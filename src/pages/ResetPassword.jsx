@@ -1,19 +1,31 @@
-import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
+import { supabase } from '../lib/supabaseClient'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
+  const [checking, setChecking] = useState(true)
+  const [hasSession, setHasSession] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
 
-  if (!token) {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setHasSession(!!data.session)
+      setChecking(false)
+    })
+  }, [])
+
+  if (checking) {
+    return <AuthCard>{null}</AuthCard>
+  }
+
+  if (!hasSession) {
     return (
       <AuthCard>
         <div className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]">
@@ -29,27 +41,35 @@ export default function ResetPassword() {
     )
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+
+    const nextErrors = {}
+    if (password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters'
+    }
+    if (password !== confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords don’t match'
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      return
+    }
+
+    setErrors({})
     setBusy(true)
 
-    setTimeout(() => {
-      setBusy(false)
-      const nextErrors = {}
-      if (password.length < 8) {
-        nextErrors.password = 'Password must be at least 8 characters'
-      }
-      if (password !== confirmPassword) {
-        nextErrors.confirmPassword = 'Passwords don’t match'
-      }
+    const { error } = await supabase.auth.updateUser({ password })
 
-      if (Object.keys(nextErrors).length > 0) {
-        setErrors(nextErrors)
-        return
-      }
+    setBusy(false)
 
-      navigate('/login?reset=1')
-    }, 900)
+    if (error) {
+      setErrors({ password: error.message })
+      return
+    }
+
+    navigate('/login?reset=1')
   }
 
   return (
