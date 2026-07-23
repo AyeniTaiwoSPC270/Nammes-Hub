@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
+import { supabase } from '../lib/supabaseClient'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
@@ -10,13 +11,16 @@ export default function ForgotPassword() {
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setBusy(true)
-    setTimeout(() => {
-      setBusy(false)
-      setSent(true)
-    }, 900)
+
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+
+    setBusy(false)
+    setSent(true)
   }
 
   if (sent) {
