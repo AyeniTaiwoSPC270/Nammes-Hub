@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
+import { supabase } from '../lib/supabaseClient'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -15,16 +16,21 @@ export default function Login() {
   const justCreated = searchParams.get('created') === '1'
   const justReset = searchParams.get('reset') === '1'
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     setError('')
     setBusy(true)
-    setTimeout(() => {
-      setBusy(false)
-      if (!email.endsWith('.edu.ng')) {
-        setError('Wrong email or password')
-      }
-    }, 900)
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+    setBusy(false)
+
+    if (signInError) {
+      setError('Wrong email or password')
+      return
+    }
+
+    navigate('/')
   }
 
   return (
