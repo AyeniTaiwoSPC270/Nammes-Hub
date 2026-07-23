@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
+import { supabase } from '../lib/supabaseClient'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -12,31 +13,64 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
+  const [sent, setSent] = useState(false)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
+
+    const nextErrors = {}
+    if (!email.endsWith('.edu.ng')) {
+      nextErrors.email = 'Use your university email (@unilag.edu.ng)'
+    }
+    if (password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters'
+    }
+    if (password !== confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords don’t match'
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors)
+      return
+    }
+
+    setErrors({})
     setBusy(true)
 
-    setTimeout(() => {
-      setBusy(false)
-      const nextErrors = {}
-      if (!email.endsWith('.edu.ng')) {
-        nextErrors.email = 'Use your university email (@unilag.edu.ng)'
-      }
-      if (password.length < 8) {
-        nextErrors.password = 'Password must be at least 8 characters'
-      }
-      if (password !== confirmPassword) {
-        nextErrors.confirmPassword = 'Passwords don’t match'
-      }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: `${window.location.origin}/login?created=1`,
+      },
+    })
 
-      if (Object.keys(nextErrors).length > 0) {
-        setErrors(nextErrors)
-        return
-      }
+    setBusy(false)
 
-      navigate('/login?created=1')
-    }, 900)
+    if (error) {
+      setErrors({ email: error.message })
+      return
+    }
+
+    setSent(true)
+  }
+
+  if (sent) {
+    return (
+      <AuthCard>
+        <div className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]">
+          <h2 className="text-[22px]">Check your email</h2>
+          <p className="text-sm leading-relaxed text-ink-muted">
+            We&rsquo;ve sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Click it
+            to activate your account, then sign in.
+          </p>
+          <Button variant="primary" type="button" onClick={() => navigate('/login')}>
+            Back to sign in
+          </Button>
+        </div>
+      </AuthCard>
+    )
   }
 
   return (
