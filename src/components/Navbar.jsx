@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../lib/AuthContext'
+import { supabase } from '../lib/supabaseClient'
 
 const links = [
   { to: '/', label: 'Home' },
@@ -17,8 +19,18 @@ function navLinkClass({ isActive }) {
   ].join(' ')
 }
 
+const authLinkClass = 'text-sm font-semibold text-green-700 no-underline hover:text-green-900'
+
 export default function Navbar() {
   const [open, setOpen] = useState(false)
+  const { user, loading } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    setOpen(false)
+    navigate('/')
+  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-hairline bg-white/95 backdrop-blur-sm">
@@ -36,9 +48,22 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <NavLink to="/login" className="hidden sm:inline-block text-sm font-semibold text-green-700 no-underline hover:text-green-900">
-          Sign in
-        </NavLink>
+        {!loading && (
+          <div className="hidden sm:flex items-center gap-4">
+            {user ? (
+              <>
+                <span className="text-sm text-ink-muted">{user.email}</span>
+                <button type="button" onClick={handleSignOut} className={authLinkClass}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <NavLink to="/login" className={authLinkClass}>
+                Sign in
+              </NavLink>
+            )}
+          </div>
+        )}
 
         <button
           type="button"
@@ -66,13 +91,27 @@ export default function Navbar() {
               {link.label}
             </NavLink>
           ))}
-          <NavLink
-            to="/login"
-            onClick={() => setOpen(false)}
-            className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
-          >
-            Sign in
-          </NavLink>
+          {!loading &&
+            (user ? (
+              <>
+                <span className="px-4 py-2 text-sm text-ink-muted">{user.email}</span>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className={[navLinkClass({ isActive: false }), 'px-4 py-3 text-left'].join(' ')}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <NavLink
+                to="/login"
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
+              >
+                Sign in
+              </NavLink>
+            ))}
         </nav>
       )}
     </header>
