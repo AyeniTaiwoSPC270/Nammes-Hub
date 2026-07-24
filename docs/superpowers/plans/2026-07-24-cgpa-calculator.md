@@ -197,7 +197,7 @@ describe('cumulativeStats', () => {
     expect(result.rows[0].gpa).toBeCloseTo(5)
     expect(result.rows[1].cumulativeUnits).toBe(5)
     expect(result.overallCGPA).toBeCloseTo((2 * 5 + 3 * 4) / 5)
-    expect(result.classification).toBe('First Class')
+    expect(result.classification).toBe('Second Class Upper')
   })
 
   it('excludes courses flagged as not counting toward CGPA from cumulative totals but keeps them in that semester GPA', () => {
