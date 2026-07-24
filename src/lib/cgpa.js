@@ -119,12 +119,19 @@ function normalizeCode(code) {
   return code.trim().toUpperCase().replace(/\s+/g, ' ')
 }
 
+function semesterRank(sem) {
+  return LEVEL_ORDER.indexOf(String(sem.level)) * 2 + (sem.semester - 1)
+}
+
 export function findPriorAttempts(code, semesters, excludeSemesterId) {
   const target = normalizeCode(code)
+  const current = semesters.find((s) => s.id === excludeSemesterId)
+  const currentRank = current ? semesterRank(current) : Infinity
   const matches = []
 
   for (const sem of semesters) {
     if (sem.id === excludeSemesterId) continue
+    if (semesterRank(sem) >= currentRank) continue
     for (const course of sem.courses) {
       if (normalizeCode(course.code) === target) {
         matches.push({ semesterId: sem.id, label: `${sem.level}L S${sem.semester}`, course })

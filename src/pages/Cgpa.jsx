@@ -28,6 +28,7 @@ export default function Cgpa() {
   const [semesters, setSemesters] = useState([])
   const [loading, setLoading] = useState(true)
   const [formError, setFormError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const [newLevel, setNewLevel] = useState(LEVELS[0])
   const [newSemesterNum, setNewSemesterNum] = useState(SEMESTERS[0])
@@ -100,7 +101,9 @@ export default function Cgpa() {
       return
     }
 
+    setSubmitting(true)
     const { data, error } = await addSemester({ userId: user.id, level: newLevel, semester: newSemesterNum })
+    setSubmitting(false)
 
     if (error) {
       setFormError(error.message)
@@ -112,7 +115,9 @@ export default function Cgpa() {
 
   async function handleDeleteSemester(semesterId) {
     setFormError('')
+    setSubmitting(true)
     const { error } = await deleteSemester(semesterId)
+    setSubmitting(false)
 
     if (error) {
       setFormError(error.message)
@@ -138,6 +143,7 @@ export default function Cgpa() {
       return
     }
 
+    setSubmitting(true)
     const { data, error } = await addCourse({
       semesterId,
       code: draft.code.trim(),
@@ -145,6 +151,7 @@ export default function Cgpa() {
       units,
       grade: draft.grade,
     })
+    setSubmitting(false)
 
     if (error) {
       setFormError(error.message)
@@ -157,9 +164,11 @@ export default function Cgpa() {
     setCourseDrafts((prev) => ({ ...prev, [semesterId]: { code: '', title: '', units: '3', grade: 'A' } }))
   }
 
-  async function handleExcludeFromCgpa(courseId) {
+  async function handleToggleCgpaCount(courseId, countsTowardCgpa) {
     setFormError('')
-    const { error } = await updateCourse(courseId, { counts_toward_cgpa: false })
+    setSubmitting(true)
+    const { error } = await updateCourse(courseId, { counts_toward_cgpa: countsTowardCgpa })
+    setSubmitting(false)
 
     if (error) {
       setFormError(error.message)
@@ -169,14 +178,16 @@ export default function Cgpa() {
     setSemesters((prev) =>
       prev.map((s) => ({
         ...s,
-        courses: s.courses.map((c) => (c.id === courseId ? { ...c, counts_toward_cgpa: false } : c)),
+        courses: s.courses.map((c) => (c.id === courseId ? { ...c, counts_toward_cgpa: countsTowardCgpa } : c)),
       }))
     )
   }
 
   async function handleDeleteCourse(semesterId, courseId) {
     setFormError('')
+    setSubmitting(true)
     const { error } = await deleteCourse(courseId)
+    setSubmitting(false)
 
     if (error) {
       setFormError(error.message)
@@ -247,7 +258,12 @@ export default function Cgpa() {
                 <h2 className="text-xl">{row.label}</h2>
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-sm text-ink-muted">GPA {row.gpa.toFixed(2)}</span>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteSemester(semester.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={submitting}
+                    onClick={() => handleDeleteSemester(semester.id)}
+                  >
                     Remove semester
                   </Button>
                 </div>
@@ -264,7 +280,12 @@ export default function Cgpa() {
                     c.units,
                     c.grade,
                     c.counts_toward_cgpa ? 'Yes' : 'No',
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteCourse(semester.id, c.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={submitting}
+                      onClick={() => handleDeleteCourse(semester.id, c.id)}
+                    >
                       Delete
                     </Button>,
                   ])}
@@ -274,19 +295,25 @@ export default function Cgpa() {
               {matches.length > 0 && (
                 <div className="mt-3 rounded-sm bg-orange-100 p-3 text-sm text-ink">
                   <p>You&rsquo;ve taken this course before:</p>
-                  {matches.map((m) => (
-                    <div key={m.course.id} className="mt-1 flex items-center justify-between gap-3">
-                      <span>
-                        {m.label} &middot; grade {m.course.grade}
-                        {m.course.counts_toward_cgpa === false ? ' (already excluded)' : ''}
-                      </span>
-                      {m.course.counts_toward_cgpa !== false && (
-                        <Button variant="secondary" size="sm" onClick={() => handleExcludeFromCgpa(m.course.id)}>
-                          Exclude that attempt from CGPA
+                  {matches.map((m) => {
+                    const excluded = m.course.counts_toward_cgpa === false
+                    return (
+                      <div key={m.course.id} className="mt-1 flex items-center justify-between gap-3">
+                        <span>
+                          {m.label} &middot; grade {m.course.grade}
+                          {excluded ? ' (excluded from CGPA)' : ''}
+                        </span>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={submitting}
+                          onClick={() => handleToggleCgpaCount(m.course.id, excluded)}
+                        >
+                          {excluded ? 'Include in CGPA' : 'Exclude that attempt from CGPA'}
                         </Button>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
@@ -319,7 +346,7 @@ export default function Cgpa() {
                   value={draft.grade}
                   onChange={(e) => setDraft(semester.id, { grade: e.target.value })}
                 />
-                <Button variant="secondary" type="submit">
+                <Button variant="secondary" type="submit" loading={submitting}>
                   Add course
                 </Button>
               </form>
@@ -343,7 +370,7 @@ export default function Cgpa() {
           value={String(newSemesterNum)}
           onChange={(e) => setNewSemesterNum(Number(e.target.value))}
         />
-        <Button variant="primary" type="submit">
+        <Button variant="primary" type="submit" loading={submitting}>
           Add semester
         </Button>
       </form>

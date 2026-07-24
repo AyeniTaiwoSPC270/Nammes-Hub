@@ -129,4 +129,15 @@ describe('findPriorAttempts', () => {
     const semesters = [{ id: 's1', level: '300', semester: 1, courses: [{ id: 'c1', code: 'MME 301', units: 3, grade: 'A' }] }]
     expect(findPriorAttempts('MME 303', semesters, 's1')).toEqual([])
   })
+
+  it('does not match a course code that only appears in a later semester', () => {
+    const semesters = [
+      { id: 's1', level: '300', semester: 1, courses: [{ id: 'c1', code: 'MME 301', units: 3, grade: 'A' }] },
+      { id: 's2', level: '300', semester: 2, courses: [{ id: 'c2', code: 'MME 305', units: 3, grade: 'A' }] },
+    ]
+
+    const matches = findPriorAttempts('MME 305', semesters, 's1')
+
+    expect(matches).toEqual([])
+  })
 })
