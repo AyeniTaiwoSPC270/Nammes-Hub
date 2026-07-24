@@ -9,7 +9,8 @@ import {
   updateCourse,
   deleteCourse,
 } from '../lib/cgpaApi'
-import { cumulativeStats, findPriorAttempts } from '../lib/cgpa'
+import { cumulativeStats, findPriorAttempts, whatIfTarget } from '../lib/cgpa'
+import TrendChart from '../components/cgpa/TrendChart'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
@@ -32,6 +33,9 @@ export default function Cgpa() {
   const [newSemesterNum, setNewSemesterNum] = useState(SEMESTERS[0])
 
   const [courseDrafts, setCourseDrafts] = useState({})
+
+  const [targetCgpa, setTargetCgpa] = useState('')
+  const [remainingUnits, setRemainingUnits] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -62,6 +66,22 @@ export default function Cgpa() {
     () => new Set(semesters.map((s) => `${s.level}-${s.semester}`)),
     [semesters]
   )
+
+  const whatIf = useMemo(() => {
+    const target = Number(targetCgpa)
+    const remaining = Number(remainingUnits)
+
+    if (!targetCgpa || !remainingUnits || Number.isNaN(target) || Number.isNaN(remaining)) {
+      return null
+    }
+
+    return whatIfTarget({
+      currentUnits: stats.overallUnits,
+      currentPoints: stats.overallPoints,
+      targetCgpa: target,
+      remainingUnits: remaining,
+    })
+  }, [targetCgpa, remainingUnits, stats.overallUnits, stats.overallPoints])
 
   function draftFor(semesterId) {
     return courseDrafts[semesterId] || { code: '', title: '', units: '3', grade: 'A' }
@@ -205,6 +225,12 @@ export default function Cgpa() {
         <span className="ml-2 font-mono text-sm text-white/80">{stats.overallUnits} units completed</span>
       </Card>
 
+      {stats.rows.length >= 2 && (
+        <div className="mt-6">
+          <TrendChart rows={stats.rows} />
+        </div>
+      )}
+
       <div className="mt-8 flex flex-col gap-6">
         {stats.rows.length === 0 && (
           <p className="text-ink-muted">No semesters yet — add your first one below.</p>
@@ -321,6 +347,49 @@ export default function Cgpa() {
           Add semester
         </Button>
       </form>
+
+      <div className="mt-10 rounded-lg bg-orange-100 p-6">
+        <h2 className="text-xl">What grade do I need?</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Enter a target CGPA and how many units you have left to find your required average grade point.
+        </p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <FormField
+            label="Target CGPA"
+            type="number"
+            value={targetCgpa}
+            onChange={(e) => setTargetCgpa(e.target.value)}
+            placeholder="4.50"
+          />
+          <FormField
+            label="Remaining units"
+            type="number"
+            value={remainingUnits}
+            onChange={(e) => setRemainingUnits(e.target.value)}
+            placeholder="60"
+          />
+        </div>
+
+        {whatIf && (
+          <p className="mt-4 text-sm">
+            {whatIf.error && <span className="text-danger">{whatIf.error}</span>}
+            {!whatIf.error && whatIf.alreadyMet && (
+              <span className="text-success">You&rsquo;ve already met that target.</span>
+            )}
+            {!whatIf.error && !whatIf.alreadyMet && !whatIf.achievable && (
+              <span className="text-danger">
+                Not achievable — even straight A&rsquo;s on your remaining units won&rsquo;t reach that target.
+              </span>
+            )}
+            {!whatIf.error && !whatIf.alreadyMet && whatIf.achievable && (
+              <span>
+                You need an average grade point of <strong>{whatIf.requiredAveragePoint.toFixed(2)}</strong> on
+                your remaining units.
+              </span>
+            )}
+          </p>
+        )}
+      </div>
     </div>
   )
 }
