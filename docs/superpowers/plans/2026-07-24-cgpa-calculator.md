@@ -1371,7 +1371,7 @@ Run: `npm run dev`, sign in, go to `/cgpa`:
 - In the what-if panel, enter a target CGPA lower than your current CGPA → expect "You've already met that target."
 - Enter a target CGPA slightly above current, with a reasonable remaining-units number → expect a specific required average grade point (double check by hand: `target * (currentUnits + remaining) - currentPoints) / remaining`).
 - Enter a target CGPA of `5.0` with very few remaining units when current CGPA is low → expect "Not achievable...".
-- Enter `0` remaining units → expect no crash and no result shown (guarded by the `useMemo`'s falsy check).
+- Enter `0` remaining units → expect no crash and a friendly "Enter at least 1 remaining unit." error message (the `useMemo` still runs since the string `'0'` is truthy; `whatIfTarget`'s own `remainingUnits <= 0` guard is what produces the message).
 - Sign out and back in (or open a private window and sign in) → confirm the full record (semesters, courses, retake exclusions) reloads from Supabase correctly.
 - Run `npx vitest run` → expect all `cgpa.js` and `chartMath.js` tests still passing after this integration.
 
