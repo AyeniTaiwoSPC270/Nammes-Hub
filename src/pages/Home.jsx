@@ -4,16 +4,16 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 
 const excos = [
-  { role: 'President', id: 'exco-president' },
-  { role: 'Vice President', id: 'exco-vp' },
-  { role: 'General Secretary', id: 'exco-secgen' },
+  { role: 'President', id: 'exco-president', name: 'Soyemi Eniola' },
+  { role: 'Vice President', id: 'exco-vp', name: 'Ameh Anthony' },
+  { role: 'General Secretary', id: 'exco-secgen', name: 'Odofin Eniola' },
   { role: 'Assistant General Secretary', id: 'exco-asstsecgen', name: 'Ayeni Taiwo' },
-  { role: 'Financial Secretary', id: 'exco-finsec' },
+  { role: 'Financial Secretary', id: 'exco-finsec', name: 'Richard Emmanuel' },
   { role: 'Treasurer', id: 'exco-treasurer' },
-  { role: 'Welfare Secretary', id: 'exco-welfare' },
-  { role: 'Social Secretary', id: 'exco-social' },
-  { role: 'Sports Secretary', id: 'exco-sports' },
-  { role: 'PRO', id: 'exco-pro' },
+  { role: 'Welfare Secretary', id: 'exco-welfare', name: 'Joseph Ofuowoicho' },
+  { role: 'Social Secretary', id: 'exco-social', name: 'Udotong Peace' },
+  { role: 'Sports Secretary', id: 'exco-sports', name: 'Omoyeni Joseph' },
+  { role: 'PRO', id: 'exco-pro', name: 'Adefesobi Nathaniel' },
 ]
 
 export default function Home() {
