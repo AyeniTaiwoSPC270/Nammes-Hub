@@ -55,7 +55,7 @@ New file `src/lib/AuthContext.jsx`:
      },
    })
    ```
-3. On Supabase error (e.g. already-registered), surface it inline via the existing `errors` state / `FormField` `error` prop.
+3. On Supabase error, surface it inline via the existing `errors` state / `FormField` `error` prop. Note: with email confirmation ON, Supabase deliberately does NOT return an error for an already-registered email (it returns a success-shaped response to prevent email enumeration) — so a duplicate signup will show the same "check your email" panel as a new one, not an inline error. This is intentional, more-secure behavior; don't add detection logic to work around it.
 4. On success, **do not** navigate to `/login?created=1` immediately (the account isn't usable until the email is confirmed). Instead swap the form for a "check your email to confirm your account" panel, mirroring `ForgotPassword`'s existing `sent` state pattern (same card shell, a message, a "Back to sign in" button).
 
 ### Login (`src/pages/Login.jsx`)
@@ -99,4 +99,7 @@ No test framework is set up in this project (no existing test files). Verificati
 3. Sign out from the Navbar → reverts to "Sign in".
 4. Forgot password → request reset → follow the email link → land on `/reset-password` with the form (not "link expired") → set new password → redirected to `/login?reset=1` → sign in with new password.
 5. Visiting `/reset-password` directly (no token) → "Link expired" panel.
+6. Wrong password on Login → "Wrong email or password" shown inline.
+
+**Status as implemented:** steps 3, 5, and 6 were live-verified. Steps 1, 2, and 4 (the full email round-trips) were NOT live-verified — Supabase's free-tier project hit its email-send rate limit during testing, and live verification was deferred by user decision. Signup's client-side validation and a live `signUp()` call succeeding (panel transition, no confirmed delivery) were verified. The `/reset-password` recovery-session path (form appears with a real token, `updateUser` succeeds) has zero live execution and should be the first thing tested once the rate limit clears.
 6. Wrong password on Login → "Wrong email or password" shown inline.
