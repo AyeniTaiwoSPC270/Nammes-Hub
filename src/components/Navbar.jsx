@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabaseClient'
 const links = [
   { to: '/', label: 'Home' },
   { to: '/outlines', label: 'Outlines' },
+  { to: '/cgpa', label: 'CGPA' },
   { to: '/events', label: 'Events' },
   { to: '/resources', label: 'Resources' },
   { to: '/news', label: 'News' },

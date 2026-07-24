@@ -10,6 +10,7 @@ import Resources from './pages/Resources'
 import News from './pages/News'
 import NewsDetail from './pages/NewsDetail'
 import Opportunities from './pages/Opportunities'
+import Cgpa from './pages/Cgpa'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="outlines/:level" element={<OutlineLevel />} />
         <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
         <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
+        <Route path="cgpa" element={<Cgpa />} />
         <Route path="events" element={<Events />} />
         <Route path="resources" element={<Resources />} />
         <Route path="news" element={<News />} />
