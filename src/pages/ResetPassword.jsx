@@ -12,6 +12,7 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
+  const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function ResetPassword() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    setFormError('')
 
     const nextErrors = {}
     if (password.length < 8) {
@@ -65,7 +67,7 @@ export default function ResetPassword() {
     setBusy(false)
 
     if (error) {
-      setErrors({ password: error.message })
+      setFormError(error.message)
       return
     }
 
@@ -79,6 +81,11 @@ export default function ResetPassword() {
         className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]"
       >
         <h2 className="text-[22px]">Reset password</h2>
+
+        {formError && (
+          <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
+        )}
+
         <p className="text-sm leading-relaxed text-ink-muted">Choose a new password for your account.</p>
 
         <FormField

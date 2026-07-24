@@ -12,11 +12,13 @@ export default function Signup() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState({})
+  const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
+    setFormError('')
 
     const nextErrors = {}
     if (!email.endsWith('.edu.ng')) {
@@ -49,7 +51,7 @@ export default function Signup() {
     setBusy(false)
 
     if (error) {
-      setErrors({ email: error.message })
+      setFormError(error.message)
       return
     }
 
@@ -80,6 +82,10 @@ export default function Signup() {
         className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]"
       >
         <h2 className="text-[22px]">Create account</h2>
+
+        {formError && (
+          <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
+        )}
 
         <FormField label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Okafor" />
         <FormField
