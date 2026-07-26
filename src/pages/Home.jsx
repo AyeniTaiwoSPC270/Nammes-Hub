@@ -2,12 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
-import { HERO_ILLUSTRATION, CATEGORY_ICONS } from '../lib/illustrations'
-
-function categoryImage(category) {
-  const src = CATEGORY_ICONS[category]
-  return src ? { src } : undefined
-}
+import { HERO_ILLUSTRATION, categoryImage } from '../lib/illustrations'
+import { getNews } from '../data/news'
 
 const excos = [
   { role: 'President', id: 'exco-president', name: 'Soyemi Eniola' },
@@ -24,6 +20,7 @@ const excos = [
 
 export default function Home() {
   const navigate = useNavigate()
+  const [featuredNews, ...restNews] = getNews().slice(0, 4)
 
   return (
     <div>
@@ -75,30 +72,31 @@ export default function Home() {
           </Button>
         </div>
 
-        <Card tone="green" eyebrow="Academics" title="2025/2026 Second Semester Exam Timetable Released" meta="Jul 20, 2026" image={categoryImage('Academics')}>
-          Second semester exams begin Aug 4. Check the pinned drive folder for your level&rsquo;s
-          full schedule and venue allocations. <Badge tone="new">New</Badge>
+        <Card
+          tone={featuredNews.tone}
+          eyebrow={featuredNews.category}
+          title={featuredNews.title}
+          meta={featuredNews.date}
+          image={categoryImage(featuredNews.category)}
+        >
+          {featuredNews.body}{' '}
+          {featuredNews.badge && <Badge tone={featuredNews.badge.tone}>{featuredNews.badge.label}</Badge>}
         </Card>
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card eyebrow="Governance" title="NAMMES General Assembly & Elections Notice" meta="Jul 15, 2026" image={categoryImage('Governance')}>
-            All levels required to attend. New Exco nominations open at the assembly.
-          </Card>
-          <Card eyebrow="Academics" title="Departmental Seminar Series Resumes" meta="Jul 10, 2026" image={categoryImage('Academics')}>
-            Weekly seminars on corrosion engineering and welding metallurgy start this Thursday, 2 PM.
-          </Card>
-          <Card tone="orange" eyebrow="Call for papers" title="Materials Science Undergraduate Symposium" meta="Jul 05, 2026" image={categoryImage('Call for papers')}>
-            Submit abstracts by Jul 30. <Badge tone="updated">Updated</Badge>
-          </Card>
-          <Card eyebrow="Resources" title="400 Level Drive Folder Updated" meta="Jun 28, 2026" image={categoryImage('Resources')}>
-            Design project templates and past FYP reports added to the shared drive.
-          </Card>
-          <Card eyebrow="Welfare" title="Textbook Donation Drive" meta="Jun 20, 2026" image={categoryImage('Welfare')}>
-            Drop off or request departmental textbooks at the NAMMES office, Rm 214.
-          </Card>
-          <Card tone="green" eyebrow="Industry" title="Site Visit to Dangote Cement Slated for August" meta="Jun 12, 2026" image={categoryImage('Industry')}>
-            Interest form for 300/400 level students closes Jul 31.
-          </Card>
+          {restNews.map((item) => (
+            <Card
+              key={item.id}
+              tone={item.tone}
+              eyebrow={item.category}
+              title={item.title}
+              meta={item.date}
+              image={categoryImage(item.category)}
+            >
+              {item.body}{' '}
+              {item.badge && <Badge tone={item.badge.tone}>{item.badge.label}</Badge>}
+            </Card>
+          ))}
         </div>
       </div>
 

@@ -36,3 +36,8 @@ export const EVENT_TONE_ICONS = {
   green: eventGreen,
   orange: eventOrange,
 }
+
+export function categoryImage(category) {
+  const src = CATEGORY_ICONS[category]
+  return src ? { src } : undefined
+}
