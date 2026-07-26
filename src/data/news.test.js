@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { news, getNewsById, filterNewsByCategory } from './news'
+import { news, getNews, getNewsById, filterNewsByCategory, NEWS_CATEGORIES } from './news'
 
 describe('getNewsById', () => {
   it('finds a news item by id', () => {
@@ -9,6 +9,30 @@ describe('getNewsById', () => {
 
   it('returns undefined for an unknown id', () => {
     expect(getNewsById('does-not-exist')).toBeUndefined()
+  })
+})
+
+describe('getNews', () => {
+  it('returns items in descending date order', () => {
+    const result = getNews()
+    const dates = result.map((n) => new Date(n.date).getTime())
+    for (let i = 1; i < dates.length; i++) {
+      expect(dates[i]).toBeLessThanOrEqual(dates[i - 1])
+    }
+  })
+
+  it('does not mutate the original news array', () => {
+    const before = news.map((n) => n.id)
+    getNews()
+    expect(news.map((n) => n.id)).toEqual(before)
+  })
+})
+
+describe('news data integrity', () => {
+  it('every item has a category in NEWS_CATEGORIES', () => {
+    news.forEach((item) => {
+      expect(NEWS_CATEGORIES).toContain(item.category)
+    })
   })
 })
 

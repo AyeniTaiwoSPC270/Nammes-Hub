@@ -17,3 +17,11 @@ describe('getOpportunities', () => {
     expect(opportunities.map((o) => o.id)).toEqual(before)
   })
 })
+
+describe('opportunities data integrity', () => {
+  it('every deadline is a valid, parseable date', () => {
+    opportunities.forEach((item) => {
+      expect(Number.isNaN(new Date(item.deadline).getTime())).toBe(false)
+    })
+  })
+})

@@ -8,7 +8,8 @@ const categories = ['All', ...NEWS_CATEGORIES]
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const active = searchParams.get('category') || 'All'
+  const requestedCategory = searchParams.get('category')
+  const active = categories.includes(requestedCategory) ? requestedCategory : 'All'
   const items = filterNewsByCategory(getNews(), active)
   const [featured, ...rest] = items
 

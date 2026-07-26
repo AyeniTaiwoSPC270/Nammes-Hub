@@ -73,7 +73,7 @@ export const news = [
 ]
 
 export function getNews() {
-  return news
+  return [...news].sort((a, b) => new Date(b.date) - new Date(a.date))
 }
 
 export function getNewsById(id) {
