@@ -27,7 +27,7 @@ Tokens live in `src/index.css` as CSS custom properties inside `@theme` (Tailwin
 
 **Don't** put brand hex values directly in components — always go through the token (`bg-green-700`, not `bg-[#127a3e]`).
 
-Visual rules: backgrounds are flat, no gradients/imagery/patterns anywhere except the one decorative shape (a solid green circle bleeding off the Home hero). Translucent blur is used exactly once — the sticky Navbar (`bg-white/95` + `backdrop-blur-sm`). Borders are flat hairlines on tables/inputs only; cards are borderless colored fills. Shadow (`shadow-sm`/`shadow-md`) reserved for floating elements — modals, dropdowns.
+Visual rules: backgrounds are flat, no gradients/patterns. Imagery is limited to a small set of custom flat illustrations (see "Illustration" below) plus the one decorative shape (a solid green circle bleeding off the Home hero) — no photography, no stock imagery. Translucent blur is used exactly once — the sticky Navbar (`bg-white/95` + `backdrop-blur-sm`). Borders are flat hairlines on tables/inputs only; cards are borderless colored fills. Shadow (`shadow-sm`/`shadow-md`) reserved for floating elements — modals, dropdowns.
 
 ## Typography
 
@@ -75,10 +75,11 @@ Props: `variant` (`primary`|`secondary`|`accent`|`destructive`|`ghost`), `size` 
 
 ### Card
 
-Props: `eyebrow`, `title`, `meta`, `children`, `padded` (default true), `tone` (`neutral`|`green`|`orange`).
+Props: `eyebrow`, `title`, `meta`, `children`, `padded` (default true), `tone` (`neutral`|`green`|`orange`), `image` (`{ src }`, optional).
 - `rounded-lg` (24px), borderless, colored fill, `p-6`, flex column, `gap-2`.
 - neutral: white bg, muted eyebrow, heading-color title. green: green-700 fill, orange-400 eyebrow, white title/body (70–90% white). orange: orange-100 fill, orange-600 eyebrow, green-900 title. Used for news, events, outlines callouts.
 - eyebrow: mono, xs, uppercase, `.04em` tracking, semibold. title: h3-style, xl. meta: mono, sm, muted. body: base, relaxed line-height.
+- `image`: renders as a 64×64 badge (`object-contain`, not cropped) above the eyebrow, inside the card's own padding. The illustration assets are self-contained circular badges (icon + soft circle backdrop) — `object-contain` keeps the full badge intact rather than cropping it into a photo-style banner. Always decorative (`alt=""`, `aria-hidden`) — the category/context is already conveyed by the eyebrow text next to it. See "Illustration" below for the asset set.
 
 ### Badge
 
@@ -116,9 +117,21 @@ Props: `brand`, `tagline`, `links`, `year`. Dark green (`green-900`) band, `whit
 - Link groups: mono uppercase xs heading (`white/50`) + column of sm links (`white/80`, no underline).
 - Bottom bar: 1px top border (`white/15`), space-between row, xs text (`white/50`) — copyright + "University of Lagos, Faculty of Engineering".
 
+## Illustration
+
+Custom flat 2D vector-style illustrations, generated per a locked style prompt (see `docs/superpowers/specs/2026-07-26-flat-illustrations-design.md` for the full prompt set), used to add visual warmth without stock photography. No photorealism, no embedded text, palette drawn from the existing brand tokens (green-700/900/100, orange-500/100, white) — generation in practice also introduced thin outlines and a few off-palette neutrals (skin tone, hair, gray tool shapes) on figurative pieces, which is an accepted deviation rather than strict palette purity.
+
+Assets live in `src/assets/illustrations/*.png`, mapped to usage keys in `src/lib/illustrations.js` (`HERO_ILLUSTRATION`, `CATEGORY_ICONS`, `LEVEL_ICONS`, `EVENT_TONE_ICONS`) so pages never import files directly. 14 images total:
+- **Hero** (1) — Home page hero; stacked below the heading/copy on mobile (smaller, centered), right side alongside the text on `sm:` and up.
+- **Category icons** (6) — Academics, Governance, Welfare, Industry, Call for papers, Resources. Used via `Card`'s `image` prop on Home's news cards.
+- **Level icons** (5) — 100–500, shown above the level number on the Outlines/Resources level-picker tiles.
+- **Event-tone icons** (2) — one per `Card` `tone` (green/orange), used on Events cards via `Card`'s `image` prop.
+
+All illustration images are decorative: `alt=""` + `aria-hidden="true"` everywhere, never real alt text, since the adjacent text (eyebrow, level number, heading) already conveys the information.
+
 ## Pages implemented from the handoff UI kit
 
-- **Home** (`src/pages/Home.jsx`) — orange hero with the one decorative green circle, department news section (1 featured green Card + 3-col grid of Cards), Exco grid (4-col, 10 roles — circular initial avatars stand in for real photos until the department supplies them).
+- **Home** (`src/pages/Home.jsx`) — orange hero with the one decorative green circle plus a custom illustration (right side, desktop only), department news section (1 featured green Card + 3-col grid of Cards, each with a category illustration via `Card`'s `image` prop), Exco grid (4-col, 10 roles — circular initial avatars stand in for real photos until the department supplies them).
 - **Outlines** — drill-down flow: level picker (`src/pages/Outlines.jsx`, 5 tiles for 100–500 Level) → semester picker (`src/pages/outlines/OutlineLevel.jsx`, First/Second Semester) → course `Table` (`src/pages/outlines/OutlineCourses.jsx`, code/title/units + "View outline" per row) → detail (`src/pages/outlines/OutlineDetail.jsx`, description + topics-covered `Card`). Routes: `/outlines`, `/outlines/:level`, `/outlines/:level/:semester`, `/outlines/:level/:semester/:code`. Sample course data lives in `src/data/outlines.js` — swap for Supabase once outlines are scoped for Admin CRUD. Shared `Breadcrumbs` component (`src/components/Breadcrumbs.jsx`) is used across all three sub-pages.
 - **Events** (`src/pages/Events.jsx`) — 2-col grid of tone Cards.
 - **Login** (`src/pages/Login.jsx`) — sign-in card (email + password `FormField`s, primary submit with `loading`, ghost cancel), plus links to Create account and Forgot password. Framed as a plain sign-in, not an "Exco-only" page — Exco members log in the same way as any other account holder would, there's no separate Exco flow. Reached via a "Sign in" link in the Navbar (and Footer), not a floating button. Shows a success banner when arriving via `?created=1` (from Signup) or `?reset=1` (from Reset password).
@@ -141,5 +154,5 @@ Resources, News, NewsDetail, Opportunities, and Admin aren't in the handoff kit 
 
 - No dark mode — single light theme by design, per the handoff.
 - No manual light/dark toggle.
-- No icon set chosen yet — when adding icons, pick one SVG set (e.g. Lucide) and stay consistent; no emoji as structural icons.
+- No structural/UI icon set chosen yet (nav, buttons, form controls) — when adding those, pick one SVG set (e.g. Lucide) and stay consistent; no emoji as structural icons. The illustration set above is decorative content, not a UI icon system, and doesn't set precedent for one.
 - Exco photo upload (the handoff's `image-slot` drag-drop prototype) — replaced with initial-avatar placeholders until there's a real upload flow.

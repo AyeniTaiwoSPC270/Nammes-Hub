@@ -2,6 +2,12 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import { HERO_ILLUSTRATION, CATEGORY_ICONS } from '../lib/illustrations'
+
+function categoryImage(category) {
+  const src = CATEGORY_ICONS[category]
+  return src ? { src } : undefined
+}
 
 const excos = [
   { role: 'President', id: 'exco-president', name: 'Soyemi Eniola' },
@@ -26,25 +32,33 @@ export default function Home() {
           aria-hidden="true"
           className="absolute -top-[90px] -right-[70px] h-[260px] w-[260px] rounded-full bg-green-700"
         />
-        <div className="relative mx-auto max-w-[720px]">
-          <div className="inline-block w-fit whitespace-nowrap rounded-full bg-white px-3.5 py-1 font-mono text-[13px] font-bold uppercase text-green-900">
-            NAMMES · 2025/2026 SESSION
+        <div className="relative mx-auto flex max-w-[960px] flex-col items-center gap-8 sm:flex-row">
+          <div className="max-w-[560px]">
+            <div className="inline-block w-fit whitespace-nowrap rounded-full bg-white px-3.5 py-1 font-mono text-[13px] font-bold uppercase text-green-900">
+              NAMMES · 2025/2026 SESSION
+            </div>
+            <h1 className="mt-5 text-[30px] text-white sm:text-[44px]">
+              Everything the department publishes, in one place.
+            </h1>
+            <p className="mt-3 text-[17px] text-white/90">
+              Course outlines, event records, drive links, department news and opportunities —
+              built for finding what you need in seconds.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button variant="primary" onClick={() => navigate('/outlines')}>
+                Browse outlines
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/events')}>
+                See events
+              </Button>
+            </div>
           </div>
-          <h1 className="mt-5 text-[30px] text-white sm:text-[44px]">
-            Everything the department publishes, in one place.
-          </h1>
-          <p className="mt-3 max-w-[560px] text-[17px] text-white/90">
-            Course outlines, event records, drive links, department news and opportunities —
-            built for finding what you need in seconds.
-          </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Button variant="primary" onClick={() => navigate('/outlines')}>
-              Browse outlines
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/events')}>
-              See events
-            </Button>
-          </div>
+          <img
+            src={HERO_ILLUSTRATION}
+            alt=""
+            aria-hidden="true"
+            className="w-52 sm:w-auto sm:max-w-[320px] sm:flex-1"
+          />
         </div>
       </div>
 
@@ -61,28 +75,28 @@ export default function Home() {
           </Button>
         </div>
 
-        <Card tone="green" eyebrow="Academics" title="2025/2026 Second Semester Exam Timetable Released" meta="Jul 20, 2026">
+        <Card tone="green" eyebrow="Academics" title="2025/2026 Second Semester Exam Timetable Released" meta="Jul 20, 2026" image={categoryImage('Academics')}>
           Second semester exams begin Aug 4. Check the pinned drive folder for your level&rsquo;s
           full schedule and venue allocations. <Badge tone="new">New</Badge>
         </Card>
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card eyebrow="Governance" title="NAMMES General Assembly & Elections Notice" meta="Jul 15, 2026">
+          <Card eyebrow="Governance" title="NAMMES General Assembly & Elections Notice" meta="Jul 15, 2026" image={categoryImage('Governance')}>
             All levels required to attend. New Exco nominations open at the assembly.
           </Card>
-          <Card eyebrow="Academics" title="Departmental Seminar Series Resumes" meta="Jul 10, 2026">
+          <Card eyebrow="Academics" title="Departmental Seminar Series Resumes" meta="Jul 10, 2026" image={categoryImage('Academics')}>
             Weekly seminars on corrosion engineering and welding metallurgy start this Thursday, 2 PM.
           </Card>
-          <Card tone="orange" eyebrow="Call for papers" title="Materials Science Undergraduate Symposium" meta="Jul 05, 2026">
+          <Card tone="orange" eyebrow="Call for papers" title="Materials Science Undergraduate Symposium" meta="Jul 05, 2026" image={categoryImage('Call for papers')}>
             Submit abstracts by Jul 30. <Badge tone="updated">Updated</Badge>
           </Card>
-          <Card eyebrow="Resources" title="400 Level Drive Folder Updated" meta="Jun 28, 2026">
+          <Card eyebrow="Resources" title="400 Level Drive Folder Updated" meta="Jun 28, 2026" image={categoryImage('Resources')}>
             Design project templates and past FYP reports added to the shared drive.
           </Card>
-          <Card eyebrow="Welfare" title="Textbook Donation Drive" meta="Jun 20, 2026">
+          <Card eyebrow="Welfare" title="Textbook Donation Drive" meta="Jun 20, 2026" image={categoryImage('Welfare')}>
             Drop off or request departmental textbooks at the NAMMES office, Rm 214.
           </Card>
-          <Card tone="green" eyebrow="Industry" title="Site Visit to Dangote Cement Slated for August" meta="Jun 12, 2026">
+          <Card tone="green" eyebrow="Industry" title="Site Visit to Dangote Cement Slated for August" meta="Jun 12, 2026" image={categoryImage('Industry')}>
             Interest form for 300/400 level students closes Jul 31.
           </Card>
         </div>

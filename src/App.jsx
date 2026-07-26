@@ -7,6 +7,8 @@ import OutlineCourses from './pages/outlines/OutlineCourses'
 import OutlineDetail from './pages/outlines/OutlineDetail'
 import Events from './pages/Events'
 import Resources from './pages/Resources'
+import ResourceLevel from './pages/resources/ResourceLevel'
+import ResourceList from './pages/resources/ResourceList'
 import News from './pages/News'
 import NewsDetail from './pages/NewsDetail'
 import Opportunities from './pages/Opportunities'
@@ -29,6 +31,8 @@ export default function App() {
         <Route path="cgpa" element={<Cgpa />} />
         <Route path="events" element={<Events />} />
         <Route path="resources" element={<Resources />} />
+        <Route path="resources/:level" element={<ResourceLevel />} />
+        <Route path="resources/:level/:semester" element={<ResourceList />} />
         <Route path="news" element={<News />} />
         <Route path="news/:id" element={<NewsDetail />} />
         <Route path="opportunities" element={<Opportunities />} />
