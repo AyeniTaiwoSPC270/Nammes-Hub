@@ -41,9 +41,9 @@ export default function App() {
         <Route path="signup" element={<Signup />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password" element={<ResetPassword />} />
-      </Route>
-      <Route element={<ProtectedRoute />}>
-        <Route path="admin" element={<Admin />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="admin" element={<Admin />} />
+        </Route>
       </Route>
     </Routes>
   )
