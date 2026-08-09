@@ -18,6 +18,7 @@ import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
+import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
   return (
@@ -40,6 +41,8 @@ export default function App() {
         <Route path="signup" element={<Signup />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password" element={<ResetPassword />} />
+      </Route>
+      <Route element={<ProtectedRoute />}>
         <Route path="admin" element={<Admin />} />
       </Route>
     </Routes>
