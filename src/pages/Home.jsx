@@ -5,30 +5,23 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import { HERO_ILLUSTRATION, categoryImage } from '../lib/illustrations'
 import { fetchNews, getNews } from '../data/news'
-
-const excos = [
-  { role: 'President', id: 'exco-president', name: 'Soyemi Eniola' },
-  { role: 'Vice President', id: 'exco-vp', name: 'Ameh Anthony' },
-  { role: 'General Secretary', id: 'exco-secgen', name: 'Odofin Eniola' },
-  { role: 'Assistant General Secretary', id: 'exco-asstsecgen', name: 'Ayeni Taiwo' },
-  { role: 'Financial Secretary', id: 'exco-finsec', name: 'Richard Emmanuel' },
-  { role: 'Treasurer', id: 'exco-treasurer' },
-  { role: 'Welfare Secretary', id: 'exco-welfare', name: 'Joseph Ofuowoicho' },
-  { role: 'Social Secretary', id: 'exco-social', name: 'Udotong Peace' },
-  { role: 'Sports Secretary', id: 'exco-sports', name: 'Omoyeni Joseph' },
-  { role: 'PRO', id: 'exco-pro', name: 'Adefesobi Nathaniel' },
-]
+import { fetchExcos } from '../data/excos'
 
 export default function Home() {
   const navigate = useNavigate()
   const [newsRows, setNewsRows] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
+  const [excosRows, setExcosRows] = useState([])
 
   useEffect(() => {
     fetchNews().then((data) => {
       setNewsRows(data)
       setNewsLoading(false)
     })
+  }, [])
+
+  useEffect(() => {
+    fetchExcos().then(setExcosRows)
   }, [])
 
   const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
@@ -121,10 +114,14 @@ export default function Home() {
         </div>
         <h2 className="mt-1.5 mb-6 text-[28px]">Meet the Excos</h2>
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          {excos.map((x) => (
+          {excosRows.map((x) => (
             <div key={x.id} className="flex flex-col items-center gap-2.5">
-              <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full bg-green-100 font-display text-2xl text-green-700">
-                {(x.name || x.role).charAt(0)}
+              <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
+                {x.photo_url ? (
+                  <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (x.name || x.role).charAt(0)
+                )}
               </div>
               <div className="text-center">
                 <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
