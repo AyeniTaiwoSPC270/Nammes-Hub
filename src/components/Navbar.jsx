@@ -56,6 +56,9 @@ export default function Navbar() {
                 <span className="max-w-[16ch] truncate text-sm text-ink-muted" title={user.email}>
                   {user.email}
                 </span>
+                <NavLink to="/admin" className={authLinkClass}>
+                  Admin
+                </NavLink>
                 <button type="button" onClick={handleSignOut} className={authLinkClass}>
                   Sign out
                 </button>
@@ -100,6 +103,13 @@ export default function Navbar() {
                 <span className="max-w-[16ch] truncate px-4 py-2 text-sm text-ink-muted" title={user.email}>
                   {user.email}
                 </span>
+                <NavLink
+                  to="/admin"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
+                >
+                  Admin
+                </NavLink>
                 <button
                   type="button"
                   onClick={handleSignOut}
