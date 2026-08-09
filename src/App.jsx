@@ -18,6 +18,7 @@ import Signup from './pages/Signup'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
+import AdminNews from './pages/admin/AdminNews'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="reset-password" element={<ResetPassword />} />
         <Route element={<ProtectedRoute />}>
           <Route path="admin" element={<Admin />} />
+          <Route path="admin/news" element={<AdminNews />} />
         </Route>
       </Route>
     </Routes>

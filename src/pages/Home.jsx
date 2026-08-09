@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import { HERO_ILLUSTRATION, categoryImage } from '../lib/illustrations'
-import { getNews } from '../data/news'
+import { fetchNews, getNews } from '../data/news'
 
 const excos = [
   { role: 'President', id: 'exco-president', name: 'Soyemi Eniola' },
@@ -20,7 +21,17 @@ const excos = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const [featuredNews, ...restNews] = getNews().slice(0, 4)
+  const [newsRows, setNewsRows] = useState([])
+  const [newsLoading, setNewsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchNews().then((data) => {
+      setNewsRows(data)
+      setNewsLoading(false)
+    })
+  }, [])
+
+  const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
 
   return (
     <div>
@@ -72,32 +83,36 @@ export default function Home() {
           </Button>
         </div>
 
-        <Card
-          tone={featuredNews.tone}
-          eyebrow={featuredNews.category}
-          title={featuredNews.title}
-          meta={featuredNews.date}
-          image={categoryImage(featuredNews.category)}
-        >
-          {featuredNews.body}{' '}
-          {featuredNews.badge && <Badge tone={featuredNews.badge.tone}>{featuredNews.badge.label}</Badge>}
-        </Card>
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {restNews.map((item) => (
+        {!newsLoading && featuredNews && (
+          <>
             <Card
-              key={item.id}
-              tone={item.tone}
-              eyebrow={item.category}
-              title={item.title}
-              meta={item.date}
-              image={categoryImage(item.category)}
+              tone={featuredNews.tone}
+              eyebrow={featuredNews.category}
+              title={featuredNews.title}
+              meta={featuredNews.date}
+              image={featuredNews.image_url ? { src: featuredNews.image_url } : categoryImage(featuredNews.category)}
             >
-              {item.body}{' '}
-              {item.badge && <Badge tone={item.badge.tone}>{item.badge.label}</Badge>}
+              {featuredNews.body}{' '}
+              {featuredNews.badge_tone && <Badge tone={featuredNews.badge_tone}>{featuredNews.badge_label}</Badge>}
             </Card>
-          ))}
-        </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {restNews.map((item) => (
+                <Card
+                  key={item.id}
+                  tone={item.tone}
+                  eyebrow={item.category}
+                  title={item.title}
+                  meta={item.date}
+                  image={item.image_url ? { src: item.image_url } : categoryImage(item.category)}
+                >
+                  {item.body}{' '}
+                  {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mx-auto max-w-[880px] px-5 pb-18 sm:px-6">

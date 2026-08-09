@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-export const ADMIN_SECTIONS = []
+export const ADMIN_SECTIONS = [{ path: '/admin/news', label: 'News' }]
 
 export default function Admin() {
   return (

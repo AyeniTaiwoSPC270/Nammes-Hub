@@ -1,14 +1,32 @@
+import { useEffect, useState } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
-import { getNewsById } from '../data/news'
+import { fetchNews, getNewsById } from '../data/news'
 
 export default function NewsDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const post = getNewsById(id)
+  useEffect(() => {
+    fetchNews().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
+      </div>
+    )
+  }
+
+  const post = getNewsById(rows, id)
   if (!post) return <Navigate to="/news" replace />
 
   return (
@@ -23,8 +41,17 @@ export default function NewsDetail() {
         <span>Posted by {post.author}</span>
         <span aria-hidden="true">&middot;</span>
         <span>{post.date}</span>
-        {post.badge && <Badge tone={post.badge.tone}>{post.badge.label}</Badge>}
+        {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
       </div>
+
+      {post.image_url && (
+        <img
+          src={post.image_url}
+          alt=""
+          style={{ width: `${post.image_width_pct || 100}%` }}
+          className="mt-6 rounded-md"
+        />
+      )}
 
       <p className="mt-6 max-w-2xl leading-relaxed text-ink">{post.body}</p>
 

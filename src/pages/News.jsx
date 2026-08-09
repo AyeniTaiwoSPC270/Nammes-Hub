@@ -1,16 +1,27 @@
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
-import { getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
+import { fetchNews, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 import { categoryImage } from '../lib/illustrations'
 
 const categories = ['All', ...NEWS_CATEGORIES]
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchNews().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
+
   const requestedCategory = searchParams.get('category')
   const active = categories.includes(requestedCategory) ? requestedCategory : 'All'
-  const items = filterNewsByCategory(getNews(), active)
+  const items = filterNewsByCategory(getNews(rows), active)
   const [featured, ...rest] = items
 
   function selectCategory(category) {
@@ -19,6 +30,14 @@ export default function News() {
     } else {
       setSearchParams({ category })
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
+      </div>
+    )
   }
 
   return (
@@ -55,10 +74,10 @@ export default function News() {
               eyebrow={featured.category}
               title={featured.title}
               meta={featured.date}
-              image={categoryImage(featured.category)}
+              image={featured.image_url ? { src: featured.image_url } : categoryImage(featured.category)}
             >
               {featured.body}{' '}
-              {featured.badge && <Badge tone={featured.badge.tone}>{featured.badge.label}</Badge>}
+              {featured.badge_tone && <Badge tone={featured.badge_tone}>{featured.badge_label}</Badge>}
             </Card>
           </Link>
 
@@ -70,10 +89,10 @@ export default function News() {
                   eyebrow={item.category}
                   title={item.title}
                   meta={item.date}
-                  image={categoryImage(item.category)}
+                  image={item.image_url ? { src: item.image_url } : categoryImage(item.category)}
                 >
                   {item.body}{' '}
-                  {item.badge && <Badge tone={item.badge.tone}>{item.badge.label}</Badge>}
+                  {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
                 </Card>
               </Link>
             ))}
