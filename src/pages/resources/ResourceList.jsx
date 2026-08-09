@@ -1,21 +1,38 @@
+import { useEffect, useState } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Table from '../../components/ui/Table'
-import { LEVELS, SEMESTER_LABELS, getResources } from '../../data/resources'
+import { LEVELS, SEMESTER_LABELS, fetchResources, getResources } from '../../data/resources'
 
 export default function ResourceList() {
   const { level, semester } = useParams()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchResources().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/resources" replace />
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
+      </div>
+    )
+  }
 
-  const items = getResources(level, semester)
+  const items = getResources(rows, level, semester)
 
-  const rows = items.map((r) => [
+  const tableRows = items.map((r) => [
     r.category,
     r.title,
     r.updated,
     <a
-      key={r.link}
+      key={r.id}
       href={r.link}
       target="_blank"
       rel="noopener noreferrer"
@@ -41,7 +58,7 @@ export default function ResourceList() {
 
       <div className="mt-6">
         {items.length > 0 ? (
-          <Table columns={['Category', 'Title', 'Updated', '']} rows={rows} />
+          <Table columns={['Category', 'Title', 'Updated', '']} rows={tableRows} />
         ) : (
           <p className="text-ink-muted">No resources published for this semester yet.</p>
         )}

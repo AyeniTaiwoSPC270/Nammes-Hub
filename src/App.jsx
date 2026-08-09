@@ -21,6 +21,7 @@ import Admin from './pages/Admin'
 import AdminNews from './pages/admin/AdminNews'
 import AdminOpportunities from './pages/admin/AdminOpportunities'
 import AdminEvents from './pages/admin/AdminEvents'
+import AdminResources from './pages/admin/AdminResources'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="admin/news" element={<AdminNews />} />
           <Route path="admin/opportunities" element={<AdminOpportunities />} />
           <Route path="admin/events" element={<AdminEvents />} />
+          <Route path="admin/resources" element={<AdminResources />} />
         </Route>
       </Route>
     </Routes>

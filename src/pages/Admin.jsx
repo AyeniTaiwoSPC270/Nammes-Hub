@@ -4,6 +4,7 @@ export const ADMIN_SECTIONS = [
   { path: '/admin/news', label: 'News' },
   { path: '/admin/opportunities', label: 'Opportunities' },
   { path: '/admin/events', label: 'Events' },
+  { path: '/admin/resources', label: 'Resources' },
 ]
 
 export default function Admin() {
