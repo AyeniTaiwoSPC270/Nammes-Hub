@@ -8,7 +8,7 @@ export const excosAdminConfig = {
   ],
   fields: [
     { field: 'role', label: 'Role', type: 'text' },
-    { field: 'name', label: 'Name', type: 'text' },
+    { field: 'name', label: 'Name', type: 'text', optional: true },
     { field: 'sort_order', label: 'Display order', type: 'number' },
     { field: 'photo_url', label: 'Photo', type: 'avatar' },
   ],
