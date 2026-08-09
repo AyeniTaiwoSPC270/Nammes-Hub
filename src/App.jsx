@@ -19,6 +19,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Admin from './pages/Admin'
 import AdminNews from './pages/admin/AdminNews'
+import AdminOpportunities from './pages/admin/AdminOpportunities'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="admin" element={<Admin />} />
           <Route path="admin/news" element={<AdminNews />} />
+          <Route path="admin/opportunities" element={<AdminOpportunities />} />
         </Route>
       </Route>
     </Routes>

@@ -1,10 +1,29 @@
+import { useEffect, useState } from 'react'
 import Table from '../components/ui/Table'
-import { getOpportunities } from '../data/opportunities'
+import { fetchOpportunities, getOpportunities } from '../data/opportunities'
 
 export default function Opportunities() {
-  const items = getOpportunities()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const rows = items.map((o) => [
+  useEffect(() => {
+    fetchOpportunities().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
+      </div>
+    )
+  }
+
+  const items = getOpportunities(rows)
+
+  const tableRows = items.map((o) => [
     o.deadline,
     o.type,
     <div key={`${o.id}-title`}>
@@ -34,7 +53,7 @@ export default function Opportunities() {
 
       <div className="mt-6">
         {items.length > 0 ? (
-          <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={rows} />
+          <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={tableRows} />
         ) : (
           <p className="text-ink-muted">No opportunities posted yet.</p>
         )}
