@@ -75,11 +75,12 @@ Props: `variant` (`primary`|`secondary`|`accent`|`destructive`|`ghost`), `size` 
 
 ### Card
 
-Props: `eyebrow`, `title`, `meta`, `children`, `padded` (default true), `tone` (`neutral`|`green`|`orange`), `image` (`{ src }`, optional).
+Props: `eyebrow`, `title`, `meta`, `children`, `padded` (default true), `tone` (`neutral`|`green`|`orange`), `image` (`{ src }`, optional), `imageVariant` (`icon` default | `cover`), `imageAspect` (`standard` default | `video`, only relevant when `imageVariant="cover"`).
 - `rounded-lg` (24px), borderless, colored fill, `p-6`, flex column, `gap-2`.
 - neutral: white bg, muted eyebrow, heading-color title. green: green-700 fill, orange-400 eyebrow, white title/body (70–90% white). orange: orange-100 fill, orange-600 eyebrow, green-900 title. Used for news, events, outlines callouts.
 - eyebrow: mono, xs, uppercase, `.04em` tracking, semibold. title: h3-style, xl. meta: mono, sm, muted. body: base, relaxed line-height.
-- `image`: renders as a 64×64 badge (`object-contain`, not cropped) above the eyebrow, inside the card's own padding. The illustration assets are self-contained circular badges (icon + soft circle backdrop) — `object-contain` keeps the full badge intact rather than cropping it into a photo-style banner. Always decorative (`alt=""`, `aria-hidden`) — the category/context is already conveyed by the eyebrow text next to it. See "Illustration" below for the asset set.
+- `image` + `imageVariant="icon"` (default): renders as a 64×64 badge (`object-contain`, not cropped) above the eyebrow, inside the card's own padding. The illustration assets are self-contained circular badges (icon + soft circle backdrop) — `object-contain` keeps the full badge intact rather than cropping it into a photo-style banner. Always decorative (`alt=""`, `aria-hidden`) — the category/context is already conveyed by the eyebrow text next to it. See "Illustration" below for the asset set.
+- `image` + `imageVariant="cover"`: renders full-bleed above the card's padded content, `object-cover`, `rounded-t-lg` to match the card's own `rounded-lg`. Fixed aspect ratio via `imageAspect`: `standard` (4:3, default — grid cards) or `video` (16:9 — featured/hero cards). Used for real uploaded photos (News) rather than decorative illustrations; if `image` is omitted, no image row renders at all — never falls back to a stretched icon. Always decorative (`alt=""`, `aria-hidden`).
 
 ### Badge
 

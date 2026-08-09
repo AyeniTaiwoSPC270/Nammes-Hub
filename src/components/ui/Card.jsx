@@ -4,13 +4,37 @@ const tones = {
   orange: { bg: 'bg-orange-100', eyebrow: 'text-orange-600', title: 'text-green-900', meta: 'text-ink-muted', body: 'text-ink' },
 }
 
-export default function Card({ eyebrow, title, meta, children, padded = true, tone = 'neutral', className = '', image }) {
+const imageAspects = {
+  standard: 'aspect-[4/3]',
+  video: 'aspect-[16/9]',
+}
+
+export default function Card({
+  eyebrow,
+  title,
+  meta,
+  children,
+  padded = true,
+  tone = 'neutral',
+  className = '',
+  image,
+  imageVariant = 'icon',
+  imageAspect = 'standard',
+}) {
   const t = tones[tone] || tones.neutral
 
   return (
     <div className={['flex flex-col gap-2 rounded-lg', t.bg, className].join(' ')}>
+      {image && imageVariant === 'cover' && (
+        <img
+          src={image.src}
+          alt=""
+          aria-hidden="true"
+          className={['w-full rounded-t-lg object-cover', imageAspects[imageAspect] || imageAspects.standard].join(' ')}
+        />
+      )}
       <div className={['flex flex-col gap-2', padded ? 'p-6' : ''].join(' ')}>
-        {image && (
+        {image && imageVariant === 'icon' && (
           <img src={image.src} alt="" aria-hidden="true" className="h-16 w-16 object-contain" />
         )}
         {eyebrow && (
