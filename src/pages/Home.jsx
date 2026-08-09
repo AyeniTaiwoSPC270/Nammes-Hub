@@ -12,6 +12,7 @@ export default function Home() {
   const [newsRows, setNewsRows] = useState([])
   const [newsLoading, setNewsLoading] = useState(true)
   const [excosRows, setExcosRows] = useState([])
+  const [excosError, setExcosError] = useState(false)
 
   useEffect(() => {
     fetchNews().then((data) => {
@@ -21,7 +22,9 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    fetchExcos().then(setExcosRows)
+    fetchExcos()
+      .then(setExcosRows)
+      .catch(() => setExcosError(true))
   }, [])
 
   const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
@@ -113,23 +116,27 @@ export default function Home() {
           Executives · 2025/2026
         </div>
         <h2 className="mt-1.5 mb-6 text-[28px]">Meet the Excos</h2>
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-          {excosRows.map((x) => (
-            <div key={x.id} className="flex flex-col items-center gap-2.5">
-              <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
-                {x.photo_url ? (
-                  <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  (x.name || x.role).charAt(0)
-                )}
+        {excosError ? (
+          <p className="text-ink-muted">Couldn&rsquo;t load the Excos list right now.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+            {excosRows.map((x) => (
+              <div key={x.id} className="flex flex-col items-center gap-2.5">
+                <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
+                  {x.photo_url ? (
+                    <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (x.name || x.role).charAt(0)
+                  )}
+                </div>
+                <div className="text-center">
+                  <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
+                  <div className="mt-0.5 font-mono text-xs text-ink-muted">{x.role}</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
-                <div className="mt-0.5 font-mono text-xs text-ink-muted">{x.role}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
