@@ -45,6 +45,9 @@ describe('parseListField / formatListField', () => {
   it('drops blank lines', () => {
     expect(parseListField('a\n\n  \nb')).toEqual(['a', 'b'])
   })
+  it('formats a null value (e.g. an unset optional list column like outlines.texts) as an empty string', () => {
+    expect(formatListField(null)).toBe('')
+  })
 })
 
 describe('buildFormState / buildPayload', () => {
@@ -93,6 +96,21 @@ describe('buildFormState / buildPayload', () => {
     const selectFields = [{ field: 'badge_tone', type: 'select', options: ['', 'new', 'updated'], optional: true }]
     const state = buildFormState(selectFields, undefined)
     expect(state.badge_tone).toBe('')
+  })
+
+  it('builds an empty textarea value for an optional list field stored as null (e.g. outlines.texts with no recommended texts)', () => {
+    const optionalListFields = [
+      { field: 'topics', type: 'list' },
+      { field: 'texts', type: 'list', optional: true },
+    ]
+    const state = buildFormState(optionalListFields, { topics: ['A'], texts: null })
+    expect(state).toEqual({ topics: 'A', texts: '' })
+  })
+
+  it('turns a null optional list field back into an empty array on save, not null', () => {
+    const optionalListFields = [{ field: 'texts', type: 'list', optional: true }]
+    const payload = buildPayload(optionalListFields, { texts: '' })
+    expect(payload).toEqual({ texts: [] })
   })
 
   it('builds a Supabase payload from form state', () => {

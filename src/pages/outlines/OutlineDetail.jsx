@@ -1,16 +1,33 @@
+import { useEffect, useState } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
-import { LEVELS, SEMESTER_LABELS, getCourse } from '../../data/outlines'
+import { LEVELS, SEMESTER_LABELS, fetchOutlines, getCourse } from '../../data/outlines'
 
 export default function OutlineDetail() {
   const { level, semester, code } = useParams()
   const navigate = useNavigate()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchOutlines().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
+      </div>
+    )
+  }
 
-  const course = getCourse(level, semester, code)
+  const course = getCourse(rows, level, semester, code)
   if (!course) return <Navigate to={`/outlines/${level}/${semester}`} replace />
 
   return (

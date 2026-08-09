@@ -23,6 +23,7 @@ import AdminOpportunities from './pages/admin/AdminOpportunities'
 import AdminEvents from './pages/admin/AdminEvents'
 import AdminResources from './pages/admin/AdminResources'
 import AdminExcos from './pages/admin/AdminExcos'
+import AdminOutlines from './pages/admin/AdminOutlines'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="admin/events" element={<AdminEvents />} />
           <Route path="admin/resources" element={<AdminResources />} />
           <Route path="admin/excos" element={<AdminExcos />} />
+          <Route path="admin/outlines" element={<AdminOutlines />} />
         </Route>
       </Route>
     </Routes>

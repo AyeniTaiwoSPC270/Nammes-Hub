@@ -1,0 +1,22 @@
+export const outlinesAdminConfig = {
+  title: 'Outlines',
+  idField: 'code',
+  listColumns: [
+    { field: 'level', label: 'Level' },
+    { field: 'semester', label: 'Semester' },
+    { field: 'code', label: 'Code' },
+    { field: 'title', label: 'Title' },
+  ],
+  fields: [
+    { field: 'level', label: 'Level (100-500)', type: 'number' },
+    { field: 'semester', label: 'Semester (1 or 2)', type: 'number' },
+    { field: 'code', label: 'Course code', type: 'text' },
+    { field: 'title', label: 'Title', type: 'text' },
+    { field: 'units', label: 'Units', type: 'number' },
+    { field: 'lecturer', label: 'Lecturer', type: 'text' },
+    { field: 'updated', label: 'Updated date', type: 'date' },
+    { field: 'description', label: 'Description', type: 'textarea' },
+    { field: 'topics', label: 'Topics', type: 'list' },
+    { field: 'texts', label: 'Recommended texts', type: 'list', optional: true },
+  ],
+}

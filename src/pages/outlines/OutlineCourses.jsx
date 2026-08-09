@@ -1,19 +1,36 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Table from '../../components/ui/Table'
-import { LEVELS, SEMESTER_LABELS, getCourses } from '../../data/outlines'
+import { LEVELS, SEMESTER_LABELS, fetchOutlines, getCourses } from '../../data/outlines'
 
 export default function OutlineCourses() {
   const { level, semester } = useParams()
   const navigate = useNavigate()
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchOutlines().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
+      </div>
+    )
+  }
 
-  const courses = getCourses(level, semester)
+  const courses = getCourses(rows, level, semester)
   const slug = (code) => code.replace(/\s+/g, '').toLowerCase()
 
-  const rows = courses.map((c) => [
+  const tableRows = courses.map((c) => [
     c.code,
     c.title,
     String(c.units),
@@ -43,7 +60,7 @@ export default function OutlineCourses() {
 
       <div className="mt-6">
         {courses.length > 0 ? (
-          <Table columns={['Code', 'Title', 'Units', '']} rows={rows} />
+          <Table columns={['Code', 'Title', 'Units', '']} rows={tableRows} />
         ) : (
           <p className="text-ink-muted">No courses published for this semester yet.</p>
         )}
