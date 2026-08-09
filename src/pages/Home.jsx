@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
-import { HERO_ILLUSTRATION, categoryImage } from '../lib/illustrations'
+import { HERO_ILLUSTRATION } from '../lib/illustrations'
 import { fetchNews, getNews } from '../data/news'
 import { fetchExcos } from '../data/excos'
 
@@ -86,7 +86,9 @@ export default function Home() {
               eyebrow={featuredNews.category}
               title={featuredNews.title}
               meta={featuredNews.date}
-              image={featuredNews.image_url ? { src: featuredNews.image_url } : categoryImage(featuredNews.category)}
+              image={featuredNews.image_url ? { src: featuredNews.image_url } : undefined}
+              imageVariant="cover"
+              imageAspect="video"
             >
               {featuredNews.body}{' '}
               {featuredNews.badge_tone && <Badge tone={featuredNews.badge_tone}>{featuredNews.badge_label}</Badge>}
@@ -100,7 +102,9 @@ export default function Home() {
                   eyebrow={item.category}
                   title={item.title}
                   meta={item.date}
-                  image={item.image_url ? { src: item.image_url } : categoryImage(item.category)}
+                  image={item.image_url ? { src: item.image_url } : undefined}
+                  imageVariant="cover"
+                  imageAspect="standard"
                 >
                   {item.body}{' '}
                   {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
