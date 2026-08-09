@@ -1,18 +1,42 @@
+import { useEffect, useState } from 'react'
 import Card from '../components/ui/Card'
 import { EVENT_TONE_ICONS } from '../lib/illustrations'
+import { fetchEvents } from '../data/events'
 
 export default function Events() {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchEvents().then((data) => {
+      setRows(data)
+      setLoading(false)
+    })
+  }, [])
+
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
       <h1 className="text-[32px]">Events</h1>
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card tone="orange" eyebrow="Nov 14" title="Metallurgy Career Fair" meta="Main Auditorium · 10:00 AM" image={{ src: EVENT_TONE_ICONS.orange }}>
-          Meet recruiters from steel, cement and mining employers.
-        </Card>
-        <Card tone="green" eyebrow="Dec 02" title="Exco Elections" image={{ src: EVENT_TONE_ICONS.green }}>
-          General assembly, all levels welcome.
-        </Card>
-      </div>
+      {loading ? (
+        <p className="mt-6 text-ink-muted">Loading…</p>
+      ) : rows.length === 0 ? (
+        <p className="mt-6 text-ink-muted">No events posted yet.</p>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {rows.map((event) => (
+            <Card
+              key={event.id}
+              tone={event.tone}
+              eyebrow={event.date}
+              title={event.title}
+              meta={event.meta || undefined}
+              image={{ src: EVENT_TONE_ICONS[event.tone] || EVENT_TONE_ICONS.green }}
+            >
+              {event.description}
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

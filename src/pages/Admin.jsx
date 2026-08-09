@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 export const ADMIN_SECTIONS = [
   { path: '/admin/news', label: 'News' },
   { path: '/admin/opportunities', label: 'Opportunities' },
+  { path: '/admin/events', label: 'Events' },
 ]
 
 export default function Admin() {
