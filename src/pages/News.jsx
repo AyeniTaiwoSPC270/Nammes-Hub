@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import { fetchNews, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
-import { categoryImage } from '../lib/illustrations'
 
 const categories = ['All', ...NEWS_CATEGORIES]
 
@@ -74,14 +73,16 @@ export default function News() {
               eyebrow={featured.category}
               title={featured.title}
               meta={featured.date}
-              image={featured.image_url ? { src: featured.image_url } : categoryImage(featured.category)}
+              image={featured.image_url ? { src: featured.image_url } : undefined}
+              imageVariant="cover"
+              imageAspect="video"
             >
               {featured.body}{' '}
               {featured.badge_tone && <Badge tone={featured.badge_tone}>{featured.badge_label}</Badge>}
             </Card>
           </Link>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {rest.map((item) => (
               <Link key={item.id} to={`/news/${item.id}`} className="block">
                 <Card
@@ -89,7 +90,9 @@ export default function News() {
                   eyebrow={item.category}
                   title={item.title}
                   meta={item.date}
-                  image={item.image_url ? { src: item.image_url } : categoryImage(item.category)}
+                  image={item.image_url ? { src: item.image_url } : undefined}
+                  imageVariant="cover"
+                  imageAspect="standard"
                 >
                   {item.body}{' '}
                   {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
