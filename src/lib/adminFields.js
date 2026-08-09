@@ -33,6 +33,11 @@ export function buildFormState(fields, record) {
     else if (f.type === 'image') {
       state[f.field] = record?.[f.field] ?? ''
       state[f.widthField] = record?.[f.widthField] ?? 100
+    } else if (f.type === 'select') {
+      // A native <select> visually shows its first <option> even when the
+      // controlled value doesn't match any option (e.g. an empty default).
+      // Default to the first option so the displayed value and form state agree.
+      state[f.field] = record?.[f.field] ?? (f.options && f.options.length > 0 ? f.options[0] : '')
     } else state[f.field] = record?.[f.field] ?? ''
   })
   return state

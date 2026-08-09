@@ -77,6 +77,24 @@ describe('buildFormState / buildPayload', () => {
     expect(state.image_width_pct).toBe(100)
   })
 
+  it('defaults a select field to its first option for a new record', () => {
+    const selectFields = [{ field: 'category', type: 'select', options: ['Academics', 'Governance'] }]
+    const state = buildFormState(selectFields, undefined)
+    expect(state.category).toBe('Academics')
+  })
+
+  it('keeps an existing record value for a select field', () => {
+    const selectFields = [{ field: 'category', type: 'select', options: ['Academics', 'Governance'] }]
+    const state = buildFormState(selectFields, { category: 'Governance' })
+    expect(state.category).toBe('Governance')
+  })
+
+  it('defaults an optional select field with a blank first option to empty string', () => {
+    const selectFields = [{ field: 'badge_tone', type: 'select', options: ['', 'new', 'updated'], optional: true }]
+    const state = buildFormState(selectFields, undefined)
+    expect(state.badge_tone).toBe('')
+  })
+
   it('builds a Supabase payload from form state', () => {
     const payload = buildPayload(fields, {
       title: 'MME 101',
