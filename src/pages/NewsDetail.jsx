@@ -49,7 +49,7 @@ export default function NewsDetail() {
           src={post.image_url}
           alt=""
           style={{ width: `${post.image_width_pct || 100}%` }}
-          className="mt-6 rounded-md"
+          className="mt-6 rounded-lg"
         />
       )}
 
