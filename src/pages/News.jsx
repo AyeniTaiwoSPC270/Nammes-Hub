@@ -49,7 +49,7 @@ export default function News() {
         ))}
       </div>
 
-      {isError ? (
+      {isError && !data ? (
         <div className="mt-8">
           <ErrorState message="Couldn't load news right now." onRetry={refetch} />
         </div>

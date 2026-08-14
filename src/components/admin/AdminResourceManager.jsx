@@ -22,10 +22,11 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
   const toast = useToast()
   const [view, setView] = useState({ mode: 'list' })
 
-  const { data: rows = [], isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: [table],
     queryFn: () => loadRows(table, orderBy),
   })
+  const rows = data ?? []
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
@@ -77,25 +78,7 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
       </Link>
       <h1 className="text-[32px]">{title}</h1>
 
-      {isError ? (
-        <div className="mt-6">
-          <ErrorState message={`Couldn't load ${title.toLowerCase()} right now.`} onRetry={refetch} />
-        </div>
-      ) : isLoading ? (
-        <div className="mt-6">
-          <SkeletonTable columns={config.listColumns.length + 1} rows={5} />
-        </div>
-      ) : view.mode === 'list' ? (
-        <div className="mt-6">
-          <AdminResourceList
-            config={config}
-            rows={rows}
-            onEdit={(record) => setView({ mode: 'edit', record })}
-            onDelete={(row) => deleteMutation.mutate(row)}
-            onAddNew={() => setView({ mode: 'new' })}
-          />
-        </div>
-      ) : (
+      {view.mode !== 'list' ? (
         <div className="mt-6">
           <AdminResourceForm
             config={config}
@@ -103,6 +86,24 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
             onSubmit={(payload) => saveMutation.mutate(payload)}
             onCancel={() => setView({ mode: 'list' })}
             saving={saveMutation.isPending}
+          />
+        </div>
+      ) : isError && !data ? (
+        <div className="mt-6">
+          <ErrorState message={`Couldn't load ${title.toLowerCase()} right now.`} onRetry={refetch} />
+        </div>
+      ) : isLoading ? (
+        <div className="mt-6">
+          <SkeletonTable columns={config.listColumns.length + 1} rows={5} />
+        </div>
+      ) : (
+        <div className="mt-6">
+          <AdminResourceList
+            config={config}
+            rows={rows}
+            onEdit={(record) => setView({ mode: 'edit', record })}
+            onDelete={(row) => deleteMutation.mutate(row)}
+            onAddNew={() => setView({ mode: 'new' })}
           />
         </div>
       )}

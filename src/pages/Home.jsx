@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
 import { HERO_ILLUSTRATION } from '../lib/illustrations'
@@ -65,7 +66,7 @@ export default function Home() {
           </Button>
         </div>
 
-        {newsQuery.isError ? (
+        {newsQuery.isError && !newsQuery.data ? (
           <ErrorState message="Couldn't load news right now." onRetry={newsQuery.refetch} />
         ) : newsQuery.isLoading ? (
           <>
@@ -109,7 +110,9 @@ export default function Home() {
               ))}
             </div>
           </>
-        ) : null}
+        ) : (
+          <EmptyState title="No news yet" body="Check back soon for updates." />
+        )}
       </div>
 
       <div className="mx-auto max-w-[880px] px-5 pb-18 sm:px-6">
@@ -117,7 +120,7 @@ export default function Home() {
           Executives · 2025/2026
         </div>
         <h2 className="mt-1.5 mb-6 text-[28px]">Meet the Excos</h2>
-        {excosQuery.isError ? (
+        {excosQuery.isError && !excosQuery.data ? (
           <ErrorState message="Couldn't load the Excos list right now." onRetry={excosQuery.refetch} />
         ) : excosQuery.isLoading ? (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
@@ -128,6 +131,8 @@ export default function Home() {
               </div>
             ))}
           </div>
+        ) : (excosQuery.data ?? []).length === 0 ? (
+          <EmptyState title="Excos coming soon" body="Check back soon." />
         ) : (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
             {(excosQuery.data ?? []).map((x) => (

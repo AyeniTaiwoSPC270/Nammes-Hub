@@ -44,7 +44,7 @@ export default function ResourceList() {
       <p className="mt-2 max-w-2xl text-ink-muted">Shared Drive links and other resources for this semester.</p>
 
       <div className="mt-6">
-        {isError ? (
+        {isError && !data ? (
           <ErrorState message="Couldn't load resources right now." onRetry={refetch} />
         ) : isLoading ? (
           <SkeletonTable columns={4} rows={4} />

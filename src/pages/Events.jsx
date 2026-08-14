@@ -12,7 +12,7 @@ export default function Events() {
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
       <h1 className="text-[32px]">Events</h1>
-      {isError ? (
+      {isError && !data ? (
         <div className="mt-6">
           <ErrorState message="Couldn't load events right now." onRetry={refetch} />
         </div>

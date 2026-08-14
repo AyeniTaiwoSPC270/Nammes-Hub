@@ -46,7 +46,7 @@ export default function OutlineCourses() {
       <p className="mt-2 max-w-2xl text-ink-muted">Select a course to view its detailed outline.</p>
 
       <div className="mt-6">
-        {isError ? (
+        {isError && !data ? (
           <ErrorState message="Couldn't load courses right now." onRetry={refetch} />
         ) : isLoading ? (
           <SkeletonTable columns={4} rows={5} />

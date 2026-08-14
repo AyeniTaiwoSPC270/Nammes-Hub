@@ -38,7 +38,7 @@ export default function Opportunities() {
       </p>
 
       <div className="mt-6">
-        {isError ? (
+        {isError && !data ? (
           <ErrorState message="Couldn't load opportunities right now." onRetry={refetch} />
         ) : isLoading ? (
           <SkeletonTable columns={4} rows={5} />

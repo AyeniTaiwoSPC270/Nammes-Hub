@@ -17,7 +17,7 @@ export default function OutlineLevel() {
       <h1 className="text-[32px]">{level} Level</h1>
       <p className="mt-2 max-w-2xl text-ink-muted">Choose a semester to see its course list.</p>
 
-      {isError ? (
+      {isError && !data ? (
         <div className="mt-8">
           <ErrorState message="Couldn't load outlines right now." onRetry={refetch} />
         </div>

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Navbar from './Navbar'
 import Footer from './Footer'
@@ -8,6 +8,7 @@ import { SkeletonText } from './ui/Skeleton'
 export default function Layout() {
   const location = useLocation()
   const reducedMotion = useReducedMotion()
+  const outlet = useOutlet()
 
   return (
     <div className="min-h-svh flex flex-col bg-paper">
@@ -28,7 +29,7 @@ export default function Layout() {
               exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
             >
-              <Outlet />
+              {outlet}
             </motion.div>
           </AnimatePresence>
         </Suspense>

@@ -11,7 +11,7 @@ export default function NewsDetail() {
   const navigate = useNavigate()
   const { data, isLoading, isError, refetch } = useNewsQuery()
 
-  if (isError) {
+  if (isError && !data) {
     return (
       <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
         <ErrorState message="Couldn't load this post right now." onRetry={refetch} />

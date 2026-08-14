@@ -13,7 +13,7 @@ export default function OutlineDetail() {
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
 
-  if (isError) {
+  if (isError && !data) {
     return (
       <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
         <ErrorState message="Couldn't load this outline right now." onRetry={refetch} />

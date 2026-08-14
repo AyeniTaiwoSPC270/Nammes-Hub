@@ -17,7 +17,7 @@ export default function ResourceLevel() {
       <h1 className="text-[32px]">{level} Level</h1>
       <p className="mt-2 max-w-2xl text-ink-muted">Choose a semester to see its shared resources.</p>
 
-      {isError ? (
+      {isError && !data ? (
         <div className="mt-8">
           <ErrorState message="Couldn't load resources right now." onRetry={refetch} />
         </div>
