@@ -130,7 +130,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-            {excosQuery.data.map((x) => (
+            {(excosQuery.data ?? []).map((x) => (
               <div key={x.id} className="flex flex-col items-center gap-2.5">
                 <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
                   {x.photo_url ? (
