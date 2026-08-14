@@ -1,31 +1,18 @@
-import { useEffect, useState } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Table from '../../components/ui/Table'
-import { LEVELS, SEMESTER_LABELS, fetchResources, getResources } from '../../data/resources'
+import EmptyState from '../../components/ui/EmptyState'
+import ErrorState from '../../components/ui/ErrorState'
+import { SkeletonTable } from '../../components/ui/Skeleton'
+import { LEVELS, SEMESTER_LABELS, useResourcesQuery, getResources } from '../../data/resources'
 
 export default function ResourceList() {
   const { level, semester } = useParams()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchResources().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useResourcesQuery()
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/resources" replace />
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
-      </div>
-    )
-  }
 
-  const items = getResources(rows, level, semester)
+  const items = getResources(data ?? [], level, semester)
 
   const tableRows = items.map((r) => [
     r.category,
@@ -57,10 +44,14 @@ export default function ResourceList() {
       <p className="mt-2 max-w-2xl text-ink-muted">Shared Drive links and other resources for this semester.</p>
 
       <div className="mt-6">
-        {items.length > 0 ? (
+        {isError && !data ? (
+          <ErrorState message="Couldn't load resources right now." onRetry={refetch} />
+        ) : isLoading ? (
+          <SkeletonTable columns={4} rows={4} />
+        ) : items.length > 0 ? (
           <Table columns={['Category', 'Title', 'Updated', '']} rows={tableRows} />
         ) : (
-          <p className="text-ink-muted">No resources published for this semester yet.</p>
+          <EmptyState title="Nothing here yet" body="No resources published for this semester yet." />
         )}
       </div>
     </div>

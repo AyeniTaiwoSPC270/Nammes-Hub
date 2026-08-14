@@ -5,6 +5,7 @@ import { clampImageWidth } from '../../lib/adminFields'
 export default function ImageUploadField({ label, url, widthPct, onChange }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [dragging, setDragging] = useState(false)
   const previewRef = useRef(null)
   const dragState = useRef(null)
 
@@ -39,6 +40,7 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
       startWidth: widthPct || 100,
       containerWidth: previewRef.current.offsetWidth,
     }
+    setDragging(true)
     e.target.setPointerCapture(e.pointerId)
   }
 
@@ -51,6 +53,7 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
 
   function handlePointerUp() {
     dragState.current = null
+    setDragging(false)
   }
 
   return (
@@ -65,7 +68,10 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            className="absolute bottom-2 right-2 h-4 w-4 cursor-nwse-resize rounded-sm bg-green-700"
+            className={[
+              'absolute bottom-2 right-2 h-4 w-4 cursor-nwse-resize rounded-sm bg-green-700 transition-transform duration-150',
+              dragging ? 'scale-125 ring-2 ring-orange-500' : '',
+            ].join(' ')}
             title="Drag to resize"
           />
           <span className="mt-1 block font-mono text-xs text-ink-muted">{widthPct || 100}% width</span>

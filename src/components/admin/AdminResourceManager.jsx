@@ -1,69 +1,75 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 import AdminResourceList from './AdminResourceList'
 import AdminResourceForm from './AdminResourceForm'
+import ErrorState from '../ui/ErrorState'
+import { SkeletonTable } from '../ui/Skeleton'
 import { generateId } from '../../lib/adminFields'
+import { useToast } from '../../lib/ToastContext'
+
+async function loadRows(table, orderBy) {
+  let query = supabase.from(table).select('*')
+  if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true })
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
 
 export default function AdminResourceManager({ table, title, config, orderBy }) {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [view, setView] = useState({ mode: 'list' })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    let query = supabase.from(table).select('*')
-    if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true })
-    const { data, error: fetchError } = await query
-    setLoading(false)
-    if (fetchError) {
-      setError(fetchError.message)
-      return
-    }
-    setRows(data || [])
-  }, [table, orderBy])
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: [table],
+    queryFn: () => loadRows(table, orderBy),
+  })
+  const rows = data ?? []
 
-  useEffect(() => {
-    load()
-  }, [load])
-
-  async function handleSubmit(payload) {
-    setSaving(true)
-    setError('')
-    let result
-    if (view.mode === 'edit') {
-      result = await supabase.from(table).update(payload).eq('id', view.record.id).select()
-    } else {
+  const saveMutation = useMutation({
+    mutationFn: async (payload) => {
+      if (view.mode === 'edit') {
+        const result = await supabase.from(table).update(payload).eq('id', view.record.id).select()
+        if (result.error) throw result.error
+        if (!result.data || result.data.length === 0) {
+          throw new Error('No changes were saved — your account may not have admin access to make this change.')
+        }
+        return result.data
+      }
       const id = generateId(payload[config.idField])
-      result = await supabase.from(table).insert({ ...payload, id })
-    }
-    setSaving(false)
-    if (result.error) {
-      setError(result.error.message)
-      return
-    }
-    if (view.mode === 'edit' && (!result.data || result.data.length === 0)) {
-      setError('No changes were saved — your account may not have admin access to make this change.')
-      return
-    }
-    setView({ mode: 'list' })
-    load()
-  }
+      const result = await supabase.from(table).insert({ ...payload, id })
+      if (result.error) throw result.error
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [table] })
+      toast.success(view.mode === 'edit' ? `${title} updated.` : `${title} added.`)
+      setView({ mode: 'list' })
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
-  async function handleDelete(row) {
-    const { data, error: deleteError } = await supabase.from(table).delete().eq('id', row.id).select()
-    if (deleteError) {
-      setError(deleteError.message)
-      return
-    }
-    if (!data || data.length === 0) {
-      setError('No changes were saved — your account may not have admin access to make this change.')
-      return
-    }
-    load()
-  }
+  const deleteMutation = useMutation({
+    mutationFn: async (row) => {
+      const { data, error } = await supabase.from(table).delete().eq('id', row.id).select()
+      if (error) throw error
+      if (!data || data.length === 0) {
+        throw new Error('No changes were saved — your account may not have admin access to make this change.')
+      }
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [table] })
+      toast.success(`${title} deleted.`)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
@@ -71,28 +77,33 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
         ← Back to Admin
       </Link>
       <h1 className="text-[32px]">{title}</h1>
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
-      {loading ? (
-        <p className="mt-6 text-ink-muted">Loading…</p>
-      ) : view.mode === 'list' ? (
+      {view.mode !== 'list' ? (
+        <div className="mt-6">
+          <AdminResourceForm
+            config={config}
+            record={view.mode === 'edit' ? view.record : undefined}
+            onSubmit={(payload) => saveMutation.mutate(payload)}
+            onCancel={() => setView({ mode: 'list' })}
+            saving={saveMutation.isPending}
+          />
+        </div>
+      ) : isError && !data ? (
+        <div className="mt-6">
+          <ErrorState message={`Couldn't load ${title.toLowerCase()} right now.`} onRetry={refetch} />
+        </div>
+      ) : isLoading ? (
+        <div className="mt-6">
+          <SkeletonTable columns={config.listColumns.length + 1} rows={5} />
+        </div>
+      ) : (
         <div className="mt-6">
           <AdminResourceList
             config={config}
             rows={rows}
             onEdit={(record) => setView({ mode: 'edit', record })}
-            onDelete={handleDelete}
+            onDelete={(row) => deleteMutation.mutate(row)}
             onAddNew={() => setView({ mode: 'new' })}
-          />
-        </div>
-      ) : (
-        <div className="mt-6">
-          <AdminResourceForm
-            config={config}
-            record={view.mode === 'edit' ? view.record : undefined}
-            onSubmit={handleSubmit}
-            onCancel={() => setView({ mode: 'list' })}
-            saving={saving}
           />
         </div>
       )}

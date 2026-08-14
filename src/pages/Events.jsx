@@ -1,26 +1,30 @@
-import { useEffect, useState } from 'react'
 import Card from '../components/ui/Card'
+import EmptyState from '../components/ui/EmptyState'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonCard } from '../components/ui/Skeleton'
 import { EVENT_TONE_ICONS } from '../lib/illustrations'
-import { fetchEvents } from '../data/events'
+import { useEventsQuery } from '../data/events'
 
 export default function Events() {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchEvents().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useEventsQuery()
+  const rows = data ?? []
 
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
       <h1 className="text-[32px]">Events</h1>
-      {loading ? (
-        <p className="mt-6 text-ink-muted">Loading…</p>
+      {isError && !data ? (
+        <div className="mt-6">
+          <ErrorState message="Couldn't load events right now." onRetry={refetch} />
+        </div>
+      ) : isLoading ? (
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       ) : rows.length === 0 ? (
-        <p className="mt-6 text-ink-muted">No events posted yet.</p>
+        <div className="mt-6">
+          <EmptyState title="No events yet" body="No events posted yet." />
+        </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {rows.map((event) => (

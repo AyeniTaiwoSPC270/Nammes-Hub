@@ -1,26 +1,20 @@
-import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
-import { fetchNews, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
+import EmptyState from '../components/ui/EmptyState'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonCard } from '../components/ui/Skeleton'
+import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 
 const categories = ['All', ...NEWS_CATEGORIES]
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchNews().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useNewsQuery()
 
   const requestedCategory = searchParams.get('category')
   const active = categories.includes(requestedCategory) ? requestedCategory : 'All'
-  const items = filterNewsByCategory(getNews(rows), active)
+  const items = filterNewsByCategory(getNews(data ?? []), active)
   const [featured, ...rest] = items
 
   function selectCategory(category) {
@@ -29,14 +23,6 @@ export default function News() {
     } else {
       setSearchParams({ category })
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
-      </div>
-    )
   }
 
   return (
@@ -63,12 +49,27 @@ export default function News() {
         ))}
       </div>
 
-      {items.length === 0 ? (
-        <p className="mt-8 text-ink-muted">No news posts in this category yet.</p>
+      {isError && !data ? (
+        <div className="mt-8">
+          <ErrorState message="Couldn't load news right now." onRetry={refetch} />
+        </div>
+      ) : isLoading ? (
+        <div className="mt-6 flex flex-col gap-4">
+          <SkeletonCard imageVariant="cover" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SkeletonCard imageVariant="cover" />
+            <SkeletonCard imageVariant="cover" />
+          </div>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="mt-8">
+          <EmptyState title="No news yet" body="No news posts in this category yet." />
+        </div>
       ) : (
         <div className="mt-6 flex flex-col gap-4">
           <Link to={`/news/${featured.id}`} className="block">
             <Card
+              interactive
               tone={featured.tone}
               eyebrow={featured.category}
               title={featured.title}
@@ -86,6 +87,7 @@ export default function News() {
             {rest.map((item) => (
               <Link key={item.id} to={`/news/${item.id}`} className="block">
                 <Card
+                  interactive
                   tone={item.tone}
                   eyebrow={item.category}
                   title={item.title}

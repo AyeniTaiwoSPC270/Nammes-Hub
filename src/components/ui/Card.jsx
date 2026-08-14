@@ -20,11 +20,19 @@ export default function Card({
   image,
   imageVariant = 'icon',
   imageAspect = 'standard',
+  interactive = false,
 }) {
   const t = tones[tone] || tones.neutral
 
   return (
-    <div className={['flex flex-col gap-2 rounded-lg', t.bg, className].join(' ')}>
+    <div
+      className={[
+        'flex flex-col gap-2 rounded-lg transition-[transform,box-shadow] duration-150 ease-out',
+        interactive ? 'hover:-translate-y-0.5 hover:shadow-md' : '',
+        t.bg,
+        className,
+      ].join(' ')}
+    >
       {image && imageVariant === 'cover' && (
         <img
           src={image.src}
@@ -42,9 +50,9 @@ export default function Card({
             {eyebrow}
           </div>
         )}
-        {title && <h3 className={['text-xl m-0', t.title].join(' ')}>{title}</h3>}
+        {title && <h3 className={['text-xl m-0 line-clamp-2', t.title].join(' ')}>{title}</h3>}
         {meta && <div className={['font-mono text-sm', t.meta].join(' ')}>{meta}</div>}
-        {children && <div className={['text-base leading-relaxed', t.body].join(' ')}>{children}</div>}
+        {children && <div className={['text-base leading-relaxed line-clamp-3', t.body].join(' ')}>{children}</div>}
       </div>
     </div>
   )

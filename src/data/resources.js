@@ -1,9 +1,14 @@
+import { useQuery } from '@tanstack/react-query'
 import { fetchTable } from '../lib/supabaseQueries'
 
 export { LEVELS, SEMESTER_LABELS } from './outlines'
 
 export function fetchResources() {
   return fetchTable('resources', { orderBy: { column: 'title', ascending: true } })
+}
+
+export function useResourcesQuery() {
+  return useQuery({ queryKey: ['resources'], queryFn: fetchResources })
 }
 
 export function getResources(rows, level, semester) {

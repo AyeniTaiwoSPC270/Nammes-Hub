@@ -1,33 +1,20 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import EmptyState from '../components/ui/EmptyState'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
 import { HERO_ILLUSTRATION } from '../lib/illustrations'
-import { fetchNews, getNews } from '../data/news'
-import { fetchExcos } from '../data/excos'
+import { useNewsQuery, getNews } from '../data/news'
+import { useExcosQuery } from '../data/excos'
 
 export default function Home() {
   const navigate = useNavigate()
-  const [newsRows, setNewsRows] = useState([])
-  const [newsLoading, setNewsLoading] = useState(true)
-  const [excosRows, setExcosRows] = useState([])
-  const [excosError, setExcosError] = useState(false)
+  const newsQuery = useNewsQuery()
+  const excosQuery = useExcosQuery()
 
-  useEffect(() => {
-    fetchNews().then((data) => {
-      setNewsRows(data)
-      setNewsLoading(false)
-    })
-  }, [])
-
-  useEffect(() => {
-    fetchExcos()
-      .then(setExcosRows)
-      .catch(() => setExcosError(true))
-  }, [])
-
-  const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
+  const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
 
   return (
     <div>
@@ -79,7 +66,18 @@ export default function Home() {
           </Button>
         </div>
 
-        {!newsLoading && featuredNews && (
+        {newsQuery.isError && !newsQuery.data ? (
+          <ErrorState message="Couldn't load news right now." onRetry={newsQuery.refetch} />
+        ) : newsQuery.isLoading ? (
+          <>
+            <SkeletonCard imageVariant="cover" />
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <SkeletonCard imageVariant="cover" />
+              <SkeletonCard imageVariant="cover" />
+              <SkeletonCard imageVariant="cover" />
+            </div>
+          </>
+        ) : featuredNews ? (
           <>
             <Card
               tone={featuredNews.tone}
@@ -112,6 +110,8 @@ export default function Home() {
               ))}
             </div>
           </>
+        ) : (
+          <EmptyState title="No news yet" body="Check back soon for updates." />
         )}
       </div>
 
@@ -120,11 +120,22 @@ export default function Home() {
           Executives · 2025/2026
         </div>
         <h2 className="mt-1.5 mb-6 text-[28px]">Meet the Excos</h2>
-        {excosError ? (
-          <p className="text-ink-muted">Couldn&rsquo;t load the Excos list right now.</p>
+        {excosQuery.isError && !excosQuery.data ? (
+          <ErrorState message="Couldn't load the Excos list right now." onRetry={excosQuery.refetch} />
+        ) : excosQuery.isLoading ? (
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2.5">
+                <div className="h-[120px] w-[120px] animate-pulse rounded-full bg-hairline" />
+                <SkeletonText lines={2} className="w-20" />
+              </div>
+            ))}
+          </div>
+        ) : (excosQuery.data ?? []).length === 0 ? (
+          <EmptyState title="Excos coming soon" body="Check back soon." />
         ) : (
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-            {excosRows.map((x) => (
+            {(excosQuery.data ?? []).map((x) => (
               <div key={x.id} className="flex flex-col items-center gap-2.5">
                 <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
                   {x.photo_url ? (
