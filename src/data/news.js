@@ -1,9 +1,14 @@
+import { useQuery } from '@tanstack/react-query'
 import { fetchTable } from '../lib/supabaseQueries'
 
 export const NEWS_CATEGORIES = ['Academics', 'Governance', 'Welfare', 'Industry', 'Call for papers', 'Resources']
 
 export function fetchNews() {
   return fetchTable('news', { orderBy: { column: 'date', ascending: false } })
+}
+
+export function useNewsQuery() {
+  return useQuery({ queryKey: ['news'], queryFn: fetchNews })
 }
 
 export function getNews(list) {
