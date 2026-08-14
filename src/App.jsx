@@ -1,62 +1,67 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import Outlines from './pages/Outlines'
-import OutlineLevel from './pages/outlines/OutlineLevel'
-import OutlineCourses from './pages/outlines/OutlineCourses'
-import OutlineDetail from './pages/outlines/OutlineDetail'
-import Events from './pages/Events'
-import Resources from './pages/Resources'
-import ResourceLevel from './pages/resources/ResourceLevel'
-import ResourceList from './pages/resources/ResourceList'
-import News from './pages/News'
-import NewsDetail from './pages/NewsDetail'
-import Opportunities from './pages/Opportunities'
-import Cgpa from './pages/Cgpa'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import Admin from './pages/Admin'
-import AdminNews from './pages/admin/AdminNews'
-import AdminOpportunities from './pages/admin/AdminOpportunities'
-import AdminEvents from './pages/admin/AdminEvents'
-import AdminResources from './pages/admin/AdminResources'
-import AdminExcos from './pages/admin/AdminExcos'
-import AdminOutlines from './pages/admin/AdminOutlines'
+import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
+
+const Home = lazy(() => import('./pages/Home'))
+const Outlines = lazy(() => import('./pages/Outlines'))
+const OutlineLevel = lazy(() => import('./pages/outlines/OutlineLevel'))
+const OutlineCourses = lazy(() => import('./pages/outlines/OutlineCourses'))
+const OutlineDetail = lazy(() => import('./pages/outlines/OutlineDetail'))
+const Events = lazy(() => import('./pages/Events'))
+const Resources = lazy(() => import('./pages/Resources'))
+const ResourceLevel = lazy(() => import('./pages/resources/ResourceLevel'))
+const ResourceList = lazy(() => import('./pages/resources/ResourceList'))
+const News = lazy(() => import('./pages/News'))
+const NewsDetail = lazy(() => import('./pages/NewsDetail'))
+const Opportunities = lazy(() => import('./pages/Opportunities'))
+const Cgpa = lazy(() => import('./pages/Cgpa'))
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const Admin = lazy(() => import('./pages/Admin'))
+const AdminNews = lazy(() => import('./pages/admin/AdminNews'))
+const AdminOpportunities = lazy(() => import('./pages/admin/AdminOpportunities'))
+const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'))
+const AdminResources = lazy(() => import('./pages/admin/AdminResources'))
+const AdminExcos = lazy(() => import('./pages/admin/AdminExcos'))
+const AdminOutlines = lazy(() => import('./pages/admin/AdminOutlines'))
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="outlines" element={<Outlines />} />
-        <Route path="outlines/:level" element={<OutlineLevel />} />
-        <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
-        <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
-        <Route path="cgpa" element={<Cgpa />} />
-        <Route path="events" element={<Events />} />
-        <Route path="resources" element={<Resources />} />
-        <Route path="resources/:level" element={<ResourceLevel />} />
-        <Route path="resources/:level/:semester" element={<ResourceList />} />
-        <Route path="news" element={<News />} />
-        <Route path="news/:id" element={<NewsDetail />} />
-        <Route path="opportunities" element={<Opportunities />} />
-        <Route path="login" element={<Login />} />
-        <Route path="signup" element={<Signup />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password" element={<ResetPassword />} />
-        <Route element={<ProtectedRoute />}>
-          <Route path="admin" element={<Admin />} />
-          <Route path="admin/news" element={<AdminNews />} />
-          <Route path="admin/opportunities" element={<AdminOpportunities />} />
-          <Route path="admin/events" element={<AdminEvents />} />
-          <Route path="admin/resources" element={<AdminResources />} />
-          <Route path="admin/excos" element={<AdminExcos />} />
-          <Route path="admin/outlines" element={<AdminOutlines />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="outlines" element={<Outlines />} />
+          <Route path="outlines/:level" element={<OutlineLevel />} />
+          <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
+          <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
+          <Route path="cgpa" element={<Cgpa />} />
+          <Route path="events" element={<Events />} />
+          <Route path="resources" element={<Resources />} />
+          <Route path="resources/:level" element={<ResourceLevel />} />
+          <Route path="resources/:level/:semester" element={<ResourceList />} />
+          <Route path="news" element={<News />} />
+          <Route path="news/:id" element={<NewsDetail />} />
+          <Route path="opportunities" element={<Opportunities />} />
+          <Route path="login" element={<Login />} />
+          <Route path="signup" element={<Signup />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="admin" element={<Admin />} />
+            <Route path="admin/news" element={<AdminNews />} />
+            <Route path="admin/opportunities" element={<AdminOpportunities />} />
+            <Route path="admin/events" element={<AdminEvents />} />
+            <Route path="admin/resources" element={<AdminResources />} />
+            <Route path="admin/excos" element={<AdminExcos />} />
+            <Route path="admin/outlines" element={<AdminOutlines />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </ErrorBoundary>
   )
 }
