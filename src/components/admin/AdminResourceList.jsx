@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Table from '../ui/Table'
 import Button from '../ui/Button'
+import EmptyState from '../ui/EmptyState'
 
 export default function AdminResourceList({ config, rows, onEdit, onDelete, onAddNew }) {
   const [confirmingId, setConfirmingId] = useState(null)
@@ -40,7 +41,12 @@ export default function AdminResourceList({ config, rows, onEdit, onDelete, onAd
       {rows.length > 0 ? (
         <Table columns={[...config.listColumns.map((c) => c.label), '']} rows={tableRows} />
       ) : (
-        <p className="text-ink-muted">No {config.title.toLowerCase()} yet.</p>
+        <EmptyState
+          title={`No ${config.title.toLowerCase()} yet`}
+          body={`Add your first ${config.title.toLowerCase()} entry to get started.`}
+          actionLabel="Add new"
+          onAction={onAddNew}
+        />
       )}
     </div>
   )
