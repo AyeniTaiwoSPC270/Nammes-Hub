@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { fetchTable } from '../lib/supabaseQueries'
 
 export const LEVELS = ['100', '200', '300', '400', '500']
@@ -9,6 +10,10 @@ export const SEMESTER_LABELS = {
 
 export function fetchOutlines() {
   return fetchTable('outlines', { orderBy: { column: 'code', ascending: true } })
+}
+
+export function useOutlinesQuery() {
+  return useQuery({ queryKey: ['outlines'], queryFn: fetchOutlines })
 }
 
 export function getCourses(rows, level, semester) {

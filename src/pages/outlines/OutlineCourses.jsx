@@ -1,33 +1,20 @@
-import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Table from '../../components/ui/Table'
-import { LEVELS, SEMESTER_LABELS, fetchOutlines, getCourses } from '../../data/outlines'
+import EmptyState from '../../components/ui/EmptyState'
+import ErrorState from '../../components/ui/ErrorState'
+import { SkeletonTable } from '../../components/ui/Skeleton'
+import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourses } from '../../data/outlines'
 
 export default function OutlineCourses() {
   const { level, semester } = useParams()
   const navigate = useNavigate()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchOutlines().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useOutlinesQuery()
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
-      </div>
-    )
-  }
 
-  const courses = getCourses(rows, level, semester)
+  const courses = getCourses(data ?? [], level, semester)
   const slug = (code) => code.replace(/\s+/g, '').toLowerCase()
 
   const tableRows = courses.map((c) => [
@@ -59,10 +46,14 @@ export default function OutlineCourses() {
       <p className="mt-2 max-w-2xl text-ink-muted">Select a course to view its detailed outline.</p>
 
       <div className="mt-6">
-        {courses.length > 0 ? (
+        {isError ? (
+          <ErrorState message="Couldn't load courses right now." onRetry={refetch} />
+        ) : isLoading ? (
+          <SkeletonTable columns={4} rows={5} />
+        ) : courses.length > 0 ? (
           <Table columns={['Code', 'Title', 'Units', '']} rows={tableRows} />
         ) : (
-          <p className="text-ink-muted">No courses published for this semester yet.</p>
+          <EmptyState title="Nothing here yet" body="No courses published for this semester yet." />
         )}
       </div>
     </div>
