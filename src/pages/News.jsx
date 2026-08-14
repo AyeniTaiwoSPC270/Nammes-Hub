@@ -69,6 +69,7 @@ export default function News() {
         <div className="mt-6 flex flex-col gap-4">
           <Link to={`/news/${featured.id}`} className="block">
             <Card
+              interactive
               tone={featured.tone}
               eyebrow={featured.category}
               title={featured.title}
@@ -86,6 +87,7 @@ export default function News() {
             {rest.map((item) => (
               <Link key={item.id} to={`/news/${item.id}`} className="block">
                 <Card
+                  interactive
                   tone={item.tone}
                   eyebrow={item.category}
                   title={item.title}
