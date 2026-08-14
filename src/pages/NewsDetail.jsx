@@ -1,32 +1,36 @@
-import { useEffect, useState } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
-import { fetchNews, getNewsById } from '../data/news'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonText } from '../components/ui/Skeleton'
+import { useNewsQuery, getNewsById } from '../data/news'
 
 export default function NewsDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading, isError, refetch } = useNewsQuery()
 
-  useEffect(() => {
-    fetchNews().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
-
-  if (loading) {
+  if (isError) {
     return (
       <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
+        <ErrorState message="Couldn't load this post right now." onRetry={refetch} />
       </div>
     )
   }
 
-  const post = getNewsById(rows, id)
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <SkeletonText lines={1} className="w-40" />
+        <div className="mt-4">
+          <SkeletonText lines={4} />
+        </div>
+      </div>
+    )
+  }
+
+  const post = getNewsById(data ?? [], id)
   if (!post) return <Navigate to="/news" replace />
 
   return (
