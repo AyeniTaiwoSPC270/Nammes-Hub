@@ -110,6 +110,7 @@ export default function Signup() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           error={errors.confirmPassword}
+          success={confirmPassword.length > 0 && confirmPassword === password && !errors.confirmPassword}
         />
 
         <Button variant="primary" type="submit" loading={busy}>
