@@ -16,6 +16,7 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Table from '../components/ui/Table'
 import FormField from '../components/ui/FormField'
+import { SkeletonCard, SkeletonTable } from '../components/ui/Skeleton'
 
 const LEVELS = ['100', '200', '300', '400', '500']
 const SEMESTERS = [1, 2]
@@ -200,7 +201,20 @@ export default function Cgpa() {
   }
 
   if (authLoading || loading) {
-    return null
+    return (
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
+          CGPA calculator
+        </div>
+        <h1 className="mt-1.5 text-[32px]">Your academic record</h1>
+        <div className="mt-6">
+          <SkeletonCard />
+        </div>
+        <div className="mt-6">
+          <SkeletonTable columns={6} rows={3} />
+        </div>
+      </div>
+    )
   }
 
   if (!user) {
