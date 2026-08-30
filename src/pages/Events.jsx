@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import Card from '../components/ui/Card'
 import PageHeader from '../components/PageHeader'
-import { EVENT_TONE_ICONS } from '../lib/illustrations'
 import { fetchEvents } from '../data/events'
 
 export default function Events() {
@@ -36,7 +35,9 @@ export default function Events() {
                 eyebrow={event.date}
                 title={event.title}
                 meta={event.meta || undefined}
-                image={{ src: EVENT_TONE_ICONS[event.tone] || EVENT_TONE_ICONS.green }}
+                image={event.image_url ? { src: event.image_url } : undefined}
+                imageVariant="cover"
+                imageAspect="standard"
               >
                 {event.description}
               </Card>
