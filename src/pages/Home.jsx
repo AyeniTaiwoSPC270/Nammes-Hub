@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import WelcomeMessage from '../components/WelcomeMessage'
 import { fetchNews, getNews } from '../data/news'
 import { fetchExcos } from '../data/excos'
 import { splitFeaturedExcos } from '../lib/excos'
@@ -56,6 +57,8 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      <WelcomeMessage />
 
       <div className="mx-auto max-w-[880px] px-5 pt-14 pb-18 sm:px-6">
         <div className="mb-6 flex items-baseline justify-between gap-4">
