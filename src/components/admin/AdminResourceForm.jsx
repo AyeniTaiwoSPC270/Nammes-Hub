@@ -3,6 +3,7 @@ import FormField from '../ui/FormField'
 import Button from '../ui/Button'
 import ImageUploadField from './ImageUploadField'
 import AvatarUploadField from './AvatarUploadField'
+import EventImageUploadField from './EventImageUploadField'
 import { buildFormState, buildPayload } from '../../lib/adminFields'
 
 export default function AdminResourceForm({ config, record, onSubmit, onCancel, saving }) {
@@ -37,6 +38,16 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
         if (f.type === 'avatar') {
           return (
             <AvatarUploadField
+              key={f.field}
+              label={f.label}
+              url={values[f.field]}
+              onChange={(url) => setField(f.field, url)}
+            />
+          )
+        }
+        if (f.type === 'event-image') {
+          return (
+            <EventImageUploadField
               key={f.field}
               label={f.label}
               url={values[f.field]}

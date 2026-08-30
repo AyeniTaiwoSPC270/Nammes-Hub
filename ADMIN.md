@@ -28,9 +28,9 @@ They can now sign in and see the Admin link like any other admin.
 
 ## Image uploads
 
-News photos and Exco photos are capped at **5MB**, image files only. If an upload is
-rejected, it's almost always the file size or the file type — resize/compress or pick
-a `.jpg`/`.png`.
+News photos, Event photos, and Exco photos are capped at **5MB**, image files only. If
+an upload is rejected, it's almost always the file size or the file type — resize/compress
+or pick a `.jpg`/`.png`.
 
 ## If the admin forms don't cover something
 
