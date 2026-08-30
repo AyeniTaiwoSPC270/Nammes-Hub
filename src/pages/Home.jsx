@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
-import { HERO_ILLUSTRATION } from '../lib/illustrations'
 import { fetchNews, getNews } from '../data/news'
 import { fetchExcos } from '../data/excos'
 import { splitFeaturedExcos } from '../lib/excos'
@@ -33,12 +32,8 @@ export default function Home() {
 
   return (
     <div>
-      <div className="relative overflow-hidden bg-orange-500 px-6 py-14 sm:px-8">
-        <div
-          aria-hidden="true"
-          className="absolute -top-[90px] -right-[70px] h-[260px] w-[260px] rounded-full bg-green-700"
-        />
-        <div className="relative mx-auto flex max-w-[960px] flex-col items-center gap-8 sm:flex-row">
+      <div className="relative overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-orange-600 px-6 py-20 sm:px-8 sm:py-24">
+        <div className="relative mx-auto max-w-[960px]">
           <div className="max-w-[560px]">
             <div className="inline-block w-fit whitespace-nowrap rounded-full bg-white px-3.5 py-1 font-mono text-[13px] font-bold uppercase text-green-900">
               NAMMES · 2025/2026 SESSION
@@ -59,12 +54,6 @@ export default function Home() {
               </Button>
             </div>
           </div>
-          <img
-            src={HERO_ILLUSTRATION}
-            alt=""
-            aria-hidden="true"
-            className="w-52 sm:w-auto sm:max-w-[320px] sm:flex-1"
-          />
         </div>
       </div>
 
