@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge'
 import { HERO_ILLUSTRATION } from '../lib/illustrations'
 import { fetchNews, getNews } from '../data/news'
 import { fetchExcos } from '../data/excos'
+import { splitFeaturedExcos } from '../lib/excos'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export default function Home() {
   }, [])
 
   const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
+  const { featured: featuredExcos, rest: restExcos } = splitFeaturedExcos(excosRows)
 
   return (
     <div>
@@ -123,23 +125,48 @@ export default function Home() {
         {excosError ? (
           <p className="text-ink-muted">Couldn&rsquo;t load the Excos list right now.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-            {excosRows.map((x) => (
-              <div key={x.id} className="flex flex-col items-center gap-2.5">
-                <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
-                  {x.photo_url ? (
-                    <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    (x.name || x.role).charAt(0)
-                  )}
-                </div>
-                <div className="text-center">
-                  <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
-                  <div className="mt-0.5 font-mono text-xs text-ink-muted">{x.role}</div>
-                </div>
+          <>
+            {featuredExcos.length > 0 && (
+              <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
+                {featuredExcos.map((x) => (
+                  <div key={x.id} className="flex flex-col items-center gap-3 rounded-lg bg-green-700 p-6 text-center">
+                    <div className="flex h-[160px] w-[160px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-4xl text-green-700">
+                      {x.photo_url ? (
+                        <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        (x.name || x.role).charAt(0)
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold text-white">{x.name || 'Name Surname'}</div>
+                      <div className="mt-0.5 font-mono text-xs uppercase tracking-[.04em] text-orange-400">
+                        {x.role}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+            {restExcos.length > 0 && (
+              <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+                {restExcos.map((x) => (
+                  <div key={x.id} className="flex flex-col items-center gap-2.5">
+                    <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
+                      {x.photo_url ? (
+                        <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        (x.name || x.role).charAt(0)
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
+                      <div className="mt-0.5 font-mono text-xs text-ink-muted">{x.role}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
