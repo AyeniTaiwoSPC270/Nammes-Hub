@@ -40,8 +40,18 @@ export default function AvatarUploadField({ label, url, onChange }) {
       </label>
       {error && <span className="text-xs text-danger">{error}</span>}
       {url && (
-        <div className="mt-2 h-[120px] w-[120px] overflow-hidden rounded-full bg-surface-low shadow-md">
-          <img src={url} alt="" className="h-full w-full object-cover" />
+        <div className="relative mt-2 h-[120px] w-[120px]">
+          <div className="h-full w-full overflow-hidden rounded-full bg-surface-low shadow-md">
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          </div>
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            aria-label="Remove photo"
+            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105"
+          >
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
         </div>
       )}
     </div>
