@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import Table from '../components/ui/Table'
+import PageBanner from '../components/PageBanner'
+import EmptyState from '../components/ui/EmptyState'
 import { fetchOpportunities, getOpportunities } from '../data/opportunities'
 
 export default function Opportunities() {
@@ -15,7 +17,7 @@ export default function Opportunities() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <p className="text-ink-muted">Loading…</p>
       </div>
     )
@@ -24,10 +26,10 @@ export default function Opportunities() {
   const items = getOpportunities(rows)
 
   const tableRows = items.map((o) => [
-    o.deadline,
+    <span key={`${o.id}-deadline`} className="font-semibold text-orange-600">{o.deadline}</span>,
     o.type,
     <div key={`${o.id}-title`}>
-      <div className="font-semibold text-ink">{o.title}</div>
+      <div className="font-semibold text-ink-900">{o.title}</div>
       <div className="text-ink-muted">{o.org}</div>
     </div>,
     <a
@@ -35,27 +37,30 @@ export default function Opportunities() {
       href={o.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 rounded-full border-2 border-transparent bg-transparent px-4.5 py-2 text-sm font-semibold text-ink transition-[background-color,transform] duration-150 ease-out hover:scale-[1.03] hover:bg-green-100"
+      className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:underline"
     >
-      Apply
+      Apply <span className="material-symbols-outlined text-base">arrow_forward</span>
     </a>,
   ])
 
   return (
-    <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-      <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
-        Opportunities
-      </div>
-      <h1 className="mt-1.5 text-[32px]">Scholarships & internships</h1>
-      <p className="mt-2 max-w-2xl text-ink-muted">
-        Manually curated opportunities, soonest deadline first.
-      </p>
+    <div>
+      <PageBanner
+        title="Opportunities"
+        subtitle="Explore current engineering roles, internships, and research positions."
+      />
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+        <h2 className="text-2xl font-bold text-ink-900 mb-2">Current listings</h2>
+        <p className="max-w-2xl text-ink-muted mb-6">Sorted by soonest deadline first.</p>
 
-      <div className="mt-6">
         {items.length > 0 ? (
           <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={tableRows} />
         ) : (
-          <p className="text-ink-muted">No opportunities posted yet.</p>
+          <EmptyState
+            icon="work_off"
+            title="No opportunities yet"
+            description="Internships, research roles, and job postings will appear here once they're published."
+          />
         )}
       </div>
     </div>

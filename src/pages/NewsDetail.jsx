@@ -20,7 +20,7 @@ export default function NewsDetail() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <p className="text-ink-muted">Loading…</p>
       </div>
     )
@@ -30,14 +30,14 @@ export default function NewsDetail() {
   if (!post) return <Navigate to="/news" replace />
 
   return (
-    <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs items={[{ label: 'News', to: '/news' }, { label: post.title }]} />
 
-      <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
+      <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
         {post.category}
       </div>
-      <h1 className="mt-1.5 text-[32px]">{post.title}</h1>
-      <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-sm text-ink-muted">
+      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{post.title}</h1>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
         <span>Posted by {post.author}</span>
         <span aria-hidden="true">&middot;</span>
         <span>{post.date}</span>

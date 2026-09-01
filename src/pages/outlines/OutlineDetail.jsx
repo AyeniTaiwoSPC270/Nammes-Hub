@@ -21,7 +21,7 @@ export default function OutlineDetail() {
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
   if (loading) {
     return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <p className="text-ink-muted">Loading…</p>
       </div>
     )
@@ -31,7 +31,7 @@ export default function OutlineDetail() {
   if (!course) return <Navigate to={`/outlines/${level}/${semester}`} replace />
 
   return (
-    <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs
         items={[
           { label: 'Outlines', to: '/outlines' },
@@ -41,11 +41,11 @@ export default function OutlineDetail() {
         ]}
       />
 
-      <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
+      <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
         {course.code} &middot; {course.units} unit{course.units === 1 ? '' : 's'}
       </div>
-      <h1 className="mt-1.5 text-[32px]">{course.title}</h1>
-      <div className="mt-2 font-mono text-sm text-ink-muted">
+      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
+      <div className="mt-2 text-sm text-ink-muted">
         Lecturer: {course.lecturer} &middot; Updated {course.updated}
       </div>
 

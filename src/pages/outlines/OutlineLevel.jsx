@@ -19,19 +19,19 @@ export default function OutlineLevel() {
   if (!LEVELS.includes(level)) return <Navigate to="/outlines" replace />
   if (loading) {
     return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <p className="text-ink-muted">Loading…</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs items={[{ label: 'Outlines', to: '/outlines' }, { label: `${level} Level` }]} />
-      <h1 className="text-[32px]">{level} Level</h1>
+      <h1 className="text-3xl font-bold text-ink-900 mt-2">{level} Level</h1>
       <p className="mt-2 max-w-2xl text-ink-muted">Choose a semester to see its course list.</p>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         {Object.entries(SEMESTER_LABELS).map(([sem, label]) => {
           const count = getCourses(rows, level, sem).length
           return (
@@ -39,15 +39,15 @@ export default function OutlineLevel() {
               key={sem}
               type="button"
               onClick={() => navigate(`/outlines/${level}/${sem}`)}
-              className="flex flex-col items-start gap-2 rounded-lg bg-orange-100 p-6 text-left transition-transform duration-150 ease-out hover:scale-[1.02]"
+              className="group flex items-center justify-between gap-4 rounded-lg border border-hairline border-l-4 border-l-transparent bg-surface p-6 text-left shadow-md transition-colors hover:border-l-orange-500 hover:bg-surface-low"
             >
-              <span className="font-mono text-xs font-semibold uppercase tracking-[.04em] text-orange-600">
-                Semester {sem}
-              </span>
-              <span className="font-display text-xl text-green-900">{label}</span>
-              <span className="font-mono text-sm text-ink-muted">
-                {count} course{count === 1 ? '' : 's'}
-              </span>
+              <div>
+                <h3 className="text-xl font-bold text-ink-900 mb-1">{label}</h3>
+                <p className="text-sm text-ink-muted">
+                  {count} course{count === 1 ? '' : 's'}
+                </p>
+              </div>
+              <span className="material-symbols-outlined text-3xl text-green-900">chevron_right</span>
             </button>
           )
         })}

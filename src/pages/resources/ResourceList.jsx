@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
-import Table from '../../components/ui/Table'
+import EmptyState from '../../components/ui/EmptyState'
 import { LEVELS, SEMESTER_LABELS, fetchResources, getResources } from '../../data/resources'
 
 export default function ResourceList() {
@@ -19,7 +19,7 @@ export default function ResourceList() {
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/resources" replace />
   if (loading) {
     return (
-      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <p className="text-ink-muted">Loading…</p>
       </div>
     )
@@ -27,23 +27,8 @@ export default function ResourceList() {
 
   const items = getResources(rows, level, semester)
 
-  const tableRows = items.map((r) => [
-    r.category,
-    r.title,
-    r.updated,
-    <a
-      key={r.id}
-      href={r.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-2 rounded-full border-2 border-transparent bg-transparent px-4.5 py-2 text-sm font-semibold text-ink transition-[background-color,transform] duration-150 ease-out hover:scale-[1.03] hover:bg-green-100"
-    >
-      Open
-    </a>,
-  ])
-
   return (
-    <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs
         items={[
           { label: 'Resources', to: '/resources' },
@@ -51,16 +36,69 @@ export default function ResourceList() {
           { label: SEMESTER_LABELS[semester] },
         ]}
       />
-      <h1 className="text-[32px]">
+      <h1 className="text-3xl font-bold text-ink-900 mt-2">
         {level} Level &middot; {SEMESTER_LABELS[semester]}
       </h1>
       <p className="mt-2 max-w-2xl text-ink-muted">Shared Drive links and other resources for this semester.</p>
 
       <div className="mt-6">
         {items.length > 0 ? (
-          <Table columns={['Category', 'Title', 'Updated', '']} rows={tableRows} />
+          <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+            <div className="flex items-center justify-between border-b border-hairline bg-surface-low p-4">
+              <h3 className="text-lg font-bold text-ink-900">
+                {level} Level &middot; {SEMESTER_LABELS[semester]} Resources
+              </h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-hairline bg-surface-low">
+                    <th className="border-r border-hairline p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">
+                      Category
+                    </th>
+                    <th className="border-r border-hairline p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">
+                      Title
+                    </th>
+                    <th className="border-r border-hairline p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">
+                      Updated
+                    </th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((r, i) => (
+                    <tr
+                      key={r.id}
+                      className={[
+                        'transition-colors hover:bg-surface-low',
+                        i < items.length - 1 ? 'border-b border-hairline' : '',
+                      ].join(' ')}
+                    >
+                      <td className="border-r border-hairline p-4 font-semibold text-ink-900">{r.category}</td>
+                      <td className="border-r border-hairline p-4 text-ink-muted">{r.title}</td>
+                      <td className="border-r border-hairline p-4 text-ink">{r.updated}</td>
+                      <td className="p-4">
+                        <a
+                          href={r.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
+                        >
+                          Open <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         ) : (
-          <p className="text-ink-muted">No resources published for this semester yet.</p>
+          <EmptyState
+            icon="folder_off"
+            title="No resources published yet"
+            description="Drive links and study materials for this level and semester haven't been added yet."
+          />
         )}
       </div>
     </div>
