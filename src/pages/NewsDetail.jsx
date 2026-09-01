@@ -22,8 +22,12 @@ export default function NewsDetail() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <SkeletonText lines={1} className="w-40" />
-        <div className="mt-4">
+        <div className="h-4 w-48 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-4 h-3 w-24 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-2 h-8 w-2/3 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-3 h-4 w-56 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-6 h-64 w-full animate-pulse rounded-lg bg-hairline" />
+        <div className="mt-6">
           <SkeletonText lines={4} />
         </div>
       </div>

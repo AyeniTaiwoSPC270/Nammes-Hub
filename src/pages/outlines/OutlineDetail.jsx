@@ -24,9 +24,18 @@ export default function OutlineDetail() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <SkeletonText lines={1} className="w-40" />
-        <div className="mt-4">
-          <SkeletonText lines={5} />
+        <div className="h-4 w-48 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-4 h-3 w-32 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-2 h-8 w-2/3 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-3 h-4 w-56 animate-pulse rounded-sm bg-hairline" />
+        <div className="mt-6">
+          <SkeletonText lines={3} />
+        </div>
+        <div className="mt-6 rounded-lg border border-hairline bg-surface p-6 shadow-md">
+          <div className="h-3 w-32 animate-pulse rounded-sm bg-hairline" />
+          <div className="mt-4">
+            <SkeletonText lines={4} />
+          </div>
         </div>
       </div>
     )

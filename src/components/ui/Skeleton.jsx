@@ -14,8 +14,8 @@ export function SkeletonText({ lines = 1, className = '' }) {
 
 export function SkeletonCard({ imageVariant = 'none' }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-surface">
-      {imageVariant === 'cover' && <div className="aspect-[4/3] w-full animate-pulse rounded-t-lg bg-hairline" />}
+    <div className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+      {imageVariant === 'cover' && <div className="h-48 w-full animate-pulse bg-hairline" />}
       <div className="flex flex-col gap-2 p-6">
         <div className="h-3 w-20 animate-pulse rounded-sm bg-hairline" />
         <div className="h-5 w-3/4 animate-pulse rounded-sm bg-hairline" />
