@@ -29,7 +29,7 @@ export function SkeletonTable({ columns = 4, rows = 5 }) {
   return (
     <div className="nm-table-wrap overflow-x-auto">
       <div className="w-full overflow-hidden rounded-md border border-hairline">
-        <div className="flex bg-green-100 px-4 py-2.5">
+        <div className="flex bg-surface-low px-4 py-2.5">
           {Array.from({ length: columns }).map((_, i) => (
             <div key={i} className="mr-6 h-3 w-16 animate-pulse rounded-sm bg-hairline last:mr-0" />
           ))}
