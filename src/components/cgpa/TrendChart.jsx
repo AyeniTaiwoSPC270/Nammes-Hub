@@ -30,7 +30,7 @@ export default function TrendChart({ rows }) {
           y={p.gpaY}
           width={barWidth}
           height={Math.max(0, baseline - p.gpaY)}
-          className="fill-green-100"
+          className="fill-surface-low"
         />
       ))}
       <path d={linePath} fill="none" className="stroke-orange-500" strokeWidth={2} />

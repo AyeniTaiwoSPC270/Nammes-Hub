@@ -7,19 +7,21 @@ const linkGroups = [
       { label: 'Home', to: '/' },
       { label: 'Outlines', to: '/outlines' },
       { label: 'Events', to: '/events' },
+      { label: 'Meet the Excos', to: '/excos' },
     ],
   },
   {
     heading: 'Resources',
     items: [
-      { label: 'Drive folders', to: '/resources' },
-      { label: 'Past questions', to: '/resources' },
+      { label: 'Resources', to: '/resources' },
+      { label: 'News', to: '/news' },
+      { label: 'Opportunities', to: '/opportunities' },
     ],
   },
   {
     heading: 'Department',
     items: [
-      { label: 'About NAMMES', to: '/' },
+      { label: 'CGPA calculator', to: '/cgpa' },
       { label: 'Sign in', to: '/login' },
     ],
   },
@@ -29,10 +31,10 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="mt-auto bg-green-900 px-8 pt-12 pb-7 text-white/72">
+    <footer className="mt-auto bg-ink-900 px-8 pt-12 pb-7 text-white/72">
       <div className="mx-auto flex max-w-[880px] flex-wrap justify-between gap-8">
         <div className="max-w-80">
-          <span className="inline-flex items-center gap-2 whitespace-nowrap font-display text-lg font-semibold text-white">
+          <span className="inline-flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-orange-500">
             <img src="/logo.png" alt="" className="h-8 w-8" />
             NAMMES Hub
           </span>
@@ -43,12 +45,12 @@ export default function Footer() {
 
         {linkGroups.map((group) => (
           <div key={group.heading}>
-            <div className="mb-3 font-mono text-xs font-semibold uppercase tracking-[.04em] text-white/50">
+            <div className="mb-3 text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
               {group.heading}
             </div>
             <div className="flex flex-col gap-2">
               {group.items.map((item) => (
-                <Link key={item.label} to={item.to} className="text-sm text-white/80 no-underline">
+                <Link key={item.label} to={item.to} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
                   {item.label}
                 </Link>
               ))}

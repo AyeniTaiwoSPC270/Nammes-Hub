@@ -2,7 +2,7 @@ const tones = {
   new: 'bg-orange-100 text-orange-600',
   updated: 'bg-success-bg text-success',
   restricted: 'bg-danger-bg text-danger',
-  neutral: 'bg-hairline text-ink-muted',
+  neutral: 'bg-surface-low text-ink-muted',
 }
 
 export default function Badge({ tone = 'new', children }) {

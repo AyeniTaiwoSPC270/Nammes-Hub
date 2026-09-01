@@ -1,12 +1,12 @@
 export default function FormField({ label, type = 'text', value, onChange, placeholder, helper, error, options, required = false }) {
   const controlClass = [
-    'rounded-sm border px-3 py-2.5 text-base bg-surface text-ink',
-    error ? 'border-danger' : 'border-hairline',
+    'rounded-md border px-3 py-2.5 text-base bg-surface text-ink outline-none transition-colors',
+    error ? 'border-danger' : 'border-hairline focus:border-green-900',
   ].join(' ')
 
   return (
     <label className="flex flex-col gap-1.5 font-body">
-      <span className="text-sm font-medium text-green-900">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{label}</span>
       {type === 'select' ? (
         <select value={value} onChange={onChange} required={required} className={controlClass}>
           {(options || []).map((o, i) => (

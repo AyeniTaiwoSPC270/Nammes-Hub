@@ -206,10 +206,10 @@ export default function Cgpa() {
   if (!user) {
     return (
       <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-        <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
+        <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
           CGPA calculator
         </div>
-        <h1 className="mt-1.5 text-[32px]">Sign in to track your CGPA</h1>
+        <h1 className="mt-1.5 text-3xl font-bold text-ink-900">Sign in to track your CGPA</h1>
         <p className="mt-2 max-w-2xl text-ink-muted">
           Your grades are saved to your account so they follow you across devices.
         </p>
@@ -222,10 +222,10 @@ export default function Cgpa() {
 
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-      <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
+      <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
         CGPA calculator
       </div>
-      <h1 className="mt-1.5 text-[32px]">Your academic record</h1>
+      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">Your academic record</h1>
 
       {formError && (
         <p className="mt-4 rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>

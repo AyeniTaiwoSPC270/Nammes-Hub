@@ -1,9 +1,9 @@
 const variants = {
-  primary: 'bg-green-700 border-green-700 text-white hover:bg-green-900 hover:border-green-900',
-  secondary: 'bg-green-100 border-transparent text-green-700 hover:bg-green-100',
+  primary: 'bg-green-900 border-green-900 text-white hover:opacity-90',
+  secondary: 'bg-surface-low border-transparent text-green-900 hover:bg-hairline/40',
   accent: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600',
-  destructive: 'bg-danger border-danger text-white hover:bg-[#7d2015] hover:border-[#7d2015]',
-  ghost: 'bg-transparent border-transparent text-ink hover:bg-green-100',
+  destructive: 'bg-danger border-danger text-white hover:bg-[#93000a] hover:border-[#93000a]',
+  ghost: 'bg-transparent border-transparent text-ink hover:bg-surface-low',
 }
 
 const sizes = {
@@ -28,9 +28,9 @@ export default function Button({
       type={type}
       disabled={isDisabled}
       className={[
-        'inline-flex items-center gap-2 rounded-full border-2 font-body font-semibold',
-        'transition-[background-color,border-color,transform] duration-150 ease-out',
-        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.03]',
+        'inline-flex items-center gap-2 rounded-md border font-body font-bold',
+        'transition-colors duration-150 ease-out',
+        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         variants[variant],
         sizes[size],
         className,
