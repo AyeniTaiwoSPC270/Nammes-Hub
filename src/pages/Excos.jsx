@@ -32,7 +32,17 @@ export default function Excos() {
         {error ? (
           <p className="text-ink-muted">Couldn&rsquo;t load the Excos list right now.</p>
         ) : loading ? (
-          <p className="text-ink-muted">Loading…</p>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+                <div className="aspect-[4/5] w-full animate-pulse bg-hairline" />
+                <div className="flex flex-col gap-2 p-6">
+                  <div className="h-5 w-3/4 animate-pulse rounded-sm bg-hairline" />
+                  <div className="h-3 w-1/2 animate-pulse rounded-sm bg-hairline" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : rows.length === 0 ? (
           <EmptyState
             icon="group_off"
