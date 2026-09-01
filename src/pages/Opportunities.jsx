@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import Table from '../components/ui/Table'
-import PageHeader from '../components/PageHeader'
 import { fetchOpportunities, getOpportunities } from '../data/opportunities'
 
 export default function Opportunities() {
@@ -16,11 +15,8 @@ export default function Opportunities() {
 
   if (loading) {
     return (
-      <div>
-        <PageHeader eyebrow="Opportunities" title="Scholarships & internships" />
-        <div className="mx-auto max-w-[880px] px-5 pt-10 pb-12 sm:px-6">
-          <p className="text-ink-muted">Loading…</p>
-        </div>
+      <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+        <p className="text-ink-muted">Loading…</p>
       </div>
     )
   }
@@ -46,13 +42,16 @@ export default function Opportunities() {
   ])
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Opportunities"
-        title="Scholarships & internships"
-        subtitle="Manually curated opportunities, soonest deadline first."
-      />
-      <div className="mx-auto max-w-[880px] px-5 pt-10 pb-12 sm:px-6">
+    <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
+      <div className="font-mono text-xs font-bold uppercase tracking-[.04em] text-green-700">
+        Opportunities
+      </div>
+      <h1 className="mt-1.5 text-[32px]">Scholarships & internships</h1>
+      <p className="mt-2 max-w-2xl text-ink-muted">
+        Manually curated opportunities, soonest deadline first.
+      </p>
+
+      <div className="mt-6">
         {items.length > 0 ? (
           <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={tableRows} />
         ) : (

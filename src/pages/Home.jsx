@@ -6,7 +6,6 @@ import Badge from '../components/ui/Badge'
 import WelcomeMessage from '../components/WelcomeMessage'
 import { fetchNews, getNews } from '../data/news'
 import { fetchExcos } from '../data/excos'
-import { splitFeaturedExcos } from '../lib/excos'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -29,11 +28,10 @@ export default function Home() {
   }, [])
 
   const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
-  const { featured: featuredExcos, rest: restExcos } = splitFeaturedExcos(excosRows)
 
   return (
     <div>
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-900 via-green-700 to-orange-600 px-6 py-20 sm:px-8 sm:py-24">
+      <div className="relative overflow-hidden bg-green-900 px-6 py-20 sm:px-8 sm:py-24">
         <div className="relative mx-auto max-w-[960px]">
           <div className="max-w-[560px]">
             <div className="inline-block w-fit whitespace-nowrap rounded-full bg-white px-3.5 py-1 font-mono text-[13px] font-bold uppercase text-green-900">
@@ -117,48 +115,23 @@ export default function Home() {
         {excosError ? (
           <p className="text-ink-muted">Couldn&rsquo;t load the Excos list right now.</p>
         ) : (
-          <>
-            {featuredExcos.length > 0 && (
-              <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
-                {featuredExcos.map((x) => (
-                  <div key={x.id} className="flex flex-col items-center gap-3 rounded-lg bg-green-700 p-6 text-center">
-                    <div className="flex h-[160px] w-[160px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-4xl text-green-700">
-                      {x.photo_url ? (
-                        <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        (x.name || x.role).charAt(0)
-                      )}
-                    </div>
-                    <div>
-                      <div className="text-lg font-semibold text-white">{x.name || 'Name Surname'}</div>
-                      <div className="mt-0.5 font-mono text-xs uppercase tracking-[.04em] text-orange-400">
-                        {x.role}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+            {excosRows.map((x) => (
+              <div key={x.id} className="flex flex-col items-center gap-2.5">
+                <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
+                  {x.photo_url ? (
+                    <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    (x.name || x.role).charAt(0)
+                  )}
+                </div>
+                <div className="text-center">
+                  <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
+                  <div className="mt-0.5 font-mono text-xs text-ink-muted">{x.role}</div>
+                </div>
               </div>
-            )}
-            {restExcos.length > 0 && (
-              <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-                {restExcos.map((x) => (
-                  <div key={x.id} className="flex flex-col items-center gap-2.5">
-                    <div className="flex h-[120px] w-[120px] items-center justify-center overflow-hidden rounded-full bg-green-100 font-display text-2xl text-green-700">
-                      {x.photo_url ? (
-                        <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        (x.name || x.role).charAt(0)
-                      )}
-                    </div>
-                    <div className="text-center">
-                      <div className="text-[15px] font-semibold">{x.name || 'Name Surname'}</div>
-                      <div className="mt-0.5 font-mono text-xs text-ink-muted">{x.role}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
     </div>

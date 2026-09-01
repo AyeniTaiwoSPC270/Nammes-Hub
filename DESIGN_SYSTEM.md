@@ -103,12 +103,6 @@ Props: `label`, `type` (`text`|`email`|`password`|`select`|…), `value`, `onCha
 - Input/select: `12px/10px` padding, `rounded-sm` (6px), base text, 1px hairline border (danger when `error` is set).
 - Helper/error text below the control (never a top-of-form-only summary) — error in danger takes priority over helper.
 
-### PageHeader
-
-Props: `eyebrow` (optional), `title`, `subtitle` (optional). Full-bleed banner used at the top of every inner page (Events, Resources, Outlines, Opportunities) in place of a bare `<h1>`.
-- Background: duotone-gradient placeholder (`bg-gradient-to-br from-green-900 via-green-700 to-orange-600`) — stands in for a real photo until the department has one; built so a `photo` prop can be added later without changing layout.
-- Content constrained to `max-w-[880px]`, `py-14`/`px-6 sm:px-8`. Eyebrow: mono/xs/uppercase/orange-400. Title: `font-display text-3xl sm:text-4xl` white. Subtitle: `text-white/90 max-w-2xl`.
-
 ### Navbar
 
 Props: `links`, `active`, `brand`. Sticky, `z-30`, translucent (`bg-white/95` + `backdrop-blur-sm`) — the one place translucency is used in this system, 1px hairline bottom border.
@@ -138,9 +132,9 @@ All illustration images are decorative: `alt=""` + `aria-hidden="true"` everywhe
 
 ## Pages implemented from the handoff UI kit
 
-- **Home** (`src/pages/Home.jsx`) — duotone-gradient hero (placeholder for a real department photo), a Welcome Message section (`src/components/WelcomeMessage.jsx`, placeholder leader photo/copy), department news section (1 featured green Card + 3-col grid of Cards, each with a category illustration via `Card`'s `image` prop), then Excos: a featured row (top 3 by `sort_order`, larger circular photos on green cards) plus a smaller 4-col grid for the rest — circular initial avatars stand in for real photos until the department supplies them.
+- **Home** (`src/pages/Home.jsx`) — solid green-900 hero band (placeholder for a real Exco group photo, no gradient/illustration), a Welcome Message section (`src/components/WelcomeMessage.jsx`, placeholder leader photo/copy), department news section (1 featured green Card + 3-col grid of Cards, each with a category illustration via `Card`'s `image` prop), Exco grid (4-col, 10 roles — circular initial avatars stand in for real photos until the department supplies them).
 - **Outlines** — drill-down flow: level picker (`src/pages/Outlines.jsx`, 5 tiles for 100–500 Level) → semester picker (`src/pages/outlines/OutlineLevel.jsx`, First/Second Semester) → course `Table` (`src/pages/outlines/OutlineCourses.jsx`, code/title/units + "View outline" per row) → detail (`src/pages/outlines/OutlineDetail.jsx`, description + topics-covered `Card`). Routes: `/outlines`, `/outlines/:level`, `/outlines/:level/:semester`, `/outlines/:level/:semester/:code`. Sample course data lives in `src/data/outlines.js` — swap for Supabase once outlines are scoped for Admin CRUD. Shared `Breadcrumbs` component (`src/components/Breadcrumbs.jsx`) is used across all three sub-pages.
-- **Events** (`src/pages/Events.jsx`) — `PageHeader` banner, then a 3-col grid of Cards showing a full-bleed cover photo (`imageVariant="cover"`) when an event has one uploaded, otherwise just the colored tone block (no icon).
+- **Events** (`src/pages/Events.jsx`) — 3-col grid of Cards showing a full-bleed cover photo (`imageVariant="cover"`) when an event has one uploaded, otherwise just the colored tone block (no icon).
 - **News** (`src/pages/News.jsx`) — full reverse-chronological list from Supabase (1 featured Card with a full-bleed cover photo + 2-col grid of cover-photo Cards, same pattern as Home's teaser), category filter pills (`All` + the 6 `NEWS_CATEGORIES`) driven by `?category=` in the URL, each card links to `/news/:id`. **NewsDetail** (`src/pages/NewsDetail.jsx`) — full post view (category, title, byline, date, badge, body) reached at `/news/:id`; unknown ids redirect to `/news`. **Opportunities** (`src/pages/Opportunities.jsx`) — `Table` of scholarships/internships from `src/data/opportunities.js`, sorted soonest-deadline-first, external "Apply" links, list-only (no detail route, no filter). Sample data in `src/data/news.js` and `src/data/opportunities.js` — swap for Supabase once these domains are scoped for Admin CRUD, matching the existing convention for `outlines.js`/`resources.js`.
 - **Login** (`src/pages/Login.jsx`) — sign-in card (email + password `FormField`s, primary submit with `loading`, ghost cancel), plus links to Create account and Forgot password. Framed as a plain sign-in, not an "Exco-only" page — Exco members log in the same way as any other account holder would, there's no separate Exco flow. Reached via a "Sign in" link in the Navbar (and Footer), not a floating button. Shows a success banner when arriving via `?created=1` (from Signup) or `?reset=1` (from Reset password).
 - **Signup** (`src/pages/Signup.jsx`) — name/email/password/confirm-password, client-side validation (university email domain, 8+ char password, matching confirmation), redirects to `/login?created=1` on success.
@@ -149,7 +143,7 @@ All illustration images are decorative: `alt=""` + `aria-hidden="true"` everywhe
 
 All four auth pages share a centered-card shell (`src/components/AuthCard.jsx`) and the handoff's placeholder validation logic (a ~900ms simulated request, then client-side checks — no network call). Swap for real Supabase auth (`src/lib/supabaseClient.js`) when that's scoped: sign-in/sign-up calls, `resetPasswordForEmail`, and reading Supabase's own recovery token instead of a generic `?token=`.
 
-Resources now has a real layout (`src/pages/Resources.jsx`, `PageHeader` banner + level-picker grid identical in structure to Outlines) rather than `PagePlaceholder` — this note was stale. Admin isn't in the handoff kit; build its real layout as that design arrives, following the component specs above rather than ad hoc styling.
+Resources now has a real layout (`src/pages/Resources.jsx`, level-picker grid identical in structure to Outlines) rather than `PagePlaceholder` — this note was stale. Admin isn't in the handoff kit; build its real layout as that design arrives, following the component specs above rather than ad hoc styling.
 
 ## Accessibility checklist (project-specific)
 
