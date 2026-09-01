@@ -1,33 +1,38 @@
-import { useEffect, useState } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
-import { LEVELS, SEMESTER_LABELS, fetchOutlines, getCourse } from '../../data/outlines'
+import ErrorState from '../../components/ui/ErrorState'
+import { SkeletonText } from '../../components/ui/Skeleton'
+import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourse } from '../../data/outlines'
 
 export default function OutlineDetail() {
   const { level, semester, code } = useParams()
   const navigate = useNavigate()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchOutlines().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useOutlinesQuery()
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
-  if (loading) {
+
+  if (isError && !data) {
     return (
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
+        <ErrorState message="Couldn't load this outline right now." onRetry={refetch} />
       </div>
     )
   }
 
-  const course = getCourse(rows, level, semester, code)
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+        <SkeletonText lines={1} className="w-40" />
+        <div className="mt-4">
+          <SkeletonText lines={5} />
+        </div>
+      </div>
+    )
+  }
+
+  const course = getCourse(data ?? [], level, semester, code)
   if (!course) return <Navigate to={`/outlines/${level}/${semester}`} replace />
 
   return (

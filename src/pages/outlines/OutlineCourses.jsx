@@ -1,32 +1,18 @@
-import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import EmptyState from '../../components/ui/EmptyState'
-import { LEVELS, SEMESTER_LABELS, fetchOutlines, getCourses } from '../../data/outlines'
+import ErrorState from '../../components/ui/ErrorState'
+import { SkeletonTable } from '../../components/ui/Skeleton'
+import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourses } from '../../data/outlines'
 
 export default function OutlineCourses() {
   const { level, semester } = useParams()
   const navigate = useNavigate()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchOutlines().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useOutlinesQuery()
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
-      </div>
-    )
-  }
 
-  const courses = getCourses(rows, level, semester)
+  const courses = getCourses(data ?? [], level, semester)
   const slug = (code) => code.replace(/\s+/g, '').toLowerCase()
 
   return (
@@ -44,7 +30,11 @@ export default function OutlineCourses() {
       <p className="mt-2 max-w-2xl text-ink-muted">Select a course to view its detailed outline.</p>
 
       <div className="mt-6">
-        {courses.length > 0 ? (
+        {isError && !data ? (
+          <ErrorState message="Couldn't load courses right now." onRetry={refetch} />
+        ) : isLoading ? (
+          <SkeletonTable columns={4} rows={5} />
+        ) : courses.length > 0 ? (
           <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
             <div className="flex items-center justify-between border-b border-hairline bg-surface-low p-4">
               <h3 className="text-lg font-bold text-ink-900">

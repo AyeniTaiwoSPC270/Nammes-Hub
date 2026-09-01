@@ -1,7 +1,19 @@
-export default function FormField({ label, type = 'text', value, onChange, placeholder, helper, error, options, required = false }) {
+export default function FormField({
+  label,
+  type = 'text',
+  value,
+  onChange,
+  placeholder,
+  helper,
+  error,
+  options,
+  required = false,
+  success = false,
+}) {
   const controlClass = [
-    'rounded-md border px-3 py-2.5 text-base bg-surface text-ink outline-none transition-colors',
-    error ? 'border-danger' : 'border-hairline focus:border-green-900',
+    'rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
+    'focus:outline-none focus:border-green-900',
+    error ? 'border-danger' : success ? 'border-success' : 'border-hairline',
   ].join(' ')
 
   return (
@@ -36,6 +48,8 @@ export default function FormField({ label, type = 'text', value, onChange, place
       )}
       {error ? (
         <span className="text-xs text-danger">{error}</span>
+      ) : success ? (
+        <span className="text-xs text-success">Looks good</span>
       ) : helper ? (
         <span className="text-xs text-ink-muted">{helper}</span>
       ) : null}

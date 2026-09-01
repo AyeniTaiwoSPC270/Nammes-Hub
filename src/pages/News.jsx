@@ -1,27 +1,20 @@
-import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Badge from '../components/ui/Badge'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
-import { fetchNews, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonCard } from '../components/ui/Skeleton'
+import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 
 const categories = ['All', ...NEWS_CATEGORIES]
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchNews().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useNewsQuery()
 
   const requestedCategory = searchParams.get('category')
   const active = categories.includes(requestedCategory) ? requestedCategory : 'All'
-  const items = filterNewsByCategory(getNews(rows), active)
+  const items = filterNewsByCategory(getNews(data ?? []), active)
   const [featured, ...rest] = items
 
   function selectCategory(category) {
@@ -30,14 +23,6 @@ export default function News() {
     } else {
       setSearchParams({ category })
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
-      </div>
-    )
   }
 
   return (
@@ -62,7 +47,18 @@ export default function News() {
           ))}
         </div>
 
-        {items.length === 0 ? (
+        {isError && !data ? (
+          <ErrorState message="Couldn't load news right now." onRetry={refetch} />
+        ) : isLoading ? (
+          <div className="flex flex-col gap-5">
+            <SkeletonCard imageVariant="cover" />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <SkeletonCard imageVariant="cover" />
+              <SkeletonCard imageVariant="cover" />
+              <SkeletonCard imageVariant="cover" />
+            </div>
+          </div>
+        ) : items.length === 0 ? (
           <EmptyState
             icon="article"
             title={active === 'All' ? 'No news yet' : `No news in ${active} yet`}

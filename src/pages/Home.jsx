@@ -1,45 +1,23 @@
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import WelcomeMessage from '../components/WelcomeMessage'
 import EmptyState from '../components/ui/EmptyState'
-import { fetchNews, getNews } from '../data/news'
-import { fetchExcos } from '../data/excos'
-import { fetchEvents } from '../data/events'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
+import { useNewsQuery, getNews } from '../data/news'
+import { useExcosQuery } from '../data/excos'
+import { useEventsQuery } from '../data/events'
 
 export default function Home() {
   const navigate = useNavigate()
-  const [newsRows, setNewsRows] = useState([])
-  const [newsLoading, setNewsLoading] = useState(true)
-  const [excosRows, setExcosRows] = useState([])
-  const [excosError, setExcosError] = useState(false)
-  const [eventsRows, setEventsRows] = useState([])
-  const [eventsLoading, setEventsLoading] = useState(true)
+  const newsQuery = useNewsQuery()
+  const excosQuery = useExcosQuery()
+  const eventsQuery = useEventsQuery()
 
-  useEffect(() => {
-    fetchNews().then((data) => {
-      setNewsRows(data)
-      setNewsLoading(false)
-    })
-  }, [])
-
-  useEffect(() => {
-    fetchExcos()
-      .then(setExcosRows)
-      .catch(() => setExcosError(true))
-  }, [])
-
-  useEffect(() => {
-    fetchEvents().then((data) => {
-      setEventsRows(data)
-      setEventsLoading(false)
-    })
-  }, [])
-
-  const [featuredNews, ...restNews] = getNews(newsRows).slice(0, 4)
-  const previewEvents = eventsRows.slice(0, 3)
+  const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
+  const previewEvents = (eventsQuery.data ?? []).slice(0, 3)
 
   return (
     <div>
@@ -80,15 +58,26 @@ export default function Home() {
             </Button>
           </div>
 
-          {!newsLoading && !featuredNews && (
+          {newsQuery.isError && !newsQuery.data ? (
+            <ErrorState message="Couldn't load news right now." onRetry={newsQuery.refetch} />
+          ) : newsQuery.isLoading ? (
+            <>
+              <div className="mb-5">
+                <SkeletonCard imageVariant="cover" />
+              </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <SkeletonCard imageVariant="cover" />
+                <SkeletonCard imageVariant="cover" />
+                <SkeletonCard imageVariant="cover" />
+              </div>
+            </>
+          ) : !featuredNews ? (
             <EmptyState
               icon="article"
               title="No news yet"
               description="Department news and announcements will show up here once they're posted."
             />
-          )}
-
-          {!newsLoading && featuredNews && (
+          ) : (
             <>
               <Card
                 layout="row"
@@ -97,7 +86,8 @@ export default function Home() {
                 title={featuredNews.title}
                 image={featuredNews.image_url ? { src: featuredNews.image_url } : undefined}
                 imageVariant="cover"
-                className="mb-5 cursor-pointer hover:shadow-lg transition-shadow"
+                interactive
+                className="mb-5 cursor-pointer"
               >
                 <span className="line-clamp-3">{featuredNews.body}</span>{' '}
                 {featuredNews.badge_tone && <Badge tone={featuredNews.badge_tone}>{featuredNews.badge_label}</Badge>}
@@ -113,7 +103,8 @@ export default function Home() {
                     image={item.image_url ? { src: item.image_url } : undefined}
                     imageVariant="cover"
                     imageAspect="standard"
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
+                    interactive
+                    className="cursor-pointer"
                   >
                     <span className="line-clamp-2">{item.body}</span>{' '}
                     {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
@@ -135,20 +126,26 @@ export default function Home() {
             </Button>
           </div>
 
-          {!eventsLoading && previewEvents.length === 0 && (
+          {eventsQuery.isError && !eventsQuery.data ? (
+            <ErrorState message="Couldn't load events right now." onRetry={eventsQuery.refetch} />
+          ) : eventsQuery.isLoading ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+              <SkeletonCard imageVariant="cover" />
+              <SkeletonCard imageVariant="cover" />
+              <SkeletonCard imageVariant="cover" />
+            </div>
+          ) : previewEvents.length === 0 ? (
             <EmptyState
               icon="event_busy"
               title="No events yet"
               description="Check back soon — upcoming workshops, seminars, and gatherings will show up here."
             />
-          )}
-
-          {!eventsLoading && previewEvents.length > 0 && (
+          ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               {previewEvents.map((event) => (
                 <article
                   key={event.id}
-                  className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                  className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md cursor-pointer transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
                 >
                   {event.image_url && (
                     <img src={event.image_url} alt="" className="h-48 w-full object-cover" />
@@ -181,11 +178,26 @@ export default function Home() {
               Meet the Excos
             </Button>
           </div>
-          {excosError ? (
-            <p className="text-ink-muted">Couldn&rsquo;t load the Excos list right now.</p>
+          {excosQuery.isError && !excosQuery.data ? (
+            <ErrorState message="Couldn't load the Excos list right now." onRetry={excosQuery.refetch} />
+          ) : excosQuery.isLoading ? (
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2.5">
+                  <div className="h-28 w-28 animate-pulse rounded-full bg-hairline sm:h-40 sm:w-40" />
+                  <SkeletonText lines={2} className="w-20" />
+                </div>
+              ))}
+            </div>
+          ) : (excosQuery.data ?? []).length === 0 ? (
+            <EmptyState
+              icon="group_off"
+              title="Excos coming soon"
+              description="Executive Council members will appear here once they're added."
+            />
           ) : (
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-              {excosRows.map((x) => (
+              {excosQuery.data.map((x) => (
                 <div key={x.id} className="flex flex-col items-center gap-2.5 text-center">
                   <div className="flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center overflow-hidden rounded-full bg-surface shadow-md font-display text-2xl text-green-900">
                     {x.photo_url ? (

@@ -1,25 +1,25 @@
-import { useEffect, useState } from 'react'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
-import { fetchEvents } from '../data/events'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonCard } from '../components/ui/Skeleton'
+import { useEventsQuery } from '../data/events'
 
 export default function Events() {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchEvents().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
+  const { data, isLoading, isError, refetch } = useEventsQuery()
+  const rows = data ?? []
 
   return (
     <div>
       <PageBanner title="Events" subtitle="Workshops, seminars, and gatherings from the department." />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        {loading ? (
-          <p className="text-ink-muted">Loading…</p>
+        {isError && !data ? (
+          <ErrorState message="Couldn't load events right now." onRetry={refetch} />
+        ) : isLoading ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <SkeletonCard imageVariant="cover" />
+            <SkeletonCard imageVariant="cover" />
+            <SkeletonCard imageVariant="cover" />
+          </div>
         ) : rows.length === 0 ? (
           <EmptyState
             icon="event_busy"
@@ -31,7 +31,7 @@ export default function Events() {
             {rows.map((event) => (
               <article
                 key={event.id}
-                className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow"
+                className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
               >
                 {event.image_url && (
                   <img src={event.image_url} alt="" className="h-48 w-full object-cover" />

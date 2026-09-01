@@ -1,20 +1,35 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 import AdminResourceList from './AdminResourceList'
 import AdminResourceForm from './AdminResourceForm'
 import Button from '../ui/Button'
+import ErrorState from '../ui/ErrorState'
+import { SkeletonTable } from '../ui/Skeleton'
 import { generateId } from '../../lib/adminFields'
+import { useToast } from '../../lib/ToastContext'
+
+async function loadRows(table, orderBy) {
+  let query = supabase.from(table).select('*')
+  if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true })
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
 
 export default function AdminResourceManager({ table, title, config, orderBy }) {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const [editing, setEditing] = useState(null) // null = add-new panel, record = editing that row
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false)
-  const [deletingAll, setDeletingAll] = useState(false)
   const [activeGroup, setActiveGroup] = useState('All')
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: [table],
+    queryFn: () => loadRows(table, orderBy),
+  })
+  const rows = data ?? []
 
   const groupValues = useMemo(() => {
     if (!config.groupField) return null
@@ -32,77 +47,71 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
     }
   }, [rows, activeGroup, config.groupField])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    let query = supabase.from(table).select('*')
-    if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true })
-    const { data, error: fetchError } = await query
-    setLoading(false)
-    if (fetchError) {
-      setError(fetchError.message)
-      return
-    }
-    setRows(data || [])
-  }, [table, orderBy])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
-  async function handleSubmit(payload) {
-    setSaving(true)
-    setError('')
-    let result
-    if (editing) {
-      result = await supabase.from(table).update(payload).eq('id', editing.id).select()
-    } else {
+  const saveMutation = useMutation({
+    mutationFn: async (payload) => {
+      if (editing) {
+        const result = await supabase.from(table).update(payload).eq('id', editing.id).select()
+        if (result.error) throw result.error
+        if (!result.data || result.data.length === 0) {
+          throw new Error('No changes were saved — your account may not have admin access to make this change.')
+        }
+        return result.data
+      }
       const id = generateId(payload[config.idField])
-      result = await supabase.from(table).insert({ ...payload, id })
-    }
-    setSaving(false)
-    if (result.error) {
-      setError(result.error.message)
-      return
-    }
-    if (editing && (!result.data || result.data.length === 0)) {
-      setError('No changes were saved — your account may not have admin access to make this change.')
-      return
-    }
-    setEditing(null)
-    load()
-  }
+      const result = await supabase.from(table).insert({ ...payload, id })
+      if (result.error) throw result.error
+      return result.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [table] })
+      toast.success(editing ? `${title} updated.` : `${title} added.`)
+      setEditing(null)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
-  async function handleDelete(row) {
-    const { data, error: deleteError } = await supabase.from(table).delete().eq('id', row.id).select()
-    if (deleteError) {
-      setError(deleteError.message)
-      return
-    }
-    if (!data || data.length === 0) {
-      setError('No changes were saved — your account may not have admin access to make this change.')
-      return
-    }
-    if (editing?.id === row.id) setEditing(null)
-    load()
-  }
+  const deleteMutation = useMutation({
+    mutationFn: async (row) => {
+      const { data: deletedRows, error } = await supabase.from(table).delete().eq('id', row.id).select()
+      if (error) throw error
+      if (!deletedRows || deletedRows.length === 0) {
+        throw new Error('No changes were saved — your account may not have admin access to make this change.')
+      }
+      return deletedRows
+    },
+    onSuccess: (_data, row) => {
+      queryClient.invalidateQueries({ queryKey: [table] })
+      toast.success(`${title} deleted.`)
+      if (editing?.id === row.id) setEditing(null)
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
-  async function handleDeleteAll() {
-    setDeletingAll(true)
-    setError('')
-    const deleteError =
-      config.groupField && activeGroup !== 'All'
-        ? (await supabase.from(table).delete().in('id', filteredRows.map((r) => r.id))).error
-        : (await supabase.from(table).delete().not('id', 'is', null)).error
-    setDeletingAll(false)
-    if (deleteError) {
-      setError(deleteError.message)
-      return
-    }
-    setConfirmingDeleteAll(false)
-    setEditing(null)
-    setActiveGroup('All')
-    load()
-  }
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const { error } =
+        config.groupField && activeGroup !== 'All'
+          ? await supabase.from(table).delete().in('id', filteredRows.map((r) => r.id))
+          : await supabase.from(table).delete().not('id', 'is', null)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [table] })
+      toast.success(
+        `${activeGroup === 'All' ? 'All' : `${activeGroup} ${config.groupLabel ?? ''}`.trim()} ${title.toLowerCase()} deleted.`,
+      )
+      setConfirmingDeleteAll(false)
+      setEditing(null)
+      setActiveGroup('All')
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
@@ -167,21 +176,30 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
               variant="ghost"
               size="sm"
               onClick={() => setConfirmingDeleteAll(false)}
-              disabled={deletingAll}
+              disabled={deleteAllMutation.isPending}
             >
               Cancel
             </Button>
-            <Button variant="destructive" size="sm" onClick={handleDeleteAll} loading={deletingAll}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => deleteAllMutation.mutate()}
+              loading={deleteAllMutation.isPending}
+            >
               Yes, delete all
             </Button>
           </div>
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-danger">{error}</p>}
-
-      {loading ? (
-        <p className="mt-6 text-ink-muted">Loading…</p>
+      {isError && !data ? (
+        <div className="mt-6">
+          <ErrorState message={`Couldn't load ${title.toLowerCase()} right now.`} onRetry={refetch} />
+        </div>
+      ) : isLoading ? (
+        <div className="mt-6">
+          <SkeletonTable columns={config.listColumns.length + 1} rows={5} />
+        </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md lg:col-span-8">
@@ -189,7 +207,7 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
               config={config}
               rows={filteredRows}
               onEdit={setEditing}
-              onDelete={handleDelete}
+              onDelete={(row) => deleteMutation.mutate(row)}
               emptyLabel={
                 config.groupField && activeGroup !== 'All'
                   ? `${activeGroup} ${config.groupLabel ?? ''} ${config.title.toLowerCase()}`.replace(/\s+/g, ' ').trim()
@@ -206,9 +224,9 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
               key={editing?.id ?? 'new'}
               config={config}
               record={editing ?? undefined}
-              onSubmit={handleSubmit}
+              onSubmit={(payload) => saveMutation.mutate(payload)}
               onCancel={() => setEditing(null)}
-              saving={saving}
+              saving={saveMutation.isPending}
             />
           </div>
         </div>

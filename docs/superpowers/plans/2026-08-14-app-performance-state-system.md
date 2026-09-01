@@ -1031,13 +1031,13 @@ export default function Home() {
 }
 ```
 
-- [ ] **Step 2: Verify**
+- [ ] **Step 3: Verify**
 
 Run: `npm run lint`
 Run: `npm run build`
 Manual: `npm run dev` with network throttled, visit `/` — confirm both the news section and the Excos grid show skeletons before content, no layout jump when content arrives. Go offline and reload — confirm both sections show their own `ErrorState` independently (one query failing shouldn't block the other section).
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add src/data/excos.js src/pages/Home.jsx

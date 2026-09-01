@@ -29,8 +29,8 @@ export default function Button({
       disabled={isDisabled}
       className={[
         'inline-flex items-center gap-2 rounded-md border font-body font-bold',
-        'transition-colors duration-150 ease-out',
-        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+        'transition-[background-color,border-color,transform] duration-150 ease-out',
+        isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.03] active:scale-[0.98]',
         variants[variant],
         sizes[size],
         className,

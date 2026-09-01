@@ -1,29 +1,14 @@
-import { useEffect, useState } from 'react'
 import Table from '../components/ui/Table'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
-import { fetchOpportunities, getOpportunities } from '../data/opportunities'
+import ErrorState from '../components/ui/ErrorState'
+import { SkeletonTable } from '../components/ui/Skeleton'
+import { useOpportunitiesQuery, getOpportunities } from '../data/opportunities'
 
 export default function Opportunities() {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading, isError, refetch } = useOpportunitiesQuery()
 
-  useEffect(() => {
-    fetchOpportunities().then((data) => {
-      setRows(data)
-      setLoading(false)
-    })
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <p className="text-ink-muted">Loading…</p>
-      </div>
-    )
-  }
-
-  const items = getOpportunities(rows)
+  const items = getOpportunities(data ?? [])
 
   const tableRows = items.map((o) => [
     <span key={`${o.id}-deadline`} className="font-semibold text-orange-600">{o.deadline}</span>,
@@ -53,7 +38,11 @@ export default function Opportunities() {
         <h2 className="text-2xl font-bold text-ink-900 mb-2">Current listings</h2>
         <p className="max-w-2xl text-ink-muted mb-6">Sorted by soonest deadline first.</p>
 
-        {items.length > 0 ? (
+        {isError && !data ? (
+          <ErrorState message="Couldn't load opportunities right now." onRetry={refetch} />
+        ) : isLoading ? (
+          <SkeletonTable columns={4} rows={5} />
+        ) : items.length > 0 ? (
           <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={tableRows} />
         ) : (
           <EmptyState
