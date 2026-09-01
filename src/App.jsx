@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import Excos from './pages/Excos'
+import NotFound from './pages/NotFound'
 import Outlines from './pages/Outlines'
 import OutlineLevel from './pages/outlines/OutlineLevel'
 import OutlineCourses from './pages/outlines/OutlineCourses'
@@ -31,6 +33,7 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
+        <Route path="excos" element={<Excos />} />
         <Route path="outlines" element={<Outlines />} />
         <Route path="outlines/:level" element={<OutlineLevel />} />
         <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
@@ -56,6 +59,7 @@ export default function App() {
           <Route path="admin/excos" element={<AdminExcos />} />
           <Route path="admin/outlines" element={<AdminOutlines />} />
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
   )
