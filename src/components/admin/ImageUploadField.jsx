@@ -55,20 +55,25 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-green-900">{label}</span>
-      <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+      <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{label}</span>
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-hairline bg-surface-low p-6 text-center transition-colors hover:bg-hairline/20">
+        <span className="material-symbols-outlined text-3xl text-ink-muted">add_photo_alternate</span>
+        <span className="text-sm font-semibold text-ink-muted">{uploading ? 'Uploading…' : 'Click to upload image'}</span>
+        <span className="text-xs text-ink-muted">JPEG, PNG up to 5MB</span>
+        <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="hidden" />
+      </label>
       {error && <span className="text-xs text-danger">{error}</span>}
       {url && (
-        <div ref={previewRef} className="relative mt-2 max-w-[400px] rounded-sm bg-green-100 p-2">
+        <div ref={previewRef} className="relative mt-2 max-w-[400px] rounded-md bg-surface-low p-2">
           <img src={url} alt="" style={{ width: `${widthPct || 100}%` }} className="rounded-sm" />
           <div
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            className="absolute bottom-2 right-2 h-4 w-4 cursor-nwse-resize rounded-sm bg-green-700"
+            className="absolute bottom-2 right-2 h-4 w-4 cursor-nwse-resize rounded-sm bg-green-900"
             title="Drag to resize"
           />
-          <span className="mt-1 block font-mono text-xs text-ink-muted">{widthPct || 100}% width</span>
+          <span className="mt-1 block text-xs text-ink-muted">{widthPct || 100}% width</span>
         </div>
       )}
     </div>

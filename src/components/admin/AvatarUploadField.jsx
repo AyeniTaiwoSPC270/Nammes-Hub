@@ -31,11 +31,16 @@ export default function AvatarUploadField({ label, url, onChange }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-green-900">{label}</span>
-      <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+      <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{label}</span>
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-hairline bg-surface-low p-6 text-center transition-colors hover:bg-hairline/20">
+        <span className="material-symbols-outlined text-3xl text-ink-muted">add_photo_alternate</span>
+        <span className="text-sm font-semibold text-ink-muted">{uploading ? 'Uploading…' : 'Click to upload photo'}</span>
+        <span className="text-xs text-ink-muted">JPEG, PNG up to 5MB</span>
+        <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="hidden" />
+      </label>
       {error && <span className="text-xs text-danger">{error}</span>}
       {url && (
-        <div className="mt-2 h-[120px] w-[120px] overflow-hidden rounded-full bg-green-100">
+        <div className="mt-2 h-[120px] w-[120px] overflow-hidden rounded-full bg-surface-low shadow-md">
           <img src={url} alt="" className="h-full w-full object-cover" />
         </div>
       )}

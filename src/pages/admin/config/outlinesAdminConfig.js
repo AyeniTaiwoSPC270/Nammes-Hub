@@ -1,6 +1,8 @@
 export const outlinesAdminConfig = {
   title: 'Outlines',
   idField: 'code',
+  groupField: 'level',
+  groupLabel: 'Level',
   listColumns: [
     { field: 'level', label: 'Level' },
     { field: 'semester', label: 'Semester' },
