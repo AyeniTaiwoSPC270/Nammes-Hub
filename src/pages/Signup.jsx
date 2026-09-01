@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabaseClient'
 export default function Signup() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
+  const [studentId, setStudentId] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -43,7 +44,7 @@ export default function Signup() {
       email,
       password,
       options: {
-        data: { full_name: name },
+        data: { full_name: name, student_id: studentId },
         emailRedirectTo: `${window.location.origin}/login?created=1`,
       },
     })
@@ -60,9 +61,9 @@ export default function Signup() {
 
   if (sent) {
     return (
-      <AuthCard>
-        <div className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]">
-          <h2 className="text-[22px]">Check your email</h2>
+      <AuthCard maxWidth="max-w-[480px]">
+        <div className="flex w-full flex-col gap-4">
+          <h2 className="text-2xl font-bold text-ink-900">Check your email</h2>
           <p className="text-sm leading-relaxed text-ink-muted">
             We&rsquo;ve sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Click it
             to activate your account, then sign in.
@@ -76,18 +77,21 @@ export default function Signup() {
   }
 
   return (
-    <AuthCard>
-      <form
-        onSubmit={handleSubmit}
-        className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]"
-      >
-        <h2 className="text-[22px]">Create account</h2>
+    <AuthCard maxWidth="max-w-[480px]">
+      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+        <h2 className="text-2xl font-bold text-ink-900">Create account</h2>
 
         {formError && (
           <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
         )}
 
         <FormField label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Okafor" />
+        <FormField
+          label="Student ID"
+          value={studentId}
+          onChange={(e) => setStudentId(e.target.value)}
+          placeholder="e.g. 190402001"
+        />
         <FormField
           label="Email"
           type="email"
@@ -121,7 +125,7 @@ export default function Signup() {
 
         <p className="text-center text-sm text-ink-muted">
           Already have an account?{' '}
-          <Link to="/login" className="text-green-700 no-underline hover:underline">
+          <Link to="/login" className="text-green-900 no-underline hover:text-orange-500 hover:underline">
             Sign in
           </Link>
         </p>

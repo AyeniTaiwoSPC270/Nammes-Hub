@@ -28,9 +28,10 @@ export default function ResetPassword() {
 
   if (!hasSession) {
     return (
-      <AuthCard>
-        <div className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]">
-          <h2 className="text-[22px]">Link expired</h2>
+      <AuthCard maxWidth="max-w-[480px]">
+        <div className="flex w-full flex-col gap-4">
+          <span className="material-symbols-outlined text-danger text-4xl">error_outline</span>
+          <h2 className="text-2xl font-bold text-ink-900">Link expired</h2>
           <p className="text-sm leading-relaxed text-ink-muted">
             This password reset link is invalid or has expired. Request a new one to continue.
           </p>
@@ -75,12 +76,9 @@ export default function ResetPassword() {
   }
 
   return (
-    <AuthCard>
-      <form
-        onSubmit={handleSubmit}
-        className="flex w-[340px] max-w-[92vw] flex-col gap-4 rounded-[8px] bg-white p-8 shadow-md sm:max-w-[90vw]"
-      >
-        <h2 className="text-[22px]">Reset password</h2>
+    <AuthCard maxWidth="max-w-[480px]">
+      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
+        <h2 className="text-2xl font-bold text-ink-900">Reset password</h2>
 
         {formError && (
           <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
