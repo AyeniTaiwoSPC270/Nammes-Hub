@@ -24,7 +24,7 @@ export default function Events() {
           <EmptyState
             icon="event_busy"
             title="No events yet"
-            description="Check back soon — upcoming workshops, seminars, and gatherings will show up here."
+            description="Check back soon. Upcoming workshops, seminars, and gatherings will show up here."
           />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

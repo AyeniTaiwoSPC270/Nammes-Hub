@@ -88,7 +88,7 @@ export default function OutlineCourses() {
           <EmptyState
             icon="menu_book"
             title="No courses published yet"
-            description="Outlines for this level and semester haven't been added yet — check back soon."
+            description="Outlines for this level and semester haven't been added yet. Check back soon."
           />
         )}
       </div>

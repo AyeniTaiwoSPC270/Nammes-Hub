@@ -258,7 +258,7 @@ export default function Cgpa() {
 
       <div className="mt-8 flex flex-col gap-6">
         {stats.rows.length === 0 && (
-          <p className="text-ink-muted">No semesters yet — add your first one below.</p>
+          <p className="text-ink-muted">No semesters yet. Add your first one below.</p>
         )}
 
         {stats.rows.map((row) => {
@@ -284,13 +284,13 @@ export default function Cgpa() {
               </div>
 
               {semester.courses.length === 0 ? (
-                <p className="text-sm text-ink-muted">No courses yet — add one below.</p>
+                <p className="text-sm text-ink-muted">No courses yet. Add one below.</p>
               ) : (
                 <Table
                   columns={['Code', 'Title', 'Units', 'Grade', 'Counts toward CGPA', '']}
                   rows={semester.courses.map((c) => [
                     c.code,
-                    c.title || '—',
+                    c.title || '',
                     c.units,
                     c.grade,
                     c.counts_toward_cgpa ? 'Yes' : 'No',
@@ -419,7 +419,7 @@ export default function Cgpa() {
             )}
             {!whatIf.error && !whatIf.alreadyMet && !whatIf.achievable && (
               <span className="text-danger">
-                Not achievable — even straight A&rsquo;s on your remaining units won&rsquo;t reach that target.
+                Not achievable. Even straight A&rsquo;s on your remaining units won&rsquo;t reach that target.
               </span>
             )}
             {!whatIf.error && !whatIf.alreadyMet && whatIf.achievable && (

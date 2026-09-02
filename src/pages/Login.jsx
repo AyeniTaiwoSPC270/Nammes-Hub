@@ -58,12 +58,12 @@ export default function Login() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {justCreated && (
           <p className="rounded-sm bg-success-bg px-3 py-2 text-sm text-success">
-            Account created — sign in below.
+            Account created. Sign in below.
           </p>
         )}
         {justReset && (
           <p className="rounded-sm bg-success-bg px-3 py-2 text-sm text-success">
-            Password reset — sign in with your new password.
+            Password reset. Sign in with your new password.
           </p>
         )}
 

@@ -27,7 +27,7 @@ export default function Home() {
         <div className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8">
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">NAMMES Hub</h1>
           <p className="text-lg text-white/90 mb-8 max-w-xl">
-            The digital home of our student society — outlines, events, resources, news and
+            The digital home of our student society: outlines, events, resources, news and
             opportunities, all in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -138,7 +138,7 @@ export default function Home() {
             <EmptyState
               icon="event_busy"
               title="No events yet"
-              description="Check back soon — upcoming workshops, seminars, and gatherings will show up here."
+              description="Check back soon. Upcoming workshops, seminars, and gatherings will show up here."
             />
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
