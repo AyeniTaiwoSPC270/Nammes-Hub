@@ -45,6 +45,14 @@ describe('groupEventsByTime', () => {
     groupEventsByTime(fixture, now)
     expect(fixture.map((e) => e.id)).toEqual(before)
   })
+
+  it('parses ordinal-suffixed dates like "3rd August 2026" so they bucket correctly', () => {
+    const laterNow = new Date('2026-09-03')
+    const ordinalFixture = [{ id: 'f', title: 'Materials Horizon 3.0', date: '3rd August 2026' }]
+    const { upcoming, past } = groupEventsByTime(ordinalFixture, laterNow)
+    expect(past.map((e) => e.id)).toEqual(['f'])
+    expect(upcoming).toEqual([])
+  })
 })
 
 describe('getEventById', () => {

@@ -11,7 +11,11 @@ function EventCard({ event }) {
       to={`/events/${event.id}`}
       className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
     >
-      {event.image_url && <img src={event.image_url} alt="" className="h-48 w-full object-cover" />}
+      {event.image_url && (
+        <div className="h-48 w-full shrink-0 overflow-hidden bg-surface-low">
+          <img src={event.image_url} alt="" className="h-full w-full object-cover object-top" />
+        </div>
+      )}
       <div className="flex flex-grow flex-col gap-2 p-6">
         <div className="flex items-center justify-between gap-3">
           {event.meta && <span className="text-sm text-ink-muted">{event.meta}</span>}
@@ -21,7 +25,7 @@ function EventCard({ event }) {
           </div>
         </div>
         <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
-        <p className="flex-grow text-base leading-relaxed text-ink">{event.description}</p>
+        <p className="flex-grow line-clamp-3 text-base leading-relaxed text-ink">{event.description}</p>
       </div>
     </Link>
   )
