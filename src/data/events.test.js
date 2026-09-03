@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupEventsByTime } from './events'
+import { groupEventsByTime, getEventById } from './events'
 
 const now = new Date('2026-06-15')
 
@@ -44,5 +44,14 @@ describe('groupEventsByTime', () => {
     const before = fixture.map((e) => e.id)
     groupEventsByTime(fixture, now)
     expect(fixture.map((e) => e.id)).toEqual(before)
+  })
+})
+
+describe('getEventById', () => {
+  it('finds an event by id', () => {
+    expect(getEventById(fixture, 'b').title).toBe('Next seminar')
+  })
+  it('returns undefined for an unknown id', () => {
+    expect(getEventById(fixture, 'does-not-exist')).toBeUndefined()
   })
 })

@@ -9,6 +9,10 @@ export function useEventsQuery() {
   return useQuery({ queryKey: ['events'], queryFn: fetchEvents })
 }
 
+export function getEventById(list, id) {
+  return list.find((e) => String(e.id) === id)
+}
+
 export function groupEventsByTime(list, now = new Date()) {
   const upcoming = []
   const past = []
