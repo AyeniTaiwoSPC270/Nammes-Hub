@@ -39,7 +39,7 @@ export default function Footer() {
             NAMMES Hub
           </span>
           <p className="mt-3 text-sm leading-relaxed">
-            Nigerian Association of Materials and Metallurgical Engineering Students
+            National Association of Metallurgical and Material Engineering Students, University of Lagos Chapter
           </p>
         </div>
 
