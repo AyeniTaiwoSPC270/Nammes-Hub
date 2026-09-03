@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
@@ -6,7 +7,10 @@ import { useEventsQuery, groupEventsByTime } from '../data/events'
 
 function EventCard({ event }) {
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md">
+    <Link
+      to={`/events/${event.id}`}
+      className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+    >
       {event.image_url && <img src={event.image_url} alt="" className="h-48 w-full object-cover" />}
       <div className="flex flex-grow flex-col gap-2 p-6">
         <div className="flex items-center justify-between gap-3">
@@ -19,7 +23,7 @@ function EventCard({ event }) {
         <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
         <p className="flex-grow text-base leading-relaxed text-ink">{event.description}</p>
       </div>
-    </article>
+    </Link>
   )
 }
 
