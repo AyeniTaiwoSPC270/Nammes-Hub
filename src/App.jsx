@@ -11,6 +11,8 @@ const Outlines = lazy(() => import('./pages/Outlines'))
 const OutlineLevel = lazy(() => import('./pages/outlines/OutlineLevel'))
 const OutlineCourses = lazy(() => import('./pages/outlines/OutlineCourses'))
 const OutlineDetail = lazy(() => import('./pages/outlines/OutlineDetail'))
+const Timetable = lazy(() => import('./pages/Timetable'))
+const TimetableLevel = lazy(() => import('./pages/timetable/TimetableLevel'))
 const Events = lazy(() => import('./pages/Events'))
 const EventDetail = lazy(() => import('./pages/EventDetail'))
 const Resources = lazy(() => import('./pages/Resources'))
@@ -45,6 +47,8 @@ export default function App() {
           <Route path="outlines/:level" element={<OutlineLevel />} />
           <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
           <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
+          <Route path="timetable" element={<Timetable />} />
+          <Route path="timetable/:level" element={<TimetableLevel />} />
           <Route path="cgpa" element={<Cgpa />} />
           <Route path="events" element={<Events />} />
           <Route path="events/:id" element={<EventDetail />} />

@@ -29,6 +29,7 @@ export function buildTimetablePdfRows(rows, type) {
     r.title,
     r.venue,
     r.lecturer ?? '',
+    r.notes ?? '',
   ])
 }
 
@@ -44,7 +45,7 @@ export function downloadTimetablePdf({ level, semester, type, rows }) {
 
   autoTable(doc, {
     startY: 30,
-    head: [[type === 'exam' ? 'Date' : 'Day', 'Time', 'Code', 'Course', 'Venue', 'Lecturer']],
+    head: [[type === 'exam' ? 'Date' : 'Day', 'Time', 'Code', 'Course', 'Venue', 'Lecturer', 'Notes']],
     body: buildTimetablePdfRows(rows, type),
     headStyles: { fillColor: [20, 83, 45] },
     styles: { fontSize: 9 },

@@ -61,10 +61,11 @@ describe('buildTimetablePdfRows', () => {
         title: 'Intro to Materials',
         venue: 'LT1',
         lecturer: 'Dr. Ade',
+        notes: 'Practical Lab',
       },
     ]
     expect(buildTimetablePdfRows(rows, 'class')).toEqual([
-      ['Monday', '9:00 AM - 10:00 AM', 'MME 101', 'Intro to Materials', 'LT1', 'Dr. Ade'],
+      ['Monday', '9:00 AM - 10:00 AM', 'MME 101', 'Intro to Materials', 'LT1', 'Dr. Ade', 'Practical Lab'],
     ])
   })
 
@@ -78,10 +79,11 @@ describe('buildTimetablePdfRows', () => {
         title: 'Intro to Materials',
         venue: 'Main Hall',
         lecturer: null,
+        notes: null,
       },
     ]
     expect(buildTimetablePdfRows(rows, 'exam')).toEqual([
-      ['2026-05-08', '9:00 AM - 11:00 AM', 'MME 101', 'Intro to Materials', 'Main Hall', ''],
+      ['2026-05-08', '9:00 AM - 11:00 AM', 'MME 101', 'Intro to Materials', 'Main Hall', '', ''],
     ])
   })
 })

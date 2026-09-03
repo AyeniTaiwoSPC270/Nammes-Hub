@@ -26,5 +26,6 @@ export const timetablesAdminConfig = {
     { field: 'title', label: 'Course title', type: 'text' },
     { field: 'venue', label: 'Venue', type: 'text' },
     { field: 'lecturer', label: 'Lecturer', type: 'text', optional: true },
+    { field: 'notes', label: 'Notes (e.g. Practical Lab, Tutorial)', type: 'text', optional: true },
   ],
 }

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 
 const links = [
   { to: '/outlines', label: 'Outlines' },
+  { to: '/timetable', label: 'Timetable' },
   { to: '/cgpa', label: 'CGPA' },
   { to: '/events', label: 'Events' },
   { to: '/resources', label: 'Resources' },
