@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
@@ -143,12 +143,15 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
               {previewEvents.map((event) => (
-                <article
+                <Link
                   key={event.id}
-                  className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md cursor-pointer transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+                  to={`/events/${event.id}`}
+                  className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
                 >
                   {event.image_url && (
-                    <img src={event.image_url} alt="" className="h-48 w-full object-cover" />
+                    <div className="h-48 w-full shrink-0 overflow-hidden bg-surface-low">
+                      <img src={event.image_url} alt="" className="h-full w-full object-cover object-top" />
+                    </div>
                   )}
                   <div className="flex flex-col gap-2 p-6">
                     <div className="flex items-center gap-1 text-sm text-ink-muted">
@@ -157,7 +160,7 @@ export default function Home() {
                     </div>
                     <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}
