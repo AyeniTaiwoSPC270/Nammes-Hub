@@ -20,6 +20,7 @@ export default function Card({
   image,
   imageVariant = 'icon',
   imageAspect = 'standard',
+  backgroundImage,
   layout = 'column',
   interactive = false,
 }) {
@@ -29,7 +30,7 @@ export default function Card({
   return (
     <div
       className={[
-        'overflow-hidden rounded-lg transition-[transform,box-shadow] duration-150 ease-out',
+        'relative overflow-hidden rounded-lg transition-[transform,box-shadow] duration-150 ease-out',
         isRow ? 'flex flex-col md:flex-row' : 'flex flex-col gap-2',
         tone === 'neutral' ? 'border border-hairline shadow-md' : '',
         interactive ? 'hover:-translate-y-0.5 hover:shadow-md' : '',
@@ -37,6 +38,16 @@ export default function Card({
         className,
       ].join(' ')}
     >
+      {backgroundImage && (
+        <>
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url('${backgroundImage}')` }}
+            aria-hidden="true"
+          />
+          <div className={['absolute inset-0 opacity-80', t.bg].join(' ')} aria-hidden="true" />
+        </>
+      )}
       {image && imageVariant === 'cover' && (
         <img
           src={image.src}
@@ -51,7 +62,7 @@ export default function Card({
       )}
       <div
         className={[
-          'flex flex-col gap-2',
+          'relative z-10 flex flex-col gap-2',
           padded ? 'p-6' : '',
           isRow ? 'w-full justify-center md:w-1/2' : '',
         ].join(' ')}

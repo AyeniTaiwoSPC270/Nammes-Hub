@@ -17,6 +17,7 @@ import Badge from '../components/ui/Badge'
 import Table from '../components/ui/Table'
 import FormField from '../components/ui/FormField'
 import { SkeletonCard, SkeletonTable } from '../components/ui/Skeleton'
+import cgpaBanner from '../assets/banners/cgpa-banner.jpg'
 
 const LEVELS = ['100', '200', '300', '400', '500']
 const SEMESTERS = [1, 2]
@@ -245,7 +246,13 @@ export default function Cgpa() {
         <p className="mt-4 rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
       )}
 
-      <Card className="mt-6" tone="green" eyebrow="Cumulative GPA" title={stats.overallCGPA.toFixed(2)}>
+      <Card
+        className="mt-6"
+        tone="green"
+        backgroundImage={cgpaBanner}
+        eyebrow="Cumulative GPA"
+        title={stats.overallCGPA.toFixed(2)}
+      >
         <Badge tone="new">{stats.classification}</Badge>
         <span className="ml-2 font-mono text-sm text-white/80">{stats.overallUnits} units completed</span>
       </Card>
