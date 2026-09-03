@@ -4,6 +4,7 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
+import eventsBanner from '../assets/banners/events-banner.jpg'
 
 function EventCard({ event }) {
   return (
@@ -52,7 +53,11 @@ export default function Events() {
 
   return (
     <div>
-      <PageBanner title="Events" subtitle="Workshops, seminars, and gatherings from the department." />
+      <PageBanner
+        image={eventsBanner}
+        title="Events"
+        subtitle="Workshops, seminars, and gatherings from the department."
+      />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         {isError && !data ? (
           <ErrorState message="Couldn't load events right now." onRetry={refetch} />
