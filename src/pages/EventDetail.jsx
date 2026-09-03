@@ -8,6 +8,7 @@ import ErrorState from '../components/ui/ErrorState'
 import { SkeletonText } from '../components/ui/Skeleton'
 import GalleryLightbox from '../components/GalleryLightbox'
 import { saveBlob } from '../lib/downloadImage'
+import { linkifyText } from '../lib/linkify'
 import { useEventsQuery, getEventById } from '../data/events'
 import { useEventPhotosQuery } from '../data/eventPhotos'
 
@@ -102,7 +103,7 @@ export default function EventDetail() {
               </>
             )}
           </div>
-          <p className="mt-4 max-w-2xl leading-relaxed text-ink">{event.description}</p>
+          <p className="mt-4 max-w-2xl leading-relaxed text-ink whitespace-pre-line">{linkifyText(event.description)}</p>
         </div>
       ) : (
         <div className="mt-6">
