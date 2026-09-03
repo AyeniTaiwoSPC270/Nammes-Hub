@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { LEVELS } from '../data/resources'
 import PageBanner from '../components/PageBanner'
+import resourcesBanner from '../assets/banners/resources-banner.jpg'
 
 const YEAR_LABELS = {
   100: 'Freshman Year',
@@ -16,6 +17,7 @@ export default function Resources() {
   return (
     <div>
       <PageBanner
+        image={resourcesBanner}
         title="Resources"
         subtitle="Access lecture notes, past questions, and study materials curated for engineering excellence."
       />

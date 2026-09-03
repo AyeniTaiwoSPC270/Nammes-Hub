@@ -4,6 +4,7 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 import { useOpportunitiesQuery, getOpportunities } from '../data/opportunities'
+import opportunitiesBanner from '../assets/banners/opportunities-banner.jpg'
 
 export default function Opportunities() {
   const { data, isLoading, isError, refetch } = useOpportunitiesQuery()
@@ -31,6 +32,7 @@ export default function Opportunities() {
   return (
     <div>
       <PageBanner
+        image={opportunitiesBanner}
         title="Opportunities"
         subtitle="Explore current engineering roles, internships, and research positions."
       />
