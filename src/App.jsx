@@ -32,6 +32,7 @@ const AdminEventGallery = lazy(() => import('./pages/admin/AdminEventGallery'))
 const AdminResources = lazy(() => import('./pages/admin/AdminResources'))
 const AdminExcos = lazy(() => import('./pages/admin/AdminExcos'))
 const AdminOutlines = lazy(() => import('./pages/admin/AdminOutlines'))
+const AdminTimetables = lazy(() => import('./pages/admin/AdminTimetables'))
 
 export default function App() {
   return (
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="admin/resources" element={<AdminResources />} />
             <Route path="admin/excos" element={<AdminExcos />} />
             <Route path="admin/outlines" element={<AdminOutlines />} />
+            <Route path="admin/timetables" element={<AdminTimetables />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>

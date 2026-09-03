@@ -1,18 +1,21 @@
+import { useState } from 'react'
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
-import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourses } from '../../data/outlines'
+import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourses, filterCourses } from '../../data/outlines'
 
 export default function OutlineCourses() {
   const { level, semester } = useParams()
   const navigate = useNavigate()
   const { data, isLoading, isError, refetch } = useOutlinesQuery()
+  const [query, setQuery] = useState('')
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
 
-  const courses = getCourses(data ?? [], level, semester)
+  const allCourses = getCourses(data ?? [], level, semester)
+  const courses = filterCourses(allCourses, query)
   const slug = (code) => code.replace(/\s+/g, '').toLowerCase()
 
   return (
@@ -28,6 +31,21 @@ export default function OutlineCourses() {
         {level} Level &middot; {SEMESTER_LABELS[semester]}
       </h1>
       <p className="mt-2 max-w-2xl text-ink-muted">Select a course to view its detailed outline.</p>
+
+      {!isLoading && !isError && allCourses.length > 0 && (
+        <div className="relative mt-6 max-w-sm">
+          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-ink-muted">
+            search
+          </span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by course code or title"
+            className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-sm text-ink transition-colors focus:border-green-900 focus:outline-none"
+          />
+        </div>
+      )}
 
       <div className="mt-6">
         {isError && !data ? (
@@ -84,6 +102,12 @@ export default function OutlineCourses() {
               </table>
             </div>
           </div>
+        ) : allCourses.length > 0 ? (
+          <EmptyState
+            icon="search_off"
+            title="No matching courses"
+            description={`No course code or title matches "${query}".`}
+          />
         ) : (
           <EmptyState
             icon="menu_book"

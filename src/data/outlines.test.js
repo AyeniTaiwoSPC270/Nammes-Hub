@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getCourses, getCourse } from './outlines'
+import { getCourses, getCourse, filterCourses } from './outlines'
 
 const fixture = [
   {
@@ -78,5 +78,25 @@ describe('getCourse', () => {
 
   it('does not match a course from a different level or semester', () => {
     expect(getCourse(fixture, '200', '1', 'mme101')).toBeUndefined()
+  })
+})
+
+describe('filterCourses', () => {
+  it('returns all courses when the query is blank', () => {
+    expect(filterCourses(fixture, '  ')).toEqual(fixture)
+  })
+
+  it('matches case-insensitively against the course code', () => {
+    const result = filterCourses(fixture, 'mme 1')
+    expect(result.map((c) => c.id)).toEqual(['mme-101', 'mme-102'])
+  })
+
+  it('matches against the course title', () => {
+    const result = filterCourses(fixture, 'physics')
+    expect(result.map((c) => c.id)).toEqual(['phy-cm-101'])
+  })
+
+  it('returns an empty array when nothing matches', () => {
+    expect(filterCourses(fixture, 'nonexistent')).toEqual([])
   })
 })

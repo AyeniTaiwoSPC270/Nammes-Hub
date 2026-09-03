@@ -43,6 +43,13 @@ export const ADMIN_SECTIONS = [
     category: 'Academics',
     description: 'Maintain course outlines by level and semester.',
   },
+  {
+    path: '/admin/timetables',
+    label: 'Timetable',
+    icon: 'calendar_month',
+    category: 'Academics',
+    description: 'Manage class and exam timetables by level.',
+  },
 ]
 
 export default function Admin() {
@@ -51,7 +58,8 @@ export default function Admin() {
       <header className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold text-ink-900">Admin Dashboard</h1>
         <p className="max-w-2xl text-ink-muted">
-          Exco-only workspace for managing news, events, resources, opportunities, excos, and outlines.
+          Exco-only workspace for managing news, events, resources, opportunities, excos, outlines, and
+          timetables.
         </p>
       </header>
 

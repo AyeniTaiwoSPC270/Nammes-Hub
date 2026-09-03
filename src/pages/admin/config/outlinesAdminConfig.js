@@ -20,5 +20,7 @@ export const outlinesAdminConfig = {
     { field: 'description', label: 'Description', type: 'textarea' },
     { field: 'topics', label: 'Topics', type: 'list' },
     { field: 'texts', label: 'Recommended texts', type: 'list', optional: true },
+    { field: 'past_questions_link', label: 'Past exam questions link', type: 'url', optional: true },
+    { field: 'lecturer_notes_link', label: 'Lecturer notes link', type: 'url', optional: true },
   ],
 }

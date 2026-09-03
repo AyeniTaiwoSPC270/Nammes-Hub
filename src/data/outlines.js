@@ -25,3 +25,9 @@ export function getCourse(rows, level, semester, code) {
     (c) => c.code.replace(/\s+/g, '').toLowerCase() === code.toLowerCase()
   )
 }
+
+export function filterCourses(courses, query) {
+  const q = query.trim().toLowerCase()
+  if (!q) return courses
+  return courses.filter((c) => c.code.toLowerCase().includes(q) || c.title.toLowerCase().includes(q))
+}

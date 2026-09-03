@@ -83,6 +83,33 @@ export default function OutlineDetail() {
         </Card>
       )}
 
+      {(course.past_questions_link || course.lecturer_notes_link) && (
+        <Card className="mt-6" eyebrow="Downloads" padded>
+          <div className="flex flex-wrap gap-4">
+            {course.past_questions_link && (
+              <a
+                href={course.past_questions_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
+              >
+                Past exam questions <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </a>
+            )}
+            {course.lecturer_notes_link && (
+              <a
+                href={course.lecturer_notes_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
+              >
+                Lecturer notes <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </a>
+            )}
+          </div>
+        </Card>
+      )}
+
       <div className="mt-8">
         <Button variant="ghost" onClick={() => navigate(`/outlines/${level}/${semester}`)}>
           Back to course list
