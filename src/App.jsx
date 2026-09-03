@@ -12,6 +12,7 @@ const OutlineLevel = lazy(() => import('./pages/outlines/OutlineLevel'))
 const OutlineCourses = lazy(() => import('./pages/outlines/OutlineCourses'))
 const OutlineDetail = lazy(() => import('./pages/outlines/OutlineDetail'))
 const Events = lazy(() => import('./pages/Events'))
+const EventDetail = lazy(() => import('./pages/EventDetail'))
 const Resources = lazy(() => import('./pages/Resources'))
 const ResourceLevel = lazy(() => import('./pages/resources/ResourceLevel'))
 const ResourceList = lazy(() => import('./pages/resources/ResourceList'))
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
           <Route path="cgpa" element={<Cgpa />} />
           <Route path="events" element={<Events />} />
+          <Route path="events/:id" element={<EventDetail />} />
           <Route path="resources" element={<Resources />} />
           <Route path="resources/:level" element={<ResourceLevel />} />
           <Route path="resources/:level/:semester" element={<ResourceList />} />
