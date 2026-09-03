@@ -9,7 +9,9 @@ signed in). That takes you to `/admin`, which links out to six sections:
 
 - **News** — the department news cards shown on the homepage and `/news`.
 - **Opportunities** — the deadline-sorted table on `/opportunities`.
-- **Events** — entries on the `/events` page.
+- **Events** — entries on the `/events` page. Each row also has a **Gallery** icon
+  that opens a page for uploading and removing that event's photo gallery (separate
+  from the single cover photo shown on the events list).
 - **Resources** — drive links / files on `/resources`.
 - **Excos** — the "Meet the Excos" grid on the homepage (name, role, photo, order).
 - **Outlines** — course outline entries on `/outlines`.
@@ -28,9 +30,9 @@ They can now sign in and see the Admin link like any other admin.
 
 ## Image uploads
 
-News photos, Event photos, and Exco photos are capped at **5MB**, image files only. If
-an upload is rejected, it's almost always the file size or the file type — resize/compress
-or pick a `.jpg`/`.png`.
+News photos, Event cover/gallery photos, and Exco photos are capped at **5MB**, image
+files only. If an upload is rejected, it's almost always the file size or the file
+type — resize/compress or pick a `.jpg`/`.png`.
 
 ## If the admin forms don't cover something
 

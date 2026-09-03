@@ -3,7 +3,7 @@ import Table from '../ui/Table'
 import Button from '../ui/Button'
 import EmptyState from '../ui/EmptyState'
 
-export default function AdminResourceList({ config, rows, onEdit, onDelete, emptyLabel }) {
+export default function AdminResourceList({ config, rows, onEdit, onDelete, emptyLabel, renderRowExtra }) {
   const [confirmingId, setConfirmingId] = useState(null)
 
   if (rows.length === 0) {
@@ -20,6 +20,7 @@ export default function AdminResourceList({ config, rows, onEdit, onDelete, empt
   const tableRows = rows.map((row) => [
     ...config.listColumns.map((col) => String(row[col.field] ?? '')),
     <div key={row.id} className="flex justify-center gap-3">
+      {renderRowExtra && renderRowExtra(row)}
       <button
         type="button"
         title="Edit"

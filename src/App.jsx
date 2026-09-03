@@ -27,6 +27,7 @@ const Admin = lazy(() => import('./pages/Admin'))
 const AdminNews = lazy(() => import('./pages/admin/AdminNews'))
 const AdminOpportunities = lazy(() => import('./pages/admin/AdminOpportunities'))
 const AdminEvents = lazy(() => import('./pages/admin/AdminEvents'))
+const AdminEventGallery = lazy(() => import('./pages/admin/AdminEventGallery'))
 const AdminResources = lazy(() => import('./pages/admin/AdminResources'))
 const AdminExcos = lazy(() => import('./pages/admin/AdminExcos'))
 const AdminOutlines = lazy(() => import('./pages/admin/AdminOutlines'))
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="admin/news" element={<AdminNews />} />
             <Route path="admin/opportunities" element={<AdminOpportunities />} />
             <Route path="admin/events" element={<AdminEvents />} />
+            <Route path="admin/events/:id/gallery" element={<AdminEventGallery />} />
             <Route path="admin/resources" element={<AdminResources />} />
             <Route path="admin/excos" element={<AdminExcos />} />
             <Route path="admin/outlines" element={<AdminOutlines />} />

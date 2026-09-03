@@ -18,7 +18,7 @@ async function loadRows(table, orderBy) {
   return data || []
 }
 
-export default function AdminResourceManager({ table, title, config, orderBy }) {
+export default function AdminResourceManager({ table, title, config, orderBy, renderRowExtra }) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const [editing, setEditing] = useState(null) // null = add-new panel, record = editing that row
@@ -208,6 +208,7 @@ export default function AdminResourceManager({ table, title, config, orderBy }) 
               rows={filteredRows}
               onEdit={setEditing}
               onDelete={(row) => deleteMutation.mutate(row)}
+              renderRowExtra={renderRowExtra}
               emptyLabel={
                 config.groupField && activeGroup !== 'All'
                   ? `${activeGroup} ${config.groupLabel ?? ''} ${config.title.toLowerCase()}`.replace(/\s+/g, ' ').trim()
