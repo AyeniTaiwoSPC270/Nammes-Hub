@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { LEVELS } from '../data/outlines'
 import PageBanner from '../components/PageBanner'
+import outlinesBanner from '../assets/banners/outlines-banner.jpg'
 
 export default function Outlines() {
   const navigate = useNavigate()
@@ -8,6 +9,7 @@ export default function Outlines() {
   return (
     <div>
       <PageBanner
+        image={outlinesBanner}
         title="Course Outlines"
         subtitle="Access detailed curriculum structures and requirements."
       />
