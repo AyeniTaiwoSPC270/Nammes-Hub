@@ -42,6 +42,8 @@ const AdminTimetables = lazy(() => import('./pages/admin/AdminTimetables'))
 const AdminForms = lazy(() => import('./pages/admin/AdminForms'))
 const AdminFormEditor = lazy(() => import('./pages/admin/AdminFormEditor'))
 const AdminFormResponses = lazy(() => import('./pages/admin/AdminFormResponses'))
+const AdminAwards = lazy(() => import('./pages/admin/AdminAwards'))
+const AdminAwardSeason = lazy(() => import('./pages/admin/AdminAwardSeason'))
 
 export default function App() {
   return (
@@ -87,6 +89,9 @@ export default function App() {
             <Route path="admin/forms/new" element={<AdminFormEditor />} />
             <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
             <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
+            <Route path="admin/awards" element={<AdminAwards />} />
+            <Route path="admin/awards/new" element={<AdminAwardSeason />} />
+            <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>

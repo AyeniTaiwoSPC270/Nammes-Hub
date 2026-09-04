@@ -66,6 +66,13 @@ export const ADMIN_SECTIONS = [
     category: 'Engagement',
     description: 'Build forms and review responses — RSVPs, surveys, applications.',
   },
+  {
+    path: '/admin/awards',
+    label: 'Awards',
+    icon: 'how_to_vote',
+    category: 'Engagement',
+    description: 'Run nominate, curate, vote, and reveal for department awards.',
+  },
 ]
 
 export default function Admin() {
