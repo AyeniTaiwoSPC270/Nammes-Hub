@@ -33,7 +33,7 @@ export function buildTimetablePdfRows(rows, type) {
   ])
 }
 
-const COLOR = {
+export const COLOR = {
   forest: [11, 36, 23],
   forestAccent: [18, 122, 62],
   forestLight: [226, 247, 234],
@@ -51,12 +51,12 @@ function hoursBetween(start, end) {
   return (eh * 60 + em - (sh * 60 + sm)) / 60
 }
 
-function academicSession(date = new Date()) {
+export function academicSession(date = new Date()) {
   const year = date.getFullYear()
   return date.getMonth() >= 8 ? `${year}/${year + 1}` : `${year - 1}/${year}`
 }
 
-function loadLogoDataUrl() {
+export function loadLogoDataUrl() {
   return new Promise((resolve) => {
     const img = new Image()
     img.onload = () => {

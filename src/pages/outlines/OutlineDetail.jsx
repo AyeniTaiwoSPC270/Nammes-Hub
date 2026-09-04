@@ -9,6 +9,7 @@ import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourse } from '../../data
 import { useApprovedSubmissionsQuery, groupSubmissionsByType } from '../../data/outlineSubmissions'
 import { useAuth } from '../../lib/AuthContext'
 import ContributeForm from '../../components/outlines/ContributeForm'
+import { downloadCourseOutlinePdf } from '../../lib/outlinePdf'
 
 export default function OutlineDetail() {
   const { level, semester, code } = useParams()
@@ -63,12 +64,20 @@ export default function OutlineDetail() {
         ]}
       />
 
-      <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
-        {course.code} &middot; {course.units} unit{course.units === 1 ? '' : 's'}
-      </div>
-      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
-      <div className="mt-2 text-sm text-ink-muted">
-        Lecturer: {course.lecturer} &middot; Updated {course.updated}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
+            {course.code} &middot; {course.units} unit{course.units === 1 ? '' : 's'}
+          </div>
+          <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
+          <div className="mt-2 text-sm text-ink-muted">
+            Lecturer: {course.lecturer} &middot; Updated {course.updated}
+          </div>
+        </div>
+        <Button variant="accent" size="sm" onClick={() => downloadCourseOutlinePdf(course)}>
+          <span className="material-symbols-outlined text-base">download</span>
+          Download PDF
+        </Button>
       </div>
 
       <p className="mt-6 max-w-2xl leading-relaxed text-ink">{course.description}</p>

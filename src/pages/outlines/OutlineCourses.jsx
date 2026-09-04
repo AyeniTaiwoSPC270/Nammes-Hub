@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
+import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourses, filterCourses } from '../../data/outlines'
+import { downloadCourseOutlinesPdf } from '../../lib/outlinePdf'
 
 export default function OutlineCourses() {
   const { level, semester } = useParams()
@@ -27,10 +29,24 @@ export default function OutlineCourses() {
           { label: SEMESTER_LABELS[semester] },
         ]}
       />
-      <h1 className="text-3xl font-bold text-ink-900 mt-2">
-        {level} Level &middot; {SEMESTER_LABELS[semester]}
-      </h1>
-      <p className="mt-2 max-w-2xl text-ink-muted">Select a course to view its detailed outline.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-ink-900 mt-2">
+            {level} Level &middot; {SEMESTER_LABELS[semester]}
+          </h1>
+          <p className="mt-2 max-w-2xl text-ink-muted">Select a course to view its detailed outline.</p>
+        </div>
+        {allCourses.length > 0 && (
+          <Button
+            variant="accent"
+            size="sm"
+            onClick={() => downloadCourseOutlinesPdf({ level, semester, courses: allCourses })}
+          >
+            <span className="material-symbols-outlined text-base">download</span>
+            Download all as PDF
+          </Button>
+        )}
+      </div>
 
       {!isLoading && !isError && allCourses.length > 0 && (
         <div className="relative mt-6 max-w-sm">
