@@ -50,16 +50,18 @@ export default function Card({
         </>
       )}
       {image && imageVariant === 'cover' && (
-        <img
-          src={image.src}
-          alt=""
-          aria-hidden="true"
+        <div
           className={
             isRow
-              ? 'h-64 w-full object-cover md:h-auto md:w-1/2'
-              : ['w-full rounded-t-lg object-cover', imageAspects[imageAspect] || imageAspects.standard].join(' ')
+              ? 'flex h-64 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low md:h-auto md:w-1/2'
+              : [
+                  'flex w-full items-center justify-center overflow-hidden rounded-t-lg bg-surface-low',
+                  imageAspects[imageAspect] || imageAspects.standard,
+                ].join(' ')
           }
-        />
+        >
+          <img src={image.src} alt="" aria-hidden="true" className="h-full w-full object-contain" />
+        </div>
       )}
       <div
         className={[
