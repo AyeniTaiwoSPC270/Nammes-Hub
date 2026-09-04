@@ -22,6 +22,7 @@ const ResourceList = lazy(() => import('./pages/resources/ResourceList'))
 const News = lazy(() => import('./pages/News'))
 const NewsDetail = lazy(() => import('./pages/NewsDetail'))
 const Opportunities = lazy(() => import('./pages/Opportunities'))
+const Forms = lazy(() => import('./pages/Forms'))
 const Cgpa = lazy(() => import('./pages/Cgpa'))
 const Login = lazy(() => import('./pages/Login'))
 const Signup = lazy(() => import('./pages/Signup'))
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="news" element={<News />} />
           <Route path="news/:id" element={<NewsDetail />} />
           <Route path="opportunities" element={<Opportunities />} />
+          <Route path="forms" element={<Forms />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
