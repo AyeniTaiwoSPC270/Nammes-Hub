@@ -5,7 +5,7 @@ Quick reference for maintaining the site without touching code.
 ## Where the admin area is
 
 Sign in at `/login`, then click **Admin** in the navbar (it only shows up once you're
-signed in). That takes you to `/admin`, which links out to six sections:
+signed in). That takes you to `/admin`, which links out to seven sections:
 
 - **News** — the department news cards shown on the homepage and `/news`.
 - **Opportunities** — the deadline-sorted table on `/opportunities`.
@@ -15,6 +15,8 @@ signed in). That takes you to `/admin`, which links out to six sections:
 - **Resources** — drive links / files on `/resources`.
 - **Excos** — the "Meet the Excos" grid on the homepage (name, role, photo, order).
 - **Outlines** — course outline entries on `/outlines`.
+- **Submissions** — student-contributed past questions/notes waiting for approval
+  before they show up on a course's outline page.
 
 Each section is add / edit / delete — no code involved. Use "← Back to Admin" at the
 top of any section to return to the section list.
@@ -33,6 +35,13 @@ They can now sign in and see the Admin link like any other admin.
 News photos, Event cover/gallery photos, and Exco photos are capped at **5MB**, image
 files only. If an upload is rejected, it's almost always the file size or the file
 type — resize/compress or pick a `.jpg`/`.png`.
+
+## Outline contribution uploads
+
+Students can attach a file (PDF/JPG/PNG, up to **10MB**) or paste a link when
+contributing a past question or notes to a course outline. Submissions start as
+**pending** and won't be visible to other students until approved from
+**Admin → Submissions**.
 
 ## If the admin forms don't cover something
 
