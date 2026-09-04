@@ -64,23 +64,19 @@ respondent_email text,                           -- denormalized for the admin t
 answers jsonb not null,                          -- { "<question_id>": value }
 submitted_at timestamptz not null default now(),
 updated_at timestamptz not null default now()
-
--- partial unique index — only constrains identified respondents, never anonymous ones
-create unique index one_response_per_person on form_responses (form_id, respondent_id)
-  where respondent_id is not null;
 ```
 
 `answers` is a single JSONB blob keyed by question id rather than a normalized per-answer table. This app's convention for anything stats/chart-shaped (`chartMath.js`) is to fetch rows and compute in JS rather than push aggregation into SQL, and at department scale (hundreds of responses, not millions) that holds for the response summary view too. One insert per submission; table/individual views read the row directly; summary stats are computed client-side by iterating responses per question. Revisit only if response volume or query needs change materially.
 
 File upload answers store a Storage URL, same pattern as `outline-attachments`: new bucket `form-uploads`, objects written to `${form_id}/${timestamp}-${filename}` (uploaded before the response row exists, so it can't key off the response id), public read.
 
-The `one_response_per_person` unique constraint is created as a partial index (`where respondent_id is not null`) so it only bites when there's a stable identity to key on; anonymous responses (`respondent_id is null`) are never constrained by it.
+**`one_response_per_person` is enforced inside the RLS insert policy, not a table-level unique index.** A static unique index on `(form_id, respondent_id)` can't see another table's per-row flag, so it would incorrectly block a second submission even on a `require_signin = true` form where the admin left `one_response_per_person` off (a valid combination — e.g. a suggestion box that requires sign-in but allows repeat posts). The insert policy instead adds a `not exists` check against `form_responses` scoped to `forms.one_response_per_person = true`, so the limit only applies to forms that actually opted into it. See the RLS section below for the exact policy.
 
 ### RLS
 
 - `forms`, `form_questions`: public `select` (needed for `/forms` and the fill-out page); `insert`/`update`/`delete` restricted to rows in the existing `admins` table — same pattern as every other admin-managed table in this app.
 - `form_responses`:
-  - `insert`: allowed if the form's `require_signin = false` (any visitor, `respondent_id` left null), or if `require_signin = true` and `auth.uid() = respondent_id`. Enforced via a policy that joins back to `forms` on `form_id`.
+  - `insert`: allowed if the form's `require_signin = false` (any visitor, `respondent_id` left null), or if `require_signin = true` and `auth.uid() = respondent_id` — **and**, only when the form's `one_response_per_person = true`, no existing row already exists for that `(form_id, respondent_id)` pair. Enforced via a policy that joins back to `forms` on `form_id` plus a `not exists` self-join on `form_responses`.
   - `select`/`update` own response: `auth.uid() = respondent_id`; `update` additionally requires the form's `allow_edit_after_submit = true` and `is_accepting_responses = true` (checked in the policy, not just client-side).
   - `select` all responses for a form: `admins` only.
   - No `delete` policy for respondents (admins only, via the `admins` check) — consistent with how `outline_submissions` handles deletion.
