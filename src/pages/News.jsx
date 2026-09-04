@@ -76,11 +76,9 @@ export default function News() {
               className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow md:flex-row"
             >
               {featured.image_url && (
-                <img
-                  src={featured.image_url}
-                  alt=""
-                  className="h-64 w-full object-cover md:h-auto md:w-1/2"
-                />
+                <div className="flex h-64 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low md:h-auto md:w-1/2">
+                  <img src={featured.image_url} alt="" className="h-full w-full object-contain" />
+                </div>
               )}
               <div className="flex w-full flex-col justify-center gap-2 p-6 md:w-1/2">
                 <div className="flex items-center gap-2">
@@ -103,7 +101,11 @@ export default function News() {
                   to={`/news/${item.id}`}
                   className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow"
                 >
-                  {item.image_url && <img src={item.image_url} alt="" className="h-48 w-full object-cover" />}
+                  {item.image_url && (
+                    <div className="flex h-48 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
+                      <img src={item.image_url} alt="" className="h-full w-full object-contain" />
+                    </div>
+                  )}
                   <div className="flex flex-grow flex-col gap-2 p-6">
                     <div className="flex items-center gap-2">
                       {item.category && (

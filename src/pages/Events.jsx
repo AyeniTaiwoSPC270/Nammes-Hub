@@ -13,8 +13,8 @@ function EventCard({ event }) {
       className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
     >
       {event.image_url && (
-        <div className="h-48 w-full shrink-0 overflow-hidden bg-surface-low">
-          <img src={event.image_url} alt="" className="h-full w-full object-cover object-top" />
+        <div className="flex h-48 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
+          <img src={event.image_url} alt="" className="h-full w-full object-contain" />
         </div>
       )}
       <div className="flex flex-grow flex-col gap-2 p-6">
