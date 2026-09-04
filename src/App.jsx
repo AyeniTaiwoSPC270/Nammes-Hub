@@ -45,6 +45,7 @@ const AdminFormResponses = lazy(() => import('./pages/admin/AdminFormResponses')
 const AdminAwards = lazy(() => import('./pages/admin/AdminAwards'))
 const AdminAwardSeason = lazy(() => import('./pages/admin/AdminAwardSeason'))
 const AdminAwardCurate = lazy(() => import('./pages/admin/AdminAwardCurate'))
+const AdminAwardResults = lazy(() => import('./pages/admin/AdminAwardResults'))
 
 export default function App() {
   return (
@@ -94,6 +95,7 @@ export default function App() {
             <Route path="admin/awards/new" element={<AdminAwardSeason />} />
             <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
             <Route path="admin/awards/:seasonId/categories/:categoryId/curate" element={<AdminAwardCurate />} />
+            <Route path="admin/awards/:seasonId/results" element={<AdminAwardResults />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>
