@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { supabase } from '../lib/supabaseClient'
+import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
+import Badge from './ui/Badge'
 
 const links = [
   { to: '/outlines', label: 'Outlines' },
@@ -28,6 +30,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { user, loading } = useAuth()
   const navigate = useNavigate()
+  const pendingCountQuery = usePendingSubmissionsCountQuery(Boolean(user))
+  const pendingCount = pendingCountQuery.data ?? 0
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -58,8 +62,9 @@ export default function Navbar() {
                 <span className="max-w-[16ch] truncate text-sm text-ink-muted" title={user.email}>
                   {user.email}
                 </span>
-                <NavLink to="/admin" className={authLinkClass}>
+                <NavLink to="/admin" className={[authLinkClass, 'inline-flex items-center gap-1.5'].join(' ')}>
                   Admin
+                  {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
                 </NavLink>
                 <button type="button" onClick={handleSignOut} className={authLinkClass}>
                   Sign out
@@ -109,9 +114,12 @@ export default function Navbar() {
                 <NavLink
                   to="/admin"
                   onClick={() => setOpen(false)}
-                  className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
+                  className={({ isActive }) =>
+                    [navLinkClass({ isActive }), 'px-4 py-3 inline-flex items-center gap-1.5'].join(' ')
+                  }
                 >
                   Admin
+                  {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
                 </NavLink>
                 <button
                   type="button"

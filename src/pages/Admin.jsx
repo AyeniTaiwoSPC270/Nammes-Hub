@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
+import Badge from '../components/ui/Badge'
 
 export const ADMIN_SECTIONS = [
   {
@@ -60,6 +62,9 @@ export const ADMIN_SECTIONS = [
 ]
 
 export default function Admin() {
+  const pendingCountQuery = usePendingSubmissionsCountQuery()
+  const pendingCount = pendingCountQuery.data ?? 0
+
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <header className="flex flex-col gap-1">
@@ -84,7 +89,12 @@ export default function Admin() {
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              <h2 className="text-xl font-bold text-ink-900">Manage {s.label}</h2>
+              <h2 className="flex items-center gap-2 text-xl font-bold text-ink-900">
+                Manage {s.label}
+                {s.path === '/admin/submissions' && pendingCount > 0 && (
+                  <Badge tone="restricted">{pendingCount} pending</Badge>
+                )}
+              </h2>
               <p className="text-sm text-ink-muted">{s.description}</p>
             </div>
           </Link>

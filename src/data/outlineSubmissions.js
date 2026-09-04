@@ -47,3 +47,20 @@ export async function fetchAllSubmissions() {
 export function useAllSubmissionsQuery() {
   return useQuery({ queryKey: ['outline_submissions', 'all'], queryFn: fetchAllSubmissions })
 }
+
+export async function fetchPendingSubmissionsCount() {
+  const { count, error } = await supabase
+    .from('outline_submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+  if (error) throw error
+  return count ?? 0
+}
+
+export function usePendingSubmissionsCountQuery(enabled = true) {
+  return useQuery({
+    queryKey: ['outline_submissions', 'pending_count'],
+    queryFn: fetchPendingSubmissionsCount,
+    enabled,
+  })
+}
