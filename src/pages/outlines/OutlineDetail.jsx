@@ -1,15 +1,24 @@
-import { useParams, Navigate, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, Navigate, useNavigate, Link } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourse } from '../../data/outlines'
+import { useApprovedSubmissionsQuery, groupSubmissionsByType } from '../../data/outlineSubmissions'
+import { useAuth } from '../../lib/AuthContext'
+import ContributeForm from '../../components/outlines/ContributeForm'
 
 export default function OutlineDetail() {
   const { level, semester, code } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const [contributing, setContributing] = useState(false)
   const { data, isLoading, isError, refetch } = useOutlinesQuery()
+  const course = getCourse(data ?? [], level, semester, code)
+  const submissionsQuery = useApprovedSubmissionsQuery(course?.id)
+  const groups = groupSubmissionsByType(submissionsQuery.data ?? [])
 
   if (!LEVELS.includes(level) || !SEMESTER_LABELS[semester]) return <Navigate to="/outlines" replace />
 
@@ -41,7 +50,6 @@ export default function OutlineDetail() {
     )
   }
 
-  const course = getCourse(data ?? [], level, semester, code)
   if (!course) return <Navigate to={`/outlines/${level}/${semester}`} replace />
 
   return (
@@ -109,6 +117,63 @@ export default function OutlineDetail() {
           </div>
         </Card>
       )}
+
+      <Card className="mt-6" eyebrow="Community contributions" padded>
+        <div className="flex flex-col gap-4">
+          {!user ? (
+            <p className="text-sm text-ink-muted">
+              <Link
+                to="/login"
+                className="font-semibold text-green-900 no-underline hover:text-orange-500 hover:underline"
+              >
+                Sign in
+              </Link>{' '}
+              to contribute a past question, notes, or other material for this course.
+            </p>
+          ) : contributing ? (
+            <ContributeForm outlineId={course.id} onSubmitted={() => setContributing(false)} />
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-ink-muted">
+                Have a past question or notes for this course? Share it with other students.
+              </p>
+              <Button variant="secondary" size="sm" onClick={() => setContributing(true)}>
+                Contribute
+              </Button>
+            </div>
+          )}
+
+          {groups.length === 0 ? (
+            <p className="text-sm text-ink-muted">No contributions yet — be the first to add one.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {groups.map((group) => (
+                <div key={group.type}>
+                  <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
+                    {group.type}
+                  </div>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {group.items.map((item) => (
+                      <li key={item.id}>
+                        <a
+                          href={item.file_url || item.external_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-green-900 hover:underline"
+                        >
+                          {item.title}
+                          {item.session ? ` (${item.session})` : ''}
+                          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
 
       <div className="mt-8">
         <Button variant="ghost" onClick={() => navigate(`/outlines/${level}/${semester}`)}>
