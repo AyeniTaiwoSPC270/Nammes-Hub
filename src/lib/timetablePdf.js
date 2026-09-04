@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { DAYS, SEMESTER_LABELS } from '../data/timetables'
+import { PUBLIC_SANS_REGULAR, PUBLIC_SANS_BOLD } from '../assets/fonts/publicSans'
 
 export function formatTimeLabel(time) {
   if (!time) return ''
@@ -56,6 +57,13 @@ export function academicSession(date = new Date()) {
   return date.getMonth() >= 8 ? `${year}/${year + 1}` : `${year - 1}/${year}`
 }
 
+export function registerPublicSans(doc) {
+  doc.addFileToVFS('PublicSans-Regular.ttf', PUBLIC_SANS_REGULAR)
+  doc.addFont('PublicSans-Regular.ttf', 'PublicSans', 'normal')
+  doc.addFileToVFS('PublicSans-Bold.ttf', PUBLIC_SANS_BOLD)
+  doc.addFont('PublicSans-Bold.ttf', 'PublicSans', 'bold')
+}
+
 export function loadLogoDataUrl() {
   return new Promise((resolve) => {
     const img = new Image()
@@ -74,6 +82,7 @@ export function loadLogoDataUrl() {
 
 export async function downloadTimetablePdf({ level, semester, type, rows }) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  registerPublicSans(doc)
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 16
@@ -99,19 +108,19 @@ export async function downloadTimetablePdf({ level, semester, type, rows }) {
   const logoHeight = 6
   const logoWidth = logo ? logoHeight * logo.ratio : 0
   if (logo) doc.addImage(logo.dataUrl, 'PNG', pageWidth - margin - logoWidth, y - 5, logoWidth, logoHeight)
-  doc.setFont('times', 'bold')
+  doc.setFont('PublicSans', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(...COLOR.forest)
   doc.text('NAMMES Hub', pageWidth - margin - logoWidth - 2, y, { align: 'right' })
 
   y += 8
-  doc.setFont('times', 'bold')
+  doc.setFont('PublicSans', 'bold')
   doc.setFontSize(24)
   doc.setTextColor(...COLOR.forest)
   doc.text(`${level} Level Timetable`, margin, y)
 
   y += 5
-  doc.setFont('helvetica', 'normal')
+  doc.setFont('PublicSans', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...COLOR.mutedInk)
   doc.text('NAMMES Hub — Department Timetable', margin, y)
@@ -143,7 +152,7 @@ export async function downloadTimetablePdf({ level, semester, type, rows }) {
     doc.setFontSize(6.5)
     doc.setTextColor(...COLOR.mutedInk)
     doc.text(stat.label, x + 2.5, y + 5)
-    doc.setFont('times', 'bold')
+    doc.setFont('PublicSans', 'bold')
     doc.setFontSize(10.5)
     doc.setTextColor(...COLOR.forest)
     doc.text(stat.value, x + 2.5, y + 11)
@@ -166,7 +175,7 @@ export async function downloadTimetablePdf({ level, semester, type, rows }) {
     margin: { left: margin, right: margin, bottom: 16 },
     head: [[type === 'exam' ? 'Date' : 'Day', 'Time', 'Code', 'Course Title', 'Venue', type === 'exam' ? 'Invigilator' : 'Lecturer', 'Notes']],
     body: buildTimetablePdfRows(rows, type),
-    styles: { font: 'helvetica', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
+    styles: { font: 'PublicSans', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
     headStyles: { fillColor: COLOR.forestLight, textColor: COLOR.forest, font: 'courier', fontStyle: 'bold', fontSize: 7.5 },
     alternateRowStyles: { fillColor: COLOR.stone },
     columnStyles: {
@@ -191,7 +200,7 @@ export async function downloadTimetablePdf({ level, semester, type, rows }) {
       const footerY = pageHeight - 12
       doc.setDrawColor(...COLOR.hairline)
       doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont('PublicSans', 'normal')
       doc.setFontSize(8)
       doc.setTextColor(...COLOR.mutedInk)
       doc.text('University of Lagos · Faculty of Engineering', margin, footerY)

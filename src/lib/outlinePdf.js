@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { COLOR, loadLogoDataUrl, academicSession } from './timetablePdf'
+import { COLOR, loadLogoDataUrl, academicSession, registerPublicSans } from './timetablePdf'
 import { SEMESTER_LABELS } from '../data/outlines'
 
 function drawChrome(doc, ctx) {
@@ -9,7 +9,7 @@ function drawChrome(doc, ctx) {
   const footerY = ctx.pageHeight - 12
   doc.setDrawColor(...COLOR.hairline)
   doc.line(ctx.margin, footerY - 5, ctx.pageWidth - ctx.margin, footerY - 5)
-  doc.setFont('helvetica', 'normal')
+  doc.setFont('PublicSans', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(...COLOR.mutedInk)
   doc.text('University of Lagos · Faculty of Engineering', ctx.margin, footerY)
@@ -38,7 +38,7 @@ function renderMastheadRow(doc, ctx, eyebrow) {
   const logoHeight = 6
   const logoWidth = logo ? logoHeight * logo.ratio : 0
   if (logo) doc.addImage(logo.dataUrl, 'PNG', ctx.pageWidth - ctx.margin - logoWidth, y - 5, logoWidth, logoHeight)
-  doc.setFont('times', 'bold')
+  doc.setFont('PublicSans', 'bold')
   doc.setFontSize(11)
   doc.setTextColor(...COLOR.forest)
   doc.text('NAMMES Hub', ctx.pageWidth - ctx.margin - logoWidth - 2, y, { align: 'right' })
@@ -58,7 +58,7 @@ function renderStatBoxes(doc, ctx, y, stats) {
     doc.setFontSize(6.5)
     doc.setTextColor(...COLOR.mutedInk)
     doc.text(stat.label, x + 2.5, y + 5)
-    doc.setFont('times', 'bold')
+    doc.setFont('PublicSans', 'bold')
     doc.setFontSize(10.5)
     doc.setTextColor(...COLOR.forest)
     doc.text(stat.value, x + 2.5, y + 11)
@@ -79,7 +79,7 @@ function renderParagraph(doc, ctx, text, y) {
   const lines = doc.splitTextToSize(text, ctx.contentWidth)
   lines.forEach((line) => {
     y = ensureSpace(doc, ctx, y, 4.8)
-    doc.setFont('helvetica', 'normal')
+    doc.setFont('PublicSans', 'normal')
     doc.setFontSize(9.5)
     doc.setTextColor(...COLOR.ink)
     doc.text(line, ctx.margin, y)
@@ -93,7 +93,7 @@ function renderBulletList(doc, ctx, items, y) {
     const lines = doc.splitTextToSize(item, ctx.contentWidth - 5)
     lines.forEach((line, i) => {
       y = ensureSpace(doc, ctx, y, 4.8)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont('PublicSans', 'normal')
       doc.setFontSize(9.5)
       if (i === 0) {
         doc.setTextColor(...COLOR.orange)
@@ -112,7 +112,7 @@ function renderCourseHeader(doc, ctx, course, level, semester) {
   let y = renderMastheadRow(doc, ctx, eyebrow)
 
   y += 8
-  doc.setFont('times', 'bold')
+  doc.setFont('PublicSans', 'bold')
   doc.setFontSize(18)
   doc.setTextColor(...COLOR.forest)
   const titleLines = doc.splitTextToSize(`${course.code} — ${course.title}`, ctx.contentWidth)
@@ -122,7 +122,7 @@ function renderCourseHeader(doc, ctx, course, level, semester) {
   y += titleLines.length * 7
 
   y += 2
-  doc.setFont('helvetica', 'normal')
+  doc.setFont('PublicSans', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...COLOR.mutedInk)
   doc.text(`Lecturer: ${course.lecturer ?? '—'} · Updated ${course.updated ?? '—'}`, ctx.margin, y)
@@ -166,7 +166,7 @@ function renderCourseBody(doc, ctx, course, y) {
     y = renderSectionTitle(doc, ctx, y, 'Downloads')
     links.forEach(([label, url]) => {
       y = ensureSpace(doc, ctx, y, 6)
-      doc.setFont('helvetica', 'bold')
+      doc.setFont('PublicSans', 'bold')
       doc.setFontSize(9.5)
       doc.setTextColor(...COLOR.forestAccent)
       doc.textWithLink(label, ctx.margin, y, { url })
@@ -182,13 +182,13 @@ function renderCoverPage(doc, ctx, { level, semester, courses }) {
   let y = renderMastheadRow(doc, ctx, eyebrow)
 
   y += 8
-  doc.setFont('times', 'bold')
+  doc.setFont('PublicSans', 'bold')
   doc.setFontSize(24)
   doc.setTextColor(...COLOR.forest)
   doc.text(`${level} Level Course Outlines`, ctx.margin, y)
 
   y += 5
-  doc.setFont('helvetica', 'normal')
+  doc.setFont('PublicSans', 'normal')
   doc.setFontSize(9)
   doc.setTextColor(...COLOR.mutedInk)
   doc.text('NAMMES Hub — Department Course Outlines', ctx.margin, y)
@@ -224,7 +224,7 @@ function renderCoverPage(doc, ctx, { level, semester, courses }) {
     margin: { left: ctx.margin, right: ctx.margin, bottom: 16 },
     head: [['Code', 'Course Title', 'Units']],
     body: courses.map((c) => [c.code, c.title, String(c.units)]),
-    styles: { font: 'helvetica', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
+    styles: { font: 'PublicSans', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
     headStyles: { fillColor: COLOR.forestLight, textColor: COLOR.forest, font: 'courier', fontStyle: 'bold', fontSize: 7.5 },
     alternateRowStyles: { fillColor: COLOR.stone },
     columnStyles: {
@@ -245,6 +245,7 @@ function stampFooterRefs(doc, ctx, ref) {
 }
 
 async function makeContext(doc) {
+  registerPublicSans(doc)
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 16
