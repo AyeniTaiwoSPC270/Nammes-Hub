@@ -29,11 +29,11 @@
 **Interfaces:**
 - Produces: tables `forms`, `form_questions`, `form_responses` and storage bucket `form-uploads`, all referenced by column name in every later task's Supabase queries.
 
-- [ ] **Step 1: Confirm with the user before applying**
+- [x] **Step 1: Confirm with the user before applying**
 
 Show the user the full SQL block below and explicitly ask for confirmation before running it — this changes live production schema and is hard to reverse.
 
-- [ ] **Step 2: Apply the SQL**
+- [x] **Step 2: Apply the SQL**
 
 Run the following against the project's Supabase database — via a connected Supabase MCP tool (`execute_sql` / `apply_migration`) if available and the user has approved that path, otherwise paste it into the Supabase Dashboard → SQL Editor and run it there, then confirm with the user that it completed without error.
 
@@ -168,7 +168,7 @@ create policy "form_uploads_delete_admin" on storage.objects for delete using (
 );
 ```
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run this against the same database and confirm all three rows come back:
 
@@ -202,7 +202,7 @@ No commit for this task — nothing in the repo changed.
   - `fetchAllForms(): Promise<Form[]>`, `useAllFormsQuery()`
   - `fetchFormWithQuestions(id): Promise<Form & { questions: Question[] }>`, `useFormQuery(id)`
 
-- [ ] **Step 1: Write the failing test file**
+- [x] **Step 1: Write the failing test file**
 
 Create `src/data/forms.test.js`:
 
@@ -301,12 +301,12 @@ describe('isFormOpen', () => {
 })
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/data/forms.test.js`
 Expected: FAIL — `./forms` has no exported members (the module doesn't exist yet).
 
-- [ ] **Step 3: Implement `src/data/forms.js`**
+- [x] **Step 3: Implement `src/data/forms.js`**
 
 ```js
 import { useQuery } from '@tanstack/react-query'
@@ -409,12 +409,12 @@ export function useFormQuery(id) {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/data/forms.test.js`
 Expected: PASS, all describe blocks green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/data/forms.js src/data/forms.test.js
@@ -441,7 +441,7 @@ git commit -m "feat: add forms data layer (question types, validation, queries)"
   - `collectFileUploadUrls(questions, responses): string[]`
   - `storagePathFromUrl(url, bucket): string | null`
 
-- [ ] **Step 1: Write the failing test file**
+- [x] **Step 1: Write the failing test file**
 
 Create `src/data/formResponses.test.js`:
 
@@ -564,12 +564,12 @@ describe('storagePathFromUrl', () => {
 })
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/data/formResponses.test.js`
 Expected: FAIL — `./formResponses` doesn't exist yet.
 
-- [ ] **Step 3: Implement `src/data/formResponses.js`**
+- [x] **Step 3: Implement `src/data/formResponses.js`**
 
 ```js
 import { useQuery } from '@tanstack/react-query'
@@ -710,12 +710,12 @@ export function storagePathFromUrl(url, bucket) {
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/data/formResponses.test.js`
 Expected: PASS, all describe blocks green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/data/formResponses.js src/data/formResponses.test.js
@@ -735,7 +735,7 @@ git commit -m "feat: add form responses data layer (queries, summary, CSV)"
 - Consumes: `useAllFormsQuery`, `isFormOpen`, `fetchFormWithQuestions` (`../../data/forms`); `useResponseCountsQuery`, `fetchFormResponses`, `collectFileUploadUrls`, `storagePathFromUrl` (`../../data/formResponses`); `supabase`; `useToast`; UI components `Breadcrumbs`, `Button`, `Badge`, `EmptyState`, `ErrorState`, `SkeletonTable`.
 - Produces: route `/admin/forms`, linking to `/admin/forms/new`, `/admin/forms/:id/edit`, `/admin/forms/:id/responses` (built in later tasks).
 
-- [ ] **Step 1: Create `src/pages/admin/AdminForms.jsx`**
+- [x] **Step 1: Create `src/pages/admin/AdminForms.jsx`**
 
 ```jsx
 import { Link } from 'react-router-dom'
@@ -871,7 +871,7 @@ export default function AdminForms() {
 }
 ```
 
-- [ ] **Step 2: Wire the route in `src/App.jsx`**
+- [x] **Step 2: Wire the route in `src/App.jsx`**
 
 Add near the other admin lazy imports:
 
@@ -885,7 +885,7 @@ Add inside the `<Route element={<ProtectedRoute />}>` block, alongside the other
 <Route path="admin/forms" element={<AdminForms />} />
 ```
 
-- [ ] **Step 3: Add the section to `src/pages/Admin.jsx`**
+- [x] **Step 3: Add the section to `src/pages/Admin.jsx`**
 
 Add an entry to the `ADMIN_SECTIONS` array (after the `outlines`/`submissions` entries, before `timetables`, or wherever reads naturally):
 
@@ -899,14 +899,14 @@ Add an entry to the `ADMIN_SECTIONS` array (after the `outlines`/`submissions` e
 },
 ```
 
-- [ ] **Step 4: Manual verification**
+- [x] **Step 4: Manual verification**
 
 Run `npm run dev`, sign in as an admin, and go to `/admin`. Confirm:
 - A "Manage Forms" card appears and links to `/admin/forms`.
 - `/admin/forms` shows the empty state ("No forms yet") since no forms exist yet.
 - "New form" links to `/admin/forms/new` (will 404 until Task 5 — expected at this point).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/pages/admin/AdminForms.jsx src/App.jsx src/pages/Admin.jsx
@@ -926,7 +926,7 @@ git commit -m "feat: add admin forms list page"
 - Consumes: `QUESTION_TYPES`, `useFormQuery`, `validateFormDraft`, `validateQuestions` (`../../data/forms`); `useAuth`, `useToast`, `supabase`; UI components `Breadcrumbs`, `Button`, `FormField`, `ErrorState`.
 - Produces: routes `/admin/forms/new` and `/admin/forms/:id/edit`, both rendered by `AdminFormEditor`. `QuestionEditorCard` props: `{ question, index, total, onChange, onRemove, onMoveUp, onMoveDown }`.
 
-- [ ] **Step 1: Create `src/components/admin/forms/QuestionEditorCard.jsx`**
+- [x] **Step 1: Create `src/components/admin/forms/QuestionEditorCard.jsx`**
 
 ```jsx
 import { QUESTION_TYPES } from '../../../data/forms'
@@ -1064,7 +1064,7 @@ export default function QuestionEditorCard({ question, index, total, onChange, o
 }
 ```
 
-- [ ] **Step 2: Create `src/pages/admin/AdminFormEditor.jsx`**
+- [x] **Step 2: Create `src/pages/admin/AdminFormEditor.jsx`**
 
 ```jsx
 import { useEffect, useState } from 'react'
@@ -1326,7 +1326,7 @@ export default function AdminFormEditor() {
 }
 ```
 
-- [ ] **Step 3: Wire the routes in `src/App.jsx`**
+- [x] **Step 3: Wire the routes in `src/App.jsx`**
 
 Add near the other admin lazy imports:
 
@@ -1341,7 +1341,7 @@ Add inside the `<Route element={<ProtectedRoute />}>` block:
 <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
 ```
 
-- [ ] **Step 4: Manual verification**
+- [x] **Step 4: Manual verification**
 
 Run `npm run dev`, sign in as an admin, go to `/admin/forms/new`. Confirm:
 - You can set a title, add a "Multiple choice" question with two options, add a "Linear scale" question, mark one required.
@@ -1351,7 +1351,7 @@ Run `npm run dev`, sign in as an admin, go to `/admin/forms/new`. Confirm:
 - Going back to `/admin/forms` shows the new form in the list with "Accepting" badge and 0 responses.
 - Editing the form again, removing one question and adding a new one, then saving, reloads with the correct final question set (confirms the update/insert/delete split in `saveQuestions` works, not just create).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/components/admin/forms/QuestionEditorCard.jsx src/pages/admin/AdminFormEditor.jsx src/App.jsx
@@ -1371,7 +1371,7 @@ git commit -m "feat: add form builder (question editor + admin form editor page)
 - Consumes: `useFormsQuery` (`../data/forms`); UI components `Card`, `EmptyState`, `ErrorState`, `SkeletonCard`.
 - Produces: route `/forms`, linking to `/forms/:id` (built in Task 8).
 
-- [ ] **Step 1: Create `src/pages/Forms.jsx`**
+- [x] **Step 1: Create `src/pages/Forms.jsx`**
 
 ```jsx
 import { Link } from 'react-router-dom'
@@ -1427,7 +1427,7 @@ export default function Forms() {
 }
 ```
 
-- [ ] **Step 2: Wire the route in `src/App.jsx`**
+- [x] **Step 2: Wire the route in `src/App.jsx`**
 
 Add near the other lazy imports:
 
@@ -1441,7 +1441,7 @@ Add inside the top-level `<Route element={<Layout />}>` block, alongside `events
 <Route path="forms" element={<Forms />} />
 ```
 
-- [ ] **Step 3: Add the nav link in `src/components/Navbar.jsx`**
+- [x] **Step 3: Add the nav link in `src/components/Navbar.jsx`**
 
 In the `links` array, add an entry after `opportunities` and before `contact`:
 
@@ -1449,14 +1449,14 @@ In the `links` array, add an entry after `opportunities` and before `contact`:
 { to: '/forms', label: 'Forms' },
 ```
 
-- [ ] **Step 4: Manual verification**
+- [x] **Step 4: Manual verification**
 
 Run `npm run dev`. Confirm:
 - "Forms" appears in the desktop nav and the mobile hamburger menu, linking to `/forms`.
 - `/forms` shows the empty state if the only form created so far in Task 5 has `is_accepting_responses` on (it should show up as a card) — toggle it off in the editor and confirm it disappears from `/forms` but the row still exists in `/admin/forms`.
 - Clicking a form card links to `/forms/:id` (will 404 until Task 8 — expected at this point).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/pages/Forms.jsx src/App.jsx src/components/Navbar.jsx
@@ -1474,7 +1474,7 @@ git commit -m "feat: add public forms listing page"
 - Consumes: `supabase` (for file uploads to the `form-uploads` bucket).
 - Produces: `QuestionField` component, props `{ question, value, onChange, error }` — `value`/`onChange` shape depends on `question.type` (string for short_text/paragraph/dropdown/date/time, string|number for linear_scale, array for checkboxes, string URL for file_upload after upload completes). Consumed by `FormDetail.jsx` in Task 8.
 
-- [ ] **Step 1: Create `src/components/forms/QuestionField.jsx`**
+- [x] **Step 1: Create `src/components/forms/QuestionField.jsx`**
 
 ```jsx
 import { useState } from 'react'
@@ -1616,11 +1616,11 @@ export default function QuestionField({ question, value, onChange, error }) {
 }
 ```
 
-- [ ] **Step 2: Manual verification (deferred)**
+- [x] **Step 2: Manual verification (deferred)**
 
 This component has no route of its own — it's exercised end-to-end once `FormDetail.jsx` exists in Task 8. Skip standalone verification here; Task 8's manual verification covers every question type through this component.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/forms/QuestionField.jsx
@@ -1639,7 +1639,7 @@ git commit -m "feat: add question field renderer for the fill-out flow"
 - Consumes: `useFormQuery`, `isFormOpen`, `validateAnswers` (`../data/forms`); `useMyResponseQuery`, `formatAnswerForDisplay` (`../data/formResponses`); `useAuth`, `useToast`, `supabase`; `QuestionField` (Task 7); UI components `Button`, `ErrorState`, `EmptyState`.
 - Produces: route `/forms/:id`.
 
-- [ ] **Step 1: Create `src/pages/FormDetail.jsx`**
+- [x] **Step 1: Create `src/pages/FormDetail.jsx`**
 
 ```jsx
 import { useState } from 'react'
@@ -1787,7 +1787,7 @@ export default function FormDetail() {
 }
 ```
 
-- [ ] **Step 2: Wire the route in `src/App.jsx`**
+- [x] **Step 2: Wire the route in `src/App.jsx`**
 
 Add near the other lazy imports:
 
@@ -1801,7 +1801,7 @@ Add inside the top-level `<Route element={<Layout />}>` block, next to the `form
 <Route path="forms/:id" element={<FormDetail />} />
 ```
 
-- [ ] **Step 3: Manual verification**
+- [x] **Step 3: Manual verification**
 
 Run `npm run dev`. Using the form built in Task 5 (make sure it has at least one question of each type — go back and add short answer, paragraph, multiple choice, checkboxes, dropdown, linear scale, file upload, date, and time questions so every renderer path in `QuestionField` gets exercised), confirm as a signed-out visitor on an open, non-require-signin form:
 - Every question type renders correctly and is fillable, including a file upload that succeeds and shows "File uploaded — click to replace".
@@ -1818,7 +1818,7 @@ Then, with `one_response_per_person` also turned on:
 
 Finally, toggle `is_accepting_responses` off and confirm `/forms/:id` shows the "This form is closed" state instead of erroring or 404ing.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/pages/FormDetail.jsx src/App.jsx
@@ -1837,7 +1837,7 @@ git commit -m "feat: add public form fill-out page"
 - Consumes: `formatAnswerForDisplay` (`../../../data/formResponses`); UI components `Table`, `Button`.
 - Produces: `ResponseTableTab`/`ResponseIndividualTab` components, both with props `{ questions, responses }`. Consumed by `AdminFormResponses.jsx` in Task 11.
 
-- [ ] **Step 1: Create `src/components/admin/forms/ResponseTableTab.jsx`**
+- [x] **Step 1: Create `src/components/admin/forms/ResponseTableTab.jsx`**
 
 ```jsx
 import Table from '../../ui/Table'
@@ -1853,7 +1853,7 @@ export default function ResponseTableTab({ questions, responses }) {
 }
 ```
 
-- [ ] **Step 2: Create `src/components/admin/forms/ResponseIndividualTab.jsx`**
+- [x] **Step 2: Create `src/components/admin/forms/ResponseIndividualTab.jsx`**
 
 ```jsx
 import { useState } from 'react'
@@ -1893,11 +1893,11 @@ export default function ResponseIndividualTab({ questions, responses }) {
 }
 ```
 
-- [ ] **Step 3: Manual verification (deferred)**
+- [x] **Step 3: Manual verification (deferred)**
 
 Neither component has its own route — both are exercised through `AdminFormResponses.jsx` in Task 11, which is where they get verified against real response data.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/admin/forms/ResponseTableTab.jsx src/components/admin/forms/ResponseIndividualTab.jsx
@@ -1917,7 +1917,7 @@ git commit -m "feat: add response table and individual view tabs"
 
 Chart design notes (per the `dataviz` skill): each question's breakdown is a single implicit series (one question's own answer counts), so this uses one hue — the app's existing primary brand color `green-700` (already verified accessible on white per `DESIGN_SYSTEM.md`'s accessibility checklist) — not a multi-hue categorical palette, so the palette validator doesn't apply here (it validates adjacent-hue confusability across a categorical series set, and there's only one hue in play). Bars are thin (`h-2.5`), fully rounded (matching this app's pill aesthetic), on a muted `bg-hairline` track, with the count value direct-labeled at the end of every bar — appropriate here since option counts per question are low-cardinality (typically 2-8), not a dense point cloud where labeling everything would clutter. No legend, since a single series needs none.
 
-- [ ] **Step 1: Create `src/components/admin/forms/ResponseSummaryTab.jsx`**
+- [x] **Step 1: Create `src/components/admin/forms/ResponseSummaryTab.jsx`**
 
 ```jsx
 import { buildResponseSummary } from '../../../data/formResponses'
@@ -1972,11 +1972,11 @@ export default function ResponseSummaryTab({ questions, responses }) {
 }
 ```
 
-- [ ] **Step 2: Manual verification (deferred)**
+- [x] **Step 2: Manual verification (deferred)**
 
 No route of its own — verified in Task 11 against real response data.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/admin/forms/ResponseSummaryTab.jsx
@@ -1995,7 +1995,7 @@ git commit -m "feat: add response summary tab with per-question bar breakdowns"
 - Consumes: `useFormQuery` (`../../data/forms`); `useFormResponsesQuery`, `responsesToCsv` (`../../data/formResponses`); `ResponseSummaryTab`, `ResponseTableTab`, `ResponseIndividualTab` (Tasks 9-10); UI components `Breadcrumbs`, `Button`, `ErrorState`, `EmptyState`, `SkeletonTable`.
 - Produces: route `/admin/forms/:id/responses`.
 
-- [ ] **Step 1: Create `src/pages/admin/AdminFormResponses.jsx`**
+- [x] **Step 1: Create `src/pages/admin/AdminFormResponses.jsx`**
 
 ```jsx
 import { useState } from 'react'
@@ -2102,7 +2102,7 @@ export default function AdminFormResponses() {
 }
 ```
 
-- [ ] **Step 2: Wire the route in `src/App.jsx`**
+- [x] **Step 2: Wire the route in `src/App.jsx`**
 
 Add near the other admin lazy imports:
 
@@ -2116,7 +2116,7 @@ Add inside the `<Route element={<ProtectedRoute />}>` block:
 <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
 ```
 
-- [ ] **Step 3: Manual verification (full end-to-end pass)**
+- [x] **Step 3: Manual verification (full end-to-end pass)**
 
 Run `npm run dev`. Using the multi-question-type form from Task 8 with a handful of submitted responses (submit 2-3 as different users/anonymous, mixing answers):
 
@@ -2126,7 +2126,7 @@ Run `npm run dev`. Using the multi-question-type form from Task 8 with a handful
 - **Export CSV** downloads a file; opening it (in a spreadsheet app or a text editor) shows a header row of "Submitted at" + question labels, one row per response, and a comma/quote-containing answer properly quoted.
 - Deleting the form from `/admin/forms` (Task 4's delete) removes it from the list, and re-checking the Supabase Table Editor confirms `form_questions` and `form_responses` rows are gone (cascade) and any uploaded file's storage object under `form-uploads` is gone too.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/pages/admin/AdminFormResponses.jsx src/App.jsx
