@@ -82,7 +82,7 @@ export default function OutlineDetail() {
 
       <p className="mt-6 max-w-2xl leading-relaxed text-ink">{course.description}</p>
 
-      <Card className="mt-6" eyebrow="Topics covered" padded>
+      <Card className="mt-6" eyebrow="Topics covered" padded clampBody={false}>
         <ul className="list-disc space-y-1.5 pl-5">
           {course.topics.map((topic) => (
             <li key={topic}>{topic}</li>
@@ -91,7 +91,7 @@ export default function OutlineDetail() {
       </Card>
 
       {course.texts?.length > 0 && (
-        <Card className="mt-6" eyebrow="Recommended texts" padded>
+        <Card className="mt-6" eyebrow="Recommended texts" padded clampBody={false}>
           <ul className="list-disc space-y-1.5 pl-5">
             {course.texts.map((text) => (
               <li key={text}>{text}</li>

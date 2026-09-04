@@ -23,6 +23,7 @@ export default function Card({
   backgroundImage,
   layout = 'column',
   interactive = false,
+  clampBody = true,
 }) {
   const t = tones[tone] || tones.neutral
   const isRow = layout === 'row'
@@ -75,7 +76,11 @@ export default function Card({
         )}
         {title && <h3 className={['text-xl font-bold m-0 line-clamp-2', t.title].join(' ')}>{title}</h3>}
         {meta && <div className={['text-sm', t.meta].join(' ')}>{meta}</div>}
-        {children && <div className={['text-base leading-relaxed line-clamp-3', t.body].join(' ')}>{children}</div>}
+        {children && (
+          <div className={['text-base leading-relaxed', clampBody ? 'line-clamp-3' : '', t.body].join(' ')}>
+            {children}
+          </div>
+        )}
       </div>
     </div>
   )
