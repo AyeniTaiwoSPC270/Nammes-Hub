@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import SocialIcons from './SocialIcons'
 
 const linkGroups = [
   {
@@ -22,6 +23,7 @@ const linkGroups = [
     heading: 'Department',
     items: [
       { label: 'CGPA calculator', to: '/cgpa' },
+      { label: 'Contact Us', to: '/contact' },
       { label: 'Sign in', to: '/login' },
     ],
   },
@@ -53,6 +55,7 @@ export default function Footer() {
           <p className="mt-4 text-sm leading-relaxed">
             National Association of Metallurgical and Material Engineering Students, University of Lagos Chapter
           </p>
+          <SocialIcons className="mt-5" />
         </div>
 
         <div className="flex flex-1 flex-wrap justify-between gap-8">

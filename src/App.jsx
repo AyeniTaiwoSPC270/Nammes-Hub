@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 const Home = lazy(() => import('./pages/Home'))
 const Excos = lazy(() => import('./pages/Excos'))
+const Contact = lazy(() => import('./pages/Contact'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Outlines = lazy(() => import('./pages/Outlines'))
 const OutlineLevel = lazy(() => import('./pages/outlines/OutlineLevel'))
@@ -44,6 +45,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="excos" element={<Excos />} />
+          <Route path="contact" element={<Contact />} />
           <Route path="outlines" element={<Outlines />} />
           <Route path="outlines/:level" element={<OutlineLevel />} />
           <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
