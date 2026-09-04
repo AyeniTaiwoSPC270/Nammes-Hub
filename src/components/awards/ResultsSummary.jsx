@@ -23,13 +23,15 @@ export default function ResultsSummary({ categories, nomineesByCategory, votes }
             {winner && (
               <div className="mt-3 flex flex-col gap-3 rounded-lg bg-orange-100 p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
-                  {winner.nominee.photo_url ? (
-                    <img src={winner.nominee.photo_url} alt="" className="h-12 w-12 rounded-full object-cover" />
-                  ) : (
-                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-surface text-ink-muted">
-                      <span className="material-symbols-outlined text-2xl">person</span>
-                    </span>
-                  )}
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-hairline bg-surface">
+                    {winner.nominee.photo_url ? (
+                      <img src={winner.nominee.photo_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-ink-muted">
+                        <span className="material-symbols-outlined text-2xl">person</span>
+                      </span>
+                    )}
+                  </div>
                   <div className="flex flex-col">
                     <span className="w-fit rounded bg-orange-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[.05em] text-white">
                       Winner
@@ -55,13 +57,15 @@ export default function ResultsSummary({ categories, nomineesByCategory, votes }
                 {tally.map(({ nominee, count }, i) => (
                   <div key={nominee.id} className="flex items-center gap-3">
                     <span className="w-4 shrink-0 text-xs font-bold text-ink-muted">{i + 1}</span>
-                    {nominee.photo_url ? (
-                      <img src={nominee.photo_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-                    ) : (
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-low text-ink-muted">
-                        <span className="material-symbols-outlined text-base">person</span>
-                      </span>
-                    )}
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline bg-surface-low">
+                      {nominee.photo_url ? (
+                        <img src={nominee.photo_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-ink-muted">
+                          <span className="material-symbols-outlined text-base">person</span>
+                        </span>
+                      )}
+                    </div>
                     <span className="w-24 shrink-0 truncate text-sm text-ink" title={nominee.name}>{nominee.name}</span>
                     <div className="h-2.5 flex-1 rounded-full bg-hairline">
                       <div className="h-2.5 rounded-full bg-green-700" style={{ width: `${(count / max) * 100}%` }} />
