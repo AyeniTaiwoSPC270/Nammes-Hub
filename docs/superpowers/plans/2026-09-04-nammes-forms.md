@@ -111,16 +111,39 @@ create policy "form_responses_insert" on form_responses for insert with check (
         forms.require_signin = false
         or (forms.require_signin = true and auth.uid() = form_responses.respondent_id)
       )
-      and (
-        forms.one_response_per_person = false
-        or not exists (
-          select 1 from form_responses existing
-          where existing.form_id = form_responses.form_id
-            and existing.respondent_id = form_responses.respondent_id
-        )
-      )
   )
 );
+
+-- one_response_per_person can't live in the policy above as a form_responses
+-- self-subquery — Postgres raises "infinite recursion detected in policy for
+-- relation form_responses" (hit in production, see the design doc). A
+-- SECURITY DEFINER trigger bypasses RLS for its own internal lookup instead.
+create or replace function enforce_one_response_per_person()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_one_per_person boolean;
+begin
+  select one_response_per_person into v_one_per_person from forms where id = new.form_id;
+  if v_one_per_person and new.respondent_id is not null then
+    if exists (
+      select 1 from form_responses
+      where form_id = new.form_id
+        and respondent_id = new.respondent_id
+    ) then
+      raise exception 'You have already responded to this form.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger form_responses_one_per_person
+before insert on form_responses
+for each row execute function enforce_one_response_per_person();
 
 create policy "form_responses_select_own" on form_responses for select using (
   auth.uid() = respondent_id
