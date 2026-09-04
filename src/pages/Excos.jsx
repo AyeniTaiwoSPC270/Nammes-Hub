@@ -66,6 +66,28 @@ export default function Excos() {
                 <div className="flex flex-grow flex-col p-6">
                   <h3 className="mb-1 text-lg font-bold text-ink-900">{x.name || 'Name Surname'}</h3>
                   <p className="text-xs font-bold uppercase tracking-[.05em] text-orange-500">{x.role}</p>
+                  {(x.email || x.phone) && (
+                    <div className="mt-3 flex flex-col gap-1.5 border-t border-hairline pt-3">
+                      {x.email && (
+                        <a
+                          href={`mailto:${x.email}`}
+                          className="flex items-center gap-1.5 text-sm text-ink-muted no-underline hover:text-green-900 hover:underline"
+                        >
+                          <span className="material-symbols-outlined text-base">mail</span>
+                          <span className="truncate">{x.email}</span>
+                        </a>
+                      )}
+                      {x.phone && (
+                        <a
+                          href={`tel:${x.phone}`}
+                          className="flex items-center gap-1.5 text-sm text-ink-muted no-underline hover:text-green-900 hover:underline"
+                        >
+                          <span className="material-symbols-outlined text-base">call</span>
+                          <span className="truncate">{x.phone}</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </article>
             ))}
