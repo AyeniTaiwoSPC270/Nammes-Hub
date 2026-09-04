@@ -6,10 +6,14 @@ import { useToast } from '../lib/ToastContext'
 import { useOwnProfileQuery } from '../data/profiles'
 import { useLatestSeasonQuery } from '../data/awardSeasons'
 import { useMyNominationsQuery, upsertNomination } from '../data/awardNominations'
+import { useNomineesQuery } from '../data/awardNominees'
+import { useMyVotesQuery, useSeasonVotesQuery, submitBallot } from '../data/awardVotes'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import NominationCategoryField from '../components/awards/NominationCategoryField'
+import NomineeOption from '../components/awards/NomineeOption'
+import ResultsSummary from '../components/awards/ResultsSummary'
 
 export default function Awards() {
   const { user, loading: authLoading } = useAuth()
@@ -21,6 +25,11 @@ export default function Awards() {
   const nominationsQuery = useMyNominationsQuery(season?.id, user?.id)
 
   const [drafts, setDrafts] = useState({})
+  const [selections, setSelections] = useState({})
+  const categoryIds = season?.categories.map((c) => c.id) ?? []
+  const nomineesQuery = useNomineesQuery(categoryIds)
+  const myVotesQuery = useMyVotesQuery(season?.id, user?.id)
+  const seasonVotesQuery = useSeasonVotesQuery(season?.phase === 'revealed' ? season.id : undefined)
 
   useEffect(() => {
     if (!nominationsQuery.data) return
@@ -58,6 +67,18 @@ export default function Awards() {
     onError: (error) => toast.error(error.message),
   })
 
+  const voteMutation = useMutation({
+    mutationFn: async () => {
+      const choices = Object.entries(selections).map(([category_id, nominee_id]) => ({ category_id, nominee_id }))
+      await submitBallot(choices)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['award_votes', 'mine', season.id, user.id] })
+      toast.success('Your vote has been recorded — thank you!')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
   if (seasonQuery.isError) {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
@@ -71,6 +92,23 @@ export default function Awards() {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
         <EmptyState icon="how_to_vote" title="No award season yet" description="Check back once an award season is announced." />
+      </div>
+    )
+  }
+
+  if (season.phase === 'revealed') {
+    if (!nomineesQuery.data || !seasonVotesQuery.data) return null
+    const nomineesByCategory = {}
+    categoryIds.forEach((id) => {
+      nomineesByCategory[id] = nomineesQuery.data.filter((n) => n.category_id === id)
+    })
+
+    return (
+      <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
+        <h1 className="text-3xl font-bold text-ink-900">{season.title} — Results</h1>
+        <div className="mt-6">
+          <ResultsSummary categories={season.categories} nomineesByCategory={nomineesByCategory} votes={seasonVotesQuery.data} />
+        </div>
       </div>
     )
   }
@@ -141,5 +179,60 @@ export default function Awards() {
     )
   }
 
-  return null // 'voting' and 'revealed' branches added in Task 11
+  if (season.phase === 'voting') {
+    if (!nomineesQuery.data || !myVotesQuery.data) return null
+
+    if (myVotesQuery.data.length > 0) {
+      return (
+        <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
+          <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+          <EmptyState icon="check_circle" title="You've already voted" description="Thanks for taking part — results will be announced soon." />
+        </div>
+      )
+    }
+
+    const votableCategories = season.categories.filter(
+      (c) => nomineesQuery.data.filter((n) => n.category_id === c.id).length > 0,
+    )
+    const allAnswered = votableCategories.every((c) => selections[c.id])
+
+    return (
+      <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
+        <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+        <p className="mt-2 text-ink-muted">Pick one nominee per category, then submit your whole ballot.</p>
+
+        <div className="mt-6 flex flex-col gap-6">
+          {votableCategories.map((c) => (
+            <div key={c.id}>
+              <h2 className="text-lg font-bold text-ink-900">{c.title}</h2>
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {nomineesQuery.data
+                  .filter((n) => n.category_id === c.id)
+                  .map((n) => (
+                    <NomineeOption
+                      key={n.id}
+                      nominee={n}
+                      selected={selections[c.id] === n.id}
+                      onSelect={() => setSelections((prev) => ({ ...prev, [c.id]: n.id }))}
+                    />
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Button
+          variant="primary"
+          className="mt-6"
+          disabled={!allAnswered}
+          loading={voteMutation.isPending}
+          onClick={() => voteMutation.mutate()}
+        >
+          Submit ballot
+        </Button>
+      </div>
+    )
+  }
+
+  return null
 }
