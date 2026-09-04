@@ -41,6 +41,7 @@ const AdminSubmissions = lazy(() => import('./pages/admin/AdminSubmissions'))
 const AdminTimetables = lazy(() => import('./pages/admin/AdminTimetables'))
 const AdminForms = lazy(() => import('./pages/admin/AdminForms'))
 const AdminFormEditor = lazy(() => import('./pages/admin/AdminFormEditor'))
+const AdminFormResponses = lazy(() => import('./pages/admin/AdminFormResponses'))
 
 export default function App() {
   return (
@@ -85,6 +86,7 @@ export default function App() {
             <Route path="admin/forms" element={<AdminForms />} />
             <Route path="admin/forms/new" element={<AdminFormEditor />} />
             <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
+            <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>
