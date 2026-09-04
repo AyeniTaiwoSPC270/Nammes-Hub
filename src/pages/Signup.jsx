@@ -4,6 +4,7 @@ import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
+import { validateStudentId, isStudentIdTaken } from '../data/profiles'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -25,6 +26,10 @@ export default function Signup() {
     if (!email.endsWith('.edu.ng')) {
       nextErrors.email = 'Use your university email (@unilag.edu.ng)'
     }
+    const studentIdError = validateStudentId(studentId)
+    if (studentIdError) {
+      nextErrors.studentId = studentIdError
+    }
     if (password.length < 8) {
       nextErrors.password = 'Password must be at least 8 characters'
     }
@@ -40,11 +45,18 @@ export default function Signup() {
     setErrors({})
     setBusy(true)
 
+    const taken = await isStudentIdTaken(studentId)
+    if (taken) {
+      setBusy(false)
+      setErrors({ studentId: 'This matric number is already registered to another account.' })
+      return
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: name, student_id: studentId },
+        data: { full_name: name, student_id: studentId.trim() },
         emailRedirectTo: `${window.location.origin}/login?created=1`,
       },
     })
@@ -90,7 +102,8 @@ export default function Signup() {
           label="Student ID"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
-          placeholder="e.g. 190402001"
+          placeholder="e.g. 240406012"
+          error={errors.studentId}
         />
         <FormField
           label="Email"
