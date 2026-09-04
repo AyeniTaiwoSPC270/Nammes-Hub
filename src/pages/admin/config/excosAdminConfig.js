@@ -10,6 +10,8 @@ export const excosAdminConfig = {
     { field: 'role', label: 'Role', type: 'text' },
     { field: 'name', label: 'Name', type: 'text', optional: true },
     { field: 'sort_order', label: 'Display order', type: 'number' },
+    { field: 'email', label: 'Email', type: 'email', optional: true },
+    { field: 'phone', label: 'Phone number', type: 'tel', optional: true },
     { field: 'photo_url', label: 'Photo', type: 'avatar' },
   ],
 }

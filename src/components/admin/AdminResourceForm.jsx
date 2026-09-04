@@ -9,7 +9,7 @@ import { buildFormState, buildPayload } from '../../lib/adminFields'
 // Short, single-line field types can sit two-up in the panel (matching the
 // mockup's paired Category/Date row); the first field and any long-form
 // fields (textarea, list, image types) always take the full row width.
-const SHORT_TYPES = new Set(['text', 'select', 'date', 'number', 'url'])
+const SHORT_TYPES = new Set(['text', 'select', 'date', 'number', 'url', 'email', 'tel'])
 
 function groupFields(fields) {
   const rows = []
