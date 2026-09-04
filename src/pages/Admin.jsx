@@ -59,6 +59,13 @@ export const ADMIN_SECTIONS = [
     category: 'Academics',
     description: 'Manage class and exam timetables by level.',
   },
+  {
+    path: '/admin/forms',
+    label: 'Forms',
+    icon: 'checklist',
+    category: 'Engagement',
+    description: 'Build forms and review responses — RSVPs, surveys, applications.',
+  },
 ]
 
 export default function Admin() {

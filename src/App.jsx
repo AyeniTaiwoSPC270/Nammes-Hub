@@ -37,6 +37,7 @@ const AdminExcos = lazy(() => import('./pages/admin/AdminExcos'))
 const AdminOutlines = lazy(() => import('./pages/admin/AdminOutlines'))
 const AdminSubmissions = lazy(() => import('./pages/admin/AdminSubmissions'))
 const AdminTimetables = lazy(() => import('./pages/admin/AdminTimetables'))
+const AdminForms = lazy(() => import('./pages/admin/AdminForms'))
 
 export default function App() {
   return (
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="admin/outlines" element={<AdminOutlines />} />
             <Route path="admin/submissions" element={<AdminSubmissions />} />
             <Route path="admin/timetables" element={<AdminTimetables />} />
+            <Route path="admin/forms" element={<AdminForms />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>
