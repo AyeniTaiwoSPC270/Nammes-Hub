@@ -11,7 +11,9 @@ import {
   advanceSeasonPhase,
   nextPhase,
   phaseAdvanceLabel,
+  submitSeasonChange,
 } from '../../data/awardSeasons'
+import { useOwnAdminRowQuery } from '../../data/admins'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
@@ -72,6 +74,8 @@ export default function AdminAwardSeason() {
   const toast = useToast()
   const { user } = useAuth()
   const seasonQuery = useSeasonQuery(seasonId)
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRowQuery.data?.is_owner)
 
   const [hydrated, setHydrated] = useState(!seasonId)
   const [title, setTitle] = useState('')
@@ -95,6 +99,11 @@ export default function AdminAwardSeason() {
       const validCategories = categories.filter((c) => c.title.trim())
       if (validCategories.length === 0) throw new Error('Add at least one category.')
 
+      if (!isOwner) {
+        await submitSeasonChange({ seasonId, title: title.trim(), categories: validCategories })
+        return null
+      }
+
       let id = seasonId
       if (id) {
         await updateSeasonTitle(id, title.trim())
@@ -107,9 +116,14 @@ export default function AdminAwardSeason() {
     },
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: ['award_seasons'] })
-      toast.success('Season saved.')
       setFormError('')
-      navigate(`/admin/awards/${id}/edit`, { replace: true })
+      if (id) {
+        toast.success('Season saved.')
+        navigate(`/admin/awards/${id}/edit`, { replace: true })
+      } else {
+        toast.success('Submitted for review.')
+        navigate('/admin/awards', { replace: true })
+      }
     },
     onError: (error) => setFormError(error.message),
   })

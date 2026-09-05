@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
+import { submitChangeRequest } from './changeRequests'
 
 export const AWARD_PHASES = ['nominating', 'curating', 'voting', 'closed', 'revealed']
 
@@ -86,4 +87,17 @@ export async function updateSeasonTitle(id, title) {
 export async function advanceSeasonPhase(id, toPhase) {
   const { error } = await supabase.from('award_seasons').update({ phase: toPhase }).eq('id', id)
   if (error) throw error
+}
+
+export async function submitSeasonChange({ seasonId, title, categories }) {
+  const payload = {
+    title,
+    categories: categories.map((c, i) => ({
+      id: c.id,
+      title: c.title.trim(),
+      description: c.description?.trim() || null,
+      sort_order: i,
+    })),
+  }
+  await submitChangeRequest('award_season', seasonId ? 'update' : 'insert', seasonId ?? null, payload)
 }
