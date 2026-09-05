@@ -1,6 +1,7 @@
 export const eventsAdminConfig = {
   title: 'Events',
   idField: 'title',
+  reviewGated: true,
   listColumns: [
     { field: 'date', label: 'Date' },
     { field: 'title', label: 'Title' },

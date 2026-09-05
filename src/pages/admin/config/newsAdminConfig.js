@@ -3,6 +3,7 @@ import { NEWS_CATEGORIES } from '../../../data/news'
 export const newsAdminConfig = {
   title: 'News',
   idField: 'title',
+  reviewGated: true,
   listColumns: [
     { field: 'date', label: 'Date' },
     { field: 'category', label: 'Category' },
