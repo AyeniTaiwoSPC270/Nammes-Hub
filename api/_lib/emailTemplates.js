@@ -1,3 +1,5 @@
+import juice from 'juice'
+
 export const SITE_URL = 'https://www.nammeshub.com.ng'
 
 export function escapeHtml(value) {
@@ -36,7 +38,7 @@ body{margin:0;padding:48px 16px;background-color:#f6f3f2;font-family:'Public San
 
 export function renderWelcomeEmail({ fullName }) {
   const name = escapeHtml(fullName || 'there')
-  return `<!DOCTYPE html>
+  return juice(`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -74,7 +76,7 @@ ${SHARED_STYLE}
     </div>
   </div>
 </body>
-</html>`
+</html>`)
 }
 
 export function renderNewContentEmail({ eyebrow, title, url }) {
@@ -85,7 +87,7 @@ export function renderNewContentEmail({ eyebrow, title, url }) {
     timeStyle: 'short',
     timeZone: 'Africa/Lagos',
   }).format(new Date())
-  return `<!DOCTYPE html>
+  return juice(`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -123,13 +125,13 @@ ${SHARED_STYLE}
     </div>
   </div>
 </body>
-</html>`
+</html>`)
 }
 
 export function renderBroadcastEmail({ subject, body }) {
   const safeSubject = escapeHtml(subject)
   const contentHtml = textToParagraphs(body)
-  return `<!DOCTYPE html>
+  return juice(`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -164,5 +166,5 @@ ${SHARED_STYLE}
     </div>
   </div>
 </body>
-</html>`
+</html>`)
 }
