@@ -2,7 +2,7 @@ import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
-import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 
 const Home = lazy(() => import('./pages/Home'))
 const About = lazy(() => import('./pages/About'))
@@ -80,7 +80,7 @@ export default function App() {
           <Route path="signup" element={<Signup />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
-          <Route element={<ProtectedRoute />}>
+          <Route element={<AdminRoute />}>
             <Route path="admin" element={<Admin />} />
             <Route path="admin/news" element={<AdminNews />} />
             <Route path="admin/opportunities" element={<AdminOpportunities />} />
