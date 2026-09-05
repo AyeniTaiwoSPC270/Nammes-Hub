@@ -3,10 +3,12 @@ export default function WelcomeMessage() {
     <section className="w-full bg-green-900 py-16">
       <div className="mx-auto max-w-[1200px] px-5 sm:px-6 flex flex-col md:flex-row gap-10 items-center">
         <div className="w-full md:w-1/3 shrink-0">
-          <div className="flex aspect-[3/4] w-full items-center justify-center rounded-lg border-4 border-white/20 bg-white/10 shadow-md">
-            <span className="px-4 text-center text-xs font-semibold uppercase tracking-[.05em] text-white/60">
-              Photo coming soon
-            </span>
+          <div className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-lg border-4 border-white/20 bg-white/10 shadow-md">
+            <img
+              src="https://randomuser.me/api/portraits/women/44.jpg"
+              alt=""
+              className="h-full w-full object-cover"
+            />
           </div>
         </div>
         <div className="w-full md:w-2/3 text-white">
@@ -23,7 +25,7 @@ export default function WelcomeMessage() {
             </p>
           </div>
           <div>
-            <p className="font-bold text-white">[Placeholder] Leader Name</p>
+            <p className="font-bold text-white">Soyemi Eniola</p>
             <p className="text-orange-500">President, NAMMES &middot; 2026/2027 Session</p>
           </div>
         </div>
