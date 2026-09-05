@@ -88,24 +88,30 @@ export default function Home() {
             />
           ) : (
             <>
-              <Card
-                layout="row"
-                tone={featuredNews.tone}
-                eyebrow={featuredNews.category}
-                title={featuredNews.title}
-                image={featuredNews.image_url ? { src: featuredNews.image_url } : undefined}
-                imageVariant="cover"
-                interactive
-                className="mb-5 cursor-pointer"
-              >
-                <span className="line-clamp-3">{featuredNews.body}</span>{' '}
-                {featuredNews.badge_tone && <Badge tone={featuredNews.badge_tone}>{featuredNews.badge_label}</Badge>}
-              </Card>
+              <Link to={`/news/${featuredNews.id}`} className="block">
+                <Card
+                  layout="row"
+                  tone={featuredNews.tone}
+                  eyebrow={featuredNews.category}
+                  title={featuredNews.title}
+                  image={featuredNews.image_url ? { src: featuredNews.image_url } : undefined}
+                  imageVariant="cover"
+                  interactive
+                  className="mb-5 cursor-pointer"
+                >
+                  <span className="line-clamp-3">{featuredNews.body}</span>{' '}
+                  {featuredNews.badge_tone && <Badge tone={featuredNews.badge_tone}>{featuredNews.badge_label}</Badge>}
+                  <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
+                    Read more
+                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </span>
+                </Card>
+              </Link>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {restNews.map((item) => (
+                  <Link key={item.id} to={`/news/${item.id}`} className="block">
                   <Card
-                    key={item.id}
                     tone={item.tone}
                     eyebrow={item.category}
                     title={item.title}
@@ -117,7 +123,12 @@ export default function Home() {
                   >
                     <span className="line-clamp-2">{item.body}</span>{' '}
                     {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
+                    <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
+                      Read more
+                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                    </span>
                   </Card>
+                  </Link>
                 ))}
               </div>
             </>
