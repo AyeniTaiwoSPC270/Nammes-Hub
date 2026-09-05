@@ -52,13 +52,13 @@ export default function Footer() {
           Get the latest updates, events, and opportunities delivered to your inbox.
         </p>
         <iframe
-          src="https://nammeshub.substack.com/embed"
+          src="https://nammescommunique.substack.com/embed"
           width="480"
           height="320"
           style={{ border: '1px solid #EEE', background: 'white' }}
           frameBorder="0"
           scrolling="no"
-          title="Subscribe to the NAMMES Hub newsletter"
+          title="Subscribe to the NAMMES Communique newsletter"
           className="mt-4 max-w-full rounded-lg"
         />
       </div>
