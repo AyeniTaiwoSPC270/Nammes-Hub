@@ -99,7 +99,7 @@ export default function Signup() {
           label="Matric number"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
-          placeholder="e.g. 240406012"
+          placeholder="e.g. 240406012 or 260406009"
           error={errors.studentId}
         />
         <FormField

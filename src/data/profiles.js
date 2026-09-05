@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 
-export const MATRIC_REGEX = /^240406\d{3}$/
+export const MATRIC_REGEX = /^\d{2}0406\d{3}$/
 
 export function validateStudentId(value) {
   const trimmed = (value || '').trim()
   if (!trimmed) return 'Matric number is required.'
-  if (!MATRIC_REGEX.test(trimmed)) return 'Use your department matric number (format: 240406XXX).'
+  if (!MATRIC_REGEX.test(trimmed)) return 'Use your department matric number (format: YY0406XXX, e.g. 240406012).'
   return null
 }
 
