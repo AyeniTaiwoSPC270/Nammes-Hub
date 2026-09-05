@@ -15,6 +15,7 @@ export default function Login() {
 
   const justCreated = searchParams.get('created') === '1'
   const justReset = searchParams.get('reset') === '1'
+  const justDisabled = searchParams.get('disabled') === '1'
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -64,6 +65,11 @@ export default function Login() {
         {justReset && (
           <p className="rounded-sm bg-success-bg px-3 py-2 text-sm text-success">
             Password reset. Sign in with your new password.
+          </p>
+        )}
+        {justDisabled && (
+          <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">
+            This account has been disabled. Contact an admin for help.
           </p>
         )}
 
