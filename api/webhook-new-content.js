@@ -1,8 +1,12 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
+import { renderNewContentEmail, SITE_URL } from './_lib/emailTemplates.js'
 
-const LABEL_BY_TABLE = { news: 'News', events: 'Events' }
+const CONTENT_META = {
+  news: { eyebrow: 'News Update', subjectPrefix: 'News update' },
+  events: { eyebrow: 'New Event', subjectPrefix: 'New event' },
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,8 +14,8 @@ export default async function handler(req, res) {
     return
   }
   const { table, record } = req.body ?? {}
-  const label = LABEL_BY_TABLE[table]
-  if (!label || !record?.title) {
+  const meta = CONTENT_META[table]
+  if (!meta || !record?.title) {
     res.status(400).json({ error: 'Unsupported table or missing record.title' })
     return
   }
@@ -35,7 +39,9 @@ export default async function handler(req, res) {
 
   const emails = recipients.map((r) => r.email)
   const resend = getResendClient()
-  const singular = label.slice(0, -1)
+  const url = `${SITE_URL}/${table}/${record.id}`
+  const html = renderNewContentEmail({ eyebrow: meta.eyebrow, title: record.title, url })
+  const subject = `${meta.subjectPrefix}: ${record.title}`
   let sent = 0
   for (const batch of chunk(emails, 100)) {
     try {
@@ -43,8 +49,8 @@ export default async function handler(req, res) {
         batch.map((email) => ({
           from: FROM_ADDRESS,
           to: email,
-          subject: `New ${singular}: ${record.title}`,
-          html: `<p>A new ${label.toLowerCase()} item was just published on NAMMES Hub: <strong>${record.title}</strong></p><p><a href="https://nammeshub.com.ng/${table}">View it here</a></p>`,
+          subject,
+          html,
         })),
       )
       sent += batch.length

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
+import { renderWelcomeEmail } from './_lib/emailTemplates.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
       from: FROM_ADDRESS,
       to: data.user.email,
       subject: 'Welcome to NAMMES Hub',
-      html: `<p>Hi ${record.full_name || 'there'},</p><p>Welcome to NAMMES Hub — glad to have you.</p>`,
+      html: renderWelcomeEmail({ fullName: record.full_name }),
     })
     res.status(200).json({ sent: true })
   } catch (sendError) {

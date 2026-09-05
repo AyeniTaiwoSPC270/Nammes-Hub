@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
+import { renderBroadcastEmail } from './_lib/emailTemplates.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -46,10 +47,11 @@ export default async function handler(req, res) {
 
   const emails = recipients.map((r) => r.email)
   const resend = getResendClient()
+  const html = renderBroadcastEmail({ subject, body })
   let sentCount = 0
   for (const batch of chunk(emails, 100)) {
     try {
-      await resend.batch.send(batch.map((email) => ({ from: FROM_ADDRESS, to: email, subject, html: body })))
+      await resend.batch.send(batch.map((email) => ({ from: FROM_ADDRESS, to: email, subject, html })))
       sentCount += batch.length
     } catch (sendError) {
       console.error('send-broadcast: batch send failed', sendError)
