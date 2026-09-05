@@ -83,6 +83,13 @@ export const ADMIN_SECTIONS = [
     description: 'Run nominate, curate, vote, and reveal for department awards.',
   },
   {
+    path: '/admin/broadcasts',
+    label: 'Broadcasts',
+    icon: 'campaign',
+    category: 'Engagement',
+    description: 'Send an announcement email to every opted-in user.',
+  },
+  {
     path: '/admin/reviews',
     label: 'Reviews',
     icon: 'fact_check',

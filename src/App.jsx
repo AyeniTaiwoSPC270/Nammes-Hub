@@ -28,6 +28,7 @@ const Forms = lazy(() => import('./pages/Forms'))
 const FormDetail = lazy(() => import('./pages/FormDetail'))
 const Cgpa = lazy(() => import('./pages/Cgpa'))
 const Login = lazy(() => import('./pages/Login'))
+const Account = lazy(() => import('./pages/Account'))
 const Signup = lazy(() => import('./pages/Signup'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
@@ -40,6 +41,7 @@ const AdminResources = lazy(() => import('./pages/admin/AdminResources'))
 const AdminExcos = lazy(() => import('./pages/admin/AdminExcos'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'))
+const AdminBroadcasts = lazy(() => import('./pages/admin/AdminBroadcasts'))
 const AdminOutlines = lazy(() => import('./pages/admin/AdminOutlines'))
 const AdminSubmissions = lazy(() => import('./pages/admin/AdminSubmissions'))
 const AdminTimetables = lazy(() => import('./pages/admin/AdminTimetables'))
@@ -82,6 +84,7 @@ export default function App() {
           <Route path="signup" element={<Signup />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="account" element={<Account />} />
           <Route element={<AdminRoute />}>
             <Route path="admin" element={<Admin />} />
             <Route path="admin/news" element={<AdminNews />} />
@@ -92,6 +95,7 @@ export default function App() {
             <Route path="admin/excos" element={<AdminExcos />} />
             <Route path="admin/users" element={<AdminUsers />} />
             <Route path="admin/reviews" element={<AdminReviews />} />
+            <Route path="admin/broadcasts" element={<AdminBroadcasts />} />
             <Route path="admin/outlines" element={<AdminOutlines />} />
             <Route path="admin/submissions" element={<AdminSubmissions />} />
             <Route path="admin/timetables" element={<AdminTimetables />} />
