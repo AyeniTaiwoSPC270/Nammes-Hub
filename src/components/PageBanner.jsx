@@ -3,7 +3,7 @@ export default function PageBanner({ image, title, subtitle, size = 'md' }) {
     <section
       className={[
         'relative w-full flex items-center justify-center overflow-hidden',
-        size === 'lg' ? 'h-[400px]' : 'h-64 md:h-80',
+        size === 'lg' ? 'min-h-[400px]' : 'min-h-64 md:min-h-80',
       ].join(' ')}
     >
       {image && (

@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <div>
       {/* 1. Hero */}
-      <section className="relative w-full h-[420px] sm:h-[560px] flex items-center overflow-hidden bg-green-900">
+      <section className="relative w-full min-h-[420px] sm:min-h-[560px] flex items-center overflow-hidden bg-green-900">
         <img
           src="https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80"
           alt=""
