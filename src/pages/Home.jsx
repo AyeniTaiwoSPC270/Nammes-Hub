@@ -30,13 +30,14 @@ export default function Home() {
         />
         <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />
         <div className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8">
-          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">NAMMES Hub</h1>
+          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">
+            The Nigerian Association of Materials and Metallurgical Engineering Students Hub
+          </h1>
           <p className="text-lg text-white/90 mb-8 max-w-xl">
-            The Nigerian Association of Materials and Metallurgical Engineering Students (NAMMES)
-            is the student-led voice of the department at the University of Lagos — representing
-            our members academically, professionally, and socially. This Hub brings everything the
-            association publishes, from course outlines and events to resources, news, and
-            opportunities, into one place.
+            NAMMES is the student-led voice of the department at the University of Lagos —
+            representing our members academically, professionally, and socially. This Hub brings
+            everything the association publishes, from course outlines and events to resources,
+            news, and opportunities, into one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button variant="primary" onClick={() => navigate('/outlines')}>
