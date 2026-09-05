@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const Home = lazy(() => import('./pages/Home'))
+const About = lazy(() => import('./pages/About'))
 const Excos = lazy(() => import('./pages/Excos'))
 const Contact = lazy(() => import('./pages/Contact'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -54,6 +55,7 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="about" element={<About />} />
           <Route path="excos" element={<Excos />} />
           <Route path="contact" element={<Contact />} />
           <Route path="outlines" element={<Outlines />} />

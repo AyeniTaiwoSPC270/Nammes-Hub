@@ -45,6 +45,24 @@ export default function Footer() {
         </Link>
       </div>
 
+      <div className="mx-auto max-w-[1080px] px-8 pt-10">
+        <h3 className="text-xl font-bold text-white">Stay Connected With Us</h3>
+        <p className="mt-1 text-sm font-semibold text-white/90">Subscribe to our Newsletter</p>
+        <p className="mt-1 max-w-md text-sm text-white/70">
+          Get the latest updates, events, and opportunities delivered to your inbox.
+        </p>
+        <iframe
+          src="https://nammeshub.substack.com/embed"
+          width="480"
+          height="320"
+          style={{ border: '1px solid #EEE', background: 'white' }}
+          frameBorder="0"
+          scrolling="no"
+          title="Subscribe to the NAMMES Hub newsletter"
+          className="mt-4 max-w-full rounded-lg"
+        />
+      </div>
+
       <div className="mx-auto flex max-w-[1080px] flex-wrap justify-between gap-10 px-8 pt-10 pb-8">
         <div className="max-w-88 min-w-56 flex-[2]">
           <span className="inline-flex items-center gap-2 whitespace-nowrap font-display text-2xl font-bold text-white">

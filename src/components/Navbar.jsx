@@ -6,6 +6,7 @@ import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import Badge from './ui/Badge'
 
 const links = [
+  { to: '/about', label: 'About' },
   { to: '/outlines', label: 'Outlines' },
   { to: '/timetable', label: 'Timetable' },
   { to: '/cgpa', label: 'CGPA' },
