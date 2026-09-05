@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Sending domain is `nammeshub.com.ng` — every `from` address uses it (e.g. `NAMMES Hub <no-reply@nammeshub.com.ng>`).
-- No secret (`RESEND_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `WEBHOOK_SHARED_SECRET`) may be `VITE_`-prefixed or referenced from `src/` — they only exist in `api/` code and Vercel's server-side env vars.
+- No secret (`RESEND_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) may be `VITE_`-prefixed or referenced from `src/` — they only exist in `api/` code and Vercel's server-side env vars. (Superseded during execution: the webhook-auth secret ended up living only in Supabase Vault, verified via the `verify_webhook_secret` RPC — see Task 4's deviation note — so it was never a Vercel env var at all in the shipped version.)
 - Resend batch sends are chunked at 100 recipients per call (Resend's batch limit).
 - Welcome email always sends, unconditional on the opt-out toggle. New-content alerts and broadcasts always respect `profiles.email_notifications_enabled`.
 - This codebase's existing test convention (verified across `src/data/*.test.js`): a file gets a `*.test.js` only when it contains pure/derived logic worth unit testing; thin Supabase CRUD wrappers (e.g. `admins.js`) have no test file. Follow this — don't invent hollow tests for passthrough functions.
@@ -243,11 +243,6 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
-  if (req.headers['x-webhook-secret'] !== process.env.WEBHOOK_SHARED_SECRET) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
   const record = req.body?.record
   if (!record?.user_id) {
     res.status(400).json({ error: 'Missing record.user_id' })
@@ -255,6 +250,15 @@ export default async function handler(req, res) {
   }
 
   const supabaseAdmin = getSupabaseAdmin()
+
+  const { data: isValidSecret } = await supabaseAdmin.rpc('verify_webhook_secret', {
+    candidate: req.headers['x-webhook-secret'] || '',
+  })
+  if (!isValidSecret) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
   const { data, error } = await supabaseAdmin.auth.admin.getUserById(record.user_id)
   if (error || !data?.user?.email) {
     console.error('webhook-welcome: could not resolve email', error)
@@ -277,17 +281,74 @@ export default async function handler(req, res) {
 }
 ```
 
-A send failure returns `200` deliberately — this endpoint is called by a fire-and-forget Supabase Database Webhook with no retry-into-transaction semantics, so a failed email must never look like a failed signup to Supabase's webhook delivery system.
+A send failure returns `200` deliberately — this endpoint is called by a fire-and-forget trigger with no retry-into-transaction semantics, so a failed email must never look like a failed signup to Postgres.
 
-- [ ] **Step 2: Deploy and configure the Supabase Database Webhook**
+- [x] **Step 2: Deploy and wire up the trigger**
 
-Deploy so the endpoint has a real URL: `vercel deploy` (or push to the branch Vercel auto-deploys).
+**Deviation from the original plan:** rather than a dashboard-configured Supabase Database Webhook with a static `WEBHOOK_SHARED_SECRET` compared against a Vercel env var, this ships as a hand-rolled equivalent — a `pg_net`-based Postgres trigger, with the secret generated inside Postgres (via `pgcrypto`) and stored in Supabase Vault, never touching a Vercel env var. The endpoint verifies the secret by calling `verify_webhook_secret(candidate)` (a `SECURITY DEFINER` SQL function that checks the candidate against `vault.decrypted_secrets` and returns a boolean) instead of comparing against `process.env`. This removes the sync problem of keeping two copies of the same secret in agreement, at the cost of not showing up in Supabase's dashboard "Database → Webhooks" tab — it's SQL-only, inspectable via `pg_trigger`/`pg_proc`.
 
-In the Supabase dashboard → Database → Webhooks → Create a new webhook:
-- Table: `profiles`, Event: `INSERT`
-- Type: HTTP Request, Method: `POST`
-- URL: `https://<your-vercel-domain>/api/webhook-welcome`
-- HTTP Headers: `x-webhook-secret: <the WEBHOOK_SHARED_SECRET value from Task 3 Step 8>`
+Applied via Supabase MCP `apply_migration` (project `ascdypvchlbpfupsssuy`):
+
+```sql
+-- migration: email_webhook_triggers
+create extension if not exists pg_net;
+
+select vault.create_secret(
+  encode(extensions.gen_random_bytes(32), 'hex'),
+  'webhook_shared_secret',
+  'Shared secret sent as x-webhook-secret to the Vercel email endpoints'
+);
+
+create or replace function public.notify_email_webhook()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  secret text;
+  target_url text;
+begin
+  select decrypted_secret into secret from vault.decrypted_secrets where name = 'webhook_shared_secret';
+  target_url := case TG_TABLE_NAME
+    when 'profiles' then 'https://www.nammeshub.com.ng/api/webhook-welcome'
+    else 'https://www.nammeshub.com.ng/api/webhook-new-content'
+  end;
+  perform net.http_post(
+    url := target_url,
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', secret),
+    body := jsonb_build_object('table', TG_TABLE_NAME, 'record', to_jsonb(NEW))
+  );
+  return NEW;
+end;
+$$;
+
+create trigger profiles_notify_welcome after insert on public.profiles
+  for each row execute function public.notify_email_webhook();
+create trigger news_notify_new_content after insert on public.news
+  for each row execute function public.notify_email_webhook();
+create trigger events_notify_new_content after insert on public.events
+  for each row execute function public.notify_email_webhook();
+```
+
+```sql
+-- migration: verify_webhook_secret_function
+create or replace function public.verify_webhook_secret(candidate text)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from vault.decrypted_secrets
+    where name = 'webhook_shared_secret' and decrypted_secret = candidate
+  );
+$$;
+
+revoke execute on function public.verify_webhook_secret(text) from public, anon, authenticated;
+```
+
+Then pushed `master` to GitHub, triggering Vercel's git-integration production deploy.
 
 - [ ] **Step 3: Manually verify**
 
@@ -326,11 +387,6 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
-  if (req.headers['x-webhook-secret'] !== process.env.WEBHOOK_SHARED_SECRET) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
   const { table, record } = req.body ?? {}
   const label = LABEL_BY_TABLE[table]
   if (!label || !record?.title) {
@@ -339,6 +395,15 @@ export default async function handler(req, res) {
   }
 
   const supabaseAdmin = getSupabaseAdmin()
+
+  const { data: isValidSecret } = await supabaseAdmin.rpc('verify_webhook_secret', {
+    candidate: req.headers['x-webhook-secret'] || '',
+  })
+  if (!isValidSecret) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
   const { data: recipients, error } = await supabaseAdmin.rpc('get_notification_recipients')
   if (error) {
     console.error('webhook-new-content: could not load recipients', error)
@@ -370,11 +435,9 @@ export default async function handler(req, res) {
 }
 ```
 
-- [ ] **Step 2: Configure two Supabase Database Webhooks**
+- [x] **Step 2: Trigger wiring**
 
-Same dashboard flow as Task 4 Step 2, twice:
-- Table: `news`, Event: `INSERT` → `https://<your-vercel-domain>/api/webhook-new-content`, same `x-webhook-secret` header
-- Table: `events`, Event: `INSERT` → same URL, same header
+Covered by Task 4 Step 2's single migration — `news_notify_new_content` and `events_notify_new_content` triggers were created there in the same migration as the `profiles` one.
 
 - [ ] **Step 3: Manually verify**
 

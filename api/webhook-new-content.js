@@ -9,11 +9,6 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
-  if (req.headers['x-webhook-secret'] !== process.env.WEBHOOK_SHARED_SECRET) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
   const { table, record } = req.body ?? {}
   const label = LABEL_BY_TABLE[table]
   if (!label || !record?.title) {
@@ -22,6 +17,15 @@ export default async function handler(req, res) {
   }
 
   const supabaseAdmin = getSupabaseAdmin()
+
+  const { data: isValidSecret } = await supabaseAdmin.rpc('verify_webhook_secret', {
+    candidate: req.headers['x-webhook-secret'] || '',
+  })
+  if (!isValidSecret) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
   const { data: recipients, error } = await supabaseAdmin.rpc('get_notification_recipients')
   if (error) {
     console.error('webhook-new-content: could not load recipients', error)
