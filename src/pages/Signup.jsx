@@ -23,9 +23,6 @@ export default function Signup() {
     setFormError('')
 
     const nextErrors = {}
-    if (!email.endsWith('.edu.ng')) {
-      nextErrors.email = 'Use your university email (@unilag.edu.ng)'
-    }
     const studentIdError = validateStudentId(studentId)
     if (studentIdError) {
       nextErrors.studentId = studentIdError
@@ -110,7 +107,7 @@ export default function Signup() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@unilag.edu.ng"
+          placeholder="you@example.com"
           error={errors.email}
         />
         <FormField
