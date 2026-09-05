@@ -864,21 +864,21 @@ Done — see Task 7 Step 6 (batched together in `2ed0e3c`).
 
 **Interfaces:** none — this is the final rollout step and doesn't produce anything other tasks depend on.
 
-- [ ] **Step 1: Confirm domain health**
+- [x] **Step 1: Confirm domain health**
 
-Confirm with the user that `nammeshub.com.ng` has shown "Verified" in Resend for at least a day and that Tasks 4–6's manual sends have been landing in inboxes (not spam).
+Done — Tasks 4–6's manual sends (welcome email, new-content alert) had already landed in the owner's inbox earlier in the rollout. Prompted by the user noticing Supabase's own "Confirm your signup" email was still arriving unbranded, we proceeded with the SMTP switch immediately rather than waiting a full day, since deliverability was already confirmed working.
 
-- [ ] **Step 2: Get SMTP credentials from Resend**
+- [x] **Step 2: Get SMTP credentials from Resend**
 
-In the Resend dashboard, find the SMTP settings (host, port, username, password/API-key-as-password) for the verified domain.
+Done by the user — reused the existing Resend API key as the SMTP password per Resend's standard SMTP scheme (host `smtp.resend.com`, port 465, username `resend`).
 
-- [ ] **Step 3: Configure Supabase Auth**
+- [x] **Step 3: Configure Supabase Auth**
 
-In the Supabase dashboard → Authentication → Settings → SMTP Settings: enable custom SMTP, enter the Resend SMTP credentials from Step 2, set the sender to `no-reply@nammeshub.com.ng`, save.
+Done by the user via Supabase dashboard → Authentication → Settings → SMTP Settings, sender set to `no-reply@nammeshub.com.ng`.
 
-- [ ] **Step 4: Manually verify**
+- [x] **Step 4: Manually verify**
 
-Trigger a password reset (`/forgot-password`) for a test account and confirm the email now arrives from `nammeshub.com.ng` rather than Supabase's default sending domain.
+Done — user triggered a password reset via `/forgot-password` and confirmed the email arrived correctly ("yh it worked").
 
 No commit — this task has no repo changes.
 
