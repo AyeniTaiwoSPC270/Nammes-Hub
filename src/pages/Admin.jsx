@@ -39,6 +39,13 @@ export const ADMIN_SECTIONS = [
     description: 'Manage the executive team directory.',
   },
   {
+    path: '/admin/users',
+    label: 'Users',
+    icon: 'group',
+    category: 'Directory',
+    description: 'View every account and manage admin access.',
+  },
+  {
     path: '/admin/outlines',
     label: 'Outlines',
     icon: 'menu_book',
