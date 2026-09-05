@@ -350,16 +350,13 @@ revoke execute on function public.verify_webhook_secret(text) from public, anon,
 
 Then pushed `master` to GitHub, triggering Vercel's git-integration production deploy.
 
-- [ ] **Step 3: Manually verify**
+- [x] **Step 3: Manually verify**
 
-Sign up a fresh test account on the deployed site and confirm a welcome email arrives at that address from `no-reply@nammeshub.com.ng`. Check Vercel function logs for `webhook-welcome` if it doesn't.
+Done, with a detour: a real signup at 16:24 UTC hit this endpoint but failed with "Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" (per Vercel logs) — `SUPABASE_SERVICE_ROLE_KEY` had never actually been added as a Vercel project env var (only ever lived in local `.env` files for the seed scripts). Added it (all 3 environments) and redeployed. Re-verified by calling `net.http_post` directly against the deployed endpoint (same payload shape the trigger sends) targeting the owner's own existing account — avoids burning more of Supabase's auth email rate limit on throwaway signups. Confirmed: no error in logs, and the user confirmed receipt of the welcome email.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
-```bash
-git add api/webhook-welcome.js
-git commit -m "feat: send a welcome email on signup via Resend"
-```
+Done — batched with Tasks 5/6 into `347cd68` ("feat: add Resend email endpoints..."), then the secret-verification approach was refactored in `602e694`.
 
 ---
 
@@ -439,16 +436,13 @@ export default async function handler(req, res) {
 
 Covered by Task 4 Step 2's single migration — `news_notify_new_content` and `events_notify_new_content` triggers were created there in the same migration as the `profiles` one.
 
-- [ ] **Step 3: Manually verify**
+- [x] **Step 3: Manually verify (partial)**
 
-Publish a test News article (as the owner, direct insert) and confirm an alert email arrives at an opted-in test account. Repeat for an Event. Then flip that test account's `email_notifications_enabled` to `false` (directly in the Supabase Table Editor, since Task 7's UI for this doesn't exist until later) and confirm a second test publish does **not** email that account.
+Verified via a direct `net.http_post` call against the deployed endpoint (same payload shape the `news` trigger sends: `{table: 'news', record: {title: ...}}`), with user consent since it emails every real opted-in user, not just the owner. No error in logs; user confirmed receipt of the "New News: ..." email. **Not yet verified:** a real insert through the actual News admin UI (vs. this direct simulation), the `events` table path specifically (same handler/trigger function, untested separately), and opt-out suppression (flipping `email_notifications_enabled` to `false` and confirming no email). Revisit if a real News/Event publish doesn't email as expected.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
-```bash
-git add api/webhook-new-content.js
-git commit -m "feat: email opted-in users when News or Events publish"
-```
+Done — see Task 4 Step 4 (batched together).
 
 ---
 
@@ -542,16 +536,13 @@ export default async function handler(req, res) {
 
 A total send failure (`sentCount === 0` with recipients to send to) returns `502` and writes no `broadcasts` row — the frontend must not claim success. A partial failure still writes the row with the real `sentCount` and returns both numbers so the UI can show "sent to N of M."
 
-- [ ] **Step 2: Manually verify**
+- [ ] **Step 2: Manually verify — deferred to Task 8**
 
-Run `vercel dev` locally (plain `npm run dev` does not serve `/api/*`). With a logged-in admin session, `curl` or fetch the endpoint with a valid bearer token and confirm a real email arrives, and that a row appears in `public.broadcasts`.
+Getting a valid bearer token requires either `vercel dev` locally or pulling a JWT out of a real browser session — both fiddly to hand the user. Deferred until Task 8 ships the actual `/admin/broadcasts` UI, at which point the user can just click "Send" for a natural end-to-end test instead.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
-```bash
-git add api/send-broadcast.js
-git commit -m "feat: add admin broadcast send endpoint"
-```
+Done — see Task 4 Step 4 (batched together).
 
 ---
 
@@ -569,7 +560,7 @@ No test file for `notificationPrefs.js` — both functions are thin one-line Sup
 - Consumes: `set_own_email_notifications(enabled boolean)` RPC (Task 2); `useAuth()` from `src/lib/AuthContext.jsx`; `useToast()` from `src/lib/ToastContext.jsx`.
 - Produces: `useNotificationPrefQuery(userId)`, `useSetNotificationPrefMutation(userId)` from `notificationPrefs.js`; the `/account` route.
 
-- [ ] **Step 1: Write `src/data/notificationPrefs.js`**
+- [x] **Step 1: Write `src/data/notificationPrefs.js`**
 
 ```js
 // src/data/notificationPrefs.js
@@ -608,7 +599,7 @@ export function useSetNotificationPrefMutation(userId) {
 }
 ```
 
-- [ ] **Step 2: Write `src/pages/Account.jsx`**
+- [x] **Step 2: Write `src/pages/Account.jsx`**
 
 ```jsx
 // src/pages/Account.jsx
@@ -660,7 +651,7 @@ export default function Account() {
 }
 ```
 
-- [ ] **Step 3: Add the route in `src/App.jsx`**
+- [x] **Step 3: Add the route in `src/App.jsx`**
 
 Add the lazy import near the other top-level pages:
 
@@ -674,7 +665,7 @@ Add the route inside the main `<Route element={<Layout />}>` block, alongside `l
 <Route path="account" element={<Account />} />
 ```
 
-- [ ] **Step 4: Add an "Account" link in `src/components/Navbar.jsx`**
+- [x] **Step 4: Add an "Account" link in `src/components/Navbar.jsx`**
 
 In the desktop authenticated block (around where `user.email` is rendered, before the "Admin" link):
 
@@ -688,14 +679,11 @@ And the matching entry in the mobile menu's authenticated block, same placement 
 
 - [ ] **Step 5: Manually verify**
 
-Run `npm run dev`, sign in, visit `/account`, toggle the checkbox, reload, and confirm the state persisted. Visit `/account` while signed out and confirm it redirects to `/login`.
+Not yet done — pending deploy. Sign in, visit `/account`, toggle the checkbox, reload, and confirm the state persisted. Visit `/account` while signed out and confirm it redirects to `/login`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
-```bash
-git add src/data/notificationPrefs.js src/pages/Account.jsx src/App.jsx src/components/Navbar.jsx
-git commit -m "feat: add /account page with an email notifications toggle"
-```
+Done — batched with Task 8 into `2ed0e3c` (both new pages touch the same `App.jsx` route registry, so committed together rather than splitting that one file's diff).
 
 ---
 
@@ -713,7 +701,7 @@ No test file for `broadcasts.js`, same reasoning as Task 7 — both functions ar
 - Consumes: `POST /api/send-broadcast` (Task 6); `public.broadcasts` table (Task 2); `useAuth()`, `useToast()`, `Table`/`Button`/`EmptyState`/`ErrorState`/`SkeletonTable` UI components (existing).
 - Produces: the `/admin/broadcasts` route and `ADMIN_SECTIONS` tile.
 
-- [ ] **Step 1: Write `src/data/broadcasts.js`**
+- [x] **Step 1: Write `src/data/broadcasts.js`**
 
 ```js
 // src/data/broadcasts.js
@@ -747,7 +735,7 @@ export async function sendBroadcast({ subject, body }) {
 }
 ```
 
-- [ ] **Step 2: Write `src/pages/admin/AdminBroadcasts.jsx`**
+- [x] **Step 2: Write `src/pages/admin/AdminBroadcasts.jsx`**
 
 ```jsx
 // src/pages/admin/AdminBroadcasts.jsx
@@ -834,7 +822,7 @@ export default function AdminBroadcasts() {
 }
 ```
 
-- [ ] **Step 3: Add the `ADMIN_SECTIONS` entry in `src/pages/Admin.jsx`**
+- [x] **Step 3: Add the `ADMIN_SECTIONS` entry in `src/pages/Admin.jsx`**
 
 Add to the `ADMIN_SECTIONS` array (any admin, no `ownerOnly`):
 
@@ -848,7 +836,7 @@ Add to the `ADMIN_SECTIONS` array (any admin, no `ownerOnly`):
 },
 ```
 
-- [ ] **Step 4: Add the route in `src/App.jsx`**
+- [x] **Step 4: Add the route in `src/App.jsx`**
 
 ```js
 const AdminBroadcasts = lazy(() => import('./pages/admin/AdminBroadcasts'))
@@ -862,14 +850,11 @@ Inside the `<Route element={<AdminRoute />}>` block:
 
 - [ ] **Step 5: Manually verify**
 
-Run `vercel dev` (needed for `/api/send-broadcast` to resolve locally). Sign in as an admin, visit `/admin/broadcasts`, send a test broadcast to a small opted-in test audience, confirm the email arrives and a history row appears.
+Not yet done — pending deploy. Sign in as an admin, visit `/admin/broadcasts`, send a test broadcast, confirm the email arrives and a history row appears. This also serves as Task 6's deferred manual verification.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
-```bash
-git add src/data/broadcasts.js src/pages/admin/AdminBroadcasts.jsx src/pages/Admin.jsx src/App.jsx
-git commit -m "feat: add /admin/broadcasts page for sending announcement emails"
-```
+Done — see Task 7 Step 6 (batched together in `2ed0e3c`).
 
 ---
 
