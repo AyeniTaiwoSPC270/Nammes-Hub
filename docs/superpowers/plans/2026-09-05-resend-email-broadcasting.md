@@ -124,11 +124,11 @@ The `_lib` (underscore-prefixed) directory name is required — Vercel treats ev
 **Interfaces:**
 - Produces: `getResendClient(): Resend`, `FROM_ADDRESS: string` from `resend.js`; `getSupabaseAdmin(): SupabaseClient` from `supabaseAdmin.js`; `chunk(array: T[], size: number): T[][]` from `chunk.js`. Consumed by Tasks 4, 5, 6.
 
-- [ ] **Step 1: Install the `resend` package**
+- [x] **Step 1: Install the `resend` package**
 
 Run: `npm install resend`
 
-- [ ] **Step 2: Write the failing test for `chunk`**
+- [x] **Step 2: Write the failing test for `chunk`**
 
 ```js
 // api/_lib/chunk.test.js
@@ -148,12 +148,12 @@ describe('chunk', () => {
 })
 ```
 
-- [ ] **Step 3: Run it to verify it fails**
+- [x] **Step 3: Run it to verify it fails**
 
 Run: `npm test -- api/_lib/chunk.test.js`
 Expected: FAIL with "Failed to resolve import" or "chunk is not a function"
 
-- [ ] **Step 4: Implement `chunk.js`**
+- [x] **Step 4: Implement `chunk.js`**
 
 ```js
 // api/_lib/chunk.js
@@ -166,12 +166,12 @@ export function chunk(array, size) {
 }
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `npm test -- api/_lib/chunk.test.js`
 Expected: PASS
 
-- [ ] **Step 6: Write `resend.js`**
+- [x] **Step 6: Write `resend.js`**
 
 ```js
 // api/_lib/resend.js
@@ -186,7 +186,7 @@ export function getResendClient() {
 }
 ```
 
-- [ ] **Step 7: Write `supabaseAdmin.js`**
+- [x] **Step 7: Write `supabaseAdmin.js`**
 
 Reuses the same env var names as the existing `scripts/supabaseAdminClient.mjs` (`VITE_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`) — these are already set as plain Vercel project env vars (the `VITE_` prefix only controls what the Vite client bundle exposes; `process.env.VITE_SUPABASE_URL` is a normal server-side var here).
 
@@ -202,7 +202,7 @@ export function getSupabaseAdmin() {
 }
 ```
 
-- [ ] **Step 8: Add `WEBHOOK_SHARED_SECRET` to `.env.example`**
+- [x] **Step 8: Add `WEBHOOK_SHARED_SECRET` to `.env.example`**
 
 ```
 VITE_SUPABASE_URL=
@@ -213,7 +213,7 @@ WEBHOOK_SHARED_SECRET=
 
 Generate the real value with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`, set it as a Vercel project env var (`vercel env add WEBHOOK_SHARED_SECRET`), and keep a copy for Task 4/5's Supabase Database Webhook header configuration.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add api/_lib package.json package-lock.json .env.example
@@ -231,7 +231,7 @@ git commit -m "feat: add shared Resend/Supabase-admin helpers for email backend"
 - Consumes: `getResendClient`, `FROM_ADDRESS` from `api/_lib/resend.js`; `getSupabaseAdmin` from `api/_lib/supabaseAdmin.js`.
 - Produces: a deployed `POST /api/webhook-welcome` endpoint.
 
-- [ ] **Step 1: Write the handler**
+- [x] **Step 1: Write the handler**
 
 ```js
 // api/webhook-welcome.js
@@ -311,7 +311,7 @@ git commit -m "feat: send a welcome email on signup via Resend"
 - Consumes: `getResendClient`, `FROM_ADDRESS`, `getSupabaseAdmin`, `chunk` (Task 3); `get_notification_recipients()` Postgres function (Task 2).
 - Produces: a deployed `POST /api/webhook-new-content` endpoint, table-agnostic (handles both `news` and `events`).
 
-- [ ] **Step 1: Write the handler**
+- [x] **Step 1: Write the handler**
 
 ```js
 // api/webhook-new-content.js
@@ -398,7 +398,7 @@ git commit -m "feat: email opted-in users when News or Events publish"
 - Consumes: `getResendClient`, `FROM_ADDRESS`, `getSupabaseAdmin`, `chunk` (Task 3); `get_notification_recipients()`, `public.broadcasts` (Task 2).
 - Produces: a deployed `POST /api/send-broadcast` endpoint expecting `{ subject, body }` JSON and an `Authorization: Bearer <supabase access token>` header; returns `{ recipientCount, sentCount }` on success. Consumed by Task 8's `src/data/broadcasts.js`.
 
-- [ ] **Step 1: Write the handler**
+- [x] **Step 1: Write the handler**
 
 ```js
 // api/send-broadcast.js
