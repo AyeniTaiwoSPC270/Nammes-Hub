@@ -39,6 +39,7 @@ const AdminEventGallery = lazy(() => import('./pages/admin/AdminEventGallery'))
 const AdminResources = lazy(() => import('./pages/admin/AdminResources'))
 const AdminExcos = lazy(() => import('./pages/admin/AdminExcos'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'))
 const AdminOutlines = lazy(() => import('./pages/admin/AdminOutlines'))
 const AdminSubmissions = lazy(() => import('./pages/admin/AdminSubmissions'))
 const AdminTimetables = lazy(() => import('./pages/admin/AdminTimetables'))
@@ -90,6 +91,7 @@ export default function App() {
             <Route path="admin/resources" element={<AdminResources />} />
             <Route path="admin/excos" element={<AdminExcos />} />
             <Route path="admin/users" element={<AdminUsers />} />
+            <Route path="admin/reviews" element={<AdminReviews />} />
             <Route path="admin/outlines" element={<AdminOutlines />} />
             <Route path="admin/submissions" element={<AdminSubmissions />} />
             <Route path="admin/timetables" element={<AdminTimetables />} />

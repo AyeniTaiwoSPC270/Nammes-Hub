@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
+import { useOwnAdminRowQuery } from '../data/admins'
+import { useAuth } from '../lib/AuthContext'
 import Badge from '../components/ui/Badge'
 
 export const ADMIN_SECTIONS = [
@@ -80,11 +82,23 @@ export const ADMIN_SECTIONS = [
     category: 'Engagement',
     description: 'Run nominate, curate, vote, and reveal for department awards.',
   },
+  {
+    path: '/admin/reviews',
+    label: 'Reviews',
+    icon: 'fact_check',
+    category: 'Governance',
+    description: 'Approve or reject pending News, Events, and Awards edits.',
+    ownerOnly: true,
+  },
 ]
 
 export default function Admin() {
+  const { user } = useAuth()
   const pendingCountQuery = usePendingSubmissionsCountQuery()
   const pendingCount = pendingCountQuery.data ?? 0
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRowQuery.data?.is_owner)
+  const visibleSections = ADMIN_SECTIONS.filter((s) => !s.ownerOnly || isOwner)
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
@@ -97,7 +111,7 @@ export default function Admin() {
       </header>
 
       <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {ADMIN_SECTIONS.map((s) => (
+        {visibleSections.map((s) => (
           <Link
             key={s.path}
             to={s.path}
