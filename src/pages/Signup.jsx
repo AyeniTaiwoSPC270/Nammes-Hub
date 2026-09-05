@@ -96,7 +96,7 @@ export default function Signup() {
 
         <FormField label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Okafor" />
         <FormField
-          label="Student ID"
+          label="Matric number"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
           placeholder="e.g. 240406012"

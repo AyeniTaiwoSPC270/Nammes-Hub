@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Navbar from './Navbar'
@@ -28,6 +28,10 @@ export default function Layout() {
   const location = useLocation()
   const reducedMotion = useReducedMotion()
   const outlet = useOutlet()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   return (
     <div className="min-h-svh flex flex-col bg-paper">
