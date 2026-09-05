@@ -23,6 +23,11 @@ export default function Home() {
     <div>
       {/* 1. Hero */}
       <section className="relative w-full h-[420px] sm:h-[560px] flex items-center overflow-hidden bg-green-900">
+        <img
+          src="https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80"
+          alt=""
+          className="absolute inset-0 z-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />
         <div className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8">
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">NAMMES Hub</h1>
