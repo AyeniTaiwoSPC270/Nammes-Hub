@@ -5,10 +5,14 @@ import { supabase } from '../../lib/supabaseClient'
 import AdminResourceList from './AdminResourceList'
 import AdminResourceForm from './AdminResourceForm'
 import Button from '../ui/Button'
+import Badge from '../ui/Badge'
 import ErrorState from '../ui/ErrorState'
 import { SkeletonTable } from '../ui/Skeleton'
 import { generateId } from '../../lib/adminFields'
 import { useToast } from '../../lib/ToastContext'
+import { useAuth } from '../../lib/AuthContext'
+import { useOwnAdminRowQuery } from '../../data/admins'
+import { submitChangeRequest, useMyPendingRequestsQuery } from '../../data/changeRequests'
 
 async function loadRows(table, orderBy) {
   let query = supabase.from(table).select('*')
@@ -21,6 +25,15 @@ async function loadRows(table, orderBy) {
 export default function AdminResourceManager({ table, title, config, orderBy, renderRowExtra }) {
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { user } = useAuth()
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRowQuery.data?.is_owner)
+  const gated = Boolean(config.reviewGated) && !isOwner
+  const pendingQuery = useMyPendingRequestsQuery(config.reviewGated ? table : null, user?.id)
+  const pendingRequests = pendingQuery.data ?? []
+  const pendingInserts = pendingRequests.filter((r) => r.action === 'insert')
+  const pendingUpdateRecordIds = new Set(pendingRequests.filter((r) => r.action === 'update').map((r) => r.record_id))
+
   const [editing, setEditing] = useState(null) // null = add-new panel, record = editing that row
   const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false)
   const [activeGroup, setActiveGroup] = useState('All')
@@ -47,9 +60,17 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
     }
   }, [rows, activeGroup, config.groupField])
 
+  function invalidatePending() {
+    if (config.reviewGated) queryClient.invalidateQueries({ queryKey: ['change_requests', 'mine', table, user?.id] })
+  }
+
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
       if (editing) {
+        if (gated) {
+          await submitChangeRequest(table, 'update', String(editing.id), payload)
+          return null
+        }
         const result = await supabase.from(table).update(payload).eq('id', editing.id).select()
         if (result.error) throw result.error
         if (!result.data || result.data.length === 0) {
@@ -58,13 +79,18 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
         return result.data
       }
       const id = generateId(payload[config.idField])
+      if (gated) {
+        await submitChangeRequest(table, 'insert', null, { ...payload, id })
+        return null
+      }
       const result = await supabase.from(table).insert({ ...payload, id })
       if (result.error) throw result.error
       return result.data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [table] })
-      toast.success(editing ? `${title} updated.` : `${title} added.`)
+      invalidatePending()
+      toast.success(gated ? 'Submitted for review.' : editing ? `${title} updated.` : `${title} added.`)
       setEditing(null)
     },
     onError: (error) => {
@@ -128,6 +154,7 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
           <h1 className="text-3xl font-bold text-ink-900">{title}</h1>
           <p className="mt-1 text-ink-muted">
             Create, edit, and remove {config.title.toLowerCase()} from the public hub.
+            {gated && ' Creates and edits need the owner’s approval before they go live.'}
           </p>
         </div>
         <div className="flex gap-3">
@@ -202,19 +229,37 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md lg:col-span-8">
-            <AdminResourceList
-              config={config}
-              rows={filteredRows}
-              onEdit={setEditing}
-              onDelete={(row) => deleteMutation.mutate(row)}
-              renderRowExtra={renderRowExtra}
-              emptyLabel={
-                config.groupField && activeGroup !== 'All'
-                  ? `${activeGroup} ${config.groupLabel ?? ''} ${config.title.toLowerCase()}`.replace(/\s+/g, ' ').trim()
-                  : undefined
-              }
-            />
+          <div className="lg:col-span-8">
+            {pendingInserts.length > 0 && (
+              <div className="mb-4 flex flex-col gap-2 rounded-lg border border-hairline bg-surface-low p-4">
+                <h3 className="text-sm font-semibold text-ink-900">Awaiting the owner&rsquo;s approval</h3>
+                {pendingInserts.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-sm text-ink-muted">
+                    <span>{r.payload.title || r.payload.id}</span>
+                    <Badge tone="new">Pending</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+              <AdminResourceList
+                config={config}
+                rows={filteredRows}
+                onEdit={setEditing}
+                onDelete={(row) => deleteMutation.mutate(row)}
+                renderRowExtra={(row) => (
+                  <>
+                    {renderRowExtra && renderRowExtra(row)}
+                    {pendingUpdateRecordIds.has(String(row.id)) && <Badge tone="new">Pending review</Badge>}
+                  </>
+                )}
+                emptyLabel={
+                  config.groupField && activeGroup !== 'All'
+                    ? `${activeGroup} ${config.groupLabel ?? ''} ${config.title.toLowerCase()}`.replace(/\s+/g, ' ').trim()
+                    : undefined
+                }
+              />
+            </div>
           </div>
 
           <div className="rounded-lg border border-hairline bg-surface p-6 shadow-md lg:sticky lg:top-24 lg:col-span-4">
