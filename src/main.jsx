@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import { ToastProvider } from './lib/ToastContext.jsx'
+import { TourProvider } from './lib/TourContext.jsx'
 import { queryClient } from './lib/queryClient.js'
 
 createRoot(document.getElementById('root')).render(
@@ -14,7 +15,9 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <AuthProvider>
           <ToastProvider>
-            <App />
+            <TourProvider>
+              <App />
+            </TourProvider>
           </ToastProvider>
         </AuthProvider>
       </BrowserRouter>

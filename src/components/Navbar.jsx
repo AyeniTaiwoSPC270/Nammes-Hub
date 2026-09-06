@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import Badge from './ui/Badge'
@@ -9,6 +10,7 @@ const navItems = [
   { to: '/about', label: 'About' },
   {
     label: 'Academics',
+    dataTour: 'nav-academics',
     children: [
       { to: '/outlines', label: 'Outlines' },
       { to: '/timetable', label: 'Timetable' },
@@ -18,6 +20,7 @@ const navItems = [
   },
   {
     label: 'Community',
+    dataTour: 'nav-community',
     children: [
       { to: '/events', label: 'Events' },
       { to: '/news', label: 'News' },
@@ -64,6 +67,7 @@ function NavDropdown({ item }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        data-tour={item.dataTour}
         className={[
           'flex items-center gap-0.5 rounded-sm px-3 py-2 text-sm font-semibold transition-colors',
           isActive
@@ -100,9 +104,14 @@ function NavDropdown({ item }) {
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { user, loading } = useAuth()
+  const { wantsMobileNavOpen } = useTour()
   const navigate = useNavigate()
   const pendingCountQuery = usePendingSubmissionsCountQuery(Boolean(user))
   const pendingCount = pendingCountQuery.data ?? 0
+
+  useEffect(() => {
+    setOpen(wantsMobileNavOpen)
+  }, [wantsMobileNavOpen])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -137,7 +146,7 @@ export default function Navbar() {
                 <span className="max-w-[16ch] truncate text-sm text-ink-muted" title={user.email}>
                   {user.email}
                 </span>
-                <NavLink to="/account" className={authLinkClass}>
+                <NavLink to="/account" className={authLinkClass} data-tour="nav-account">
                   Account
                 </NavLink>
                 <NavLink to="/admin" className={[authLinkClass, 'inline-flex items-center gap-1.5'].join(' ')}>
@@ -174,7 +183,7 @@ export default function Navbar() {
         <nav className="fixed inset-x-0 top-[60px] flex max-h-[calc(100vh-60px)] flex-col gap-0.5 overflow-y-auto border-b border-hairline bg-surface px-4 py-2 shadow-md sm:hidden">
           {navItems.map((item) =>
             item.children ? (
-              <div key={item.label} className="flex flex-col">
+              <div key={item.label} className="flex flex-col" data-tour={item.dataTour}>
                 <span className="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-[.05em] text-ink-muted">
                   {item.label}
                 </span>
@@ -211,6 +220,7 @@ export default function Navbar() {
                   to="/account"
                   onClick={() => setOpen(false)}
                   className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
+                  data-tour="nav-account"
                 >
                   Account
                 </NavLink>

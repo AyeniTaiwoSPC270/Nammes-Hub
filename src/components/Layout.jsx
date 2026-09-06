@@ -3,6 +3,8 @@ import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import WelcomeCarousel from './tour/WelcomeCarousel'
+import SpotlightOverlay from './tour/SpotlightOverlay'
 
 function RouteSkeleton() {
   return (
@@ -52,6 +54,8 @@ export default function Layout() {
         </Suspense>
       </main>
       <Footer />
+      <WelcomeCarousel />
+      <SpotlightOverlay />
     </div>
   )
 }

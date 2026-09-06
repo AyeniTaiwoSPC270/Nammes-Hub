@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Spotlight - Step 2 (Community) - NAMMES Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          'green-900': '#0b2417',
+          'orange-500': '#ff5a1f',
+          'orange-600': '#ae3200',
+          'orange-100': '#fff0e6',
+          'ink-900': '#000904',
+          paper: '#fcf9f8',
+          surface: '#ffffff',
+          'surface-low': '#f6f3f2',
+          ink: '#1c1b1b',
+          'ink-muted': '#424843',
+          hairline: '#c2c8c1',
+        },
+        borderRadius: { sm: '4px', md: '8px', lg: '12px' },
+        fontFamily: { display: ['Public Sans', 'sans-serif'], body: ['Public Sans', 'sans-serif'], mono: ['Public Sans', 'sans-serif'] },
+      },
+    },
+  }
+</script>
+<style>
+  body { background-color: #d9d9d9; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; line-height: 1; }
+</style>
+</head>
+<body class="font-body min-h-screen flex justify-center py-8">
+
+  <div class="relative w-[390px] min-h-[700px] bg-paper shadow-2xl overflow-hidden">
+
+    <!-- ============ REAL MOBILE HEADER ============ -->
+    <header class="sticky top-0 z-30 border-b border-hairline bg-surface">
+      <div class="flex items-center justify-between gap-6 px-4 py-3.5">
+        <a href="#" class="inline-flex items-center gap-2 whitespace-nowrap no-underline">
+          <img src="../../public/logo.png" alt="" class="h-8 w-8">
+          <span class="font-display text-xl font-bold text-ink-900">NAMMES Hub</span>
+        </a>
+        <button class="flex items-center justify-center p-2 text-ink-900">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ============ REAL MOBILE MENU PANEL, forced open ============ -->
+    <nav class="absolute inset-x-0 top-[60px] flex flex-col gap-0.5 border-b border-hairline bg-surface px-4 py-2 shadow-md z-30">
+      <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted opacity-40">About</a>
+
+      <div class="flex flex-col opacity-40">
+        <span class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-[.05em] text-ink-muted">Academics</span>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">Outlines</a>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">Timetable</a>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">CGPA</a>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">Resources</a>
+      </div>
+
+      <!-- SPOTLIGHTED: Community section (label + its real 4 children) -->
+      <div class="flex flex-col relative z-40 bg-surface rounded-sm" style="box-shadow: 0 0 0 4px rgba(11,36,23,0.15), 0 10px 25px rgba(0,0,0,0.25);">
+        <span class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-[.05em] text-ink-muted">Community</span>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">Events</a>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">News</a>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">Opportunities</a>
+        <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted">Awards</a>
+      </div>
+
+      <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted opacity-40">Forms</a>
+      <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted opacity-40">Contact</a>
+
+      <span class="max-w-[16ch] truncate px-4 py-2 text-sm text-ink-muted opacity-40">240406012@live.unilag.edu.ng</span>
+      <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted opacity-40">Account</a>
+      <a href="#" class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted opacity-40">Admin</a>
+      <span class="rounded-sm px-4 py-3 text-sm font-semibold text-ink-muted opacity-40">Sign out</span>
+    </nav>
+
+    <!-- ============ TOUR OVERLAY ============ -->
+    <div class="absolute inset-0 top-[60px] bg-black/55 z-20"></div>
+
+    <!-- Callout card anchored below the spotlighted Community block -->
+    <div class="absolute z-50 left-4 right-4" style="top: 460px;">
+      <div class="bg-surface rounded-lg p-5 shadow-md border border-hairline">
+        <span class="font-mono text-[11px] font-medium uppercase tracking-[.03em] text-ink-muted mb-1.5 block">Step 2 of 3</span>
+        <h2 class="font-display text-lg font-semibold text-ink-900 mb-2">Never miss what's happening</h2>
+        <p class="text-sm leading-relaxed text-ink-muted mb-4">
+          Events, News, Opportunities, and Awards all live under Community.
+        </p>
+        <div class="flex items-center justify-between pt-3 border-t border-hairline">
+          <a href="#" class="text-sm font-semibold text-ink-muted">Skip tour</a>
+          <button class="inline-flex items-center gap-2 rounded-md border font-body font-bold px-4.5 py-2 text-sm bg-green-900 border-green-900 text-white">Next</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
