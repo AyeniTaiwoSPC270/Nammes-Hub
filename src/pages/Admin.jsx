@@ -6,6 +6,13 @@ import Badge from '../components/ui/Badge'
 
 export const ADMIN_SECTIONS = [
   {
+    path: '/admin/home',
+    label: 'Home Page',
+    icon: 'home',
+    category: 'Content',
+    description: 'Edit the hero banner and the president’s welcome message.',
+  },
+  {
     path: '/admin/news',
     label: 'News',
     icon: 'article',

@@ -9,12 +9,15 @@ import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
 import { useNewsQuery, getNews } from '../data/news'
 import { useExcosQuery } from '../data/excos'
 import { useEventsQuery } from '../data/events'
+import { useSiteContentQuery } from '../data/siteContent'
 
 export default function Home() {
   const navigate = useNavigate()
   const newsQuery = useNewsQuery()
   const excosQuery = useExcosQuery()
   const eventsQuery = useEventsQuery()
+  const contentQuery = useSiteContentQuery()
+  const content = contentQuery.data
 
   const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
   const previewEvents = (eventsQuery.data ?? []).slice(0, 3)
@@ -23,22 +26,19 @@ export default function Home() {
     <div>
       {/* 1. Hero */}
       <section className="relative w-full min-h-[420px] sm:min-h-[560px] flex items-center overflow-hidden bg-green-900">
-        <img
-          src="https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80"
-          alt=""
-          className="absolute inset-0 z-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />
+        {content?.hero_image_url && (
+          <img
+            src={content.hero_image_url}
+            alt=""
+            className="absolute inset-0 z-0 h-full w-full object-cover"
+          />
+        )}
+        {content?.hero_image_url && <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />}
         <div className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8">
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">
-            The Nigerian Association of Materials and Metallurgical Engineering Students Hub
+            {content?.hero_title}
           </h1>
-          <p className="text-lg text-white/90 mb-8 max-w-xl">
-            NAMMES is the student-led voice of the department at the University of Lagos —
-            representing our members academically, professionally, and socially. This Hub brings
-            everything the association publishes, from course outlines and events to resources,
-            news, and opportunities, into one place.
-          </p>
+          <p className="text-lg text-white/90 mb-8 max-w-xl">{content?.hero_subtitle}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button variant="primary" onClick={() => navigate('/outlines')}>
               Browse outlines
@@ -55,7 +55,12 @@ export default function Home() {
       </section>
 
       {/* 2. Welcome message */}
-      <WelcomeMessage />
+      <WelcomeMessage
+        name={content?.president_name}
+        role={content?.president_role}
+        message={content?.president_message}
+        photoUrl={content?.president_photo_url}
+      />
 
       {/* 3. Department news */}
       <section className="w-full bg-surface-low py-16">
