@@ -19,15 +19,14 @@ function textToParagraphs(text) {
     .join('\n')
 }
 
-const WORDMARK_SVG =
-  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>'
+const WORDMARK_LOGO = `<img src="${SITE_URL}/logo.png" width="22" height="22" alt="NAMMES Hub" style="border-radius:4px;" />`
 
 const SHARED_STYLE = `
 *,*::before,*::after{box-sizing:border-box;}
 body{margin:0;padding:48px 16px;background-color:#f6f3f2;font-family:'Public Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#000904;-webkit-font-smoothing:antialiased;line-height:1.6;}
 .email-container{max-width:600px;margin:0 auto;background-color:#ffffff;border:1px solid #c2c8c1;border-radius:8px;overflow:hidden;}
 .wordmark{font-size:19px;font-weight:700;letter-spacing:-0.02em;text-decoration:none;color:#0b2417;}
-.wordmark svg{vertical-align:middle;margin-right:8px;}
+.wordmark img{vertical-align:middle;margin-right:8px;}
 .wordmark span{vertical-align:middle;}
 .cta-container{margin:28px 0 12px 0;}
 .cta-button{display:inline-block;background-color:#ae3200;color:#ffffff !important;font-size:15px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:9999px;letter-spacing:.01em;}
@@ -58,16 +57,16 @@ ${SHARED_STYLE}
 <body>
   <div class="email-container">
     <div class="email-header">
-      <a href="${SITE_URL}" class="wordmark">${WORDMARK_SVG}<span>NAMMES Hub</span></a>
+      <a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a>
     </div>
     <div class="email-body">
       <div class="meta-tag">Membership Activation</div>
       <h1 class="greeting">Welcome to the hub, ${name}.</h1>
-      <p class="paragraph">Welcome to <strong>NAMMES Hub</strong> — your official student departmental portal for the National Association of Metallurgical and Materials Engineering Students. Your account is now active, giving you access to lecture timetables, course outlines, past exam papers, opportunity listings, and departmental awards voting.</p>
+      <p class="paragraph">Welcome to <strong>NAMMES Hub</strong> — your official student departmental portal for the National Association of Metallurgical and Materials Engineering Students. Your account is now active, giving you access to lecture timetables, course outlines, past exam papers, and opportunity listings.</p>
       <div class="cta-container">
         <a href="${SITE_URL}" class="cta-button">Visit NAMMES Hub &rarr;</a>
       </div>
-      <div class="signoff">Sincerely,<br><span class="signoff-team">The NAMMES Executive Council</span></div>
+      <div class="signoff">Sincerely,<br><span class="signoff-team">The Aegis 2026/2027</span></div>
     </div>
     <div class="email-footer">
       <div>National Association of Metallurgical and Materials Engineering Students (NAMMES)</div>
@@ -79,9 +78,12 @@ ${SHARED_STYLE}
 </html>`)
 }
 
-export function renderNewContentEmail({ eyebrow, title, url }) {
+export function renderNewContentEmail({ eyebrow, title, url, imageUrl }) {
   const safeEyebrow = escapeHtml(eyebrow)
   const safeTitle = escapeHtml(title)
+  const imageHtml = imageUrl
+    ? `<img src="${imageUrl}" alt="" width="520" class="content-image" />`
+    : ''
   const postedAt = new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -99,6 +101,7 @@ ${SHARED_STYLE}
 .header-time{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6b6558;}
 .email-body{padding:36px 40px 40px 40px;}
 .eyebrow-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#ae3200;background-color:#fff0e6;border:1px solid rgba(174,50,0,.18);padding:4px 10px;border-radius:4px;margin-bottom:16px;}
+.content-image{width:100%;max-width:520px;height:auto;border-radius:8px;display:block;margin:0 0 20px 0;}
 .headline-title{font-size:22px;font-weight:700;line-height:1.3;color:#0b2417;margin:0 0 14px 0;letter-spacing:-.015em;}
 .supporting-copy{font-size:15px;line-height:1.6;color:#424843;margin:0 0 28px 0;}
 </style>
@@ -107,12 +110,13 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="email-header">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_SVG}<span>NAMMES Hub</span></a></td>
+        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
         <td align="right" class="header-time">${postedAt}</td>
       </tr></table>
     </div>
     <div class="email-body">
       <div class="eyebrow-badge">${safeEyebrow}</div>
+      ${imageHtml}
       <h1 class="headline-title">${safeTitle}</h1>
       <p class="supporting-copy">A new update was just posted on NAMMES Hub.</p>
       <div class="cta-container">
@@ -152,7 +156,7 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="header-bar">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_SVG}<span>NAMMES Hub</span></a></td>
+        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
         <td align="right"><span class="header-tag">Official Notice</span></td>
       </tr></table>
     </div>

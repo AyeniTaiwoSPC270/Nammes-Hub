@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   const emails = recipients.map((r) => r.email)
   const resend = getResendClient()
   const url = `${SITE_URL}/${table}/${record.id}`
-  const html = renderNewContentEmail({ eyebrow: meta.eyebrow, title: record.title, url })
+  const html = renderNewContentEmail({ eyebrow: meta.eyebrow, title: record.title, url, imageUrl: record.image_url })
   const subject = `${meta.subjectPrefix}: ${record.title}`
   let sent = 0
   for (const batch of chunk(emails, 100)) {
