@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../lib/AuthContext'
 import { useToast } from '../../lib/ToastContext'
-import { useFormQuery, validateFormDraft, validateQuestions } from '../../data/forms'
+import { useFormQuery, validateFormDraft, validateQuestions, FORM_CATEGORIES } from '../../data/forms'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
+import Toggle from '../../components/ui/Toggle'
 import ErrorState from '../../components/ui/ErrorState'
 import QuestionEditorCard from '../../components/admin/forms/QuestionEditorCard'
 
@@ -85,6 +88,7 @@ export default function AdminFormEditor() {
   const [hydrated, setHydrated] = useState(!id)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('other')
   const [isAcceptingResponses, setIsAcceptingResponses] = useState(true)
   const [closesAt, setClosesAt] = useState('')
   const [requireSignin, setRequireSignin] = useState(false)
@@ -93,11 +97,17 @@ export default function AdminFormEditor() {
   const [questions, setQuestions] = useState([newQuestion()])
   const [formError, setFormError] = useState('')
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
   useEffect(() => {
     if (hydrated || !formQuery.data) return
     const form = formQuery.data
     setTitle(form.title)
     setDescription(form.description || '')
+    setCategory(form.category || 'other')
     setIsAcceptingResponses(form.is_accepting_responses)
     setClosesAt(form.closes_at ? form.closes_at.slice(0, 16) : '')
     setRequireSignin(form.require_signin)
@@ -117,6 +127,7 @@ export default function AdminFormEditor() {
       const payload = {
         title: title.trim(),
         description: description.trim() || null,
+        category,
         is_accepting_responses: isAcceptingResponses,
         closes_at: closesAt || null,
         require_signin: requireSignin,
@@ -155,13 +166,13 @@ export default function AdminFormEditor() {
     setQuestions((prev) => prev.filter((_, i) => i !== index))
   }
 
-  function moveQuestion(index, direction) {
+  function handleDragEnd(event) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
     setQuestions((prev) => {
-      const next = [...prev]
-      const target = index + direction
-      if (target < 0 || target >= next.length) return prev
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return next
+      const oldIndex = prev.findIndex((q) => q.id === active.id)
+      const newIndex = prev.findIndex((q) => q.id === over.id)
+      return arrayMove(prev, oldIndex, newIndex)
     })
   }
 
@@ -190,29 +201,30 @@ export default function AdminFormEditor() {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What is this form for?"
         />
+        <label className="flex flex-col gap-1.5 font-body">
+          <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Category</span>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="rounded-md border border-hairline bg-surface px-3 py-2.5 text-base text-ink transition-colors duration-150 focus:outline-none focus:border-green-900"
+          >
+            {FORM_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+        </label>
 
-        <div className="grid grid-cols-1 gap-3 border-t border-hairline pt-4 sm:grid-cols-2">
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={isAcceptingResponses} onChange={(e) => setIsAcceptingResponses(e.target.checked)} />
-            Accepting responses
-          </label>
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={requireSignin} onChange={(e) => setRequireSignin(e.target.checked)} />
-            Require sign-in to respond
-          </label>
-          <label className={['flex items-center gap-2 text-sm', requireSignin ? 'text-ink' : 'text-ink-muted opacity-50'].join(' ')}>
-            <input
-              type="checkbox"
+        <div className="grid grid-cols-1 gap-4 border-t border-hairline pt-4 sm:grid-cols-2">
+          <Toggle checked={isAcceptingResponses} onChange={setIsAcceptingResponses} label="Accepting responses" />
+          <Toggle checked={requireSignin} onChange={setRequireSignin} label="Require sign-in to respond" />
+          <div className={requireSignin ? '' : 'opacity-50'}>
+            <Toggle
               checked={oneResponsePerPerson}
-              disabled={!requireSignin}
-              onChange={(e) => setOneResponsePerPerson(e.target.checked)}
+              onChange={requireSignin ? setOneResponsePerPerson : () => {}}
+              label="Limit to one response per person"
             />
-            Limit to one response per person
-          </label>
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" checked={allowEditAfterSubmit} onChange={(e) => setAllowEditAfterSubmit(e.target.checked)} />
-            Allow editing a response after submit
-          </label>
+          </div>
+          <Toggle checked={allowEditAfterSubmit} onChange={setAllowEditAfterSubmit} label="Allow editing a response after submit" />
         </div>
 
         <FormField
@@ -224,19 +236,20 @@ export default function AdminFormEditor() {
         />
       </div>
 
-      <div className="mt-6 flex flex-col gap-4">
-        {questions.map((q, i) => (
-          <QuestionEditorCard
-            key={q.id}
-            question={q}
-            index={i}
-            total={questions.length}
-            onChange={(next) => updateQuestion(i, next)}
-            onRemove={() => removeQuestion(i)}
-            onMoveUp={() => moveQuestion(i, -1)}
-            onMoveDown={() => moveQuestion(i, 1)}
-          />
-        ))}
+      <div className="mt-6 flex flex-col gap-3">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={questions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
+            {questions.map((q, i) => (
+              <QuestionEditorCard
+                key={q.id}
+                question={q}
+                index={i}
+                onChange={(next) => updateQuestion(i, next)}
+                onRemove={() => removeQuestion(i)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
         <Button variant="ghost" type="button" onClick={() => setQuestions((prev) => [...prev, newQuestion()])}>
           + Add question
         </Button>

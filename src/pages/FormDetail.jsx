@@ -11,6 +11,10 @@ import Button from '../components/ui/Button'
 import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
 
+function isAnswered(value) {
+  return value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0)
+}
+
 export default function FormDetail() {
   const { id } = useParams()
   const { user, loading: authLoading } = useAuth()
@@ -93,11 +97,14 @@ export default function FormDetail() {
         <p className="mt-2 text-ink-muted">
           You&rsquo;ve already responded to this form{form.allow_edit_after_submit ? '.' : ' — thank you!'}
         </p>
-        <div className="mt-6 flex flex-col gap-4">
+        <div className="mt-6 flex flex-col gap-2">
           {form.questions.map((q) => (
-            <div key={q.id}>
-              <div className="text-sm font-semibold text-ink-900">{q.label}</div>
-              <div className="text-sm text-ink-muted">{formatAnswerForDisplay(q, existingResponse.answers?.[q.id])}</div>
+            <div
+              key={q.id}
+              className="flex flex-col gap-0.5 rounded-md bg-surface-low px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+            >
+              <span className="text-sm font-semibold text-ink-900">{q.label}</span>
+              <span className="text-sm text-ink-muted sm:text-right">{formatAnswerForDisplay(q, existingResponse.answers?.[q.id])}</span>
             </div>
           ))}
         </div>
@@ -117,19 +124,36 @@ export default function FormDetail() {
     )
   }
 
+  const totalCount = form.questions.length
+  const answeredCount = form.questions.filter((q) => isAnswered(answers[q.id])).length
+  const progressPct = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0
+
   return (
     <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
       <h1 className="text-3xl font-bold text-ink-900">{form.title}</h1>
       {form.description && <p className="mt-2 text-ink-muted">{form.description}</p>}
 
-      <div className="mt-6 flex flex-col gap-6">
+      {totalCount > 0 && (
+        <div className="mt-6">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-ink-muted">
+            <span>{answeredCount} of {totalCount} answered</span>
+            <span>{progressPct}%</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-low">
+            <div className="h-full rounded-full bg-green-900 transition-all duration-150" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 flex flex-col gap-4">
         {form.questions.map((q) => (
-          <QuestionField
-            key={q.id}
-            question={q}
-            value={answers[q.id]}
-            onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
-          />
+          <div key={q.id} className="rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+            <QuestionField
+              question={q}
+              value={answers[q.id]}
+              onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
+            />
+          </div>
         ))}
       </div>
 

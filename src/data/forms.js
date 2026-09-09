@@ -1,6 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 
+export const FORM_CATEGORIES = [
+  { value: 'event', label: 'Event', badgeTone: 'new' },
+  { value: 'application', label: 'Application', badgeTone: 'updated' },
+  { value: 'survey', label: 'Survey', badgeTone: 'neutral' },
+  { value: 'other', label: 'Other', badgeTone: 'neutral' },
+]
+
+export function categoryLabel(category) {
+  return FORM_CATEGORIES.find((c) => c.value === category)?.label ?? 'Other'
+}
+
+export function categoryBadgeTone(category) {
+  return FORM_CATEGORIES.find((c) => c.value === category)?.badgeTone ?? 'neutral'
+}
+
 export const QUESTION_TYPES = [
   { value: 'short_text', label: 'Short answer', hasOptions: false, isScale: false },
   { value: 'paragraph', label: 'Paragraph', hasOptions: false, isScale: false },

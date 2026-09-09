@@ -42,6 +42,12 @@ export default function QuestionField({ question, value, onChange, error }) {
     error ? 'border-danger' : 'border-hairline',
   ].join(' ')
 
+  const choiceRowClass = (checked) =>
+    [
+      'flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 text-sm transition-colors duration-150',
+      checked ? 'border-green-900 bg-surface-low' : 'border-hairline bg-surface hover:bg-surface-low',
+    ].join(' ')
+
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-semibold text-ink-900">
@@ -60,23 +66,45 @@ export default function QuestionField({ question, value, onChange, error }) {
 
       {question.type === 'multiple_choice' && (
         <div className="flex flex-col gap-2">
-          {(question.options || []).map((option, i) => (
-            <label key={i} className="flex items-center gap-2 text-sm text-ink">
-              <input type="radio" name={question.id} checked={value === option} onChange={() => onChange(option)} />
-              {option}
-            </label>
-          ))}
+          {(question.options || []).map((option, i) => {
+            const checked = value === option
+            return (
+              <label key={i} className={choiceRowClass(checked)}>
+                <input type="radio" name={question.id} checked={checked} onChange={() => onChange(option)} className="sr-only" />
+                <span
+                  className={[
+                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2',
+                    checked ? 'border-green-900' : 'border-hairline',
+                  ].join(' ')}
+                >
+                  {checked && <span className="h-2.5 w-2.5 rounded-full bg-green-900" />}
+                </span>
+                <span className="text-ink">{option}</span>
+              </label>
+            )
+          })}
         </div>
       )}
 
       {question.type === 'checkboxes' && (
         <div className="flex flex-col gap-2">
-          {(question.options || []).map((option, i) => (
-            <label key={i} className="flex items-center gap-2 text-sm text-ink">
-              <input type="checkbox" checked={(value || []).includes(option)} onChange={() => toggleCheckbox(option)} />
-              {option}
-            </label>
-          ))}
+          {(question.options || []).map((option, i) => {
+            const checked = (value || []).includes(option)
+            return (
+              <label key={i} className={choiceRowClass(checked)}>
+                <input type="checkbox" checked={checked} onChange={() => toggleCheckbox(option)} className="sr-only" />
+                <span
+                  className={[
+                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border-2',
+                    checked ? 'border-green-900 bg-green-900' : 'border-hairline bg-surface',
+                  ].join(' ')}
+                >
+                  {checked && <span className="material-symbols-outlined text-sm text-white">check</span>}
+                </span>
+                <span className="text-ink">{option}</span>
+              </label>
+            )
+          })}
         </div>
       )}
 
@@ -90,18 +118,34 @@ export default function QuestionField({ question, value, onChange, error }) {
       )}
 
       {question.type === 'linear_scale' && (
-        <div className="flex items-center gap-3">
-          {question.scale_min_label && <span className="text-xs text-ink-muted">{question.scale_min_label}</span>}
-          {Array.from(
-            { length: question.scale_max - question.scale_min + 1 },
-            (_, i) => question.scale_min + i
-          ).map((n) => (
-            <label key={n} className="flex flex-col items-center gap-1 text-sm text-ink">
-              <input type="radio" name={question.id} checked={String(value) === String(n)} onChange={() => onChange(n)} />
-              {n}
-            </label>
-          ))}
-          {question.scale_max_label && <span className="text-xs text-ink-muted">{question.scale_max_label}</span>}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            {Array.from(
+              { length: question.scale_max - question.scale_min + 1 },
+              (_, i) => question.scale_min + i
+            ).map((n) => {
+              const checked = String(value) === String(n)
+              return (
+                <label key={n} className="flex cursor-pointer flex-col items-center gap-1.5">
+                  <input type="radio" name={question.id} checked={checked} onChange={() => onChange(n)} className="sr-only" />
+                  <span
+                    className={[
+                      'flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors duration-150',
+                      checked ? 'border-green-900 bg-green-900 text-white' : 'border-hairline bg-surface text-ink hover:bg-surface-low',
+                    ].join(' ')}
+                  >
+                    {n}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+          {(question.scale_min_label || question.scale_max_label) && (
+            <div className="flex items-center justify-between text-xs text-ink-muted">
+              <span>{question.scale_min_label}</span>
+              <span>{question.scale_max_label}</span>
+            </div>
+          )}
         </div>
       )}
 
