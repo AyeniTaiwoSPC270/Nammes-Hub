@@ -10,7 +10,7 @@ import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
-import AwardNomineePhotoUploadField from '../../components/admin/AwardNomineePhotoUploadField'
+import NomineePhotoUploadField from '../../components/awards/NomineePhotoUploadField'
 
 export default function AdminAwardCurate() {
   const { seasonId, categoryId } = useParams()
@@ -133,7 +133,7 @@ export default function AdminAwardCurate() {
                 {isAdding && (
                   <div className="mt-4 flex flex-col gap-3 border-t border-hairline pt-4">
                     <FormField label="Nominee name" value={draftName} onChange={(e) => setDraftName(e.target.value)} required />
-                    <AwardNomineePhotoUploadField label="Photo" url={draftPhotoUrl} onChange={setDraftPhotoUrl} />
+                    <NomineePhotoUploadField label="Photo" url={draftPhotoUrl} onChange={setDraftPhotoUrl} />
                     <div className="flex gap-2">
                       <Button
                         variant="primary"

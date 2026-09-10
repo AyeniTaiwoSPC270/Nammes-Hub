@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 
-export default function AwardNomineePhotoUploadField({ label, url, onChange }) {
+export default function NomineePhotoUploadField({ label, url, onChange, required = false }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
@@ -31,11 +31,15 @@ export default function AwardNomineePhotoUploadField({ label, url, onChange }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
+        {label} {required && <span className="text-danger">*</span>}
+      </span>
       <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-hairline bg-surface-low p-6 text-center transition-colors hover:bg-hairline/20">
         <span className="material-symbols-outlined text-3xl text-ink-muted">add_photo_alternate</span>
-        <span className="text-sm font-semibold text-ink-muted">{uploading ? 'Uploading…' : 'Click to upload photo (optional)'}</span>
-        <span className="text-xs text-ink-muted">JPEG, PNG up to 5MB</span>
+        <span className="text-sm font-semibold text-ink-muted">
+          {uploading ? 'Uploading…' : required ? 'Upload a photo of your nominee' : 'Click to upload photo (optional)'}
+        </span>
+        <span className="text-xs text-ink-muted">JPEG, PNG up to 5MB{required ? ' — clear headshot preferred' : ''}</span>
         <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="hidden" />
       </label>
       {error && <span className="text-xs text-danger">{error}</span>}
