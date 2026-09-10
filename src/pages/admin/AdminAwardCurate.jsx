@@ -123,7 +123,7 @@ export default function AdminAwardCurate() {
                       onClick={() => {
                         setAddingKey(key)
                         setDraftName(g.displayName)
-                        setDraftPhotoUrl('')
+                        setDraftPhotoUrl(g.photos[g.photos.length - 1] || '')
                       }}
                     >
                       Add as nominee
@@ -133,6 +133,28 @@ export default function AdminAwardCurate() {
                 {isAdding && (
                   <div className="mt-4 flex flex-col gap-3 border-t border-hairline pt-4">
                     <FormField label="Nominee name" value={draftName} onChange={(e) => setDraftName(e.target.value)} required />
+                    {g.photos.length > 1 && (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
+                          Choose a submitted photo
+                        </span>
+                        <div className="flex gap-2">
+                          {g.photos.map((photo) => (
+                            <button
+                              key={photo}
+                              type="button"
+                              onClick={() => setDraftPhotoUrl(photo)}
+                              className={[
+                                'h-14 w-14 overflow-hidden rounded-md border-2 shadow-sm',
+                                draftPhotoUrl === photo ? 'border-green-900' : 'border-transparent',
+                              ].join(' ')}
+                            >
+                              <img src={photo} alt="" className="h-full w-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <NomineePhotoUploadField label="Photo" url={draftPhotoUrl} onChange={setDraftPhotoUrl} />
                     <div className="flex gap-2">
                       <Button
