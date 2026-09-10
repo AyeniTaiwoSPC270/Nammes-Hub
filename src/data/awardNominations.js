@@ -18,18 +18,18 @@ export function useMyNominationsQuery(seasonId, userId) {
   })
 }
 
-export async function upsertNomination({ id, categoryId, userId, nomineeName }) {
+export async function upsertNomination({ id, categoryId, userId, nomineeName, photoUrl }) {
   if (id) {
     const { error } = await supabase
       .from('award_nominations')
-      .update({ nominee_name: nomineeName, updated_at: new Date().toISOString() })
+      .update({ nominee_name: nomineeName, photo_url: photoUrl || null, updated_at: new Date().toISOString() })
       .eq('id', id)
     if (error) throw error
     return
   }
   const { error } = await supabase
     .from('award_nominations')
-    .insert({ category_id: categoryId, submitted_by: userId, nominee_name: nomineeName })
+    .insert({ category_id: categoryId, submitted_by: userId, nominee_name: nomineeName, photo_url: photoUrl || null })
   if (error) throw error
 }
 
@@ -54,10 +54,11 @@ export function groupNominationsByText(nominations) {
   const groups = new Map()
   for (const n of nominations) {
     const key = n.nominee_name.trim().toLowerCase().replace(/\s+/g, ' ')
-    if (!groups.has(key)) groups.set(key, { displayName: n.nominee_name.trim(), count: 0, ids: [] })
+    if (!groups.has(key)) groups.set(key, { displayName: n.nominee_name.trim(), count: 0, ids: [], photos: [] })
     const g = groups.get(key)
     g.count += 1
     g.ids.push(n.id)
+    if (n.photo_url && !g.photos.includes(n.photo_url)) g.photos.push(n.photo_url)
   }
   return Array.from(groups.values()).sort((a, b) => b.count - a.count)
 }
