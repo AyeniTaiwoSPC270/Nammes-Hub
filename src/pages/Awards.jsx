@@ -14,6 +14,7 @@ import ErrorState from '../components/ui/ErrorState'
 import NominationCategoryField from '../components/awards/NominationCategoryField'
 import NomineeOption from '../components/awards/NomineeOption'
 import ResultsSummary from '../components/awards/ResultsSummary'
+import { shareOrDownloadCard } from '../lib/shareCard'
 
 export default function Awards() {
   const { user, loading: authLoading } = useAuth()
@@ -71,6 +72,18 @@ export default function Awards() {
     },
     onError: (error) => toast.error(error.message),
   })
+
+  async function handleShareNominee(nominee) {
+    try {
+      await shareOrDownloadCard(
+        `/api/award-card?type=campaign&nomineeId=${nominee.id}`,
+        `${nominee.name.replace(/\s+/g, '-')}-campaign-card.png`,
+        `Vote for ${nominee.name}`,
+      )
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
 
   const voteMutation = useMutation({
     mutationFn: async () => {
@@ -340,6 +353,7 @@ export default function Awards() {
                       nominee={n}
                       selected={selections[c.id] === n.id}
                       onSelect={() => setSelections((prev) => ({ ...prev, [c.id]: n.id }))}
+                      onShare={() => handleShareNominee(n)}
                     />
                   ))}
               </div>
