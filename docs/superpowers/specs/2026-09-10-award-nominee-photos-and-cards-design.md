@@ -51,6 +51,25 @@ that produces both card types on demand.
 - No retroactive photo requirement for nominations submitted before this ships — the column is
   nullable at the DB level; "required" is enforced only in the nomination form going forward.
 
+## Visual design
+
+Stitch-generated mockups for the nomination form and voting ballot are checked in at
+`scripts/award-mockups/nomination-form.html` and `scripts/award-mockups/voting-ballot.html`
+(same convention as `scripts/tour-mockups/`). The campaign/winner card concept (forest-green
+background, gold hex-lattice corner motif, gradient photo frame, "VOTE" vs. gold "★ WINNER"
+ribbon, serif nominee name) was approved as an HTML preview and is the target look for the
+`api/award-card.js` templates, implemented with `@napi-rs/canvas` rather than as markup.
+
+Two things in the voting-ballot mockup don't carry over, confirmed with the project owner:
+- The mockup's one-category-at-a-time paginated ballot ("1 of 6", "Cast Ballot for [name]") is
+  **not** built. The shipped ballot (`Awards.jsx`, `voting` phase) keeps showing every category
+  on one page with a single "Submit ballot" action — this feature only adds the share-icon
+  button and photo-card styling from the mockup onto that existing layout. Rebuilding the
+  ballot as a paginated per-category flow would change the already-shipped voting feature's
+  submission model and is out of scope here.
+- The mockup's nominee subtitle (e.g. "500L Metallurgy") is dropped — there's no such field on
+  `award_nominees` today and none is being added. Nominee cards show photo + name only.
+
 ## Architecture
 
 ### Data: `award_nominations.photo_url` + storage policy change
