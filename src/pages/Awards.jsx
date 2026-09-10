@@ -25,6 +25,7 @@ export default function Awards() {
   const nominationsQuery = useMyNominationsQuery(season?.id, user?.id)
 
   const [drafts, setDrafts] = useState({})
+  const [photoDrafts, setPhotoDrafts] = useState({})
   const [selections, setSelections] = useState({})
   const categoryIds = season?.categories.map((c) => c.id) ?? []
   const nomineesQuery = useNomineesQuery(categoryIds)
@@ -33,11 +34,14 @@ export default function Awards() {
 
   useEffect(() => {
     if (!nominationsQuery.data) return
-    const next = {}
+    const nextNames = {}
+    const nextPhotos = {}
     nominationsQuery.data.forEach((n) => {
-      next[n.category_id] = n.nominee_name
+      nextNames[n.category_id] = n.nominee_name
+      nextPhotos[n.category_id] = n.photo_url || ''
     })
-    setDrafts(next)
+    setDrafts(nextNames)
+    setPhotoDrafts(nextPhotos)
   }, [nominationsQuery.data])
 
   const nominationsByCategory = {}
@@ -48,7 +52,7 @@ export default function Awards() {
   const submitMutation = useMutation({
     mutationFn: async () => {
       const jobs = season.categories
-        .filter((c) => (drafts[c.id] || '').trim())
+        .filter((c) => (drafts[c.id] || '').trim() && photoDrafts[c.id])
         .map((c) => {
           const existing = nominationsByCategory[c.id]
           return upsertNomination({
@@ -56,6 +60,7 @@ export default function Awards() {
             categoryId: c.id,
             userId: user.id,
             nomineeName: drafts[c.id].trim(),
+            photoUrl: photoDrafts[c.id],
           })
         })
       await Promise.all(jobs)
@@ -169,7 +174,7 @@ export default function Awards() {
   }
 
   if (season.phase === 'nominating') {
-    const answeredCount = season.categories.filter((c) => (drafts[c.id] || '').trim()).length
+    const answeredCount = season.categories.filter((c) => (drafts[c.id] || '').trim() && photoDrafts[c.id]).length
     const totalCategories = season.categories.length
     const pct = totalCategories ? Math.round((answeredCount / totalCategories) * 100) : 0
 
@@ -206,6 +211,8 @@ export default function Awards() {
               index={i}
               value={drafts[c.id]}
               onChange={(value) => setDrafts((prev) => ({ ...prev, [c.id]: value }))}
+              photoUrl={photoDrafts[c.id]}
+              onPhotoChange={(url) => setPhotoDrafts((prev) => ({ ...prev, [c.id]: url }))}
             />
           ))}
         </div>

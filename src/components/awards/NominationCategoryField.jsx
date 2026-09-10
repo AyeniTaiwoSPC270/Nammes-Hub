@@ -1,5 +1,7 @@
-export default function NominationCategoryField({ category, index, value, onChange }) {
-  const filled = Boolean((value || '').trim())
+import NomineePhotoUploadField from './NomineePhotoUploadField'
+
+export default function NominationCategoryField({ category, index, value, onChange, photoUrl, onPhotoChange }) {
+  const filled = Boolean((value || '').trim()) && Boolean(photoUrl)
 
   return (
     <div className="rounded-lg bg-surface-low p-5 shadow-sm">
@@ -29,10 +31,13 @@ export default function NominationCategoryField({ category, index, value, onChan
           className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-10 text-base text-ink transition-colors focus:border-green-900 focus:outline-none"
         />
         <span
-          className={['material-symbols-outlined pointer-events-none absolute right-3', filled ? 'text-green-900' : 'text-hairline'].join(' ')}
+          className={['material-symbols-outlined pointer-events-none absolute right-3', (value || '').trim() ? 'text-green-900' : 'text-hairline'].join(' ')}
         >
-          {filled ? 'check_circle' : 'edit'}
+          {(value || '').trim() ? 'check_circle' : 'edit'}
         </span>
+      </div>
+      <div className="mt-3">
+        <NomineePhotoUploadField label="Photo" url={photoUrl} onChange={onPhotoChange} required />
       </div>
     </div>
   )
