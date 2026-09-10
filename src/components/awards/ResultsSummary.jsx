@@ -1,4 +1,18 @@
 import { buildTally } from '../../data/awardVotes'
+import { shareOrDownloadCard } from '../../lib/shareCard'
+
+async function handleDownloadWinnerCard(categoryId, winnerName) {
+  try {
+    await shareOrDownloadCard(
+      `/api/award-card?type=winner&categoryId=${categoryId}`,
+      `${winnerName.replace(/\s+/g, '-')}-winner-card.png`,
+      `${winnerName} — Winner`,
+    )
+  } catch {
+    // Silently ignored here since ResultsSummary has no toast context wired in;
+    // the download simply won't start, which is visible to the user directly.
+  }
+}
 
 export default function ResultsSummary({ categories, nomineesByCategory, votes }) {
   return (
@@ -39,13 +53,23 @@ export default function ResultsSummary({ categories, nomineesByCategory, votes }
                     <span className="mt-0.5 font-bold text-ink-900">{winner.nominee.name}</span>
                   </div>
                 </div>
-                <div className="text-left sm:text-right">
-                  <span className="block font-bold text-orange-600">
-                    {winner.count} vote{winner.count === 1 ? '' : 's'}
-                  </span>
-                  <span className="text-xs text-ink-muted">
-                    {totalVotes ? Math.round((winner.count / totalVotes) * 100) : 0}% share
-                  </span>
+                <div className="flex flex-col items-start gap-2 sm:items-end">
+                  <div className="text-left sm:text-right">
+                    <span className="block font-bold text-orange-600">
+                      {winner.count} vote{winner.count === 1 ? '' : 's'}
+                    </span>
+                    <span className="text-xs text-ink-muted">
+                      {totalVotes ? Math.round((winner.count / totalVotes) * 100) : 0}% share
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadWinnerCard(category.id, winner.nominee.name)}
+                    className="inline-flex items-center gap-1 rounded-md bg-surface px-2.5 py-1.5 text-xs font-semibold text-green-900 shadow-sm hover:bg-hairline/30"
+                  >
+                    <span className="material-symbols-outlined text-sm">download</span>
+                    Download result card
+                  </button>
                 </div>
               </div>
             )}
