@@ -45,9 +45,11 @@ that produces both card types on demand.
 - No tie-breaking UI for the winner card — if a category tie ever happens, the endpoint renders
   whichever tied nominee it encounters first; an admin can deal with a genuine tie out of band.
   Not worth building UI for an edge case this department has never hit.
-- The actual visual template (the ornate frame / branded background you have examples of) is not
-  built in this pass — this spec builds the mechanism with placeholder styling. The real template
-  art gets swapped in once you bring back a Stitch design, same as every other page in this app.
+- ~~The actual visual template is not built in this pass~~ — superseded: see Visual design below.
+  A NAMMES-branded card concept (forest-green background, gold hex-lattice corner motif,
+  gradient photo frame, "VOTE"/"★ WINNER" ribbons) was designed and approved during this
+  brainstorm and is now the target look implemented directly in `api/award-card.js`, not a
+  placeholder.
 - No retroactive photo requirement for nominations submitted before this ships — the column is
   nullable at the DB level; "required" is enforced only in the nomination form going forward.
 
