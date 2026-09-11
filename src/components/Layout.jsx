@@ -39,19 +39,17 @@ export default function Layout() {
     <div className="min-h-svh flex flex-col bg-paper">
       <Navbar />
       <main className="flex-1">
-        <Suspense fallback={<RouteSkeleton />}>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={location.pathname}
-              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-            >
-              {outlet}
-            </motion.div>
-          </AnimatePresence>
-        </Suspense>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            <Suspense fallback={<RouteSkeleton />}>{outlet}</Suspense>
+          </motion.div>
+        </AnimatePresence>
       </main>
       <Footer />
       <WelcomeCarousel />
