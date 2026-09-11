@@ -7,8 +7,9 @@ export default function AdminRoute() {
   const location = useLocation()
   const adminRowQuery = useOwnAdminRowQuery(user?.id)
 
-  if (loading || (session && adminRowQuery.isLoading)) return null
+  if (loading) return null
   if (!session) return <Navigate to="/login" state={{ from: location }} replace />
+  if (adminRowQuery.isPending) return null
   if (!adminRowQuery.data) return <Navigate to="/" replace />
   return <Outlet />
 }

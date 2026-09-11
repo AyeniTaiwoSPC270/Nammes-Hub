@@ -229,7 +229,7 @@ export default function Home() {
                 <div key={x.id} className="flex flex-col items-center gap-2.5 text-center">
                   <div className="flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center overflow-hidden rounded-full bg-surface shadow-md font-display text-2xl text-green-900">
                     {x.photo_url ? (
-                      <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                      <img src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
                     ) : (
                       (x.name || x.role).charAt(0)
                     )}

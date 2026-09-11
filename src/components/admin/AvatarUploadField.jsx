@@ -42,7 +42,7 @@ export default function AvatarUploadField({ label, url, onChange }) {
       {url && (
         <div className="relative mt-2 h-[120px] w-[120px]">
           <div className="h-full w-full overflow-hidden rounded-full bg-surface-low shadow-md">
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <img src={url} alt="" className="h-full w-full object-cover object-top" />
           </div>
           <button
             type="button"

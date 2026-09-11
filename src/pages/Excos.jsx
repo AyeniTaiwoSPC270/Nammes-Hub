@@ -59,7 +59,7 @@ export default function Excos() {
               >
                 <div className="flex w-full aspect-[4/5] items-center justify-center bg-surface-low font-display text-3xl text-green-900">
                   {x.photo_url ? (
-                    <img src={x.photo_url} alt="" className="h-full w-full object-cover" />
+                    <img src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
                   ) : (
                     (x.name || x.role || '?').charAt(0)
                   )}
