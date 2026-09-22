@@ -65,7 +65,7 @@ export default function ResultsSummary({ categories, nomineesByCategory, votes }
                   <button
                     type="button"
                     onClick={() => handleDownloadWinnerCard(category.id, winner.nominee.name)}
-                    className="inline-flex items-center gap-1 rounded-md bg-surface px-2.5 py-1.5 text-xs font-semibold text-green-900 shadow-sm hover:bg-hairline/30"
+                    className="inline-flex items-center gap-1 rounded-md bg-surface px-2.5 py-1.5 text-xs font-semibold text-brand shadow-sm hover:bg-hairline/30"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
                     Download result card

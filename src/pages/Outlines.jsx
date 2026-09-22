@@ -1,20 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { LEVELS } from '../data/outlines'
 import PageBanner from '../components/PageBanner'
+import { usePageBanner } from '../data/pageBanners'
 import outlinesBanner from '../assets/banners/outlines-banner.jpg'
 
 export default function Outlines() {
   const navigate = useNavigate()
+  const banner = usePageBanner('outlines')
 
   return (
     <div>
       <PageBanner
-        image={outlinesBanner}
-        title="Course Outlines"
-        subtitle="Access detailed curriculum structures and requirements."
+        image={banner?.image_url ?? outlinesBanner}
+        title={banner?.title ?? 'Course Outlines'}
+        subtitle={banner?.subtitle ?? 'Access detailed curriculum structures and requirements.'}
       />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-        <h2 className="text-xl font-bold text-green-900 mb-4">Select Level</h2>
+        <h2 className="text-xl font-bold text-brand mb-4">Select Level</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {LEVELS.map((level) => (
             <button

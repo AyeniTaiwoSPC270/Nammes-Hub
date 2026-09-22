@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
+import { useTheme } from '../lib/ThemeContext'
 import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
@@ -41,7 +42,7 @@ function navLinkClass({ isActive }) {
   ].join(' ')
 }
 
-const authLinkClass = 'text-sm font-semibold text-green-900 no-underline hover:text-orange-500'
+const authLinkClass = 'text-sm font-semibold text-brand no-underline hover:text-orange-500'
 
 function NavDropdown({ item }) {
   const [open, setOpen] = useState(false)
@@ -88,7 +89,9 @@ function NavDropdown({ item }) {
               className={({ isActive: childActive }) =>
                 [
                   'block px-4 py-2 text-sm font-semibold no-underline transition-colors',
-                  childActive ? 'bg-green-100 text-green-900' : 'text-ink-muted hover:bg-surface-low hover:text-ink-900',
+                  childActive
+                    ? 'bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-brand'
+                    : 'text-ink-muted hover:bg-surface-low hover:text-ink-900',
                 ].join(' ')
               }
             >
@@ -98,6 +101,21 @@ function NavDropdown({ item }) {
         </div>
       )}
     </div>
+  )
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme()
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="flex items-center justify-center rounded-sm p-2 text-ink-muted transition-colors hover:bg-surface-low hover:text-ink-900"
+    >
+      <span className="material-symbols-outlined text-xl">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+    </button>
   )
 }
 
@@ -168,15 +186,18 @@ export default function Navbar() {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          className="flex items-center justify-center p-2 text-ink-900 sm:hidden"
-        >
-          <span className="material-symbols-outlined">menu</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Toggle menu"
+            aria-expanded={open}
+            className="flex items-center justify-center p-2 text-ink-900 sm:hidden"
+          >
+            <span className="material-symbols-outlined">menu</span>
+          </button>
+        </div>
       </div>
 
       {open && (

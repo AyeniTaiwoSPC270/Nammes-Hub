@@ -24,7 +24,7 @@ export default function ForgotPassword() {
   return (
     <AuthCard maxWidth="max-w-[480px]">
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-green-900">Forgot Password</h1>
+        <h1 className="text-2xl font-bold text-brand">Forgot Password</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Enter your email address and we&rsquo;ll send you instructions to reset your password.
         </p>
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your.email@example.com"
                 required
-                className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors focus:border-green-900"
+                className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors focus:border-brand"
               />
             </div>
           </div>
@@ -61,8 +61,8 @@ export default function ForgotPassword() {
 
       {sent && (
         <div className="flex flex-col items-center gap-2 rounded-md border border-hairline bg-surface-low p-6 text-center">
-          <span className="material-symbols-outlined text-4xl text-green-900">check_circle</span>
-          <h3 className="text-lg font-bold text-green-900">Check your email</h3>
+          <span className="material-symbols-outlined text-4xl text-brand">check_circle</span>
+          <h3 className="text-lg font-bold text-brand">Check your email</h3>
           <p className="text-sm leading-relaxed text-ink-muted">
             If an account exists for <span className="font-medium text-ink">{email}</span>, we&rsquo;ve sent
             instructions to reset your password.
@@ -73,7 +73,7 @@ export default function ForgotPassword() {
       <div className="mt-6 text-center">
         <Link
           to="/login"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-green-900 no-underline hover:text-orange-500 hover:underline"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
         >
           <span className="material-symbols-outlined text-base">arrow_back</span>
           Return to Sign In

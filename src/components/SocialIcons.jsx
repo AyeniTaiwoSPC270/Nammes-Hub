@@ -1,3 +1,5 @@
+import { useSiteContentQuery } from '../data/siteContent'
+
 function WhatsAppIcon(props) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -40,26 +42,39 @@ function YouTubeIcon(props) {
   )
 }
 
-export const socialLinks = [
-  { label: 'WhatsApp community', href: '#', Icon: WhatsAppIcon },
-  { label: 'X', href: '#', Icon: XIcon },
-  { label: 'Instagram', href: '#', Icon: InstagramIcon },
-  { label: 'LinkedIn', href: '#', Icon: LinkedInIcon },
-  { label: 'YouTube', href: '#', Icon: YouTubeIcon },
+export const SOCIAL_PLATFORMS = [
+  { key: 'whatsapp_url', label: 'WhatsApp community', Icon: WhatsAppIcon },
+  { key: 'x_url', label: 'X', Icon: XIcon },
+  { key: 'instagram_url', label: 'Instagram', Icon: InstagramIcon },
+  { key: 'linkedin_url', label: 'LinkedIn', Icon: LinkedInIcon },
+  { key: 'youtube_url', label: 'YouTube', Icon: YouTubeIcon },
 ]
 
 const darkLinkClass =
   'flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-white/70 transition-colors hover:border-orange-500 hover:text-orange-500'
 const lightLinkClass =
-  'flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-ink-muted transition-colors hover:border-green-900 hover:text-green-900'
+  'flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-ink-muted transition-colors hover:border-brand hover:text-brand'
 
 export default function SocialIcons({ className = '', variant = 'dark' }) {
+  const contentQuery = useSiteContentQuery()
+  const content = contentQuery.data
   const linkClass = variant === 'light' ? lightLinkClass : darkLinkClass
+  const links = SOCIAL_PLATFORMS.filter(({ key }) => content?.[key])
+
+  if (links.length === 0) return null
 
   return (
     <div className={['flex items-center gap-3', className].join(' ')}>
-      {socialLinks.map(({ label, href, Icon }) => (
-        <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className={linkClass}>
+      {links.map(({ key, label, Icon }) => (
+        <a
+          key={key}
+          href={content[key]}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={label}
+          title={label}
+          className={linkClass}
+        >
           <Icon className="h-4 w-4" />
         </a>
       ))}

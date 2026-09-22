@@ -206,7 +206,7 @@ export default function AdminFormEditor() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-md border border-hairline bg-surface px-3 py-2.5 text-base text-ink transition-colors duration-150 focus:outline-none focus:border-green-900"
+            className="rounded-md border border-hairline bg-surface px-3 py-2.5 text-base text-ink transition-colors duration-150 focus:outline-none focus:border-brand"
           >
             {FORM_CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>

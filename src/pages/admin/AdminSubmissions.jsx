@@ -104,7 +104,7 @@ export default function AdminSubmissions() {
           onClick={() => setTab('pending')}
           className={[
             'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-            tab === 'pending' ? 'border-green-900 text-green-900' : 'border-transparent text-ink-muted',
+            tab === 'pending' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
           ].join(' ')}
         >
           Pending{pendingRows.length > 0 ? ` (${pendingRows.length})` : ''}
@@ -114,7 +114,7 @@ export default function AdminSubmissions() {
           onClick={() => setTab('history')}
           className={[
             'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-            tab === 'history' ? 'border-green-900 text-green-900' : 'border-transparent text-ink-muted',
+            tab === 'history' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
           ].join(' ')}
         >
           Approved / rejected

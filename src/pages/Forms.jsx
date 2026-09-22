@@ -42,11 +42,11 @@ export default function Forms() {
         <div className="mt-8 grid grid-cols-2 gap-4 rounded-lg bg-surface-low p-5 sm:grid-cols-3">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-ink-muted">Open now</span>
-            <span className="text-2xl font-bold text-green-900">{forms.length}</span>
+            <span className="text-2xl font-bold text-brand">{forms.length}</span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-ink-muted">Responses so far</span>
-            <span className="text-2xl font-bold text-green-900">{totalResponses}</span>
+            <span className="text-2xl font-bold text-brand">{totalResponses}</span>
           </div>
           <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
             <span className="text-xs text-ink-muted">Next deadline</span>

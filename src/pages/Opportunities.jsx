@@ -4,10 +4,12 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonTable } from '../components/ui/Skeleton'
 import { useOpportunitiesQuery, getOpportunities } from '../data/opportunities'
+import { usePageBanner } from '../data/pageBanners'
 import opportunitiesBanner from '../assets/banners/opportunities-banner.jpg'
 
 export default function Opportunities() {
   const { data, isLoading, isError, refetch } = useOpportunitiesQuery()
+  const banner = usePageBanner('opportunities')
 
   const items = getOpportunities(data ?? [])
 
@@ -32,9 +34,9 @@ export default function Opportunities() {
   return (
     <div>
       <PageBanner
-        image={opportunitiesBanner}
-        title="Opportunities"
-        subtitle="Explore current engineering roles, internships, and research positions."
+        image={banner?.image_url ?? opportunitiesBanner}
+        title={banner?.title ?? 'Opportunities'}
+        subtitle={banner?.subtitle ?? 'Explore current engineering roles, internships, and research positions.'}
       />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <h2 className="text-2xl font-bold text-ink-900 mb-2">Current listings</h2>

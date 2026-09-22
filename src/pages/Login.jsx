@@ -39,7 +39,7 @@ export default function Login() {
       footer={
         <p className="text-sm text-ink-muted">
           Don&rsquo;t have an account?{' '}
-          <Link to="/signup" className="font-semibold text-green-900 no-underline hover:text-orange-500 hover:underline">
+          <Link to="/signup" className="font-semibold text-brand no-underline hover:text-orange-500 hover:underline">
             Create an account
           </Link>
         </p>
@@ -52,7 +52,7 @@ export default function Login() {
       }
     >
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-green-900">NAMMES Hub</h1>
+        <h1 className="text-2xl font-bold text-brand">NAMMES Hub</h1>
         <p className="mt-1 text-sm text-ink-muted">Sign in to your account</p>
       </div>
 
@@ -88,7 +88,7 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@university.edu"
               required
-              className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors focus:border-green-900"
+              className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors focus:border-brand"
             />
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function Login() {
             <label htmlFor="password" className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
               Password
             </label>
-            <Link to="/forgot-password" className="text-xs text-green-900 no-underline hover:text-orange-500 hover:underline">
+            <Link to="/forgot-password" className="text-xs text-brand no-underline hover:text-orange-500 hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -115,7 +115,7 @@ export default function Login() {
               required
               className={[
                 'w-full rounded-md border bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors',
-                error ? 'border-danger' : 'border-hairline focus:border-green-900',
+                error ? 'border-danger' : 'border-hairline focus:border-brand',
               ].join(' ')}
             />
           </div>

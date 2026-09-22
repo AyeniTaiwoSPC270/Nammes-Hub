@@ -12,7 +12,7 @@ export default function NominationCategoryField({ category, index, value, onChan
         <span
           className={[
             'inline-flex items-center gap-1 text-xs font-semibold',
-            filled ? 'text-green-900' : 'text-ink-muted',
+            filled ? 'text-brand' : 'text-ink-muted',
           ].join(' ')}
         >
           <span className="material-symbols-outlined text-base">{filled ? 'check_circle' : 'radio_button_unchecked'}</span>
@@ -28,10 +28,10 @@ export default function NominationCategoryField({ category, index, value, onChan
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder={`Who do you nominate for ${category.title}?`}
-          className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-10 text-base text-ink transition-colors focus:border-green-900 focus:outline-none"
+          className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-10 text-base text-ink transition-colors focus:border-brand focus:outline-none"
         />
         <span
-          className={['material-symbols-outlined pointer-events-none absolute right-3', (value || '').trim() ? 'text-green-900' : 'text-hairline'].join(' ')}
+          className={['material-symbols-outlined pointer-events-none absolute right-3', (value || '').trim() ? 'text-brand' : 'text-hairline'].join(' ')}
         >
           {(value || '').trim() ? 'check_circle' : 'edit'}
         </span>

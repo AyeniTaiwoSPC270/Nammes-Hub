@@ -5,6 +5,7 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
+import { usePageBanner } from '../data/pageBanners'
 import newsBanner from '../assets/banners/news-banner.jpg'
 
 const categories = ['All', ...NEWS_CATEGORIES]
@@ -17,6 +18,7 @@ export default function News() {
   const active = categories.includes(requestedCategory) ? requestedCategory : 'All'
   const items = filterNewsByCategory(getNews(data ?? []), active)
   const [featured, ...rest] = items
+  const banner = usePageBanner('news')
 
   function selectCategory(category) {
     if (category === 'All') {
@@ -29,9 +31,9 @@ export default function News() {
   return (
     <div>
       <PageBanner
-        image={newsBanner}
-        title="Department News"
-        subtitle="News and announcements, posted jointly with the PRO."
+        image={banner?.image_url ?? newsBanner}
+        title={banner?.title ?? 'Department News'}
+        subtitle={banner?.subtitle ?? 'News and announcements, posted jointly with the PRO.'}
       />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <div className="flex flex-wrap gap-2 mb-8">

@@ -146,7 +146,7 @@ export default function AdminAwardCurate() {
                               onClick={() => setDraftPhotoUrl(photo)}
                               className={[
                                 'h-14 w-14 overflow-hidden rounded-md border-2 shadow-sm',
-                                draftPhotoUrl === photo ? 'border-green-900' : 'border-transparent',
+                                draftPhotoUrl === photo ? 'border-brand' : 'border-transparent',
                               ].join(' ')}
                             >
                               <img src={photo} alt="" className="h-full w-full object-cover" />

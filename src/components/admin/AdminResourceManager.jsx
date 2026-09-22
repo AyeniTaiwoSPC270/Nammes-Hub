@@ -143,7 +143,7 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Link
         to="/admin"
-        className="inline-flex items-center gap-1 text-sm font-semibold text-green-900 no-underline hover:text-orange-500 hover:underline"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
       >
         <span className="material-symbols-outlined text-base">arrow_back</span>
         Back to Admin

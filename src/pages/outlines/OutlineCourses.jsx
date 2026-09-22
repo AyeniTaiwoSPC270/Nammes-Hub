@@ -58,7 +58,7 @@ export default function OutlineCourses() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by course code or title"
-            className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-sm text-ink transition-colors focus:border-green-900 focus:outline-none"
+            className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-sm text-ink transition-colors focus:border-brand focus:outline-none"
           />
         </div>
       )}

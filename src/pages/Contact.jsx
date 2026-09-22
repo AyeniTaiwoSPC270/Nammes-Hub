@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import PageBanner from '../components/PageBanner'
+import { usePageBanner } from '../data/pageBanners'
 import FormField from '../components/ui/FormField'
 import Button from '../components/ui/Button'
 import SocialIcons from '../components/SocialIcons'
@@ -10,6 +11,7 @@ import { useToast } from '../lib/ToastContext'
 
 export default function Contact() {
   const toast = useToast()
+  const banner = usePageBanner('contact')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -48,7 +50,12 @@ export default function Contact() {
 
   return (
     <div>
-      <PageBanner title="Contact Us" subtitle="Questions, feedback, or ideas for NAMMES Hub? We'd love to hear from you." size="md" />
+      <PageBanner
+        image={banner?.image_url}
+        title={banner?.title ?? 'Contact Us'}
+        subtitle={banner?.subtitle ?? "Questions, feedback, or ideas for NAMMES Hub? We'd love to hear from you."}
+        size="md"
+      />
 
       <section className="mx-auto max-w-[1000px] px-5 sm:px-6 py-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr]">
@@ -84,7 +91,7 @@ export default function Contact() {
               </p>
               <Link
                 to="/excos"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-900 no-underline hover:text-orange-500 hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
               >
                 Meet the Excos
                 <span className="material-symbols-outlined text-base">arrow_forward</span>

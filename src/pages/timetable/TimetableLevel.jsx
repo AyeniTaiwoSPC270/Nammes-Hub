@@ -84,7 +84,7 @@ export default function TimetableLevel() {
                 onClick={() => setType(value)}
                 className={[
                   'rounded-full px-4 py-1.5 text-xs font-semibold transition-colors',
-                  type === value ? 'bg-green-100 text-green-900' : 'text-ink-muted hover:text-ink-900',
+                  type === value ? 'bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-brand' : 'text-ink-muted hover:text-ink-900',
                 ].join(' ')}
               >
                 {label}

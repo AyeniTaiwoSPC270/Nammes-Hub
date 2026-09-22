@@ -4,6 +4,7 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
+import { usePageBanner } from '../data/pageBanners'
 import eventsBanner from '../assets/banners/events-banner.jpg'
 
 function EventCard({ event }) {
@@ -50,13 +51,14 @@ export default function Events() {
   const { data, isLoading, isError, refetch } = useEventsQuery()
   const rows = data ?? []
   const { upcoming, past } = groupEventsByTime(rows)
+  const banner = usePageBanner('events')
 
   return (
     <div>
       <PageBanner
-        image={eventsBanner}
-        title="Events"
-        subtitle="Workshops, seminars, and gatherings from the department."
+        image={banner?.image_url ?? eventsBanner}
+        title={banner?.title ?? 'Events'}
+        subtitle={banner?.subtitle ?? 'Workshops, seminars, and gatherings from the department.'}
       />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         {isError && !data ? (

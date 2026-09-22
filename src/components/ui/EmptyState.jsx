@@ -6,7 +6,7 @@ export default function EmptyState({ icon = 'inbox', title, description, classNa
         className,
       ].join(' ')}
     >
-      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface text-green-900 shadow-md">
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface text-brand shadow-md">
         <span className="material-symbols-outlined text-3xl">{icon}</span>
       </span>
       <h3 className="text-lg font-bold text-ink-900">{title}</h3>

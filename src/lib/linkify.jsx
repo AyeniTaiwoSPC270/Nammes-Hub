@@ -25,7 +25,7 @@ export function linkifyText(text) {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-green-900 underline underline-offset-2 hover:text-green-700"
+        className="text-brand underline underline-offset-2 hover:opacity-80"
       >
         {url}
       </a>,

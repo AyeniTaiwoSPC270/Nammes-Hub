@@ -3,7 +3,7 @@ export default function NomineeOption({ nominee, selected, onSelect, onShare }) 
     <div
       className={[
         'flex flex-col overflow-hidden rounded-lg border bg-surface text-left shadow-sm transition-shadow hover:shadow-md',
-        selected ? 'border-green-900' : 'border-hairline',
+        selected ? 'border-brand' : 'border-hairline',
       ].join(' ')}
     >
       <button type="button" onClick={onSelect} className="relative flex aspect-[4/5] w-full items-center justify-center bg-surface-low">
@@ -36,7 +36,7 @@ export default function NomineeOption({ nominee, selected, onSelect, onShare }) 
       <div className="flex flex-col gap-1 p-3 text-center">
         <span className="truncate text-sm font-semibold text-ink-900">{nominee.name}</span>
         {selected && (
-          <span className="mx-auto rounded bg-green-900/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[.05em] text-green-900">
+          <span className="mx-auto rounded bg-green-900/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[.05em] text-brand">
             Selected
           </span>
         )}

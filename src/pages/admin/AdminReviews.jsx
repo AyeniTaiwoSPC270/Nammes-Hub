@@ -56,7 +56,7 @@ function ReviewCard({ request, onApprove, onReject, busy }) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Reason for rejection"
-            className="w-full rounded-md border border-hairline bg-surface p-2 text-sm outline-none focus:border-green-900"
+            className="w-full rounded-md border border-hairline bg-surface p-2 text-sm outline-none focus:border-brand"
           />
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => setRejecting(false)}>Cancel</Button>

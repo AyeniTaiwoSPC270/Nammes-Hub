@@ -46,7 +46,7 @@ export default function ResourceLevel() {
                     {count} resource{count === 1 ? '' : 's'}
                   </p>
                 </div>
-                <span className="material-symbols-outlined text-3xl text-green-900">chevron_right</span>
+                <span className="material-symbols-outlined text-3xl text-brand">chevron_right</span>
               </button>
             )
           })}

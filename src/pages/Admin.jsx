@@ -13,6 +13,20 @@ export const ADMIN_SECTIONS = [
     description: 'Edit the hero banner and the president’s welcome message.',
   },
   {
+    path: '/admin/links',
+    label: 'Site Links',
+    icon: 'link',
+    category: 'Content',
+    description: 'Edit the Substack newsletter link and social media links shown in the footer.',
+  },
+  {
+    path: '/admin/banners',
+    label: 'Page Banners',
+    icon: 'panorama',
+    category: 'Content',
+    description: 'Edit the title, subtitle, and image shown at the top of each page.',
+  },
+  {
     path: '/admin/news',
     label: 'News',
     icon: 'article',
@@ -133,7 +147,7 @@ export default function Admin() {
           >
             <div className="flex w-full items-start justify-between">
               <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{s.category}</span>
-              <span className="material-symbols-outlined text-hairline transition-colors group-hover:text-green-900">
+              <span className="material-symbols-outlined text-hairline transition-colors group-hover:text-brand">
                 {s.icon}
               </span>
             </div>

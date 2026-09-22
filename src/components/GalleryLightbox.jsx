@@ -48,7 +48,7 @@ export default function GalleryLightbox({ photos, index, onIndexChange, onClose 
             type="button"
             aria-label="Download this photo"
             onClick={() => downloadImage(photo.image_url, `photo-${photo.id}.jpg`)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink-900 shadow-md hover:text-green-900"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-surface text-ink-900 shadow-md hover:text-brand"
           >
             <span className="material-symbols-outlined">download</span>
           </button>

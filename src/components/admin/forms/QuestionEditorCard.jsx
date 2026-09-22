@@ -88,7 +88,7 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
             value={question.label}
             onChange={(e) => update({ label: e.target.value })}
             placeholder="Question"
-            className="flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-base font-semibold text-ink focus:outline-none focus:border-green-900"
+            className="flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-base font-semibold text-ink focus:outline-none focus:border-brand"
           />
         </div>
         <select
@@ -109,7 +109,7 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
         value={question.helper_text || ''}
         onChange={(e) => update({ helper_text: e.target.value })}
         placeholder="Helper text (optional)"
-        className="rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink-muted focus:outline-none focus:border-green-900"
+        className="rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink-muted focus:outline-none focus:border-brand"
       />
 
       {type.hasOptions && (
@@ -120,7 +120,7 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
                 value={option}
                 onChange={(e) => updateOption(i, e.target.value)}
                 placeholder={`Option ${i + 1}`}
-                className="flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-green-900"
+                className="flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-brand"
               />
               <button type="button" onClick={() => removeOption(i)} className="text-ink-muted hover:text-danger">
                 <span className="material-symbols-outlined text-lg">close</span>

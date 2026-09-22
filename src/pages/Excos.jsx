@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import { fetchExcos } from '../data/excos'
+import { usePageBanner } from '../data/pageBanners'
 
 export default function Excos() {
   const [rows, setRows] = useState([])
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
+  const banner = usePageBanner('excos')
 
   useEffect(() => {
     fetchExcos()
@@ -23,9 +25,9 @@ export default function Excos() {
   return (
     <div>
       <PageBanner
-        image="https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80"
-        title="The Aegis 26/27"
-        subtitle="Meet the Executive Council leading NAMMES for the 2026/2027 session."
+        image={banner?.image_url ?? 'https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80'}
+        title={banner?.title ?? 'The Aegis 26/27'}
+        subtitle={banner?.subtitle ?? 'Meet the Executive Council leading NAMMES for the 2026/2027 session.'}
         size="lg"
       />
 
@@ -57,7 +59,7 @@ export default function Excos() {
                 key={x.id}
                 className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-shadow hover:shadow-lg"
               >
-                <div className="flex w-full aspect-[4/5] items-center justify-center bg-surface-low font-display text-3xl text-green-900">
+                <div className="flex w-full aspect-[4/5] items-center justify-center bg-surface-low font-display text-3xl text-brand">
                   {x.photo_url ? (
                     <img src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
                   ) : (
@@ -72,7 +74,7 @@ export default function Excos() {
                       {x.email && (
                         <a
                           href={`mailto:${x.email}`}
-                          className="flex items-center gap-1.5 text-sm text-ink-muted no-underline hover:text-green-900 hover:underline"
+                          className="flex items-center gap-1.5 text-sm text-ink-muted no-underline hover:text-brand hover:underline"
                         >
                           <span className="material-symbols-outlined text-base">mail</span>
                           <span className="truncate">{x.email}</span>
@@ -81,7 +83,7 @@ export default function Excos() {
                       {x.phone && (
                         <a
                           href={`tel:${x.phone}`}
-                          className="flex items-center gap-1.5 text-sm text-ink-muted no-underline hover:text-green-900 hover:underline"
+                          className="flex items-center gap-1.5 text-sm text-ink-muted no-underline hover:text-brand hover:underline"
                         >
                           <span className="material-symbols-outlined text-base">call</span>
                           <span className="truncate">{x.phone}</span>

@@ -133,7 +133,7 @@ export default function OutlineDetail() {
             <p className="text-sm text-ink-muted">
               <Link
                 to="/login"
-                className="font-semibold text-green-900 no-underline hover:text-orange-500 hover:underline"
+                className="font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
               >
                 Sign in
               </Link>{' '}
@@ -168,7 +168,7 @@ export default function OutlineDetail() {
                           href={item.file_url || item.external_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-green-900 hover:underline"
+                          className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
                         >
                           {item.title}
                           {item.session ? ` (${item.session})` : ''}

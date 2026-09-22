@@ -12,13 +12,13 @@ export default function FormField({
 }) {
   const controlClass = [
     'rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
-    'focus:outline-none focus:border-green-900',
+    'focus:outline-none focus:border-brand',
     error ? 'border-danger' : success ? 'border-success' : 'border-hairline',
   ].join(' ')
 
   return (
     <label className="flex flex-col gap-1.5 font-body">
-      <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{label}</span>
+      <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">{label}</span>
       {type === 'select' ? (
         <select value={value} onChange={onChange} required={required} className={controlClass}>
           {(options || []).map((o, i) => (

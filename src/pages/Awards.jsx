@@ -136,7 +136,7 @@ export default function Awards() {
 
         <div className="mt-6 grid grid-cols-1 gap-3 rounded-lg bg-surface-low p-4 shadow-sm sm:grid-cols-2">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-surface text-green-900 shadow-sm">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-surface text-brand shadow-sm">
               <span className="material-symbols-outlined text-xl">how_to_vote</span>
             </span>
             <div className="flex flex-col">
@@ -145,7 +145,7 @@ export default function Awards() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-surface text-green-900 shadow-sm">
+            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-surface text-brand shadow-sm">
               <span className="material-symbols-outlined text-xl">workspace_premium</span>
             </span>
             <div className="flex flex-col">
@@ -203,7 +203,7 @@ export default function Awards() {
 
         <div className="mt-5 rounded-lg bg-surface-low p-4 shadow-sm">
           <div className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-1.5 font-semibold text-green-900">
+            <span className="flex items-center gap-1.5 font-semibold text-brand">
               <span className="material-symbols-outlined text-lg">task_alt</span>
               Submission progress
             </span>
@@ -290,7 +290,7 @@ export default function Awards() {
               <span className="material-symbols-outlined text-xl">verified_user</span>
             </span>
             <div className="flex flex-col">
-              <span className="text-xs font-semibold uppercase tracking-[.05em] text-green-900">Official student ballot</span>
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand">Official student ballot</span>
               <span className="text-sm text-ink-muted">
                 Matric no: <strong className="text-ink-900">{profileQuery.data?.student_id ?? '—'}</strong> verified &middot; 1 vote per
                 student
@@ -305,7 +305,7 @@ export default function Awards() {
 
         <div className="mt-4 rounded-lg bg-surface-low p-4 shadow-sm">
           <div className="flex items-center justify-between text-sm">
-            <span className="flex items-center gap-1.5 font-semibold text-green-900">
+            <span className="flex items-center gap-1.5 font-semibold text-brand">
               <span className="material-symbols-outlined text-lg">fact_check</span>
               Categories completed: <span className="text-ink-900">{answeredCount} of {votableCategories.length}</span>
             </span>
@@ -337,7 +337,7 @@ export default function Awards() {
                 <span
                   className={[
                     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
-                    selections[c.id] ? 'bg-green-900/10 text-green-900' : 'text-ink-muted',
+                    selections[c.id] ? 'bg-green-900/10 text-brand' : 'text-ink-muted',
                   ].join(' ')}
                 >
                   <span className="material-symbols-outlined text-base">{selections[c.id] ? 'check' : 'radio_button_unchecked'}</span>
@@ -364,7 +364,7 @@ export default function Awards() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 px-5 py-3 backdrop-blur-sm sm:px-6">
           <div className="mx-auto flex max-w-[900px] flex-col items-center justify-between gap-3 sm:flex-row">
             <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-low text-green-900">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-low text-brand">
                 <span className="material-symbols-outlined text-xl">{allAnswered ? 'verified' : 'pending_actions'}</span>
               </span>
               <div className="flex flex-col">

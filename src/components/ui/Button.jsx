@@ -1,6 +1,6 @@
 const variants = {
   primary: 'bg-green-900 border-green-900 text-white hover:opacity-90',
-  secondary: 'bg-surface-low border-transparent text-green-900 hover:bg-hairline/40',
+  secondary: 'bg-surface-low border-transparent text-brand hover:bg-hairline/40',
   accent: 'bg-orange-500 border-orange-500 text-white hover:bg-orange-600 hover:border-orange-600',
   destructive: 'bg-danger border-danger text-white hover:bg-[#93000a] hover:border-[#93000a]',
   ghost: 'bg-transparent border-transparent text-ink hover:bg-surface-low',

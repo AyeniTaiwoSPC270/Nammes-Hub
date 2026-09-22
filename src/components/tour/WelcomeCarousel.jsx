@@ -29,7 +29,7 @@ export default function WelcomeCarousel() {
         {carouselSlide.items && (
           <div className="mb-6 flex flex-wrap gap-2">
             {carouselSlide.items.map((item) => (
-              <span key={item} className="rounded-md bg-surface-low px-3 py-1.5 text-sm font-semibold text-green-900">
+              <span key={item} className="rounded-md bg-surface-low px-3 py-1.5 text-sm font-semibold text-brand">
                 {item}
               </span>
             ))}

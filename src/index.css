@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-green-900: #0b2417;
 
@@ -22,6 +24,13 @@
   --color-danger: #ba1a1a;
   --color-danger-bg: #ffdad6;
 
+  /* Brand accent used for text/borders/icons on a page surface (links, focus rings,
+     active states). Distinct from --color-green-900, which is the solid brand fill
+     used on backgrounds (buttons, footer, hero bands) and must stay dark in both
+     themes. Same split for --color-brand-orange vs --color-orange-600. */
+  --color-brand: #0b2417;
+  --color-brand-orange: #ae3200;
+
   --font-display: "Public Sans", -apple-system, sans-serif;
   --font-body: "Public Sans", -apple-system, sans-serif;
   --font-mono: "Public Sans", -apple-system, sans-serif;
@@ -35,9 +44,28 @@
   --shadow-md: 0px 4px 20px rgba(0, 0, 0, 0.05);
 }
 
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --color-ink-900: #f7f9f7;
+  --color-paper: #0d1310;
+  --color-surface: #16211b;
+  --color-surface-low: #111a15;
+  --color-ink: #e6e8e5;
+  --color-ink-muted: #9aa79e;
+  --color-hairline: #2c352f;
+
+  --color-brand: #5cb88a;
+  --color-brand-orange: #ff9a5c;
+}
+
 @layer base {
   body {
-    @apply bg-paper text-ink font-body antialiased;
+    @apply bg-paper text-ink font-body antialiased transition-colors duration-150;
   }
 
   h1, h2, h3 {
@@ -46,7 +74,7 @@
   }
 
   a {
-    @apply text-green-900;
+    @apply text-brand;
   }
 
   a:hover {

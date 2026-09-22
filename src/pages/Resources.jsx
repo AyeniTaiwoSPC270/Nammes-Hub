@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { LEVELS } from '../data/resources'
 import PageBanner from '../components/PageBanner'
+import { usePageBanner } from '../data/pageBanners'
 import resourcesBanner from '../assets/banners/resources-banner.jpg'
 
 const YEAR_LABELS = {
@@ -13,13 +14,17 @@ const YEAR_LABELS = {
 
 export default function Resources() {
   const navigate = useNavigate()
+  const banner = usePageBanner('resources')
 
   return (
     <div>
       <PageBanner
-        image={resourcesBanner}
-        title="Resources"
-        subtitle="Access lecture notes, past questions, and study materials curated for engineering excellence."
+        image={banner?.image_url ?? resourcesBanner}
+        title={banner?.title ?? 'Resources'}
+        subtitle={
+          banner?.subtitle ??
+          'Access lecture notes, past questions, and study materials curated for engineering excellence.'
+        }
       />
       <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
         <div className="mb-6 border-b border-hairline pb-2">

@@ -25,7 +25,7 @@ export default function AdminResourceList({ config, rows, onEdit, onDelete, empt
         type="button"
         title="Edit"
         onClick={() => onEdit(row)}
-        className="text-ink-muted transition-colors hover:text-green-900"
+        className="text-ink-muted transition-colors hover:text-brand"
       >
         <span className="material-symbols-outlined text-xl">edit</span>
       </button>

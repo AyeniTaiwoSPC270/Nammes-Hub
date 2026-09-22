@@ -38,14 +38,14 @@ export default function QuestionField({ question, value, onChange, error }) {
 
   const controlClass = [
     'rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
-    'focus:outline-none focus:border-green-900',
+    'focus:outline-none focus:border-brand',
     error ? 'border-danger' : 'border-hairline',
   ].join(' ')
 
   const choiceRowClass = (checked) =>
     [
       'flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 text-sm transition-colors duration-150',
-      checked ? 'border-green-900 bg-surface-low' : 'border-hairline bg-surface hover:bg-surface-low',
+      checked ? 'border-brand bg-surface-low' : 'border-hairline bg-surface hover:bg-surface-low',
     ].join(' ')
 
   return (
@@ -74,7 +74,7 @@ export default function QuestionField({ question, value, onChange, error }) {
                 <span
                   className={[
                     'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2',
-                    checked ? 'border-green-900' : 'border-hairline',
+                    checked ? 'border-brand' : 'border-hairline',
                   ].join(' ')}
                 >
                   {checked && <span className="h-2.5 w-2.5 rounded-full bg-green-900" />}

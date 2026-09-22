@@ -1,4 +1,5 @@
 import PageBanner from '../components/PageBanner'
+import { usePageBanner } from '../data/pageBanners'
 
 const missionVision = [
   {
@@ -47,17 +48,19 @@ const coreValues = [
 ]
 
 export default function About() {
+  const banner = usePageBanner('about')
+
   return (
     <div>
       <PageBanner
-        image="https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80"
-        title="About NAMMES"
-        subtitle="Learn more about NAMMES, our mission and values."
+        image={banner?.image_url ?? 'https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80'}
+        title={banner?.title ?? 'About NAMMES'}
+        subtitle={banner?.subtitle ?? 'Learn more about NAMMES, our mission and values.'}
         size="lg"
       />
 
       <div className="mx-auto max-w-[900px] px-5 py-14 sm:px-6">
-        <h2 className="text-center text-2xl sm:text-[28px] font-bold text-green-900 mb-6">Who We Are</h2>
+        <h2 className="text-center text-2xl sm:text-[28px] font-bold text-brand mb-6">Who We Are</h2>
         <div className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-6 shadow-md sm:p-8">
           <p className="leading-relaxed text-ink">
             Created in 1973 to catalyze Nigeria&rsquo;s industrialization, the Department of
@@ -83,13 +86,13 @@ export default function About() {
 
       <div className="w-full bg-surface-low py-14">
         <div className="mx-auto max-w-[1000px] px-5 sm:px-6">
-          <h2 className="text-center text-2xl sm:text-[28px] font-bold text-green-900 mb-8">
+          <h2 className="text-center text-2xl sm:text-[28px] font-bold text-brand mb-8">
             Our Mission &amp; Vision
           </h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             {missionVision.map((item) => (
               <div key={item.title} className="rounded-lg border border-hairline bg-surface p-6 shadow-md">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-900">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-brand">
                   <span className="material-symbols-outlined text-xl">{item.icon}</span>
                 </span>
                 <h3 className="mt-4 text-lg font-bold text-ink-900">{item.title}</h3>
@@ -101,7 +104,7 @@ export default function About() {
       </div>
 
       <div className="mx-auto max-w-[1100px] px-5 py-14 sm:px-6">
-        <h2 className="text-center text-2xl sm:text-[28px] font-bold text-green-900 mb-2">Our Core Values</h2>
+        <h2 className="text-center text-2xl sm:text-[28px] font-bold text-brand mb-2">Our Core Values</h2>
         <p className="mb-8 text-center text-ink-muted">
           The principles NAMMES is built upon, guiding how we work and represent our members.
         </p>

@@ -78,7 +78,7 @@ export default function AdminFormResponses() {
             onClick={() => setTab(t.id)}
             className={[
               'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-              tab === t.id ? 'border-green-900 text-green-900' : 'border-transparent text-ink-muted',
+              tab === t.id ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
             ].join(' ')}
           >
             {t.label}

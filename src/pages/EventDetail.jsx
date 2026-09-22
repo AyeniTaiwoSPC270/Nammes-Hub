@@ -74,7 +74,7 @@ export default function EventDetail() {
           onClick={() => setTab('details')}
           className={[
             'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-            tab === 'details' ? 'border-green-900 text-green-900' : 'border-transparent text-ink-muted',
+            tab === 'details' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
           ].join(' ')}
         >
           Details
@@ -84,7 +84,7 @@ export default function EventDetail() {
           onClick={() => setTab('gallery')}
           className={[
             'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-            tab === 'gallery' ? 'border-green-900 text-green-900' : 'border-transparent text-ink-muted',
+            tab === 'gallery' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
           ].join(' ')}
         >
           Gallery{photos.length > 0 ? ` (${photos.length})` : ''}

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import SocialIcons from './SocialIcons'
+import { useSiteContentQuery } from '../data/siteContent'
 
 const linkGroups = [
   {
@@ -31,6 +32,8 @@ const linkGroups = [
 
 export default function Footer() {
   const year = new Date().getFullYear()
+  const contentQuery = useSiteContentQuery()
+  const substackUrl = contentQuery.data?.substack_url
 
   return (
     <footer className="mt-auto bg-green-900 text-white/72">
@@ -51,16 +54,18 @@ export default function Footer() {
         <p className="mt-1 max-w-md text-sm text-white/70">
           Get the latest updates, events, and opportunities delivered to your inbox.
         </p>
-        <iframe
-          src="https://nammescommunique.substack.com/embed"
-          width="480"
-          height="320"
-          style={{ border: '1px solid #EEE', background: 'white' }}
-          frameBorder="0"
-          scrolling="no"
-          title="Subscribe to the NAMMES Communique newsletter"
-          className="mt-4 max-w-full rounded-lg"
-        />
+        {substackUrl && (
+          <iframe
+            src={`${substackUrl.replace(/\/+$/, '')}/embed`}
+            width="480"
+            height="320"
+            style={{ border: '1px solid #EEE', background: 'white' }}
+            frameBorder="0"
+            scrolling="no"
+            title="Subscribe to the NAMMES Communique newsletter"
+            className="mt-4 max-w-full rounded-lg"
+          />
+        )}
       </div>
 
       <div className="mx-auto flex max-w-[1080px] flex-wrap justify-between gap-10 px-8 pt-10 pb-8">

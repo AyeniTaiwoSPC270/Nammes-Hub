@@ -13,7 +13,7 @@ export default function AdminEvents() {
         <Link
           to={`/admin/events/${row.id}/gallery`}
           title="Manage gallery"
-          className="text-ink-muted transition-colors hover:text-green-900"
+          className="text-ink-muted transition-colors hover:text-brand"
         >
           <span className="material-symbols-outlined text-xl">photo_library</span>
         </Link>
