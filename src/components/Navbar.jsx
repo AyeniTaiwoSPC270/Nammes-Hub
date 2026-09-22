@@ -6,6 +6,7 @@ import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import UserMenu from './UserMenu'
+import Badge from './ui/Badge'
 
 const navItems = [
   { to: '/about', label: 'About' },
@@ -217,9 +218,36 @@ export default function Navbar() {
           )}
           {!loading &&
             (user ? (
-              <div className="px-4 py-2">
-                <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="left" />
-              </div>
+              <>
+                <span className="max-w-[16ch] truncate px-4 py-2 text-sm text-ink-muted" title={user.email}>
+                  {user.email}
+                </span>
+                <NavLink
+                  to="/account"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
+                  data-tour="nav-account"
+                >
+                  Account
+                </NavLink>
+                <NavLink
+                  to="/admin"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    [navLinkClass({ isActive }), 'px-4 py-3 inline-flex items-center gap-1.5'].join(' ')
+                  }
+                >
+                  Admin
+                  {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
+                </NavLink>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className={[navLinkClass({ isActive: false }), 'px-4 py-3 text-left'].join(' ')}
+                >
+                  Sign out
+                </button>
+              </>
             ) : (
               <NavLink
                 to="/login"
