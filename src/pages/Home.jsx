@@ -40,7 +40,7 @@ export default function Home() {
           </h1>
           <p className="text-lg text-white/90 mb-8 max-w-xl">{content?.hero_subtitle}</p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="primary" onClick={() => navigate('/outlines')}>
+            <Button variant="accent" onClick={() => navigate('/outlines')}>
               Browse outlines
             </Button>
             <Button
