@@ -42,11 +42,19 @@ export default function Home() {
             src={content.hero_image_url}
             alt=""
             style={{ y: heroImageY }}
-            className="absolute inset-0 z-0 h-full w-full scale-110 object-cover"
+            initial={reducedMotion ? false : { opacity: 0, scale: 1.18 }}
+            animate={{ opacity: 1, scale: 1.1 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className="absolute inset-0 z-0 h-full w-full object-cover"
           />
         )}
         {content?.hero_image_url && <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />}
-        <div className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8">
+        <motion.div
+          className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8"
+          initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut', delay: reducedMotion ? 0 : 0.15 }}
+        >
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">
             {content?.hero_title}
           </h1>
@@ -63,7 +71,7 @@ export default function Home() {
               See events
             </Button>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* 2. Welcome message */}

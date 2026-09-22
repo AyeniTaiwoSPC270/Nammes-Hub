@@ -3,6 +3,7 @@ import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
+import ImageReveal from '../components/ui/ImageReveal'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { usePageBanner } from '../data/pageBanners'
@@ -19,7 +20,7 @@ function EventCard({ event }) {
     >
       {event.image_url && (
         <div className="flex aspect-[3/4] w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
-          <img src={event.image_url} alt="" className="h-full w-full object-contain" />
+          <ImageReveal src={event.image_url} alt="" className="h-full w-full object-contain" />
         </div>
       )}
       <div className="flex flex-grow flex-col gap-2 p-6">

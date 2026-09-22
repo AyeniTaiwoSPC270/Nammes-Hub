@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import Reveal from '../components/ui/Reveal'
+import ImageReveal from '../components/ui/ImageReveal'
 import { fetchExcos } from '../data/excos'
 import { usePageBanner } from '../data/pageBanners'
 
@@ -65,7 +66,7 @@ export default function Excos() {
               >
                 <div className="flex w-full aspect-[4/5] items-center justify-center bg-surface-low font-display text-3xl text-brand">
                   {x.photo_url ? (
-                    <img src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
+                    <ImageReveal src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
                   ) : (
                     (x.name || x.role || '?').charAt(0)
                   )}
