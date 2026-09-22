@@ -10,6 +10,10 @@ import QuestionField from '../components/forms/QuestionField'
 import Button from '../components/ui/Button'
 import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
+import Reveal from '../components/ui/Reveal'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 function isAnswered(value) {
   return value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0)
@@ -146,14 +150,14 @@ export default function FormDetail() {
       )}
 
       <div className="mt-6 flex flex-col gap-4">
-        {form.questions.map((q) => (
-          <div key={q.id} className="rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+        {form.questions.map((q, i) => (
+          <Reveal key={q.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)} className="rounded-lg border border-hairline bg-surface p-5 shadow-sm">
             <QuestionField
               question={q}
               value={answers[q.id]}
               onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
             />
-          </div>
+          </Reveal>
         ))}
       </div>
 

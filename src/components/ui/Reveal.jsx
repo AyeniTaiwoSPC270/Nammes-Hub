@@ -9,7 +9,7 @@ export default function Reveal({ as = 'div', delay = 0, className = '', children
       className={className}
       initial={reducedMotion ? false : { opacity: 0, y: 24, scale: 0.96 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: false, margin: '-80px' }}
       transition={{ duration: 0.5, ease: 'easeOut', delay: reducedMotion ? 0 : delay }}
     >
       {children}

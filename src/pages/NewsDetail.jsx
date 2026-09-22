@@ -3,6 +3,7 @@ import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import ErrorState from '../components/ui/ErrorState'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
 import { useNewsQuery, getNewsById } from '../data/news'
 
@@ -52,16 +53,18 @@ export default function NewsDetail() {
         {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
       </div>
 
-      {post.image_url && (
-        <img
-          src={post.image_url}
-          alt=""
-          style={{ width: `${post.image_width_pct || 100}%` }}
-          className="mt-6 rounded-lg"
-        />
-      )}
+      <Reveal>
+        {post.image_url && (
+          <img
+            src={post.image_url}
+            alt=""
+            style={{ width: `${post.image_width_pct || 100}%` }}
+            className="mt-6 rounded-lg"
+          />
+        )}
 
-      <p className="mt-6 max-w-2xl leading-relaxed text-ink">{post.body}</p>
+        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{post.body}</p>
+      </Reveal>
 
       <div className="mt-8">
         <Button variant="ghost" onClick={() => navigate('/news')}>

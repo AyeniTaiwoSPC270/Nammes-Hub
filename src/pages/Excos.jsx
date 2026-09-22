@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
+import Reveal from '../components/ui/Reveal'
 import { fetchExcos } from '../data/excos'
 import { usePageBanner } from '../data/pageBanners'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 export default function Excos() {
   const [rows, setRows] = useState([])
@@ -54,9 +58,9 @@ export default function Excos() {
           />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-4">
-            {rows.map((x) => (
+            {rows.map((x, i) => (
+              <Reveal key={x.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
               <article
-                key={x.id}
                 className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-shadow hover:shadow-lg"
               >
                 <div className="flex w-full aspect-[4/5] items-center justify-center bg-surface-low font-display text-3xl text-brand">
@@ -93,6 +97,7 @@ export default function Excos() {
                   )}
                 </div>
               </article>
+              </Reveal>
             ))}
           </div>
         )}

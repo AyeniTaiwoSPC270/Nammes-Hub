@@ -2,6 +2,7 @@ import Table from '../components/ui/Table'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonTable } from '../components/ui/Skeleton'
 import { useOpportunitiesQuery, getOpportunities } from '../data/opportunities'
 import { usePageBanner } from '../data/pageBanners'
@@ -47,7 +48,9 @@ export default function Opportunities() {
         ) : isLoading ? (
           <SkeletonTable columns={4} rows={5} />
         ) : items.length > 0 ? (
-          <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={tableRows} />
+          <Reveal>
+            <Table columns={['Deadline', 'Type', 'Title & Org', '']} rows={tableRows} />
+          </Reveal>
         ) : (
           <EmptyState
             icon="work_off"

@@ -2,10 +2,14 @@ import { Link } from 'react-router-dom'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { usePageBanner } from '../data/pageBanners'
 import eventsBanner from '../assets/banners/events-banner.jpg'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 function EventCard({ event }) {
   return (
@@ -36,14 +40,16 @@ function EventCard({ event }) {
 function EventSection({ heading, events }) {
   if (events.length === 0) return null
   return (
-    <section>
+    <Reveal as="section">
       <h2 className="mb-5 text-2xl font-bold text-ink-900">{heading}</h2>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
-          <EventCard key={event.id} event={event} />
+        {events.map((event, i) => (
+          <Reveal key={event.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
+            <EventCard event={event} />
+          </Reveal>
         ))}
       </div>
-    </section>
+    </Reveal>
   )
 }
 

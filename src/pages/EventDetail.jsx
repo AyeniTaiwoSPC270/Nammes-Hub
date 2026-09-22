@@ -5,8 +5,12 @@ import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
 import GalleryLightbox from '../components/GalleryLightbox'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 import { saveBlob } from '../lib/downloadImage'
 import { linkifyText } from '../lib/linkify'
 import { useEventsQuery, getEventById } from '../data/events'
@@ -92,7 +96,7 @@ export default function EventDetail() {
       </div>
 
       {tab === 'details' ? (
-        <div className="mt-6">
+        <Reveal className="mt-6">
           {event.image_url && <img src={event.image_url} alt="" className="w-full rounded-lg" />}
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
             <span>{event.date}</span>
@@ -104,7 +108,7 @@ export default function EventDetail() {
             )}
           </div>
           <p className="mt-4 max-w-2xl leading-relaxed text-ink whitespace-pre-line">{linkifyText(event.description)}</p>
-        </div>
+        </Reveal>
       ) : (
         <div className="mt-6">
           {photosQuery.isError && !photosQuery.data ? (
@@ -125,14 +129,15 @@ export default function EventDetail() {
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {photos.map((photo, i) => (
-                  <button
-                    key={photo.id}
-                    type="button"
-                    onClick={() => setLightboxIndex(i)}
-                    className="aspect-[4/3] overflow-hidden rounded-md bg-surface-low shadow-md transition-transform hover:scale-[1.02]"
-                  >
-                    <img src={photo.image_url} alt="" className="h-full w-full object-cover" />
-                  </button>
+                  <Reveal key={photo.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIndex(i)}
+                      className="aspect-[4/3] w-full overflow-hidden rounded-md bg-surface-low shadow-md transition-transform hover:scale-[1.02]"
+                    >
+                      <img src={photo.image_url} alt="" className="h-full w-full object-cover" />
+                    </button>
+                  </Reveal>
                 ))}
               </div>
             </>

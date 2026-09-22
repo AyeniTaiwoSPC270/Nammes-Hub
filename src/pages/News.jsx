@@ -3,12 +3,15 @@ import Badge from '../components/ui/Badge'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 import { usePageBanner } from '../data/pageBanners'
 import newsBanner from '../assets/banners/news-banner.jpg'
 
 const categories = ['All', ...NEWS_CATEGORIES]
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -73,6 +76,7 @@ export default function News() {
           />
         ) : (
           <div className="flex flex-col gap-5">
+            <Reveal>
             <Link
               to={`/news/${featured.id}`}
               className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow md:flex-row"
@@ -95,11 +99,12 @@ export default function News() {
                 <p className="text-sm text-ink-muted">{featured.date}</p>
               </div>
             </Link>
+            </Reveal>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((item) => (
+              {rest.map((item, i) => (
+                <Reveal key={item.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
                 <Link
-                  key={item.id}
                   to={`/news/${item.id}`}
                   className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow"
                 >
@@ -125,6 +130,7 @@ export default function News() {
                     </span>
                   </div>
                 </Link>
+                </Reveal>
               ))}
             </div>
           </div>

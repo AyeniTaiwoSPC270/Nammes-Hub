@@ -5,7 +5,7 @@ import { useTheme } from '../lib/ThemeContext'
 import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
-import Badge from './ui/Badge'
+import UserMenu from './UserMenu'
 
 const navItems = [
   { to: '/about', label: 'About' },
@@ -41,8 +41,6 @@ function navLinkClass({ isActive }) {
       : 'text-ink-muted hover:text-ink-900 hover:bg-surface-low',
   ].join(' ')
 }
-
-const authLinkClass = 'text-sm font-semibold text-brand no-underline hover:text-orange-500'
 
 function NavDropdown({ item }) {
   const [open, setOpen] = useState(false)
@@ -160,21 +158,7 @@ export default function Navbar() {
         {!loading && (
           <div className="hidden sm:flex items-center gap-4">
             {user ? (
-              <>
-                <span className="max-w-[16ch] truncate text-sm text-ink-muted" title={user.email}>
-                  {user.email}
-                </span>
-                <NavLink to="/account" className={authLinkClass} data-tour="nav-account">
-                  Account
-                </NavLink>
-                <NavLink to="/admin" className={[authLinkClass, 'inline-flex items-center gap-1.5'].join(' ')}>
-                  Admin
-                  {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
-                </NavLink>
-                <button type="button" onClick={handleSignOut} className={authLinkClass}>
-                  Sign out
-                </button>
-              </>
+              <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="right" dataTour="nav-account" />
             ) : (
               <NavLink
                 to="/login"
@@ -233,36 +217,9 @@ export default function Navbar() {
           )}
           {!loading &&
             (user ? (
-              <>
-                <span className="max-w-[16ch] truncate px-4 py-2 text-sm text-ink-muted" title={user.email}>
-                  {user.email}
-                </span>
-                <NavLink
-                  to="/account"
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
-                  data-tour="nav-account"
-                >
-                  Account
-                </NavLink>
-                <NavLink
-                  to="/admin"
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    [navLinkClass({ isActive }), 'px-4 py-3 inline-flex items-center gap-1.5'].join(' ')
-                  }
-                >
-                  Admin
-                  {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
-                </NavLink>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className={[navLinkClass({ isActive: false }), 'px-4 py-3 text-left'].join(' ')}
-                >
-                  Sign out
-                </button>
-              </>
+              <div className="px-4 py-2">
+                <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="left" />
+              </div>
             ) : (
               <NavLink
                 to="/login"

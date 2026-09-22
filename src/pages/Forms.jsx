@@ -4,7 +4,11 @@ import { useResponseCountsQuery } from '../data/formResponses'
 import Badge from '../components/ui/Badge'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonCard } from '../components/ui/Skeleton'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 function formatCloses(closesAt) {
   if (!closesAt) return null
@@ -70,6 +74,7 @@ export default function Forms() {
       ) : (
         <div className="mt-8 flex flex-col gap-6">
           {featured && (
+            <Reveal>
             <Link key={featured.id} to={`/forms/${featured.id}`} className="no-underline">
               <div className="flex flex-col justify-between gap-5 rounded-lg border border-hairline bg-surface p-6 shadow-md transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center">
                 <div className="flex flex-col gap-2">
@@ -88,12 +93,14 @@ export default function Forms() {
                 </span>
               </div>
             </Link>
+            </Reveal>
           )}
 
           {rest.length > 0 && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((form) => (
-                <Link key={form.id} to={`/forms/${form.id}`} className="no-underline">
+              {rest.map((form, i) => (
+                <Reveal key={form.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
+                <Link to={`/forms/${form.id}`} className="no-underline">
                   <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-hairline bg-surface p-6 shadow-md transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-md">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
@@ -106,6 +113,7 @@ export default function Forms() {
                     {form.closes_at && <span className="text-xs text-ink-muted">Closes {formatCloses(form.closes_at)}</span>}
                   </div>
                 </Link>
+                </Reveal>
               ))}
             </div>
           )}

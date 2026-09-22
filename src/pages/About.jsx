@@ -1,5 +1,9 @@
 import PageBanner from '../components/PageBanner'
+import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 const missionVision = [
   {
@@ -59,7 +63,7 @@ export default function About() {
         size="lg"
       />
 
-      <div className="mx-auto max-w-[900px] px-5 py-14 sm:px-6">
+      <Reveal className="mx-auto max-w-[900px] px-5 py-14 sm:px-6">
         <h2 className="text-center text-2xl sm:text-[28px] font-bold text-brand mb-6">Who We Are</h2>
         <div className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-6 shadow-md sm:p-8">
           <p className="leading-relaxed text-ink">
@@ -82,44 +86,44 @@ export default function About() {
             but as the overall Best Graduating Student in the entire Faculty of Engineering.
           </p>
         </div>
-      </div>
+      </Reveal>
 
-      <div className="w-full bg-surface-low py-14">
+      <Reveal className="w-full bg-surface-low py-14">
         <div className="mx-auto max-w-[1000px] px-5 sm:px-6">
           <h2 className="text-center text-2xl sm:text-[28px] font-bold text-brand mb-8">
             Our Mission &amp; Vision
           </h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            {missionVision.map((item) => (
-              <div key={item.title} className="rounded-lg border border-hairline bg-surface p-6 shadow-md">
+            {missionVision.map((item, i) => (
+              <Reveal key={item.title} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)} className="rounded-lg border border-hairline bg-surface p-6 shadow-md">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-brand">
                   <span className="material-symbols-outlined text-xl">{item.icon}</span>
                 </span>
                 <h3 className="mt-4 text-lg font-bold text-ink-900">{item.title}</h3>
                 <p className="mt-2 leading-relaxed text-ink-muted">{item.body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
-      </div>
+      </Reveal>
 
-      <div className="mx-auto max-w-[1100px] px-5 py-14 sm:px-6">
+      <Reveal className="mx-auto max-w-[1100px] px-5 py-14 sm:px-6">
         <h2 className="text-center text-2xl sm:text-[28px] font-bold text-brand mb-2">Our Core Values</h2>
         <p className="mb-8 text-center text-ink-muted">
           The principles NAMMES is built upon, guiding how we work and represent our members.
         </p>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {coreValues.map((item) => (
-            <div key={item.title} className="rounded-lg border border-hairline bg-surface p-6 shadow-md">
+          {coreValues.map((item, i) => (
+            <Reveal key={item.title} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)} className="rounded-lg border border-hairline bg-surface p-6 shadow-md">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-600">
                 <span className="material-symbols-outlined text-xl">{item.icon}</span>
               </span>
               <h3 className="mt-4 text-lg font-bold text-ink-900">{item.title}</h3>
               <p className="mt-2 leading-relaxed text-ink-muted">{item.body}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
-      </div>
+      </Reveal>
     </div>
   )
 }

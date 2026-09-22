@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import PageBanner from '../components/PageBanner'
+import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
 import FormField from '../components/ui/FormField'
 import Button from '../components/ui/Button'
@@ -57,7 +58,7 @@ export default function Contact() {
         size="md"
       />
 
-      <section className="mx-auto max-w-[1000px] px-5 sm:px-6 py-14">
+      <Reveal as="section" className="mx-auto max-w-[1000px] px-5 sm:px-6 py-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <FormField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
@@ -104,7 +105,7 @@ export default function Contact() {
             </div>
           </div>
         </div>
-      </section>
+      </Reveal>
     </div>
   )
 }

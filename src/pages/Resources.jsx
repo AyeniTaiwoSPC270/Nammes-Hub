@@ -1,8 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { LEVELS } from '../data/resources'
 import PageBanner from '../components/PageBanner'
+import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
 import resourcesBanner from '../assets/banners/resources-banner.jpg'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 const YEAR_LABELS = {
   100: 'Freshman Year',
@@ -36,21 +40,23 @@ export default function Resources() {
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
           {LEVELS.map((level, i) => (
-            <button
+            <Reveal
               key={level}
-              type="button"
-              onClick={() => navigate(`/resources/${level}`)}
-              className={[
-                'group relative flex aspect-square flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border border-hairline bg-surface p-6 text-center shadow-md transition-colors hover:bg-surface-low',
-                i === LEVELS.length - 1 && LEVELS.length % 2 !== 0 ? 'col-span-2 md:col-span-1' : '',
-              ].join(' ')}
+              delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}
+              className={i === LEVELS.length - 1 && LEVELS.length % 2 !== 0 ? 'col-span-2 md:col-span-1' : ''}
             >
-              <div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-surface-low transition-colors duration-300 group-hover:bg-orange-100" />
-              <span className="relative text-3xl font-bold text-ink-900">{level}</span>
-              <span className="relative text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
-                {YEAR_LABELS[level]}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/resources/${level}`)}
+                className="group relative flex aspect-square w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-lg border border-hairline bg-surface p-6 text-center shadow-md transition-colors hover:bg-surface-low"
+              >
+                <div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-surface-low transition-colors duration-300 group-hover:bg-orange-100" />
+                <span className="relative text-3xl font-bold text-ink-900">{level}</span>
+                <span className="relative text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
+                  {YEAR_LABELS[level]}
+                </span>
+              </button>
+            </Reveal>
           ))}
         </div>
       </div>
