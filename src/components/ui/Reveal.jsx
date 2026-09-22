@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'motion/react'
 
 export default function Reveal({ as = 'div', delay = 0, className = '', children }) {
   const reducedMotion = useReducedMotion()
-  const Tag = motion[as] || motion.div
+  const Tag = as === 'section' ? motion.section : motion.div
 
   return (
     <Tag
