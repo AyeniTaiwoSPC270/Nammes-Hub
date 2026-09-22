@@ -1,7 +1,10 @@
+import { useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import Reveal from '../components/ui/Reveal'
 import WelcomeMessage from '../components/WelcomeMessage'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
@@ -11,6 +14,9 @@ import { useExcosQuery } from '../data/excos'
 import { useEventsQuery } from '../data/events'
 import { useSiteContentQuery } from '../data/siteContent'
 
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
+
 export default function Home() {
   const navigate = useNavigate()
   const newsQuery = useNewsQuery()
@@ -18,6 +24,11 @@ export default function Home() {
   const eventsQuery = useEventsQuery()
   const contentQuery = useSiteContentQuery()
   const content = contentQuery.data
+  const reducedMotion = useReducedMotion()
+
+  const heroRef = useRef(null)
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const heroImageY = useTransform(scrollYProgress, [0, 1], reducedMotion ? [0, 0] : [0, 60])
 
   const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
   const previewEvents = (eventsQuery.data ?? []).slice(0, 3)
@@ -25,12 +36,13 @@ export default function Home() {
   return (
     <div>
       {/* 1. Hero */}
-      <section className="relative w-full min-h-[420px] sm:min-h-[560px] flex items-center overflow-hidden bg-green-900">
+      <section ref={heroRef} className="relative w-full min-h-[420px] sm:min-h-[560px] flex items-center overflow-hidden bg-green-900">
         {content?.hero_image_url && (
-          <img
+          <motion.img
             src={content.hero_image_url}
             alt=""
-            className="absolute inset-0 z-0 h-full w-full object-cover"
+            style={{ y: heroImageY }}
+            className="absolute inset-0 z-0 h-full w-full scale-110 object-cover"
           />
         )}
         {content?.hero_image_url && <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />}
@@ -55,15 +67,17 @@ export default function Home() {
       </section>
 
       {/* 2. Welcome message */}
-      <WelcomeMessage
-        name={content?.president_name}
-        role={content?.president_role}
-        message={content?.president_message}
-        photoUrl={content?.president_photo_url}
-      />
+      <Reveal>
+        <WelcomeMessage
+          name={content?.president_name}
+          role={content?.president_role}
+          message={content?.president_message}
+          photoUrl={content?.president_photo_url}
+        />
+      </Reveal>
 
       {/* 3. Department news */}
-      <section className="w-full bg-surface-low py-16">
+      <Reveal as="section" className="w-full bg-surface-low py-16">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
           <div className="mb-8 flex items-baseline justify-between gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-ink-900">Latest News</h2>
@@ -114,35 +128,37 @@ export default function Home() {
               </Link>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {restNews.map((item) => (
-                  <Link key={item.id} to={`/news/${item.id}`} className="block">
-                  <Card
-                    tone={item.tone}
-                    eyebrow={item.category}
-                    title={item.title}
-                    image={item.image_url ? { src: item.image_url } : undefined}
-                    imageVariant="cover"
-                    imageAspect="standard"
-                    interactive
-                    className="cursor-pointer"
-                  >
-                    <span className="line-clamp-2">{item.body}</span>{' '}
-                    {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
-                    <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
-                      Read more
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </span>
-                  </Card>
-                  </Link>
+                {restNews.map((item, i) => (
+                  <Reveal key={item.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
+                    <Link to={`/news/${item.id}`} className="block">
+                    <Card
+                      tone={item.tone}
+                      eyebrow={item.category}
+                      title={item.title}
+                      image={item.image_url ? { src: item.image_url } : undefined}
+                      imageVariant="cover"
+                      imageAspect="standard"
+                      interactive
+                      className="cursor-pointer"
+                    >
+                      <span className="line-clamp-2">{item.body}</span>{' '}
+                      {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
+                      <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
+                        Read more
+                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                      </span>
+                    </Card>
+                    </Link>
+                  </Reveal>
                 ))}
               </div>
             </>
           )}
         </div>
-      </section>
+      </Reveal>
 
       {/* 4. Upcoming events */}
-      <section className="w-full bg-surface py-16">
+      <Reveal as="section" className="w-full bg-surface py-16">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
           <div className="mb-8 flex items-baseline justify-between gap-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-ink-900">Upcoming Events</h2>
@@ -167,33 +183,34 @@ export default function Home() {
             />
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-              {previewEvents.map((event) => (
-                <Link
-                  key={event.id}
-                  to={`/events/${event.id}`}
-                  className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  {event.image_url && (
-                    <div className="flex aspect-[3/4] w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
-                      <img src={event.image_url} alt="" className="h-full w-full object-contain" />
+              {previewEvents.map((event, i) => (
+                <Reveal key={event.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
+                  <Link
+                    to={`/events/${event.id}`}
+                    className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    {event.image_url && (
+                      <div className="flex aspect-[3/4] w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
+                        <img src={event.image_url} alt="" className="h-full w-full object-contain" />
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-2 p-6">
+                      <div className="flex items-center gap-1 text-sm text-ink-muted">
+                        <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                        {event.date}
+                      </div>
+                      <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
                     </div>
-                  )}
-                  <div className="flex flex-col gap-2 p-6">
-                    <div className="flex items-center gap-1 text-sm text-ink-muted">
-                      <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-                      {event.date}
-                    </div>
-                    <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
-                  </div>
-                </Link>
+                  </Link>
+                </Reveal>
               ))}
             </div>
           )}
         </div>
-      </section>
+      </Reveal>
 
       {/* 5. Meet the Excos */}
-      <section className="w-full bg-surface-low py-16">
+      <Reveal as="section" className="w-full bg-surface-low py-16">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
           <div className="mb-8 flex items-baseline justify-between gap-4">
             <div>
@@ -225,8 +242,8 @@ export default function Home() {
             />
           ) : (
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-              {excosQuery.data.map((x) => (
-                <div key={x.id} className="flex flex-col items-center gap-2.5 text-center">
+              {excosQuery.data.map((x, i) => (
+                <Reveal key={x.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)} className="flex flex-col items-center gap-2.5 text-center">
                   <div className="flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center overflow-hidden rounded-full bg-surface shadow-md font-display text-2xl text-brand">
                     {x.photo_url ? (
                       <img src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
@@ -236,12 +253,12 @@ export default function Home() {
                   </div>
                   <div className="font-bold text-ink-900">{x.name || 'Name Surname'}</div>
                   <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">{x.role}</div>
-                </div>
+                </Reveal>
               ))}
             </div>
           )}
         </div>
-      </section>
+      </Reveal>
     </div>
   )
 }
