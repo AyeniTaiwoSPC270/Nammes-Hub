@@ -9,10 +9,12 @@ import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
 import { buildBroadcastEmailHtml } from '../../../api/_lib/emailTemplateHtml.js'
+import BroadcastImageUploadField from '../../components/admin/BroadcastImageUploadField'
 
 export default function AdminBroadcasts() {
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const toast = useToast()
   const queryClient = useQueryClient()
   const historyQuery = useBroadcastHistoryQuery()
@@ -23,6 +25,7 @@ export default function AdminBroadcasts() {
       queryClient.invalidateQueries({ queryKey: ['broadcasts', 'history'] })
       setSubject('')
       setBody('')
+      setImageUrl('')
       toast.success(
         result.sentCount === result.recipientCount
           ? `Sent to ${result.sentCount} recipient(s).`
@@ -34,7 +37,7 @@ export default function AdminBroadcasts() {
 
   function handleSubmit(event) {
     event.preventDefault()
-    sendMutation.mutate({ subject, body })
+    sendMutation.mutate({ subject, body, imageUrl: imageUrl || undefined })
   }
 
   const previewHtml = useMemo(
@@ -42,8 +45,9 @@ export default function AdminBroadcasts() {
       buildBroadcastEmailHtml({
         subject: subject.trim() || 'Your subject line',
         body: body.trim() || 'Start typing to see the email body here…',
+        imageUrl: imageUrl || undefined,
       }),
-    [subject, body],
+    [subject, body, imageUrl],
   )
 
   if (historyQuery.isError && !historyQuery.data) {
@@ -64,7 +68,15 @@ export default function AdminBroadcasts() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
           <FormField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
-          <FormField label="Body" type="textarea" value={body} onChange={(e) => setBody(e.target.value)} required />
+          <BroadcastImageUploadField label="Image (optional)" url={imageUrl} onChange={setImageUrl} />
+          <FormField
+            label="Body"
+            type="textarea"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            helper="Add a link with [link text](https://example.com), or paste a bare URL — it becomes clickable automatically."
+            required
+          />
           <Button type="submit" variant="primary" loading={sendMutation.isPending}>
             Send broadcast
           </Button>

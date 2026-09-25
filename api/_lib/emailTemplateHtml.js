@@ -9,11 +9,24 @@ export function escapeHtml(value) {
     .replace(/'/g, '&#39;')
 }
 
+const LINK_STYLE = 'color:#ae3200;text-decoration:underline;'
+
+function linkify(escapedText) {
+  const withMarkdownLinks = escapedText.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    (_match, linkText, url) => `<a href="${url}" style="${LINK_STYLE}">${linkText}</a>`,
+  )
+  return withMarkdownLinks.replace(
+    /(?<!href=")https?:\/\/[^\s<]+/g,
+    (url) => `<a href="${url}" style="${LINK_STYLE}">${url}</a>`,
+  )
+}
+
 function textToParagraphs(text) {
   return text
     .trim()
     .split(/\n{2,}/)
-    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, '<br>')}</p>`)
+    .map((block) => `<p>${linkify(escapeHtml(block)).replace(/\n/g, '<br>')}</p>`)
     .join('\n')
 }
 
@@ -130,9 +143,12 @@ ${SHARED_STYLE}
 </html>`
 }
 
-export function buildBroadcastEmailHtml({ subject, body }) {
+export function buildBroadcastEmailHtml({ subject, body, imageUrl }) {
   const safeSubject = escapeHtml(subject)
   const contentHtml = textToParagraphs(body)
+  const imageHtml = imageUrl
+    ? `<img src="${imageUrl}" alt="" width="520" class="content-image" />`
+    : ''
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -145,9 +161,11 @@ ${SHARED_STYLE}
 .header-bar .wordmark{color:#ffffff;}
 .header-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#9cd6b2;background-color:rgba(255,255,255,.08);padding:4px 8px;border-radius:4px;}
 .email-body{padding:40px 40px 36px 40px;}
+.content-image{width:100%;max-width:520px;height:auto;border-radius:8px;display:block;margin:0 0 20px 0;}
 .subject-title{font-size:23px;font-weight:700;line-height:1.3;color:#0b2417;margin:0 0 24px 0;letter-spacing:-.015em;}
 .content-area{font-size:15px;line-height:1.7;color:#191813;}
 .content-area p{margin:0 0 18px 0;}
+.content-area a{${LINK_STYLE}}
 </style>
 </head>
 <body>
@@ -159,6 +177,7 @@ ${SHARED_STYLE}
       </tr></table>
     </div>
     <div class="email-body">
+      ${imageHtml}
       <h1 class="subject-title">${safeSubject}</h1>
       <div class="content-area">${contentHtml}</div>
     </div>

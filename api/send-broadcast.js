@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return
   }
 
-  const { subject, body } = req.body ?? {}
+  const { subject, body, imageUrl } = req.body ?? {}
   if (!subject?.trim() || !body?.trim()) {
     res.status(400).json({ error: 'subject and body are required' })
     return
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
 
   const emails = recipients.map((r) => r.email)
   const resend = getResendClient()
-  const html = renderBroadcastEmail({ subject, body })
+  const html = renderBroadcastEmail({ subject, body, imageUrl })
   let sentCount = 0
   for (const batch of chunk(emails, 100)) {
     try {
@@ -66,6 +66,7 @@ export default async function handler(req, res) {
   const { error: insertError } = await supabaseAdmin.from('broadcasts').insert({
     subject,
     body,
+    image_url: imageUrl || null,
     sent_by: userData.user.id,
     recipient_count: sentCount,
   })
