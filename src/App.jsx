@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
 import AdminRoute from './components/AdminRoute'
+import AppUpdateNotifier from './components/AppUpdateNotifier'
 
 const Home = lazy(() => import('./pages/Home'))
 const About = lazy(() => import('./pages/About'))
@@ -59,6 +60,7 @@ const AdminAwardResults = lazy(() => import('./pages/admin/AdminAwardResults'))
 export default function App() {
   return (
     <ErrorBoundary>
+      <AppUpdateNotifier />
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />

@@ -14,15 +14,19 @@ export function ToastProvider({ children }) {
     delete timers.current[id]
   }, [])
 
-  const push = useCallback((tone, message) => {
+  const push = useCallback((tone, message, options = {}) => {
+    const { actionLabel, onAction, sticky = false } = options
     const id = ++nextId
-    setToasts((prev) => [...prev, { id, tone, message }])
-    timers.current[id] = setTimeout(() => dismiss(id), 4000)
+    setToasts((prev) => [...prev, { id, tone, message, actionLabel, onAction }])
+    if (!sticky) {
+      timers.current[id] = setTimeout(() => dismiss(id), 4000)
+    }
   }, [dismiss])
 
   const value = {
     success: (message) => push('success', message),
     error: (message) => push('danger', message),
+    info: (message, options) => push('info', message, options),
   }
 
   return (
@@ -30,7 +34,7 @@ export function ToastProvider({ children }) {
       {children}
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end">
         {toasts.map((t) => (
-          <Toast key={t.id} tone={t.tone} onDismiss={() => dismiss(t.id)}>
+          <Toast key={t.id} tone={t.tone} actionLabel={t.actionLabel} onAction={t.onAction} onDismiss={() => dismiss(t.id)}>
             {t.message}
           </Toast>
         ))}
