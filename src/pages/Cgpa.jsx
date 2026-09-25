@@ -16,12 +16,15 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Table from '../components/ui/Table'
 import FormField from '../components/ui/FormField'
+import Reveal from '../components/ui/Reveal'
 import { SkeletonCard, SkeletonTable } from '../components/ui/Skeleton'
 import cgpaBanner from '../assets/banners/cgpa-banner.jpg'
 
 const LEVELS = ['100', '200', '300', '400', '500']
 const SEMESTERS = [1, 2]
 const GRADES = ['A', 'B', 'C', 'D', 'E', 'F']
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 export default function Cgpa() {
   const { user, loading: authLoading } = useAuth()
@@ -221,16 +224,18 @@ export default function Cgpa() {
   if (!user) {
     return (
       <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-        <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-          CGPA calculator
-        </div>
-        <h1 className="mt-1.5 text-3xl font-bold text-ink-900">Sign in to track your CGPA</h1>
-        <p className="mt-2 max-w-2xl text-ink-muted">
-          Your grades are saved to your account so they follow you across devices.
-        </p>
-        <Button variant="primary" className="mt-6" onClick={() => navigate('/login')}>
-          Sign in
-        </Button>
+        <Reveal>
+          <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
+            CGPA calculator
+          </div>
+          <h1 className="mt-1.5 text-3xl font-bold text-ink-900">Sign in to track your CGPA</h1>
+          <p className="mt-2 max-w-2xl text-ink-muted">
+            Your grades are saved to your account so they follow you across devices.
+          </p>
+          <Button variant="primary" className="mt-6" onClick={() => navigate('/login')}>
+            Sign in
+          </Button>
+        </Reveal>
       </div>
     )
   }
@@ -246,21 +251,22 @@ export default function Cgpa() {
         <p className="mt-4 rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
       )}
 
-      <Card
-        className="mt-6"
-        tone="green"
-        backgroundImage={cgpaBanner}
-        eyebrow="Cumulative GPA"
-        title={stats.overallCGPA.toFixed(2)}
-      >
-        <Badge tone="new">{stats.classification}</Badge>
-        <span className="ml-2 font-mono text-sm text-white/80">{stats.overallUnits} units completed</span>
-      </Card>
+      <Reveal className="mt-6">
+        <Card
+          tone="green"
+          backgroundImage={cgpaBanner}
+          eyebrow="Cumulative GPA"
+          title={stats.overallCGPA.toFixed(2)}
+        >
+          <Badge tone="new">{stats.classification}</Badge>
+          <span className="ml-2 font-mono text-sm text-white/80">{stats.overallUnits} units completed</span>
+        </Card>
+      </Reveal>
 
       {stats.rows.length >= 2 && (
-        <div className="mt-6">
+        <Reveal delay={0.06} className="mt-6">
           <TrendChart rows={stats.rows} />
-        </div>
+        </Reveal>
       )}
 
       <div className="mt-8 flex flex-col gap-6">
@@ -268,13 +274,13 @@ export default function Cgpa() {
           <p className="text-ink-muted">No semesters yet. Add your first one below.</p>
         )}
 
-        {stats.rows.map((row) => {
+        {stats.rows.map((row, i) => {
           const semester = semesters.find((s) => s.id === row.semesterId)
           const draft = draftFor(semester.id)
           const matches = draft.code.trim() ? findPriorAttempts(draft.code, semesters, semester.id) : []
 
           return (
-            <div key={semester.id}>
+            <Reveal key={semester.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
               <div className="mb-2 flex items-baseline justify-between">
                 <h2 className="text-xl">{row.label}</h2>
                 <div className="flex items-center gap-3">
@@ -371,32 +377,34 @@ export default function Cgpa() {
                   Add course
                 </Button>
               </form>
-            </div>
+            </Reveal>
           )
         })}
       </div>
 
-      <form onSubmit={handleAddSemester} className="mt-8 flex flex-wrap items-end gap-3">
-        <FormField
-          label="Level"
-          type="select"
-          options={LEVELS}
-          value={newLevel}
-          onChange={(e) => setNewLevel(e.target.value)}
-        />
-        <FormField
-          label="Semester"
-          type="select"
-          options={SEMESTERS.map(String)}
-          value={String(newSemesterNum)}
-          onChange={(e) => setNewSemesterNum(Number(e.target.value))}
-        />
-        <Button variant="primary" type="submit" loading={submitting}>
-          Add semester
-        </Button>
-      </form>
+      <Reveal className="mt-8">
+        <form onSubmit={handleAddSemester} className="flex flex-wrap items-end gap-3">
+          <FormField
+            label="Level"
+            type="select"
+            options={LEVELS}
+            value={newLevel}
+            onChange={(e) => setNewLevel(e.target.value)}
+          />
+          <FormField
+            label="Semester"
+            type="select"
+            options={SEMESTERS.map(String)}
+            value={String(newSemesterNum)}
+            onChange={(e) => setNewSemesterNum(Number(e.target.value))}
+          />
+          <Button variant="primary" type="submit" loading={submitting}>
+            Add semester
+          </Button>
+        </form>
+      </Reveal>
 
-      <div className="mt-10 rounded-lg bg-orange-100 p-6">
+      <Reveal delay={0.06} className="mt-10 rounded-lg bg-orange-100 p-6">
         <h2 className="text-xl">What grade do I need?</h2>
         <p className="mt-1 text-sm text-ink-muted">
           Enter a target CGPA and how many units you have left to find your required average grade point.
@@ -437,7 +445,7 @@ export default function Cgpa() {
             )}
           </p>
         )}
-      </div>
+      </Reveal>
     </div>
   )
 }

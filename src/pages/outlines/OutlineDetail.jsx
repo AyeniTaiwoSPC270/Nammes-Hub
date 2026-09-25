@@ -4,6 +4,7 @@ import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import ErrorState from '../../components/ui/ErrorState'
+import Reveal from '../../components/ui/Reveal'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourse } from '../../data/outlines'
 import { useApprovedSubmissionsQuery, groupSubmissionsByType } from '../../data/outlineSubmissions'
@@ -64,125 +65,135 @@ export default function OutlineDetail() {
         ]}
       />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
-            {course.code} &middot; {course.units} unit{course.units === 1 ? '' : 's'}
+      <Reveal>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
+              {course.code} &middot; {course.units} unit{course.units === 1 ? '' : 's'}
+            </div>
+            <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
+            <div className="mt-2 text-sm text-ink-muted">
+              Lecturer: {course.lecturer} &middot; Updated {course.updated}
+            </div>
           </div>
-          <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
-          <div className="mt-2 text-sm text-ink-muted">
-            Lecturer: {course.lecturer} &middot; Updated {course.updated}
-          </div>
+          <Button variant="accent" size="sm" onClick={() => downloadCourseOutlinePdf(course)}>
+            <span className="material-symbols-outlined text-base">download</span>
+            Download PDF
+          </Button>
         </div>
-        <Button variant="accent" size="sm" onClick={() => downloadCourseOutlinePdf(course)}>
-          <span className="material-symbols-outlined text-base">download</span>
-          Download PDF
-        </Button>
-      </div>
 
-      <p className="mt-6 max-w-2xl leading-relaxed text-ink">{course.description}</p>
+        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{course.description}</p>
+      </Reveal>
 
-      <Card className="mt-6" eyebrow="Topics covered" padded clampBody={false}>
-        <ul className="list-disc space-y-1.5 pl-5">
-          {course.topics.map((topic) => (
-            <li key={topic}>{topic}</li>
-          ))}
-        </ul>
-      </Card>
-
-      {course.texts?.length > 0 && (
-        <Card className="mt-6" eyebrow="Recommended texts" padded clampBody={false}>
+      <Reveal delay={0.06}>
+        <Card className="mt-6" eyebrow="Topics covered" padded clampBody={false}>
           <ul className="list-disc space-y-1.5 pl-5">
-            {course.texts.map((text) => (
-              <li key={text}>{text}</li>
+            {course.topics.map((topic) => (
+              <li key={topic}>{topic}</li>
             ))}
           </ul>
         </Card>
+      </Reveal>
+
+      {course.texts?.length > 0 && (
+        <Reveal delay={0.12}>
+          <Card className="mt-6" eyebrow="Recommended texts" padded clampBody={false}>
+            <ul className="list-disc space-y-1.5 pl-5">
+              {course.texts.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          </Card>
+        </Reveal>
       )}
 
       {(course.past_questions_link || course.lecturer_notes_link) && (
-        <Card className="mt-6" eyebrow="Downloads" padded>
-          <div className="flex flex-wrap gap-4">
-            {course.past_questions_link && (
-              <a
-                href={course.past_questions_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
-              >
-                Past exam questions <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </a>
+        <Reveal delay={0.18}>
+          <Card className="mt-6" eyebrow="Downloads" padded>
+            <div className="flex flex-wrap gap-4">
+              {course.past_questions_link && (
+                <a
+                  href={course.past_questions_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
+                >
+                  Past exam questions <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </a>
+              )}
+              {course.lecturer_notes_link && (
+                <a
+                  href={course.lecturer_notes_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
+                >
+                  Lecturer notes <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </a>
+              )}
+            </div>
+          </Card>
+        </Reveal>
+      )}
+
+      <Reveal delay={0.24}>
+        <Card className="mt-6" eyebrow="Community contributions" padded>
+          <div className="flex flex-col gap-4">
+            {!user ? (
+              <p className="text-sm text-ink-muted">
+                <Link
+                  to="/login"
+                  className="font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
+                >
+                  Sign in
+                </Link>{' '}
+                to contribute a past question, notes, or other material for this course.
+              </p>
+            ) : contributing ? (
+              <ContributeForm outlineId={course.id} onSubmitted={() => setContributing(false)} />
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-ink-muted">
+                  Have a past question or notes for this course? Share it with other students.
+                </p>
+                <Button variant="secondary" size="sm" onClick={() => setContributing(true)}>
+                  Contribute
+                </Button>
+              </div>
             )}
-            {course.lecturer_notes_link && (
-              <a
-                href={course.lecturer_notes_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
-              >
-                Lecturer notes <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-              </a>
+
+            {groups.length === 0 ? (
+              <p className="text-sm text-ink-muted">No contributions yet — be the first to add one.</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {groups.map((group) => (
+                  <div key={group.type}>
+                    <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
+                      {group.type}
+                    </div>
+                    <ul className="mt-1.5 space-y-1.5">
+                      {group.items.map((item) => (
+                        <li key={item.id}>
+                          <a
+                            href={item.file_url || item.external_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
+                          >
+                            {item.title}
+                            {item.session ? ` (${item.session})` : ''}
+                            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </Card>
-      )}
-
-      <Card className="mt-6" eyebrow="Community contributions" padded>
-        <div className="flex flex-col gap-4">
-          {!user ? (
-            <p className="text-sm text-ink-muted">
-              <Link
-                to="/login"
-                className="font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
-              >
-                Sign in
-              </Link>{' '}
-              to contribute a past question, notes, or other material for this course.
-            </p>
-          ) : contributing ? (
-            <ContributeForm outlineId={course.id} onSubmitted={() => setContributing(false)} />
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-ink-muted">
-                Have a past question or notes for this course? Share it with other students.
-              </p>
-              <Button variant="secondary" size="sm" onClick={() => setContributing(true)}>
-                Contribute
-              </Button>
-            </div>
-          )}
-
-          {groups.length === 0 ? (
-            <p className="text-sm text-ink-muted">No contributions yet — be the first to add one.</p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {groups.map((group) => (
-                <div key={group.type}>
-                  <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-                    {group.type}
-                  </div>
-                  <ul className="mt-1.5 space-y-1.5">
-                    {group.items.map((item) => (
-                      <li key={item.id}>
-                        <a
-                          href={item.file_url || item.external_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
-                        >
-                          {item.title}
-                          {item.session ? ` (${item.session})` : ''}
-                          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Card>
+      </Reveal>
 
       <div className="mt-8">
         <Button variant="ghost" onClick={() => navigate(`/outlines/${level}/${semester}`)}>

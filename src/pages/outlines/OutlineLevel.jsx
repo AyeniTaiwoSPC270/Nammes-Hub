@@ -1,8 +1,12 @@
 import { useNavigate, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import ErrorState from '../../components/ui/ErrorState'
+import Reveal from '../../components/ui/Reveal'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourses } from '../../data/outlines'
+
+const CARD_STAGGER = 0.06
+const MAX_STAGGER_DELAY = 0.3
 
 export default function OutlineLevel() {
   const { level } = useParams()
@@ -31,23 +35,24 @@ export default function OutlineLevel() {
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-          {Object.entries(SEMESTER_LABELS).map(([sem, label]) => {
+          {Object.entries(SEMESTER_LABELS).map(([sem, label], i) => {
             const count = getCourses(data ?? [], level, sem).length
             return (
-              <button
-                key={sem}
-                type="button"
-                onClick={() => navigate(`/outlines/${level}/${sem}`)}
-                className="group flex items-center justify-between gap-4 rounded-lg border border-hairline border-l-4 border-l-transparent bg-surface p-6 text-left shadow-md transition-colors hover:border-l-orange-500 hover:bg-surface-low"
-              >
-                <div>
-                  <h3 className="text-xl font-bold text-ink-900 mb-1">{label}</h3>
-                  <p className="text-sm text-ink-muted">
-                    {count} course{count === 1 ? '' : 's'}
-                  </p>
-                </div>
-                <span className="material-symbols-outlined text-3xl text-brand">chevron_right</span>
-              </button>
+              <Reveal key={sem} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/outlines/${level}/${sem}`)}
+                  className="group flex w-full items-center justify-between gap-4 rounded-lg border border-hairline border-l-4 border-l-transparent bg-surface p-6 text-left shadow-md transition-colors hover:border-l-orange-500 hover:bg-surface-low"
+                >
+                  <div>
+                    <h3 className="text-xl font-bold text-ink-900 mb-1">{label}</h3>
+                    <p className="text-sm text-ink-muted">
+                      {count} course{count === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-3xl text-brand">chevron_right</span>
+                </button>
+              </Reveal>
             )
           })}
         </div>

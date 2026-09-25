@@ -4,6 +4,7 @@ import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
+import Reveal from '../../components/ui/Reveal'
 import Table from '../../components/ui/Table'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, DAYS, useTimetablesQuery, getTimetable } from '../../data/timetables'
@@ -118,7 +119,9 @@ export default function TimetableLevel() {
         ) : isLoading ? (
           <SkeletonTable columns={CLASS_COLUMNS.length} rows={5} />
         ) : visibleRows.length > 0 ? (
-          <Table columns={type === 'exam' ? EXAM_COLUMNS : CLASS_COLUMNS} rows={toTableRows(visibleRows)} />
+          <Reveal key={`${semester}-${type}-${day}`}>
+            <Table columns={type === 'exam' ? EXAM_COLUMNS : CLASS_COLUMNS} rows={toTableRows(visibleRows)} />
+          </Reveal>
         ) : sortedRows.length > 0 ? (
           <EmptyState
             icon="event_busy"

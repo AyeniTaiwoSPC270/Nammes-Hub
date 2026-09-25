@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../lib/ToastContext'
+import Reveal from '../components/ui/Reveal'
 import { useNotificationPrefQuery, useSetNotificationPrefMutation } from '../data/notificationPrefs'
 
 export default function Account() {
@@ -26,7 +27,7 @@ export default function Account() {
       <h1 className="text-3xl font-bold text-ink-900">Account</h1>
       <p className="mt-1 text-ink-muted">{user.email}</p>
 
-      <div className="mt-8 flex items-center justify-between gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+      <Reveal className="mt-8 flex items-center justify-between gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
         <div>
           <h2 className="font-bold text-ink-900">Email notifications</h2>
           <p className="text-sm text-ink-muted">New News/Events alerts and department broadcasts.</p>
@@ -40,7 +41,7 @@ export default function Account() {
             className="h-5 w-5 accent-green-900"
           />
         </label>
-      </div>
+      </Reveal>
     </div>
   )
 }

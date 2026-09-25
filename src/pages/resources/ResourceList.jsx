@@ -2,6 +2,7 @@ import { useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
+import Reveal from '../../components/ui/Reveal'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useResourcesQuery, getResources } from '../../data/resources'
 
@@ -33,7 +34,7 @@ export default function ResourceList() {
         ) : isLoading ? (
           <SkeletonTable columns={4} rows={4} />
         ) : items.length > 0 ? (
-          <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+          <Reveal className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
             <div className="flex items-center justify-between border-b border-hairline bg-surface-low p-4">
               <h3 className="text-lg font-bold text-ink-900">
                 {level} Level &middot; {SEMESTER_LABELS[semester]} Resources
@@ -82,7 +83,7 @@ export default function ResourceList() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </Reveal>
         ) : (
           <EmptyState
             icon="folder_off"
