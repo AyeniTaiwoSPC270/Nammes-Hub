@@ -37,3 +37,16 @@ export async function setUserDisabled(userId, disabled) {
   const { error } = await supabase.rpc('admin_set_user_disabled', { target: userId, disabled })
   if (error) throw error
 }
+
+export async function deleteUserAccount(userId) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData.session?.access_token
+  const response = await fetch('/api/delete-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ userId }),
+  })
+  const result = await response.json()
+  if (!response.ok) throw new Error(result.error || 'Failed to delete account')
+  return result
+}

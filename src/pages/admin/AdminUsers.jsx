@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../lib/AuthContext'
 import { useToast } from '../../lib/ToastContext'
-import { useAllUsersQuery, setUserDisabled } from '../../data/users'
+import { useAllUsersQuery, setUserDisabled, deleteUserAccount } from '../../data/users'
 import { assignAdmin, revokeAdmin, transferOwnership } from '../../data/admins'
 import Table from '../../components/ui/Table'
 import Badge from '../../components/ui/Badge'
@@ -56,6 +56,14 @@ export default function AdminUsers() {
     onSuccess: () => {
       invalidate()
       toast.success('Ownership transferred.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: deleteUserAccount,
+    onSuccess: () => {
+      invalidate()
+      toast.success('Account deleted.')
     },
     onError: (error) => toast.error(error.message),
   })
@@ -127,6 +135,23 @@ export default function AdminUsers() {
                     }}
                   >
                     Make owner
+                  </Button>
+                )}
+                {u.user_id !== user.id && !u.isOwner && !u.isAdmin && me?.isOwner && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Permanently delete ${u.full_name || u.student_id}'s account? This can't be undone.`,
+                        )
+                      ) {
+                        deleteMutation.mutate(u.user_id)
+                      }
+                    }}
+                  >
+                    Delete
                   </Button>
                 )}
               </div>,

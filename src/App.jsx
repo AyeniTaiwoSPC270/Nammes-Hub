@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
 import AdminRoute from './components/AdminRoute'
+import AdminLayout from './components/admin/AdminLayout'
 import AppUpdateNotifier from './components/AppUpdateNotifier'
 import { useAuth } from './lib/AuthContext'
 import { useOwnAdminRowQuery } from './data/admins'
@@ -119,30 +120,32 @@ export default function App() {
             <Route path="account" element={<Account />} />
             <Route element={<AdminRoute />}>
               <Route path="admin" element={<Admin />} />
-              <Route path="admin/home" element={<AdminHomeContent />} />
-              <Route path="admin/links" element={<AdminSiteLinks />} />
-              <Route path="admin/banners" element={<AdminPageBanners />} />
-              <Route path="admin/news" element={<AdminNews />} />
-              <Route path="admin/opportunities" element={<AdminOpportunities />} />
-              <Route path="admin/events" element={<AdminEvents />} />
-              <Route path="admin/events/:id/gallery" element={<AdminEventGallery />} />
-              <Route path="admin/resources" element={<AdminResources />} />
-              <Route path="admin/excos" element={<AdminExcos />} />
-              <Route path="admin/users" element={<AdminUsers />} />
-              <Route path="admin/reviews" element={<AdminReviews />} />
-              <Route path="admin/broadcasts" element={<AdminBroadcasts />} />
-              <Route path="admin/outlines" element={<AdminOutlines />} />
-              <Route path="admin/submissions" element={<AdminSubmissions />} />
-              <Route path="admin/timetables" element={<AdminTimetables />} />
-              <Route path="admin/forms" element={<AdminForms />} />
-              <Route path="admin/forms/new" element={<AdminFormEditor />} />
-              <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
-              <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
-              <Route path="admin/awards" element={<AdminAwards />} />
-              <Route path="admin/awards/new" element={<AdminAwardSeason />} />
-              <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
-              <Route path="admin/awards/:seasonId/categories/:categoryId/curate" element={<AdminAwardCurate />} />
-              <Route path="admin/awards/:seasonId/results" element={<AdminAwardResults />} />
+              <Route element={<AdminLayout />}>
+                <Route path="admin/home" element={<AdminHomeContent />} />
+                <Route path="admin/links" element={<AdminSiteLinks />} />
+                <Route path="admin/banners" element={<AdminPageBanners />} />
+                <Route path="admin/news" element={<AdminNews />} />
+                <Route path="admin/opportunities" element={<AdminOpportunities />} />
+                <Route path="admin/events" element={<AdminEvents />} />
+                <Route path="admin/events/:id/gallery" element={<AdminEventGallery />} />
+                <Route path="admin/resources" element={<AdminResources />} />
+                <Route path="admin/excos" element={<AdminExcos />} />
+                <Route path="admin/users" element={<AdminUsers />} />
+                <Route path="admin/reviews" element={<AdminReviews />} />
+                <Route path="admin/broadcasts" element={<AdminBroadcasts />} />
+                <Route path="admin/outlines" element={<AdminOutlines />} />
+                <Route path="admin/submissions" element={<AdminSubmissions />} />
+                <Route path="admin/timetables" element={<AdminTimetables />} />
+                <Route path="admin/forms" element={<AdminForms />} />
+                <Route path="admin/forms/new" element={<AdminFormEditor />} />
+                <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
+                <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
+                <Route path="admin/awards" element={<AdminAwards />} />
+                <Route path="admin/awards/new" element={<AdminAwardSeason />} />
+                <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
+                <Route path="admin/awards/:seasonId/categories/:categoryId/curate" element={<AdminAwardCurate />} />
+                <Route path="admin/awards/:seasonId/results" element={<AdminAwardResults />} />
+              </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
           </Route>
