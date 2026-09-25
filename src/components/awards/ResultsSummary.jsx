@@ -35,7 +35,7 @@ export default function ResultsSummary({ categories, nomineesByCategory, votes }
             </div>
 
             {winner && (
-              <div className="mt-3 flex flex-col gap-3 rounded-lg bg-orange-100 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="mt-3 flex flex-col gap-3 rounded-lg bg-orange-100 p-3 dark:bg-brand-orange/15 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-hairline bg-surface">
                     {winner.nominee.photo_url ? (

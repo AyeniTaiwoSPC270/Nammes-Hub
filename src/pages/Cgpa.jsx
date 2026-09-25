@@ -320,7 +320,7 @@ export default function Cgpa() {
               )}
 
               {matches.length > 0 && (
-                <div className="mt-3 rounded-sm bg-orange-100 p-3 text-sm text-ink">
+                <div className="mt-3 rounded-sm bg-orange-100 p-3 text-sm text-ink dark:bg-brand-orange/15">
                   <p>You&rsquo;ve taken this course before:</p>
                   {matches.map((m) => {
                     const excluded = m.course.counts_toward_cgpa === false
@@ -404,7 +404,7 @@ export default function Cgpa() {
         </form>
       </Reveal>
 
-      <Reveal delay={0.06} className="mt-10 rounded-lg bg-orange-100 p-6">
+      <Reveal delay={0.06} className="mt-10 rounded-lg bg-orange-100 p-6 dark:bg-brand-orange/15">
         <h2 className="text-xl">What grade do I need?</h2>
         <p className="mt-1 text-sm text-ink-muted">
           Enter a target CGPA and how many units you have left to find your required average grade point.

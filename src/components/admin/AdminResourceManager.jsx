@@ -192,7 +192,7 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
       )}
 
       {confirmingDeleteAll && (
-        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-danger bg-danger-bg p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-danger bg-danger-bg p-4 dark:bg-danger/15 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-semibold text-danger">
             Delete all {filteredRows.length}{' '}
             {activeGroup !== 'All' ? `${activeGroup} ${config.groupLabel ?? ''} `.trim() + ' ' : ''}

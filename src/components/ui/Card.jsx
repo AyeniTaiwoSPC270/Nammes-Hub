@@ -1,7 +1,7 @@
 const tones = {
   neutral: { bg: 'bg-surface', eyebrow: 'text-brand-orange', title: 'text-ink-900', meta: 'text-ink-muted', body: 'text-ink' },
   green: { bg: 'bg-green-900', eyebrow: 'text-orange-500', title: 'text-white', meta: 'text-white/70', body: 'text-white/90' },
-  orange: { bg: 'bg-orange-100', eyebrow: 'text-orange-600', title: 'text-ink-900', meta: 'text-ink-muted', body: 'text-ink' },
+  orange: { bg: 'bg-orange-100 dark:bg-brand-orange/15', eyebrow: 'text-orange-600', title: 'text-ink-900', meta: 'text-ink-muted', body: 'text-ink' },
 }
 
 const imageAspects = {
