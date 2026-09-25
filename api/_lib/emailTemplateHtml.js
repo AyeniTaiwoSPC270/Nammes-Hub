@@ -143,11 +143,6 @@ ${SHARED_STYLE}
 </html>`
 }
 
-const BROADCAST_FOOTER = `<div class="email-footer">
-      <div>You're receiving this because you're a NAMMES Hub member — <a href="${SITE_URL}/account" class="footer-link">manage your notification preferences</a>.</div>
-      <div style="margin-top:6px;">National Association of Metallurgical and Materials Engineering Students · Faculty of Engineering, University of Lagos</div>
-    </div>`
-
 function broadcastImageHtml(imageUrl, className = 'content-image') {
   return imageUrl ? `<img src="${imageUrl}" alt="" width="520" class="${className}" />` : ''
 }
@@ -162,11 +157,26 @@ export const BROADCAST_TEMPLATES = [
   { id: 'celebration', label: 'Celebration', description: 'Festive orange + green accents — for wins, results, and congratulations.' },
 ]
 
-function buildDefaultBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl)
-  return `<!DOCTYPE html>
+// Broadcast templates are plain HTML strings with placeholder tokens, so admins can
+// edit every byte of them (Admin > Email Templates) instead of only subject/body/image.
+export const BROADCAST_TEMPLATE_TOKENS = [
+  { token: '{{subject}}', description: 'The broadcast subject line (HTML-escaped).' },
+  { token: '{{body}}', description: 'The broadcast body, converted to paragraphs with links.' },
+  { token: '{{image}}', description: 'The uploaded image as an <img> tag, or nothing if no image was attached.' },
+  { token: '{{date}}', description: 'Today’s date, short form (e.g. "Mar 5, 2026").' },
+  { token: '{{date_full}}', description: 'Today’s date, long form (e.g. "Thursday, March 5, 2026").' },
+  { token: '{{site_url}}', description: 'The site’s base URL, for links and the logo image.' },
+]
+
+const WORDMARK_TOKEN_HTML = `<img src="{{site_url}}/logo.png" width="22" height="22" alt="NAMMES Hub" style="border-radius:4px;" />`
+
+const BROADCAST_FOOTER_TOKEN_HTML = `<div class="email-footer">
+      <div>You're receiving this because you're a NAMMES Hub member — <a href="{{site_url}}/account" class="footer-link">manage your notification preferences</a>.</div>
+      <div style="margin-top:6px;">National Association of Metallurgical and Materials Engineering Students · Faculty of Engineering, University of Lagos</div>
+    </div>`
+
+export const DEFAULT_BROADCAST_TEMPLATE_HTML = {
+  default: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -189,30 +199,21 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="header-bar">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
+        <td><a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a></td>
         <td align="right"><span class="header-tag">Official Notice</span></td>
       </tr></table>
     </div>
     <div class="email-body">
-      <h1 class="subject-title">${safeSubject}</h1>
-      <div class="content-area">${contentHtml}</div>
-      ${imageHtml}
+      <h1 class="subject-title">{{subject}}</h1>
+      <div class="content-area">{{body}}</div>
+      {{image}}
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
-}
+</html>`,
 
-function buildBoldBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl)
-  const postedAt = new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeZone: 'Africa/Lagos',
-  }).format(new Date())
-  return `<!DOCTYPE html>
+  bold: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -236,34 +237,25 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="header-bar">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
+        <td><a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a></td>
         <td align="right"><span class="header-tag">Official Bulletin</span></td>
       </tr></table>
     </div>
     <div class="email-body">
-      <div class="eyebrow-row">Announcement · ${postedAt}</div>
-      <h1 class="subject-title">${safeSubject}</h1>
-      <div class="content-area">${contentHtml}</div>
-      ${imageHtml}
+      <div class="eyebrow-row">Announcement · {{date}}</div>
+      <h1 class="subject-title">{{subject}}</h1>
+      <div class="content-area">{{body}}</div>
+      {{image}}
       <div class="cta-container">
-        <a href="${SITE_URL}" class="cta-button">Visit NAMMES Hub &rarr;</a>
+        <a href="{{site_url}}" class="cta-button">Visit NAMMES Hub &rarr;</a>
       </div>
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
-}
+</html>`,
 
-function buildMinimalBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl, 'content-image-sm')
-  const postedAt = new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeZone: 'Africa/Lagos',
-  }).format(new Date())
-  return `<!DOCTYPE html>
+  minimal: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -287,32 +279,23 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="email-header">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
+        <td><a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a></td>
         <td align="right"><span class="header-label">Notice</span></td>
       </tr></table>
     </div>
     <div class="header-divider"></div>
     <div class="email-body">
-      <div class="eyebrow-row">${postedAt}</div>
-      <h1 class="subject-title">${safeSubject}</h1>
-      <div class="content-area">${contentHtml}</div>
-      ${imageHtml}
+      <div class="eyebrow-row">{{date}}</div>
+      <h1 class="subject-title">{{subject}}</h1>
+      <div class="content-area">{{body}}</div>
+      {{image}}
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
-}
+</html>`,
 
-function buildEventBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl)
-  const postedAt = new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeZone: 'Africa/Lagos',
-  }).format(new Date())
-  return `<!DOCTYPE html>
+  event: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -335,30 +318,25 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="email-header">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
+        <td><a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a></td>
         <td align="right"><span class="header-tag">Official Invitation</span></td>
       </tr></table>
     </div>
     <div class="email-body">
-      <div class="date-badge">${postedAt}</div>
-      <h1 class="subject-title">${safeSubject}</h1>
-      <div class="content-area">${contentHtml}</div>
-      ${imageHtml}
+      <div class="date-badge">{{date}}</div>
+      <h1 class="subject-title">{{subject}}</h1>
+      <div class="content-area">{{body}}</div>
+      {{image}}
       <div class="cta-container">
-        <a href="${SITE_URL}/events" class="cta-button">See events &rarr;</a>
+        <a href="{{site_url}}/events" class="cta-button">See events &rarr;</a>
       </div>
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
-}
+</html>`,
 
-function buildAlertBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl)
-  return `<!DOCTYPE html>
+  alert: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -387,35 +365,26 @@ ${SHARED_STYLE}
     <div class="top-strip"></div>
     <div class="header-bar">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td><a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a></td>
+        <td><a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a></td>
         <td align="right"><span class="header-tag">Urgent Notice</span></td>
       </tr></table>
     </div>
     <div class="email-body">
       <div class="alert-card">
-        <h1 class="subject-title">${safeSubject}</h1>
+        <h1 class="subject-title">{{subject}}</h1>
         <div class="callout">
           <span class="callout-label">Please read carefully</span>
-          <div class="content-area">${contentHtml}</div>
+          <div class="content-area">{{body}}</div>
         </div>
-        ${imageHtml}
+        {{image}}
       </div>
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
-}
+</html>`,
 
-function buildDigestBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl)
-  const postedAt = new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'full',
-    timeZone: 'Africa/Lagos',
-  }).format(new Date())
-  return `<!DOCTYPE html>
+  digest: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -439,29 +408,24 @@ ${SHARED_STYLE}
 <body>
   <div class="email-container">
     <div class="email-header">
-      <a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a>
-      <span class="eyebrow">Weekly Dispatch · ${postedAt}</span>
+      <a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a>
+      <span class="eyebrow">Weekly Dispatch · {{date_full}}</span>
     </div>
     <div class="email-body">
-      <h1 class="subject-title">${safeSubject}</h1>
+      <h1 class="subject-title">{{subject}}</h1>
       <div class="divider"></div>
-      <div class="content-area">${contentHtml}</div>
-      ${imageHtml}
+      <div class="content-area">{{body}}</div>
+      {{image}}
       <div class="cta-container">
-        <a href="${SITE_URL}" class="cta-button">Read more on NAMMES Hub &rarr;</a>
+        <a href="{{site_url}}" class="cta-button">Read more on NAMMES Hub &rarr;</a>
       </div>
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
-}
+</html>`,
 
-function buildCelebrationBroadcastHtml({ subject, body, imageUrl }) {
-  const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
-  const imageHtml = broadcastImageHtml(imageUrl)
-  return `<!DOCTYPE html>
+  celebration: `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -485,34 +449,39 @@ ${SHARED_STYLE}
   <div class="email-container">
     <div class="stripe"></div>
     <div class="email-header">
-      <a href="${SITE_URL}" class="wordmark">${WORDMARK_LOGO}<span>NAMMES Hub</span></a>
+      <a href="{{site_url}}" class="wordmark">${WORDMARK_TOKEN_HTML}<span>NAMMES Hub</span></a>
       <div><span class="header-tag">Congratulations</span></div>
     </div>
     <div class="email-body">
-      <h1 class="subject-title">${safeSubject}</h1>
-      <div class="content-area">${contentHtml}</div>
-      ${imageHtml}
+      <h1 class="subject-title">{{subject}}</h1>
+      <div class="content-area">{{body}}</div>
+      {{image}}
       <div class="cta-container">
-        <a href="${SITE_URL}/awards" class="cta-button">View all results &rarr;</a>
+        <a href="{{site_url}}/awards" class="cta-button">View all results &rarr;</a>
       </div>
     </div>
-    ${BROADCAST_FOOTER}
+    ${BROADCAST_FOOTER_TOKEN_HTML}
   </div>
 </body>
-</html>`
+</html>`,
 }
 
-const BROADCAST_BUILDERS = {
-  default: buildDefaultBroadcastHtml,
-  bold: buildBoldBroadcastHtml,
-  minimal: buildMinimalBroadcastHtml,
-  event: buildEventBroadcastHtml,
-  alert: buildAlertBroadcastHtml,
-  digest: buildDigestBroadcastHtml,
-  celebration: buildCelebrationBroadcastHtml,
+export function renderBroadcastTemplate(html, { subject, body, imageUrl }) {
+  const safeSubject = escapeHtml(subject)
+  const contentHtml = textToParagraphs(body)
+  const imageHtml = broadcastImageHtml(imageUrl)
+  const dateShort = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'Africa/Lagos' }).format(new Date())
+  const dateFull = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'Africa/Lagos' }).format(new Date())
+  return html
+    .replaceAll('{{subject}}', safeSubject)
+    .replaceAll('{{body}}', contentHtml)
+    .replaceAll('{{image}}', imageHtml)
+    .replaceAll('{{date_full}}', dateFull)
+    .replaceAll('{{date}}', dateShort)
+    .replaceAll('{{site_url}}', SITE_URL)
 }
 
-export function buildBroadcastEmailHtml({ subject, body, imageUrl, templateId = 'default' }) {
-  const builder = BROADCAST_BUILDERS[templateId] || BROADCAST_BUILDERS.default
-  return builder({ subject, body, imageUrl })
+export function buildBroadcastEmailHtml({ subject, body, imageUrl, templateId = 'default', customHtml }) {
+  const html = customHtml || DEFAULT_BROADCAST_TEMPLATE_HTML[templateId] || DEFAULT_BROADCAST_TEMPLATE_HTML.default
+  return renderBroadcastTemplate(html, { subject, body, imageUrl })
 }

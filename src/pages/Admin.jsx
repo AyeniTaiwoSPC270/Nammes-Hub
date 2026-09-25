@@ -111,6 +111,13 @@ export const ADMIN_SECTIONS = [
     description: 'Send an announcement email to every opted-in user.',
   },
   {
+    path: '/admin/email-templates',
+    label: 'Email Templates',
+    icon: 'code',
+    category: 'Engagement',
+    description: 'Edit the raw HTML behind each broadcast email template.',
+  },
+  {
     path: '/admin/reviews',
     label: 'Reviews',
     icon: 'fact_check',

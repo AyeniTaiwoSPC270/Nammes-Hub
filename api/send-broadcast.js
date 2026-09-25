@@ -48,9 +48,21 @@ export default async function handler(req, res) {
     return
   }
 
+  const { data: templateRow } = await supabaseAdmin
+    .from('email_templates')
+    .select('html')
+    .eq('template_id', safeTemplateId)
+    .maybeSingle()
+
   const emails = recipients.map((r) => r.email)
   const resend = getResendClient()
-  const html = renderBroadcastEmail({ subject, body, imageUrl, templateId: safeTemplateId })
+  const html = renderBroadcastEmail({
+    subject,
+    body,
+    imageUrl,
+    templateId: safeTemplateId,
+    customHtml: templateRow?.html || undefined,
+  })
   let sentCount = 0
   for (const batch of chunk(emails, 100)) {
     try {

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBroadcastHistoryQuery, sendBroadcast } from '../../data/broadcasts'
+import { useEmailTemplatesQuery } from '../../data/emailTemplates'
 import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
 import Table from '../../components/ui/Table'
@@ -19,6 +21,7 @@ export default function AdminBroadcasts() {
   const toast = useToast()
   const queryClient = useQueryClient()
   const historyQuery = useBroadcastHistoryQuery()
+  const templatesQuery = useEmailTemplatesQuery()
 
   const sendMutation = useMutation({
     mutationFn: sendBroadcast,
@@ -42,6 +45,8 @@ export default function AdminBroadcasts() {
     sendMutation.mutate({ subject, body, imageUrl: imageUrl || undefined, templateId })
   }
 
+  const customHtml = templatesQuery.data?.find((t) => t.template_id === templateId)?.html
+
   const previewHtml = useMemo(
     () =>
       buildBroadcastEmailHtml({
@@ -49,8 +54,9 @@ export default function AdminBroadcasts() {
         body: body.trim() || 'Start typing to see the email body here…',
         imageUrl: imageUrl || undefined,
         templateId,
+        customHtml,
       }),
-    [subject, body, imageUrl, templateId],
+    [subject, body, imageUrl, templateId, customHtml],
   )
 
   if (historyQuery.isError && !historyQuery.data) {
@@ -71,7 +77,12 @@ export default function AdminBroadcasts() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Template</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Template</span>
+              <Link to="/admin/email-templates" className="text-xs font-semibold text-brand no-underline hover:text-orange-500">
+                Edit templates
+              </Link>
+            </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {BROADCAST_TEMPLATES.map((t) => (
                 <button
