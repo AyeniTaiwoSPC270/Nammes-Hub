@@ -1,7 +1,9 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
-import { renderBroadcastEmail } from './_lib/emailTemplates.js'
+import { renderBroadcastEmail, BROADCAST_TEMPLATES } from './_lib/emailTemplates.js'
+
+const VALID_TEMPLATE_IDS = new Set(BROADCAST_TEMPLATES.map((t) => t.id))
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -15,11 +17,12 @@ export default async function handler(req, res) {
     return
   }
 
-  const { subject, body, imageUrl } = req.body ?? {}
+  const { subject, body, imageUrl, templateId } = req.body ?? {}
   if (!subject?.trim() || !body?.trim()) {
     res.status(400).json({ error: 'subject and body are required' })
     return
   }
+  const safeTemplateId = VALID_TEMPLATE_IDS.has(templateId) ? templateId : 'default'
 
   const supabaseAdmin = getSupabaseAdmin()
 
@@ -47,7 +50,7 @@ export default async function handler(req, res) {
 
   const emails = recipients.map((r) => r.email)
   const resend = getResendClient()
-  const html = renderBroadcastEmail({ subject, body, imageUrl })
+  const html = renderBroadcastEmail({ subject, body, imageUrl, templateId: safeTemplateId })
   let sentCount = 0
   for (const batch of chunk(emails, 100)) {
     try {
@@ -67,6 +70,7 @@ export default async function handler(req, res) {
     subject,
     body,
     image_url: imageUrl || null,
+    template_id: safeTemplateId,
     sent_by: userData.user.id,
     recipient_count: sentCount,
   })

@@ -90,6 +90,14 @@ export default function App() {
       <AppUpdateNotifier />
       <MaintenanceGate>
         <Routes>
+          <Route
+            path="maintenance"
+            element={
+              <Suspense fallback={null}>
+                <Maintenance />
+              </Suspense>
+            }
+          />
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
