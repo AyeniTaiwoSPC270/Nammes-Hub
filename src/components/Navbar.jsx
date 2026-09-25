@@ -156,22 +156,22 @@ export default function Navbar() {
           )}
         </nav>
 
-        {!loading && (
-          <div className="hidden sm:flex items-center gap-4">
-            {user ? (
-              <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="right" dataTour="nav-account" />
-            ) : (
-              <NavLink
-                to="/login"
-                className="rounded-md bg-green-900 px-4 py-2 text-sm font-bold text-white no-underline transition-opacity hover:opacity-90"
-              >
-                Sign In
-              </NavLink>
-            )}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {!loading && (
+            <div className="hidden sm:flex items-center gap-4">
+              {user ? (
+                <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="right" dataTour="nav-account" />
+              ) : (
+                <NavLink
+                  to="/login"
+                  className="rounded-md bg-green-900 px-4 py-2 text-sm font-bold text-white no-underline transition-opacity hover:opacity-90"
+                >
+                  Sign In
+                </NavLink>
+              )}
+            </div>
+          )}
 
-        <div className="flex items-center gap-1">
           <ThemeToggle />
           <button
             type="button"
