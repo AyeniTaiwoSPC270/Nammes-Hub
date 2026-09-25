@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useBroadcastHistoryQuery, sendBroadcast } from '../../data/broadcasts'
 import Button from '../../components/ui/Button'
@@ -8,6 +8,7 @@ import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
+import { buildBroadcastEmailHtml } from '../../../api/_lib/emailTemplateHtml.js'
 
 export default function AdminBroadcasts() {
   const [subject, setSubject] = useState('')
@@ -36,6 +37,15 @@ export default function AdminBroadcasts() {
     sendMutation.mutate({ subject, body })
   }
 
+  const previewHtml = useMemo(
+    () =>
+      buildBroadcastEmailHtml({
+        subject: subject.trim() || 'Your subject line',
+        body: body.trim() || 'Start typing to see the email body here…',
+      }),
+    [subject, body],
+  )
+
   if (historyQuery.isError && !historyQuery.data) {
     return (
       <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
@@ -51,13 +61,25 @@ export default function AdminBroadcasts() {
       <h1 className="text-3xl font-bold text-ink-900">Broadcasts</h1>
       <p className="mt-1 text-ink-muted">Send an email to every opted-in user on NAMMES Hub.</p>
 
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
-        <FormField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
-        <FormField label="Body" type="textarea" value={body} onChange={(e) => setBody(e.target.value)} required />
-        <Button type="submit" variant="primary" loading={sendMutation.isPending}>
-          Send broadcast
-        </Button>
-      </form>
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+          <FormField label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
+          <FormField label="Body" type="textarea" value={body} onChange={(e) => setBody(e.target.value)} required />
+          <Button type="submit" variant="primary" loading={sendMutation.isPending}>
+            Send broadcast
+          </Button>
+        </form>
+
+        <div className="overflow-hidden rounded-lg border border-hairline bg-surface-low shadow-sm lg:sticky lg:top-6">
+          <div className="border-b border-hairline bg-surface px-4 py-2.5">
+            <p className="text-xs font-semibold uppercase tracking-[.05em] text-ink-muted">Live preview</p>
+            <p className="mt-0.5 truncate text-sm text-ink-900">
+              {subject.trim() || <span className="italic text-ink-muted">No subject yet</span>}
+            </p>
+          </div>
+          <iframe title="Broadcast email preview" srcDoc={previewHtml} className="h-[560px] w-full bg-white" />
+        </div>
+      </div>
 
       <h2 className="mt-10 text-xl font-bold text-ink-900">History</h2>
       {historyQuery.isLoading ? (

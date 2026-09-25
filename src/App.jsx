@@ -1,9 +1,14 @@
-import { lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
 import AdminRoute from './components/AdminRoute'
 import AppUpdateNotifier from './components/AppUpdateNotifier'
+import { useAuth } from './lib/AuthContext'
+import { useOwnAdminRowQuery } from './data/admins'
+import { useSiteContentQuery } from './data/siteContent'
+
+const Maintenance = lazy(() => import('./pages/Maintenance'))
 
 const Home = lazy(() => import('./pages/Home'))
 const About = lazy(() => import('./pages/About'))
@@ -57,69 +62,92 @@ const AdminAwardSeason = lazy(() => import('./pages/admin/AdminAwardSeason'))
 const AdminAwardCurate = lazy(() => import('./pages/admin/AdminAwardCurate'))
 const AdminAwardResults = lazy(() => import('./pages/admin/AdminAwardResults'))
 
+function MaintenanceGate({ children }) {
+  const location = useLocation()
+  const { user } = useAuth()
+  const siteContentQuery = useSiteContentQuery()
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+
+  const isMaintenanceOn = Boolean(siteContentQuery.data?.maintenance_mode)
+  const isAdmin = Boolean(adminRowQuery.data)
+  const isLoginPage = location.pathname === '/login'
+
+  if (isMaintenanceOn && !isAdmin && !isLoginPage) {
+    return (
+      <Suspense fallback={null}>
+        <Maintenance />
+      </Suspense>
+    )
+  }
+
+  return children
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <AppUpdateNotifier />
-      <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="excos" element={<Excos />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="outlines" element={<Outlines />} />
-          <Route path="outlines/:level" element={<OutlineLevel />} />
-          <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
-          <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
-          <Route path="timetable" element={<Timetable />} />
-          <Route path="timetable/:level" element={<TimetableLevel />} />
-          <Route path="cgpa" element={<Cgpa />} />
-          <Route path="events" element={<Events />} />
-          <Route path="events/:id" element={<EventDetail />} />
-          <Route path="resources" element={<Resources />} />
-          <Route path="resources/:level" element={<ResourceLevel />} />
-          <Route path="resources/:level/:semester" element={<ResourceList />} />
-          <Route path="news" element={<News />} />
-          <Route path="news/:id" element={<NewsDetail />} />
-          <Route path="opportunities" element={<Opportunities />} />
-          <Route path="awards" element={<Awards />} />
-          <Route path="forms" element={<Forms />} />
-          <Route path="forms/:id" element={<FormDetail />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
-          <Route path="forgot-password" element={<ForgotPassword />} />
-          <Route path="reset-password" element={<ResetPassword />} />
-          <Route path="account" element={<Account />} />
-          <Route element={<AdminRoute />}>
-            <Route path="admin" element={<Admin />} />
-            <Route path="admin/home" element={<AdminHomeContent />} />
-            <Route path="admin/links" element={<AdminSiteLinks />} />
-            <Route path="admin/banners" element={<AdminPageBanners />} />
-            <Route path="admin/news" element={<AdminNews />} />
-            <Route path="admin/opportunities" element={<AdminOpportunities />} />
-            <Route path="admin/events" element={<AdminEvents />} />
-            <Route path="admin/events/:id/gallery" element={<AdminEventGallery />} />
-            <Route path="admin/resources" element={<AdminResources />} />
-            <Route path="admin/excos" element={<AdminExcos />} />
-            <Route path="admin/users" element={<AdminUsers />} />
-            <Route path="admin/reviews" element={<AdminReviews />} />
-            <Route path="admin/broadcasts" element={<AdminBroadcasts />} />
-            <Route path="admin/outlines" element={<AdminOutlines />} />
-            <Route path="admin/submissions" element={<AdminSubmissions />} />
-            <Route path="admin/timetables" element={<AdminTimetables />} />
-            <Route path="admin/forms" element={<AdminForms />} />
-            <Route path="admin/forms/new" element={<AdminFormEditor />} />
-            <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
-            <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
-            <Route path="admin/awards" element={<AdminAwards />} />
-            <Route path="admin/awards/new" element={<AdminAwardSeason />} />
-            <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
-            <Route path="admin/awards/:seasonId/categories/:categoryId/curate" element={<AdminAwardCurate />} />
-            <Route path="admin/awards/:seasonId/results" element={<AdminAwardResults />} />
+      <MaintenanceGate>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="about" element={<About />} />
+            <Route path="excos" element={<Excos />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="outlines" element={<Outlines />} />
+            <Route path="outlines/:level" element={<OutlineLevel />} />
+            <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
+            <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
+            <Route path="timetable" element={<Timetable />} />
+            <Route path="timetable/:level" element={<TimetableLevel />} />
+            <Route path="cgpa" element={<Cgpa />} />
+            <Route path="events" element={<Events />} />
+            <Route path="events/:id" element={<EventDetail />} />
+            <Route path="resources" element={<Resources />} />
+            <Route path="resources/:level" element={<ResourceLevel />} />
+            <Route path="resources/:level/:semester" element={<ResourceList />} />
+            <Route path="news" element={<News />} />
+            <Route path="news/:id" element={<NewsDetail />} />
+            <Route path="opportunities" element={<Opportunities />} />
+            <Route path="awards" element={<Awards />} />
+            <Route path="forms" element={<Forms />} />
+            <Route path="forms/:id" element={<FormDetail />} />
+            <Route path="login" element={<Login />} />
+            <Route path="signup" element={<Signup />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password" element={<ResetPassword />} />
+            <Route path="account" element={<Account />} />
+            <Route element={<AdminRoute />}>
+              <Route path="admin" element={<Admin />} />
+              <Route path="admin/home" element={<AdminHomeContent />} />
+              <Route path="admin/links" element={<AdminSiteLinks />} />
+              <Route path="admin/banners" element={<AdminPageBanners />} />
+              <Route path="admin/news" element={<AdminNews />} />
+              <Route path="admin/opportunities" element={<AdminOpportunities />} />
+              <Route path="admin/events" element={<AdminEvents />} />
+              <Route path="admin/events/:id/gallery" element={<AdminEventGallery />} />
+              <Route path="admin/resources" element={<AdminResources />} />
+              <Route path="admin/excos" element={<AdminExcos />} />
+              <Route path="admin/users" element={<AdminUsers />} />
+              <Route path="admin/reviews" element={<AdminReviews />} />
+              <Route path="admin/broadcasts" element={<AdminBroadcasts />} />
+              <Route path="admin/outlines" element={<AdminOutlines />} />
+              <Route path="admin/submissions" element={<AdminSubmissions />} />
+              <Route path="admin/timetables" element={<AdminTimetables />} />
+              <Route path="admin/forms" element={<AdminForms />} />
+              <Route path="admin/forms/new" element={<AdminFormEditor />} />
+              <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
+              <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
+              <Route path="admin/awards" element={<AdminAwards />} />
+              <Route path="admin/awards/new" element={<AdminAwardSeason />} />
+              <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
+              <Route path="admin/awards/:seasonId/categories/:categoryId/curate" element={<AdminAwardCurate />} />
+              <Route path="admin/awards/:seasonId/results" element={<AdminAwardResults />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
           </Route>
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+        </Routes>
+      </MaintenanceGate>
     </ErrorBoundary>
   )
 }

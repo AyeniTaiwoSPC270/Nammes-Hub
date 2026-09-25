@@ -4,6 +4,7 @@ import { useSiteContentQuery, updateSiteContent } from '../../data/siteContent'
 import { SOCIAL_PLATFORMS } from '../../components/SocialIcons'
 import FormField from '../../components/ui/FormField'
 import Button from '../../components/ui/Button'
+import Toggle from '../../components/ui/Toggle'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
@@ -15,6 +16,9 @@ const EMPTY_FORM = {
   instagram_url: '',
   linkedin_url: '',
   youtube_url: '',
+  maintenance_mode: false,
+  maintenance_message: '',
+  maintenance_contact_email: '',
 }
 
 export default function AdminSiteLinks() {
@@ -70,6 +74,30 @@ export default function AdminSiteLinks() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-8">
+          <fieldset className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+            <legend className="px-1 text-sm font-bold text-ink-900">Maintenance mode</legend>
+            <Toggle
+              checked={form.maintenance_mode}
+              onChange={(checked) => setForm((f) => ({ ...f, maintenance_mode: checked }))}
+              label="Site under maintenance"
+              description="Shows the maintenance page to every visitor except signed-in admins."
+            />
+            <FormField
+              label="Status message"
+              type="textarea"
+              placeholder="NAMMES Hub is currently undergoing scheduled maintenance…"
+              helper="Shown on the maintenance page. Leave blank to use the default message."
+              {...field('maintenance_message')}
+            />
+            <FormField
+              label="Contact email"
+              type="email"
+              placeholder="excos@nammes.example"
+              helper="Shows a 'Reach an Exco' button on the maintenance page. Leave blank to hide it."
+              {...field('maintenance_contact_email')}
+            />
+          </fieldset>
+
           <fieldset className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
             <legend className="px-1 text-sm font-bold text-ink-900">Newsletter</legend>
             <FormField
