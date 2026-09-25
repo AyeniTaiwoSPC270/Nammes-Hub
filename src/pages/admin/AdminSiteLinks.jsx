@@ -28,7 +28,14 @@ export default function AdminSiteLinks() {
   const [form, setForm] = useState(EMPTY_FORM)
 
   useEffect(() => {
-    if (contentQuery.data) setForm({ ...EMPTY_FORM, ...contentQuery.data })
+    if (contentQuery.data) {
+      setForm({
+        ...EMPTY_FORM,
+        ...contentQuery.data,
+        maintenance_message: contentQuery.data.maintenance_message ?? '',
+        maintenance_contact_email: contentQuery.data.maintenance_contact_email ?? '',
+      })
+    }
   }, [contentQuery.data])
 
   const saveMutation = useMutation({
@@ -39,6 +46,27 @@ export default function AdminSiteLinks() {
     },
     onError: (error) => toast.error(error.message),
   })
+
+  const toggleMaintenanceMutation = useMutation({
+    mutationFn: (checked) => updateSiteContent({ maintenance_mode: checked }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['site_content'], data)
+      toast.success(
+        data.maintenance_mode
+          ? 'Maintenance mode is on — visitors will now see the maintenance page.'
+          : 'Maintenance mode is off.',
+      )
+    },
+    onError: (error, checked) => {
+      setForm((f) => ({ ...f, maintenance_mode: !checked }))
+      toast.error(error.message)
+    },
+  })
+
+  function handleMaintenanceToggle(checked) {
+    setForm((f) => ({ ...f, maintenance_mode: checked }))
+    toggleMaintenanceMutation.mutate(checked)
+  }
 
   function field(key) {
     return {
@@ -78,9 +106,9 @@ export default function AdminSiteLinks() {
             <legend className="px-1 text-sm font-bold text-ink-900">Maintenance mode</legend>
             <Toggle
               checked={form.maintenance_mode}
-              onChange={(checked) => setForm((f) => ({ ...f, maintenance_mode: checked }))}
+              onChange={handleMaintenanceToggle}
               label="Site under maintenance"
-              description="Shows the maintenance page to every visitor except signed-in admins."
+              description="Shows the maintenance page to every visitor except signed-in admins. Saves instantly."
             />
             <FormField
               label="Status message"
