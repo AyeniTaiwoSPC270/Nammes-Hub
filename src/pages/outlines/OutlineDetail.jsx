@@ -118,7 +118,8 @@ export default function OutlineDetail() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
                 >
-                  Past exam questions <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  {course.past_questions_name || 'Past exam questions'}{' '}
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </a>
               )}
               {course.lecturer_notes_link && (
@@ -128,7 +129,8 @@ export default function OutlineDetail() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 hover:underline"
                 >
-                  Lecturer notes <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  {course.lecturer_notes_name || 'Lecturer notes'}{' '}
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                 </a>
               )}
             </div>

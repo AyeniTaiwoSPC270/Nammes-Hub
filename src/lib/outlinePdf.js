@@ -159,8 +159,8 @@ function renderCourseBody(doc, ctx, course, y) {
   }
 
   const links = [
-    course.past_questions_link && ['Past exam questions', course.past_questions_link],
-    course.lecturer_notes_link && ['Lecturer notes', course.lecturer_notes_link],
+    course.past_questions_link && [course.past_questions_name || 'Past exam questions', course.past_questions_link],
+    course.lecturer_notes_link && [course.lecturer_notes_name || 'Lecturer notes', course.lecturer_notes_link],
   ].filter(Boolean)
   if (links.length) {
     y = renderSectionTitle(doc, ctx, y, 'Downloads')
