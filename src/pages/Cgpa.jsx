@@ -39,6 +39,7 @@ export default function Cgpa() {
   const [newSemesterNum, setNewSemesterNum] = useState(SEMESTERS[0])
 
   const [courseDrafts, setCourseDrafts] = useState({})
+  const [editingCourse, setEditingCourse] = useState(null)
 
   const [targetCgpa, setTargetCgpa] = useState('')
   const [remainingUnits, setRemainingUnits] = useState('')
@@ -188,6 +189,63 @@ export default function Cgpa() {
     )
   }
 
+  function startEditCourse(course) {
+    setFormError('')
+    setEditingCourse({
+      id: course.id,
+      code: course.code,
+      title: course.title || '',
+      units: String(course.units),
+      grade: course.grade,
+    })
+  }
+
+  function cancelEditCourse() {
+    setEditingCourse(null)
+  }
+
+  function updateEditDraft(patch) {
+    setEditingCourse((prev) => ({ ...prev, ...patch }))
+  }
+
+  async function handleSaveCourse(semesterId) {
+    setFormError('')
+
+    const units = Number(editingCourse.units)
+
+    if (!editingCourse.code.trim()) {
+      setFormError('Enter a course code.')
+      return
+    }
+    if (!Number.isInteger(units) || units < 1 || units > 6) {
+      setFormError('Units must be a whole number between 1 and 6.')
+      return
+    }
+
+    setSubmitting(true)
+    const { data, error } = await updateCourse(editingCourse.id, {
+      code: editingCourse.code.trim(),
+      title: editingCourse.title.trim() || null,
+      units,
+      grade: editingCourse.grade,
+    })
+    setSubmitting(false)
+
+    if (error) {
+      setFormError(error.message)
+      return
+    }
+
+    setSemesters((prev) =>
+      prev.map((s) =>
+        s.id === semesterId
+          ? { ...s, courses: s.courses.map((c) => (c.id === data.id ? data : c)) }
+          : s
+      )
+    )
+    setEditingCourse(null)
+  }
+
   async function handleDeleteCourse(semesterId, courseId) {
     setFormError('')
     setSubmitting(true)
@@ -301,21 +359,81 @@ export default function Cgpa() {
               ) : (
                 <Table
                   columns={['Code', 'Title', 'Units', 'Grade', 'Counts toward CGPA', '']}
-                  rows={semester.courses.map((c) => [
-                    c.code,
-                    c.title || '',
-                    c.units,
-                    c.grade,
-                    c.counts_toward_cgpa ? 'Yes' : 'No',
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={submitting}
-                      onClick={() => handleDeleteCourse(semester.id, c.id)}
-                    >
-                      Delete
-                    </Button>,
-                  ])}
+                  rows={semester.courses.map((c) => {
+                    const isEditing = editingCourse?.id === c.id
+
+                    if (isEditing) {
+                      return [
+                        <input
+                          className="w-24 rounded-md border border-hairline bg-surface px-2 py-1.5 text-sm text-ink focus:outline-none focus:border-brand"
+                          value={editingCourse.code}
+                          onChange={(e) => updateEditDraft({ code: e.target.value })}
+                        />,
+                        <input
+                          className="w-32 rounded-md border border-hairline bg-surface px-2 py-1.5 text-sm text-ink focus:outline-none focus:border-brand"
+                          value={editingCourse.title}
+                          onChange={(e) => updateEditDraft({ title: e.target.value })}
+                        />,
+                        <input
+                          type="number"
+                          className="w-16 rounded-md border border-hairline bg-surface px-2 py-1.5 text-sm text-ink focus:outline-none focus:border-brand"
+                          value={editingCourse.units}
+                          onChange={(e) => updateEditDraft({ units: e.target.value })}
+                        />,
+                        <select
+                          className="rounded-md border border-hairline bg-surface px-2 py-1.5 text-sm text-ink focus:outline-none focus:border-brand"
+                          value={editingCourse.grade}
+                          onChange={(e) => updateEditDraft({ grade: e.target.value })}
+                        >
+                          {GRADES.map((g) => (
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
+                          ))}
+                        </select>,
+                        c.counts_toward_cgpa ? 'Yes' : 'No',
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            loading={submitting}
+                            onClick={() => handleSaveCourse(semester.id)}
+                          >
+                            Save
+                          </Button>
+                          <Button variant="ghost" size="sm" disabled={submitting} onClick={cancelEditCourse}>
+                            Cancel
+                          </Button>
+                        </div>,
+                      ]
+                    }
+
+                    return [
+                      c.code,
+                      c.title || '',
+                      c.units,
+                      c.grade,
+                      c.counts_toward_cgpa ? 'Yes' : 'No',
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={submitting}
+                          onClick={() => startEditCourse(c)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={submitting}
+                          onClick={() => handleDeleteCourse(semester.id, c.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>,
+                    ]
+                  })}
                 />
               )}
 
