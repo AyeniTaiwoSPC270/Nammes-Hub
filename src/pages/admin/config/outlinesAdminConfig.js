@@ -1,8 +1,12 @@
+import { SEMESTER_LABELS } from '../../../data/outlines'
+
 export const outlinesAdminConfig = {
   title: 'Outlines',
   idField: 'code',
   groupField: 'level',
   groupLabel: 'Level',
+  subGroupField: 'semester',
+  subGroupLabels: SEMESTER_LABELS,
   listColumns: [
     { field: 'level', label: 'Level' },
     { field: 'semester', label: 'Semester' },

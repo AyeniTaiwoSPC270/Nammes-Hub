@@ -57,6 +57,18 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
       ? rows.filter((r) => String(r[config.groupField]) === activeGroup)
       : rows
 
+  const subGroups =
+    config.subGroupField && filteredRows.length > 0
+      ? Object.entries(
+          filteredRows.reduce((acc, row) => {
+            const key = String(row[config.subGroupField])
+            acc[key] = acc[key] || []
+            acc[key].push(row)
+            return acc
+          }, {}),
+        ).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+      : null
+
   useEffect(() => {
     if (config.groupField && activeGroup !== 'All' && !rows.some((r) => String(r[config.groupField]) === activeGroup)) {
       setActiveGroup('All')
@@ -244,25 +256,49 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
                 ))}
               </div>
             )}
-            <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
-              <AdminResourceList
-                config={config}
-                rows={filteredRows}
-                onEdit={setEditing}
-                onDelete={(row) => deleteMutation.mutate(row)}
-                renderRowExtra={(row) => (
-                  <>
-                    {renderRowExtra && renderRowExtra(row)}
-                    {pendingUpdateRecordIds.has(String(row.id)) && <Badge tone="new">Pending review</Badge>}
-                  </>
-                )}
-                emptyLabel={
-                  config.groupField && activeGroup !== 'All'
-                    ? `${activeGroup} ${config.groupLabel ?? ''} ${config.title.toLowerCase()}`.replace(/\s+/g, ' ').trim()
-                    : undefined
-                }
-              />
-            </div>
+            {subGroups ? (
+              <div className="flex flex-col gap-6">
+                {subGroups.map(([key, groupRows]) => (
+                  <div key={key} className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+                    <div className="border-b border-hairline bg-surface-low p-4">
+                      <h3 className="text-lg font-bold text-ink-900">{config.subGroupLabels?.[key] ?? key}</h3>
+                    </div>
+                    <AdminResourceList
+                      config={config}
+                      rows={groupRows}
+                      onEdit={setEditing}
+                      onDelete={(row) => deleteMutation.mutate(row)}
+                      renderRowExtra={(row) => (
+                        <>
+                          {renderRowExtra && renderRowExtra(row)}
+                          {pendingUpdateRecordIds.has(String(row.id)) && <Badge tone="new">Pending review</Badge>}
+                        </>
+                      )}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
+                <AdminResourceList
+                  config={config}
+                  rows={filteredRows}
+                  onEdit={setEditing}
+                  onDelete={(row) => deleteMutation.mutate(row)}
+                  renderRowExtra={(row) => (
+                    <>
+                      {renderRowExtra && renderRowExtra(row)}
+                      {pendingUpdateRecordIds.has(String(row.id)) && <Badge tone="new">Pending review</Badge>}
+                    </>
+                  )}
+                  emptyLabel={
+                    config.groupField && activeGroup !== 'All'
+                      ? `${activeGroup} ${config.groupLabel ?? ''} ${config.title.toLowerCase()}`.replace(/\s+/g, ' ').trim()
+                      : undefined
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-hairline bg-surface p-6 shadow-md lg:sticky lg:top-24 lg:col-span-4">
