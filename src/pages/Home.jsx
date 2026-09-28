@@ -51,7 +51,7 @@ export default function Home() {
         )}
         {content?.hero_image_url && <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />}
         <motion.div
-          className="relative z-20 max-w-[1200px] w-full mx-auto px-5 sm:px-8"
+          className="relative z-20 max-w-[1200px] w-full mx-auto px-5 py-14 sm:px-8 sm:py-0"
           initial={reducedMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut', delay: reducedMotion ? 0 : 0.15 }}
