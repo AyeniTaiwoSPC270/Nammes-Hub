@@ -13,6 +13,7 @@ import FormField from '../../components/ui/FormField'
 import Toggle from '../../components/ui/Toggle'
 import ErrorState from '../../components/ui/ErrorState'
 import QuestionEditorCard from '../../components/admin/forms/QuestionEditorCard'
+import ShareFormModal from '../../components/admin/ShareFormModal'
 
 function assertRowsChanged(rows) {
   if (!rows || rows.length === 0) {
@@ -96,6 +97,7 @@ export default function AdminFormEditor() {
   const [allowEditAfterSubmit, setAllowEditAfterSubmit] = useState(false)
   const [questions, setQuestions] = useState([newQuestion()])
   const [formError, setFormError] = useState('')
+  const [sharing, setSharing] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -190,7 +192,14 @@ export default function AdminFormEditor() {
     <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
       <Breadcrumbs items={[{ label: 'Admin', to: '/admin' }, { label: 'Forms', to: '/admin/forms' }, { label: id ? 'Edit' : 'New' }]} />
 
-      <h1 className="text-3xl font-bold text-ink-900">{id ? 'Edit form' : 'New form'}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold text-ink-900">{id ? 'Edit form' : 'New form'}</h1>
+        {id && (
+          <Button variant="secondary" size="sm" type="button" onClick={() => setSharing(true)}>
+            Share
+          </Button>
+        )}
+      </div>
 
       <div className="mt-6 flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
         <FormField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Form title" required />
@@ -265,6 +274,8 @@ export default function AdminFormEditor() {
           <Button variant="secondary" type="button">Cancel</Button>
         </Link>
       </div>
+
+      {sharing && id && <ShareFormModal form={{ id, title }} onClose={() => setSharing(false)} />}
     </div>
   )
 }

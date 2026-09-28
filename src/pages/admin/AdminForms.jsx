@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
@@ -14,6 +15,7 @@ import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
+import ShareFormModal from '../../components/admin/ShareFormModal'
 import { useToast } from '../../lib/ToastContext'
 
 function assertRowsChanged(rows) {
@@ -29,6 +31,7 @@ export default function AdminForms() {
   const countsQuery = useResponseCountsQuery()
   const forms = formsQuery.data ?? []
   const counts = countsQuery.data ?? {}
+  const [sharingForm, setSharingForm] = useState(null)
 
   const deleteMutation = useMutation({
     mutationFn: async (form) => {
@@ -107,6 +110,9 @@ export default function AdminForms() {
                 </div>
               </div>
               <div className="flex shrink-0 gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setSharingForm(form)}>
+                  Share
+                </Button>
                 <Link to={`/admin/forms/${form.id}/edit`}>
                   <Button variant="secondary" size="sm">Edit</Button>
                 </Link>
@@ -126,6 +132,8 @@ export default function AdminForms() {
           ))}
         </div>
       )}
+
+      {sharingForm && <ShareFormModal form={sharingForm} onClose={() => setSharingForm(null)} />}
     </div>
   )
 }
