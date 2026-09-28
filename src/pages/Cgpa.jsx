@@ -12,6 +12,7 @@ import {
 import { cumulativeStats, findPriorAttempts, whatIfTarget } from '../lib/cgpa'
 import { downloadCgpaReportPdf } from '../lib/cgpaPdf'
 import { useOwnProfileQuery } from '../data/profiles'
+import { usePageBanner } from '../data/pageBanners'
 import TrendChart from '../components/cgpa/TrendChart'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -34,6 +35,7 @@ export default function Cgpa() {
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const profileQuery = useOwnProfileQuery(user?.id)
+  const banner = usePageBanner('cgpa')
 
   const [semesters, setSemesters] = useState([])
   const [loading, setLoading] = useState(true)
@@ -345,7 +347,9 @@ export default function Cgpa() {
       <Reveal className="mt-6">
         <Card
           tone="green"
-          backgroundImage={cgpaBanner}
+          backgroundImages={banner?.image_urls?.length ? banner.image_urls : [cgpaBanner]}
+          backgroundTransition={banner?.transition}
+          backgroundIntervalSeconds={banner?.interval_seconds}
           eyebrow="Cumulative GPA"
           title={stats.overallCGPA.toFixed(2)}
         >

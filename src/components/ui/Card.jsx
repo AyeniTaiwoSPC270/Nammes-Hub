@@ -1,3 +1,5 @@
+import SlideshowLayer from '../SlideshowLayer'
+
 const tones = {
   neutral: { bg: 'bg-surface', eyebrow: 'text-brand-orange', title: 'text-ink-900', meta: 'text-ink-muted', body: 'text-ink' },
   green: { bg: 'bg-green-900', eyebrow: 'text-orange-500', title: 'text-white', meta: 'text-white/70', body: 'text-white/90' },
@@ -20,13 +22,16 @@ export default function Card({
   image,
   imageVariant = 'icon',
   imageAspect = 'standard',
-  backgroundImage,
+  backgroundImages,
+  backgroundTransition = 'fade',
+  backgroundIntervalSeconds = 5,
   layout = 'column',
   interactive = false,
   clampBody = true,
 }) {
   const t = tones[tone] || tones.neutral
   const isRow = layout === 'row'
+  const hasBackground = (backgroundImages ?? []).filter(Boolean).length > 0
 
   return (
     <div
@@ -39,13 +44,9 @@ export default function Card({
         className,
       ].join(' ')}
     >
-      {backgroundImage && (
+      {hasBackground && (
         <>
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url('${backgroundImage}')` }}
-            aria-hidden="true"
-          />
+          <SlideshowLayer images={backgroundImages} transition={backgroundTransition} intervalSeconds={backgroundIntervalSeconds} />
           <div className={['absolute inset-0 opacity-80', t.bg].join(' ')} aria-hidden="true" />
         </>
       )}

@@ -10,7 +10,9 @@ import { useToast } from '../../lib/ToastContext'
 
 const PAGES = [
   { key: 'about', label: 'About' },
+  { key: 'cgpa', label: 'CGPA Calculator', imagesOnly: true },
   { key: 'contact', label: 'Contact' },
+  { key: 'curriculum', label: 'Curriculum' },
   { key: 'events', label: 'Events' },
   { key: 'excos', label: 'Meet the Excos' },
   { key: 'news', label: 'News' },
@@ -57,19 +59,27 @@ function BannerFieldset({ page, row }) {
     <fieldset className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
       <legend className="px-1 text-sm font-bold text-ink-900">{page.label}</legend>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormField
-          label="Title"
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          required
-        />
-        <FormField
-          label="Subtitle"
-          type="textarea"
-          value={form.subtitle}
-          onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))}
-          required
-        />
+        {page.imagesOnly ? (
+          <p className="text-sm text-ink-muted">
+            This page has no title/subtitle banner &mdash; these images set the background of its "Cumulative GPA" card.
+          </p>
+        ) : (
+          <>
+            <FormField
+              label="Title"
+              value={form.title}
+              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              required
+            />
+            <FormField
+              label="Subtitle"
+              type="textarea"
+              value={form.subtitle}
+              onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))}
+              required
+            />
+          </>
+        )}
         <PageBannerImagesField
           label="Banner images"
           urls={form.image_urls}
