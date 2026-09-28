@@ -9,6 +9,7 @@ import Table from '../../components/ui/Table'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, DAYS, useTimetablesQuery, getTimetable } from '../../data/timetables'
 import { sortTimetableRows, formatTimeLabel, downloadTimetablePdf } from '../../lib/timetablePdf'
+import { downloadTimetableImage } from '../../lib/timetableImage'
 
 const CLASS_COLUMNS = ['Day', 'Time', 'Code', 'Course', 'Venue', 'Lecturer', 'Notes']
 const EXAM_COLUMNS = ['Date', 'Time', 'Code', 'Course', 'Venue', 'Invigilator', 'Notes']
@@ -45,14 +46,24 @@ export default function TimetableLevel() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold text-ink-900">{level} Level Timetable</h1>
         {sortedRows.length > 0 && (
-          <Button
-            variant="accent"
-            size="sm"
-            onClick={() => downloadTimetablePdf({ level, semester, type, rows: sortedRows })}
-          >
-            <span className="material-symbols-outlined text-base">download</span>
-            Download PDF
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={() => downloadTimetablePdf({ level, semester, type, rows: sortedRows })}
+            >
+              <span className="material-symbols-outlined text-base">download</span>
+              Download PDF
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => downloadTimetableImage({ level, semester, type, rows: sortedRows })}
+            >
+              <span className="material-symbols-outlined text-base">image</span>
+              Download Image
+            </Button>
+          </div>
         )}
       </div>
 

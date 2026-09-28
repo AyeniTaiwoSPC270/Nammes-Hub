@@ -45,7 +45,7 @@ export const COLOR = {
   stone: [250, 249, 247],
 }
 
-function hoursBetween(start, end) {
+export function hoursBetween(start, end) {
   if (!start || !end) return 0
   const [sh, sm] = start.split(':').map(Number)
   const [eh, em] = end.split(':').map(Number)
@@ -78,6 +78,18 @@ export function loadLogoDataUrl() {
     img.onerror = () => resolve(null)
     img.src = '/logo.png'
   })
+}
+
+function drawWatermark(doc, logo, pageWidth, pageHeight) {
+  if (!logo) return
+  const wmWidth = pageWidth * 0.55
+  const wmHeight = wmWidth / logo.ratio
+  const x = (pageWidth - wmWidth) / 2
+  const y = (pageHeight - wmHeight) / 2
+  doc.saveGraphicsState()
+  doc.setGState(new doc.GState({ opacity: 0.06 }))
+  doc.addImage(logo.dataUrl, 'PNG', x, y, wmWidth, wmHeight)
+  doc.restoreGraphicsState()
 }
 
 export async function downloadTimetablePdf({ level, semester, type, rows }) {
@@ -197,6 +209,7 @@ export async function downloadTimetablePdf({ level, semester, type, rows }) {
       }
     },
     didDrawPage: () => {
+      drawWatermark(doc, logo, pageWidth, pageHeight)
       const footerY = pageHeight - 12
       doc.setDrawColor(...COLOR.hairline)
       doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5)
