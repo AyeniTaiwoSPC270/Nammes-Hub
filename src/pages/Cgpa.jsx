@@ -10,6 +10,8 @@ import {
   deleteCourse,
 } from '../lib/cgpaApi'
 import { cumulativeStats, findPriorAttempts, whatIfTarget } from '../lib/cgpa'
+import { downloadCgpaReportPdf } from '../lib/cgpaPdf'
+import { useOwnProfileQuery } from '../data/profiles'
 import TrendChart from '../components/cgpa/TrendChart'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -29,11 +31,13 @@ const MAX_STAGGER_DELAY = 0.3
 export default function Cgpa() {
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+  const profileQuery = useOwnProfileQuery(user?.id)
 
   const [semesters, setSemesters] = useState([])
   const [loading, setLoading] = useState(true)
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const [newLevel, setNewLevel] = useState(LEVELS[0])
   const [newSemesterNum, setNewSemesterNum] = useState(SEMESTERS[0])
@@ -246,6 +250,18 @@ export default function Cgpa() {
     setEditingCourse(null)
   }
 
+  async function handleDownloadReport() {
+    setFormError('')
+    setDownloading(true)
+    try {
+      await downloadCgpaReportPdf({ profile: profileQuery.data, semesters, stats })
+    } catch (err) {
+      setFormError(err.message || 'Could not generate the report. Try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   async function handleDeleteCourse(semesterId, courseId) {
     setFormError('')
     setSubmitting(true)
@@ -300,10 +316,19 @@ export default function Cgpa() {
 
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-      <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-        CGPA calculator
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
+            CGPA calculator
+          </div>
+          <h1 className="mt-1.5 text-3xl font-bold text-ink-900">Your academic record</h1>
+        </div>
+        {stats.rows.length > 0 && (
+          <Button variant="secondary" loading={downloading} onClick={handleDownloadReport}>
+            Download report
+          </Button>
+        )}
       </div>
-      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">Your academic record</h1>
 
       {formError && (
         <p className="mt-4 rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
