@@ -35,7 +35,9 @@ export default function Opportunities() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url ?? opportunitiesBanner}
+        images={banner?.image_urls?.length ? banner.image_urls : [opportunitiesBanner]}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Opportunities'}
         subtitle={banner?.subtitle ?? 'Explore current engineering roles, internships, and research positions.'}
       />

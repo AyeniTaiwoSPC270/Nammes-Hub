@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { usePageBannersQuery, updatePageBanner } from '../../data/pageBanners'
-import PageBannerImageUploadField from '../../components/admin/PageBannerImageUploadField'
+import PageBannerImagesField from '../../components/admin/PageBannerImagesField'
 import FormField from '../../components/ui/FormField'
 import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
@@ -23,10 +23,18 @@ const PAGES = [
 function BannerFieldset({ page, row }) {
   const toast = useToast()
   const queryClient = useQueryClient()
-  const [form, setForm] = useState({ title: '', subtitle: '', image_url: null })
+  const [form, setForm] = useState({ title: '', subtitle: '', image_urls: [], transition: 'fade', interval_seconds: 5 })
 
   useEffect(() => {
-    if (row) setForm({ title: row.title ?? '', subtitle: row.subtitle ?? '', image_url: row.image_url ?? null })
+    if (row) {
+      setForm({
+        title: row.title ?? '',
+        subtitle: row.subtitle ?? '',
+        image_urls: row.image_urls ?? [],
+        transition: row.transition ?? 'fade',
+        interval_seconds: row.interval_seconds ?? 5,
+      })
+    }
   }, [row])
 
   const saveMutation = useMutation({
@@ -62,11 +70,33 @@ function BannerFieldset({ page, row }) {
           onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))}
           required
         />
-        <PageBannerImageUploadField
-          label="Banner image"
-          url={form.image_url}
-          onChange={(url) => setForm((f) => ({ ...f, image_url: url }))}
+        <PageBannerImagesField
+          label="Banner images"
+          urls={form.image_urls}
+          onChange={(urls) => setForm((f) => ({ ...f, image_urls: urls }))}
         />
+        {form.image_urls.length >= 2 && (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1.5 font-body">
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">Transition</span>
+              <select
+                value={form.transition}
+                onChange={(e) => setForm((f) => ({ ...f, transition: e.target.value }))}
+                className="rounded-md border border-hairline bg-surface px-3 py-2.5 text-base text-ink focus:outline-none focus:border-brand"
+              >
+                <option value="fade">Fade</option>
+                <option value="slide">Slide</option>
+                <option value="zoom">Zoom</option>
+              </select>
+            </label>
+            <FormField
+              label="Seconds per slide"
+              type="number"
+              value={form.interval_seconds}
+              onChange={(e) => setForm((f) => ({ ...f, interval_seconds: Math.max(1, Number(e.target.value) || 1) }))}
+            />
+          </div>
+        )}
         <div>
           <Button type="submit" variant="primary" loading={saveMutation.isPending}>
             Save changes
@@ -92,8 +122,8 @@ export default function AdminPageBanners() {
     <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
       <h1 className="text-3xl font-bold text-ink-900">Page Banners</h1>
       <p className="mt-1 text-ink-muted">
-        Edit the title, subtitle, and background image shown at the top of each page. Remove the image to
-        fall back to a plain green banner.
+        Edit the title, subtitle, and background images shown at the top of each page. Add 2 or more images to
+        turn the banner into an auto-playing slideshow. Remove all images to fall back to a plain green banner.
       </p>
 
       {bannersQuery.isLoading ? (

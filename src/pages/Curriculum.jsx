@@ -27,7 +27,9 @@ export default function Curriculum() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url ?? outlinesBanner}
+        images={banner?.image_urls?.length ? banner.image_urls : [outlinesBanner]}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Programme Curriculum (CCMAS)'}
         subtitle={
           banner?.subtitle ??

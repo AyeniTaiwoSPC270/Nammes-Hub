@@ -52,7 +52,9 @@ export default function Contact() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url}
+        images={banner?.image_urls ?? []}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Contact Us'}
         subtitle={banner?.subtitle ?? "Questions, feedback, or ideas for NAMMES Hub? We'd love to hear from you."}
         size="md"

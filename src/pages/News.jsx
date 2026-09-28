@@ -35,7 +35,9 @@ export default function News() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url ?? newsBanner}
+        images={banner?.image_urls?.length ? banner.image_urls : [newsBanner]}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Department News'}
         subtitle={banner?.subtitle ?? 'News and announcements, posted jointly with the PRO.'}
       />

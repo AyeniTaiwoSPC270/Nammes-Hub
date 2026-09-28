@@ -30,7 +30,13 @@ export default function Excos() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url ?? 'https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80'}
+        images={
+          banner?.image_urls?.length
+            ? banner.image_urls
+            : ['https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80']
+        }
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'The Aegis 26/27'}
         subtitle={banner?.subtitle ?? 'Meet the Executive Council leading NAMMES for the 2026/2027 session.'}
         size="lg"

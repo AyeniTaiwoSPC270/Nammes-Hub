@@ -23,7 +23,9 @@ export default function Resources() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url ?? resourcesBanner}
+        images={banner?.image_urls?.length ? banner.image_urls : [resourcesBanner]}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Resources'}
         subtitle={
           banner?.subtitle ??

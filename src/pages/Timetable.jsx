@@ -14,7 +14,9 @@ export default function Timetable() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url}
+        images={banner?.image_urls ?? []}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Timetable'}
         subtitle={banner?.subtitle ?? 'Select your level to view the class and exam schedule.'}
       />

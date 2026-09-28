@@ -63,7 +63,9 @@ export default function Events() {
   return (
     <div>
       <PageBanner
-        image={banner?.image_url ?? eventsBanner}
+        images={banner?.image_urls?.length ? banner.image_urls : [eventsBanner]}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Events'}
         subtitle={banner?.subtitle ?? 'Workshops, seminars, and gatherings from the department.'}
       />
