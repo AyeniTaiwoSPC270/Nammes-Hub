@@ -89,6 +89,44 @@ export async function advanceSeasonPhase(id, toPhase) {
   if (error) throw error
 }
 
+function storagePathFromUrl(url, bucket) {
+  const marker = `/${bucket}/`
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return decodeURIComponent(url.slice(idx + marker.length))
+}
+
+export async function deleteSeason(id) {
+  const { data: categories, error: categoriesError } = await supabase
+    .from('award_categories')
+    .select('id')
+    .eq('season_id', id)
+  if (categoriesError) throw categoriesError
+  const categoryIds = (categories ?? []).map((c) => c.id)
+
+  if (categoryIds.length > 0) {
+    const [{ data: nominees, error: nomineesError }, { data: nominations, error: nominationsError }] = await Promise.all([
+      supabase.from('award_nominees').select('photo_url').in('category_id', categoryIds),
+      supabase.from('award_nominations').select('photo_url').in('category_id', categoryIds),
+    ])
+    if (nomineesError) throw nomineesError
+    if (nominationsError) throw nominationsError
+
+    const paths = [...(nominees ?? []), ...(nominations ?? [])]
+      .map((row) => row.photo_url)
+      .filter(Boolean)
+      .map((url) => storagePathFromUrl(url, 'award-nominee-photos'))
+      .filter(Boolean)
+    if (paths.length > 0) await supabase.storage.from('award-nominee-photos').remove(paths)
+  }
+
+  const { data, error } = await supabase.from('award_seasons').delete().eq('id', id).select()
+  if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error('No changes were saved — your account may not have admin access to make this change.')
+  }
+}
+
 export async function submitSeasonChange({ seasonId, title, categories }) {
   const payload = {
     title,

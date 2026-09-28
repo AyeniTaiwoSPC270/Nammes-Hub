@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useAllSeasonsQuery } from '../../data/awardSeasons'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAllSeasonsQuery, deleteSeason } from '../../data/awardSeasons'
+import { useToast } from '../../lib/ToastContext'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
@@ -11,7 +13,23 @@ const PHASE_TONE = { nominating: 'new', curating: 'neutral', voting: 'updated', 
 
 export default function AdminAwards() {
   const seasonsQuery = useAllSeasonsQuery()
+  const queryClient = useQueryClient()
+  const toast = useToast()
   const seasons = seasonsQuery.data ?? []
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteSeason,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['award_seasons'] })
+      toast.success('Season deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  function handleDelete(season) {
+    if (!confirm(`Delete "${season.title}"? This removes all its categories, nominations, and votes. This can't be undone.`)) return
+    deleteMutation.mutate(season.id)
+  }
 
   if (seasonsQuery.isError && !seasonsQuery.data) {
     return (
@@ -67,6 +85,14 @@ export default function AdminAwards() {
                     <Button variant="secondary" size="sm">Results</Button>
                   </Link>
                 )}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  loading={deleteMutation.isPending && deleteMutation.variables === season.id}
+                  onClick={() => handleDelete(season)}
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           ))}
