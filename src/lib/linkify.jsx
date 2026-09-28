@@ -1,4 +1,11 @@
 const URL_PATTERN = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi
+const BARE_URL_PATTERN = /^(https?:\/\/\S+|www\.\S+)$/i
+
+// True when the whole string is a single URL with nothing else around it,
+// e.g. a text item that's just a pasted link rather than prose containing one.
+export function isBareUrl(text) {
+  return BARE_URL_PATTERN.test((text ?? '').trim())
+}
 
 // Turns plain-text URLs typed into an admin field (e.g. "RSVP at https://...")
 // into clickable links when rendered.

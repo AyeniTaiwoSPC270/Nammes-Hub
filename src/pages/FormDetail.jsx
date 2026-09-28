@@ -11,6 +11,7 @@ import Button from '../components/ui/Button'
 import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
 import Reveal from '../components/ui/Reveal'
+import { linkifyText } from '../lib/linkify'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -135,7 +136,7 @@ export default function FormDetail() {
   return (
     <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
       <h1 className="text-3xl font-bold text-ink-900">{form.title}</h1>
-      {form.description && <p className="mt-2 text-ink-muted">{form.description}</p>}
+      {form.description && <p className="mt-2 text-ink-muted">{linkifyText(form.description)}</p>}
 
       {totalCount > 0 && (
         <div className="mt-6">

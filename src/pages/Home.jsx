@@ -13,6 +13,7 @@ import { useNewsQuery, getNews } from '../data/news'
 import { useExcosQuery } from '../data/excos'
 import { useEventsQuery } from '../data/events'
 import { useSiteContentQuery } from '../data/siteContent'
+import { linkifyText } from '../lib/linkify'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -58,7 +59,7 @@ export default function Home() {
           <h1 className="text-3xl sm:text-5xl font-bold text-white mb-3 max-w-2xl">
             {content?.hero_title}
           </h1>
-          <p className="text-lg text-white/90 mb-8 max-w-xl">{content?.hero_subtitle}</p>
+          <p className="text-lg text-white/90 mb-8 max-w-xl">{linkifyText(content?.hero_subtitle)}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Button variant="accent" onClick={() => navigate('/outlines')}>
               Browse outlines

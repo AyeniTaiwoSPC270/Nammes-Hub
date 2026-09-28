@@ -10,7 +10,9 @@ import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourse } from '../../data
 import { useApprovedSubmissionsQuery, groupSubmissionsByType } from '../../data/outlineSubmissions'
 import { useAuth } from '../../lib/AuthContext'
 import ContributeForm from '../../components/outlines/ContributeForm'
+import RecommendedTextItem from '../../components/outlines/RecommendedTextItem'
 import { downloadCourseOutlinePdf } from '../../lib/outlinePdf'
+import { linkifyText } from '../../lib/linkify'
 
 export default function OutlineDetail() {
   const { level, semester, code } = useParams()
@@ -82,7 +84,7 @@ export default function OutlineDetail() {
           </Button>
         </div>
 
-        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{course.description}</p>
+        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(course.description)}</p>
       </Reveal>
 
       <Reveal delay={0.06}>
@@ -100,7 +102,9 @@ export default function OutlineDetail() {
           <Card className="mt-6" eyebrow="Recommended texts" padded clampBody={false}>
             <ul className="list-disc space-y-1.5 pl-5">
               {course.texts.map((text) => (
-                <li key={text}>{text}</li>
+                <li key={text}>
+                  <RecommendedTextItem text={text} />
+                </li>
               ))}
             </ul>
           </Card>

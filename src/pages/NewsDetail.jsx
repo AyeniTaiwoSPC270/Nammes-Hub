@@ -6,6 +6,7 @@ import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
 import { useNewsQuery, getNewsById } from '../data/news'
+import { linkifyText } from '../lib/linkify'
 
 export default function NewsDetail() {
   const { id } = useParams()
@@ -63,7 +64,7 @@ export default function NewsDetail() {
           />
         )}
 
-        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{post.body}</p>
+        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(post.body)}</p>
       </Reveal>
 
       <div className="mt-8">
