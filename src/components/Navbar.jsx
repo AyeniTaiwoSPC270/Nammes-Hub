@@ -15,6 +15,7 @@ const navItems = [
     dataTour: 'nav-academics',
     children: [
       { to: '/outlines', label: 'Outlines' },
+      { to: '/curriculum', label: 'Curriculum' },
       { to: '/timetable', label: 'Timetable' },
       { to: '/cgpa', label: 'CGPA' },
       { to: '/resources', label: 'Resources' },

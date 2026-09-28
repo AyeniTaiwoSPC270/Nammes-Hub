@@ -17,6 +17,7 @@ const Excos = lazy(() => import('./pages/Excos'))
 const Contact = lazy(() => import('./pages/Contact'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Outlines = lazy(() => import('./pages/Outlines'))
+const Curriculum = lazy(() => import('./pages/Curriculum'))
 const OutlineLevel = lazy(() => import('./pages/outlines/OutlineLevel'))
 const OutlineCourses = lazy(() => import('./pages/outlines/OutlineCourses'))
 const OutlineDetail = lazy(() => import('./pages/outlines/OutlineDetail'))
@@ -105,6 +106,7 @@ export default function App() {
             <Route path="excos" element={<Excos />} />
             <Route path="contact" element={<Contact />} />
             <Route path="outlines" element={<Outlines />} />
+            <Route path="curriculum" element={<Curriculum />} />
             <Route path="outlines/:level" element={<OutlineLevel />} />
             <Route path="outlines/:level/:semester" element={<OutlineCourses />} />
             <Route path="outlines/:level/:semester/:code" element={<OutlineDetail />} />
