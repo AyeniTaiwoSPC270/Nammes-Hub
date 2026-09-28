@@ -25,6 +25,8 @@ import cgpaBanner from '../assets/banners/cgpa-banner.jpg'
 const LEVELS = ['100', '200', '300', '400', '500']
 const SEMESTERS = [1, 2]
 const GRADES = ['A', 'B', 'C', 'D', 'E', 'F']
+const COURSE_TYPES = ['compulsory', 'elective']
+const COURSE_TYPE_LABELS = { compulsory: 'Compulsory', elective: 'Elective' }
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
 
@@ -95,7 +97,7 @@ export default function Cgpa() {
   }, [targetCgpa, remainingUnits, stats.overallUnits, stats.overallPoints])
 
   function draftFor(semesterId) {
-    return courseDrafts[semesterId] || { code: '', title: '', units: '3', grade: 'A' }
+    return courseDrafts[semesterId] || { code: '', title: '', units: '3', grade: 'A', courseType: 'compulsory' }
   }
 
   function setDraft(semesterId, patch) {
@@ -160,6 +162,7 @@ export default function Cgpa() {
       title: draft.title.trim(),
       units,
       grade: draft.grade,
+      courseType: draft.courseType,
     })
     setSubmitting(false)
 
@@ -171,7 +174,10 @@ export default function Cgpa() {
     setSemesters((prev) =>
       prev.map((s) => (s.id === semesterId ? { ...s, courses: [...s.courses, data] } : s))
     )
-    setCourseDrafts((prev) => ({ ...prev, [semesterId]: { code: '', title: '', units: '3', grade: 'A' } }))
+    setCourseDrafts((prev) => ({
+      ...prev,
+      [semesterId]: { code: '', title: '', units: '3', grade: 'A', courseType: 'compulsory' },
+    }))
   }
 
   async function handleToggleCgpaCount(courseId, countsTowardCgpa) {
@@ -201,6 +207,7 @@ export default function Cgpa() {
       title: course.title || '',
       units: String(course.units),
       grade: course.grade,
+      courseType: course.course_type || 'compulsory',
     })
   }
 
@@ -232,6 +239,7 @@ export default function Cgpa() {
       title: editingCourse.title.trim() || null,
       units,
       grade: editingCourse.grade,
+      course_type: editingCourse.courseType,
     })
     setSubmitting(false)
 
@@ -383,7 +391,7 @@ export default function Cgpa() {
                 <p className="text-sm text-ink-muted">No courses yet. Add one below.</p>
               ) : (
                 <Table
-                  columns={['Code', 'Title', 'Units', 'Grade', 'Counts toward CGPA', '']}
+                  columns={['Code', 'Title', 'Units', 'Grade', 'Type', 'Counts toward CGPA', '']}
                   rows={semester.courses.map((c) => {
                     const isEditing = editingCourse?.id === c.id
 
@@ -416,6 +424,17 @@ export default function Cgpa() {
                             </option>
                           ))}
                         </select>,
+                        <select
+                          className="rounded-md border border-hairline bg-surface px-2 py-1.5 text-sm text-ink focus:outline-none focus:border-brand"
+                          value={editingCourse.courseType}
+                          onChange={(e) => updateEditDraft({ courseType: e.target.value })}
+                        >
+                          {COURSE_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {COURSE_TYPE_LABELS[t]}
+                            </option>
+                          ))}
+                        </select>,
                         c.counts_toward_cgpa ? 'Yes' : 'No',
                         <div className="flex gap-2">
                           <Button
@@ -438,6 +457,7 @@ export default function Cgpa() {
                       c.title || '',
                       c.units,
                       c.grade,
+                      COURSE_TYPE_LABELS[c.course_type] || COURSE_TYPE_LABELS.compulsory,
                       c.counts_toward_cgpa ? 'Yes' : 'No',
                       <div className="flex gap-2">
                         <Button
@@ -489,7 +509,7 @@ export default function Cgpa() {
 
               <form
                 onSubmit={(e) => handleAddCourse(semester.id, e)}
-                className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-5 sm:items-end"
+                className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-6 sm:items-end"
               >
                 <FormField
                   label="Code"
@@ -515,6 +535,13 @@ export default function Cgpa() {
                   options={GRADES}
                   value={draft.grade}
                   onChange={(e) => setDraft(semester.id, { grade: e.target.value })}
+                />
+                <FormField
+                  label="Type"
+                  type="select"
+                  options={COURSE_TYPES}
+                  value={draft.courseType}
+                  onChange={(e) => setDraft(semester.id, { courseType: e.target.value })}
                 />
                 <Button variant="secondary" type="submit" loading={submitting}>
                   Add course

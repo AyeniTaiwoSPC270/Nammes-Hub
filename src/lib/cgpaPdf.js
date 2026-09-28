@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { COLOR, loadLogoDataUrl, academicSession, registerPublicSans } from './timetablePdf'
+import { COLOR, loadLogoDataUrl, academicSession, sessionForLevel, registerPublicSans } from './timetablePdf'
 
 function drawChrome(doc, ctx) {
   doc.setFillColor(...COLOR.forest)
@@ -89,12 +89,13 @@ function courseTable(doc, ctx, courses, y) {
   autoTable(doc, {
     startY: y,
     margin: { left: ctx.margin, right: ctx.margin, bottom: 16 },
-    head: [['Code', 'Title', 'Units', 'Grade', 'Counts toward CGPA']],
+    head: [['Code', 'Title', 'Units', 'Grade', 'Type', 'Counts toward CGPA']],
     body: courses.map((c) => [
       c.code,
       c.title || '',
       String(c.units),
       c.grade,
+      c.course_type === 'elective' ? 'Elective' : 'Compulsory',
       c.counts_toward_cgpa === false ? 'No' : 'Yes',
     ]),
     styles: { font: 'PublicSans', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
@@ -155,8 +156,14 @@ export async function downloadCgpaReportPdf({ profile, semesters, stats }) {
   autoTable(doc, {
     startY: y,
     margin: { left: ctx.margin, right: ctx.margin, bottom: 16 },
-    head: [['Semester', 'GPA', 'Cumulative units', 'CGPA so far']],
-    body: stats.rows.map((r) => [r.label, r.gpa.toFixed(2), String(r.cumulativeUnits), r.cgpaSoFar.toFixed(2)]),
+    head: [['Semester', 'Session', 'GPA', 'Cumulative units', 'CGPA so far']],
+    body: stats.rows.map((r) => [
+      r.label,
+      sessionForLevel(profile?.entry_year, r.level),
+      r.gpa.toFixed(2),
+      String(r.cumulativeUnits),
+      r.cgpaSoFar.toFixed(2),
+    ]),
     styles: { font: 'PublicSans', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
     headStyles: { fillColor: COLOR.forestLight, textColor: COLOR.forest, font: 'courier', fontStyle: 'bold', fontSize: 7.5 },
     alternateRowStyles: { fillColor: COLOR.stone },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatTimeLabel, sortTimetableRows, buildTimetablePdfRows } from './timetablePdf'
+import { formatTimeLabel, sortTimetableRows, buildTimetablePdfRows, sessionForLevel, academicSession } from './timetablePdf'
 
 describe('formatTimeLabel', () => {
   it('formats a morning 24h time as 12h with AM', () => {
@@ -47,6 +47,19 @@ describe('sortTimetableRows', () => {
     const before = [...rows]
     sortTimetableRows(rows, 'class')
     expect(rows).toEqual(before)
+  })
+})
+
+describe('sessionForLevel', () => {
+  it('derives the session for a level from the 100L entry year', () => {
+    expect(sessionForLevel(2024, '100')).toBe('2024/2025')
+    expect(sessionForLevel(2024, '200')).toBe('2025/2026')
+    expect(sessionForLevel(2024, 300)).toBe('2026/2027')
+  })
+
+  it('falls back to the current-date session when no entry year is set', () => {
+    const date = new Date('2026-09-28')
+    expect(sessionForLevel(null, '300', date)).toBe(academicSession(date))
   })
 })
 

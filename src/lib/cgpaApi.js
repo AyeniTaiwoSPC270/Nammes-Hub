@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient'
 export async function fetchSemesters(userId) {
   const { data, error } = await supabase
     .from('cgpa_semesters')
-    .select('id, level, semester, cgpa_courses(id, code, title, units, grade, counts_toward_cgpa)')
+    .select('id, level, semester, cgpa_courses(id, code, title, units, grade, course_type, counts_toward_cgpa)')
     .eq('user_id', userId)
 
   if (error) return { data: null, error }
@@ -30,10 +30,10 @@ export async function deleteSemester(semesterId) {
   return supabase.from('cgpa_semesters').delete().eq('id', semesterId)
 }
 
-export async function addCourse({ semesterId, code, title, units, grade }) {
+export async function addCourse({ semesterId, code, title, units, grade, courseType }) {
   return supabase
     .from('cgpa_courses')
-    .insert({ semester_id: semesterId, code, title: title || null, units, grade })
+    .insert({ semester_id: semesterId, code, title: title || null, units, grade, course_type: courseType })
     .select()
     .single()
 }

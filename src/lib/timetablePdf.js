@@ -57,6 +57,12 @@ export function academicSession(date = new Date()) {
   return date.getMonth() >= 8 ? `${year}/${year + 1}` : `${year - 1}/${year}`
 }
 
+export function sessionForLevel(entryYear, level, date = new Date()) {
+  if (!entryYear) return academicSession(date)
+  const startYear = Number(entryYear) + Number(level) / 100 - 1
+  return `${startYear}/${startYear + 1}`
+}
+
 export function registerPublicSans(doc) {
   doc.addFileToVFS('PublicSans-Regular.ttf', PUBLIC_SANS_REGULAR)
   doc.addFont('PublicSans-Regular.ttf', 'PublicSans', 'normal')
