@@ -7,7 +7,11 @@ export default function AdminOutlines() {
       table="outlines"
       title="Outlines"
       config={outlinesAdminConfig}
-      orderBy={{ column: 'code', ascending: true }}
+      orderBy={[
+        { column: 'level', ascending: true },
+        { column: 'semester', ascending: true },
+        { column: 'code', ascending: true },
+      ]}
     />
   )
 }

@@ -75,7 +75,7 @@ export default function OutlineDetail() {
             </div>
             <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
             <div className="mt-2 text-sm text-ink-muted">
-              Lecturer: {course.lecturer} &middot; Updated {course.updated}
+              Lecturer: {course.lecturer ?? '—'} &middot; Updated {course.updated}
             </div>
           </div>
           <Button variant="accent" size="sm" onClick={() => downloadCourseOutlinePdf(course)}>
@@ -84,7 +84,9 @@ export default function OutlineDetail() {
           </Button>
         </div>
 
-        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(course.description)}</p>
+        {course.description && (
+          <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(course.description)}</p>
+        )}
       </Reveal>
 
       <Reveal delay={0.06}>

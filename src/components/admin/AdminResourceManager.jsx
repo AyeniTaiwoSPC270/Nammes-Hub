@@ -16,7 +16,10 @@ import { submitChangeRequest, useMyPendingRequestsQuery } from '../../data/chang
 
 async function loadRows(table, orderBy) {
   let query = supabase.from(table).select('*')
-  if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true })
+  const orderings = Array.isArray(orderBy) ? orderBy : orderBy ? [orderBy] : []
+  orderings.forEach((o) => {
+    query = query.order(o.column, { ascending: o.ascending ?? true })
+  })
   const { data, error } = await query
   if (error) throw error
   return data || []
