@@ -69,6 +69,13 @@ export const ADMIN_SECTIONS = [
     description: 'View every account and manage admin access.',
   },
   {
+    path: '/admin/security',
+    label: 'Security',
+    icon: 'shield_lock',
+    category: 'Directory',
+    description: 'Turn on two-factor login for your admin account.',
+  },
+  {
     path: '/admin/system',
     label: 'System',
     icon: 'monitor_heart',

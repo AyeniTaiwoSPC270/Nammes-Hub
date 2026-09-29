@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
+import MfaChallenge from '../components/MfaChallenge'
 import { supabase } from '../lib/supabaseClient'
+import { getAalStatus } from '../lib/mfa'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -12,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [needsCode, setNeedsCode] = useState(false)
 
   const justCreated = searchParams.get('created') === '1'
   const justReset = searchParams.get('reset') === '1'
@@ -24,14 +27,36 @@ export default function Login() {
 
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-    setBusy(false)
-
     if (signInError) {
+      setBusy(false)
       setError('Wrong email or password')
       return
     }
 
+    // Accounts with two-factor login enabled must enter a code before continuing.
+    const status = await getAalStatus()
+    setBusy(false)
+    if (status === 'challenge') {
+      setNeedsCode(true)
+      return
+    }
+
     navigate(location.state?.from?.pathname ?? '/')
+  }
+
+  if (needsCode) {
+    return (
+      <AuthCard>
+        <MfaChallenge
+          onVerified={() => navigate(location.state?.from?.pathname ?? '/')}
+          onCancel={async () => {
+            await supabase.auth.signOut()
+            setNeedsCode(false)
+            setPassword('')
+          }}
+        />
+      </AuthCard>
+    )
   }
 
   return (
