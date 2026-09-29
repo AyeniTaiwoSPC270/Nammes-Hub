@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import { supabase } from '../lib/supabaseClient'
+import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
+import { captchaOptions, canSubmitWithCaptcha } from '../lib/turnstile'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
+  const captcha = useTurnstile()
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -15,6 +18,7 @@ export default function ForgotPassword() {
 
     await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
+      ...captchaOptions(captcha.token),
     })
 
     setBusy(false)
@@ -52,7 +56,15 @@ export default function ForgotPassword() {
             </div>
           </div>
 
-          <Button variant="primary" type="submit" loading={busy} className="justify-center">
+          <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+
+          <Button
+            variant="primary"
+            type="submit"
+            loading={busy}
+            disabled={!canSubmitWithCaptcha(captcha)}
+            className="justify-center"
+          >
             Reset Password
             <span className="material-symbols-outlined text-base">arrow_forward</span>
           </Button>

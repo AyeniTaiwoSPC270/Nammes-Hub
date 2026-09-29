@@ -5,6 +5,8 @@ import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
 import { validateStudentId } from '../data/profiles'
+import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
+import { captchaOptions, canSubmitWithCaptcha } from '../lib/turnstile'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -17,6 +19,7 @@ export default function Signup() {
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
+  const captcha = useTurnstile()
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -46,6 +49,7 @@ export default function Signup() {
       email,
       password,
       options: {
+        ...captchaOptions(captcha.token),
         data: { full_name: name, student_id: studentId.trim() },
         emailRedirectTo: `${window.location.origin}/login?created=1`,
       },
@@ -54,6 +58,7 @@ export default function Signup() {
     setBusy(false)
 
     if (error) {
+      captcha.reset()
       // A duplicate matric number fails inside the database trigger and surfaces as this generic message.
       setFormError(
         /database error/i.test(error.message)
@@ -125,7 +130,9 @@ export default function Signup() {
           success={confirmPassword.length > 0 && confirmPassword === password && !errors.confirmPassword}
         />
 
-        <Button variant="primary" type="submit" loading={busy}>
+        <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+
+        <Button variant="primary" type="submit" loading={busy} disabled={!canSubmitWithCaptcha(captcha)}>
           Create account
         </Button>
         <Button variant="ghost" type="button" onClick={() => navigate('/')}>
