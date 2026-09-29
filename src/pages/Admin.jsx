@@ -69,6 +69,13 @@ export const ADMIN_SECTIONS = [
     description: 'View every account and manage admin access.',
   },
   {
+    path: '/admin/messages',
+    label: 'Messages',
+    icon: 'mail',
+    category: 'Engagement',
+    description: 'Read messages sent through the contact form.',
+  },
+  {
     path: '/admin/outlines',
     label: 'Outlines',
     icon: 'menu_book',
