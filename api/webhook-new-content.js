@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
 import { renderNewContentEmail, SITE_URL } from './_lib/emailTemplates.js'
+import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
 
 const CONTENT_META = {
   news: { eyebrow: 'News Update', subjectPrefix: 'News update' },
@@ -15,17 +16,19 @@ export default async function handler(req, res) {
   }
   const { table, record } = req.body ?? {}
   const meta = CONTENT_META[table]
-  if (!meta || !record?.title) {
-    res.status(400).json({ error: 'Unsupported table or missing record.title' })
+  if (!meta || !record?.title || !isSafeRecordKey(record?.id)) {
+    res.status(400).json({ error: 'Unsupported table, missing record.title or invalid record.id' })
     return
   }
 
   const supabaseAdmin = getSupabaseAdmin()
 
-  const { data: isValidSecret } = await supabaseAdmin.rpc('verify_webhook_secret', {
-    candidate: req.headers['x-webhook-secret'] || '',
+  const authentic = await isWebhookAuthentic(supabaseAdmin, {
+    headers: req.headers,
+    table,
+    key: record.id,
   })
-  if (!isValidSecret) {
+  if (!authentic) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
