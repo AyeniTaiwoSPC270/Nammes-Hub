@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../lib/ToastContext'
 import Reveal from '../components/ui/Reveal'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { useNotificationPrefQuery, useSetNotificationPrefMutation } from '../data/notificationPrefs'
+import { requestDataExport, saveAsJsonFile } from '../data/dataExport'
 import { useOwnProfileQuery, useSetFullNameMutation, useSetEntryYearMutation } from '../data/profiles'
 
 const CURRENT_YEAR = new Date().getFullYear()
@@ -21,6 +22,7 @@ export default function Account() {
   const setEntryYearMutation = useSetEntryYearMutation(user?.id)
 
   const [nameDraft, setNameDraft] = useState(null)
+  const [exporting, setExporting] = useState(false)
 
   if (loading || (user && (prefQuery.isLoading || profileQuery.isLoading))) return null
   if (!user) return <Navigate to="/login" replace />
@@ -34,6 +36,23 @@ export default function Account() {
       onSuccess: () => toast.success(!enabled ? 'Email notifications turned on.' : 'Email notifications turned off.'),
       onError: (error) => toast.error(error.message),
     })
+  }
+
+  async function exportData(delivery) {
+    setExporting(true)
+    try {
+      const result = await requestDataExport(delivery)
+      if (delivery === 'download') {
+        saveAsJsonFile(result.data)
+        toast.success('Your data has been downloaded.')
+      } else {
+        toast.success(`Your data was emailed to ${user.email}.`)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setExporting(false)
+    }
   }
 
   function saveName(event) {
@@ -107,6 +126,25 @@ export default function Account() {
             className="h-5 w-5 accent-green-900"
           />
         </label>
+      </Reveal>
+      <Reveal delay={0.12} className="mt-6 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+        <h2 className="font-bold text-ink-900">Your data</h2>
+        <p className="text-sm text-ink-muted">
+          A copy of your profile, CGPA semesters, form responses, nominations and outline submissions. Votes are
+          left out to keep ballots secret. See our{' '}
+          <Link to="/privacy" className="font-semibold text-orange-600 hover:underline">
+            privacy page
+          </Link>
+          .
+        </p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <Button variant="secondary" size="sm" loading={exporting} onClick={() => exportData('download')}>
+            Download my data
+          </Button>
+          <Button variant="secondary" size="sm" loading={exporting} onClick={() => exportData('email')}>
+            Email it to me
+          </Button>
+        </div>
       </Reveal>
     </div>
   )

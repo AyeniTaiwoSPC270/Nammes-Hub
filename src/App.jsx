@@ -13,6 +13,7 @@ import { lazyRetry } from './lib/lazyRetry'
 const Maintenance = lazyRetry(() => import('./pages/Maintenance'))
 
 const Home = lazyRetry(() => import('./pages/Home'))
+const Privacy = lazyRetry(() => import('./pages/Privacy'))
 const About = lazyRetry(() => import('./pages/About'))
 const Excos = lazyRetry(() => import('./pages/Excos'))
 const Contact = lazyRetry(() => import('./pages/Contact'))
@@ -109,6 +110,7 @@ export default function App() {
             <Route path="about" element={<About />} />
             <Route path="excos" element={<Excos />} />
             <Route path="contact" element={<Contact />} />
+            <Route path="privacy" element={<Privacy />} />
             <Route path="outlines" element={<Outlines />} />
             <Route path="curriculum" element={<Curriculum />} />
             <Route path="outlines/:level" element={<OutlineLevel />} />

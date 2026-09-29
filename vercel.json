@@ -13,6 +13,10 @@
       "destination": "/api/account?action=anonymise-user"
     },
     {
+      "source": "/api/export-data",
+      "destination": "/api/account?action=export-data"
+    },
+    {
       "source": "/api/admin-issues",
       "destination": "/api/system?action=admin-issues"
     },
