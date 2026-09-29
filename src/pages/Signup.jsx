@@ -97,12 +97,13 @@ export default function Signup() {
           <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
         )}
 
-        <FormField label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Okafor" />
+        <FormField label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Okafor" autoComplete="name" />
         <FormField
           label="Matric number"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
           placeholder="e.g. 240406012 or 260406009"
+          autoComplete="off"
           error={errors.studentId}
         />
         <FormField
@@ -111,6 +112,8 @@ export default function Signup() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
+          autoComplete="email"
+          inputMode="email"
           error={errors.email}
         />
         <FormField

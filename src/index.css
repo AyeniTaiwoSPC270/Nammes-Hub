@@ -92,3 +92,14 @@
   vertical-align: middle;
   line-height: 1;
 }
+
+/* Horizontally scrollable tables: soft edge shadows hint that there is more to swipe to. */
+.nm-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, var(--color-surface) 30%, transparent) left center / 24px 100% no-repeat local,
+    linear-gradient(to left, var(--color-surface) 30%, transparent) right center / 24px 100% no-repeat local,
+    linear-gradient(to right, rgba(0, 0, 0, 0.14), transparent) left center / 10px 100% no-repeat scroll,
+    linear-gradient(to left, rgba(0, 0, 0, 0.14), transparent) right center / 10px 100% no-repeat scroll;
+}

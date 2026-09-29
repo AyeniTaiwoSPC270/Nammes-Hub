@@ -40,7 +40,7 @@ export default function ResourceList() {
                 {level} Level &middot; {SEMESTER_LABELS[semester]} Resources
               </h3>
             </div>
-            <div className="overflow-x-auto">
+            <div className="nm-table-wrap">
               <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-hairline bg-surface-low">

@@ -112,7 +112,7 @@ function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="flex items-center justify-center rounded-sm p-2 text-ink-muted transition-colors hover:bg-surface-low hover:text-ink-900"
+      className="flex h-11 w-11 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-surface-low hover:text-ink-900"
     >
       <span className="material-symbols-outlined text-xl">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
     </button>
@@ -131,6 +131,22 @@ export default function Navbar() {
     setOpen(wantsMobileNavOpen)
   }, [wantsMobileNavOpen])
 
+  // While the mobile menu is open: lock page scroll behind it and let Escape close it.
+  useEffect(() => {
+    // The tour also sets open on desktop, where the mobile menu is hidden; only lock on small screens.
+    if (!open || !window.matchMedia('(max-width: 1023px)').matches) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    function handleKey(event) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [open])
+
   async function handleSignOut() {
     await supabase.auth.signOut()
     setOpen(false)
@@ -141,11 +157,11 @@ export default function Navbar() {
     <header className="sticky top-0 z-30 border-b border-hairline bg-surface">
       <div className="flex items-center justify-between gap-6 px-4 py-3.5 sm:px-8">
         <NavLink to="/" className="inline-flex items-center gap-2 whitespace-nowrap no-underline">
-          <img src="/logo.png" alt="" className="h-8 w-8" />
+          <img src="/logo-small.png" alt="" width="32" height="32" className="h-8 w-8" />
           <span className="font-display text-xl font-bold text-ink-900">NAMMES Hub</span>
         </NavLink>
 
-        <nav className="hidden sm:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) =>
             item.children ? (
               <NavDropdown key={item.label} item={item} />
@@ -159,7 +175,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-3">
           {!loading && (
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-4">
               {user ? (
                 <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="right" dataTour="nav-account" />
               ) : (
@@ -179,7 +195,7 @@ export default function Navbar() {
             onClick={() => setOpen((o) => !o)}
             aria-label="Toggle menu"
             aria-expanded={open}
-            className="flex items-center justify-center p-2 text-ink-900 sm:hidden"
+            className="flex items-center justify-center h-11 w-11 text-ink-900 lg:hidden"
           >
             <span className="material-symbols-outlined">menu</span>
           </button>
@@ -187,7 +203,7 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <nav className="fixed inset-x-0 top-[60px] flex max-h-[calc(100vh-60px)] flex-col gap-0.5 overflow-y-auto border-b border-hairline bg-surface px-4 py-2 shadow-md sm:hidden">
+        <nav className="absolute inset-x-0 top-full flex max-h-[calc(100dvh-4rem)] flex-col gap-0.5 overflow-y-auto overscroll-contain border-b border-hairline bg-surface px-4 py-2 shadow-md lg:hidden">
           {navItems.map((item) =>
             item.children ? (
               <div key={item.label} className="flex flex-col" data-tour={item.dataTour}>
@@ -220,7 +236,7 @@ export default function Navbar() {
           {!loading &&
             (user ? (
               <>
-                <span className="max-w-[16ch] truncate px-4 py-2 text-sm text-ink-muted" title={user.email}>
+                <span className="truncate px-4 py-2 text-sm text-ink-muted" title={user.email}>
                   {user.email}
                 </span>
                 <NavLink

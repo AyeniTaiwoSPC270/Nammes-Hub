@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { useToast } from '../../lib/ToastContext'
 import { saveBlob } from '../../lib/downloadImage'
+import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import Button from '../ui/Button'
 
 export default function ShareFormModal({ form, onClose }) {
   const toast = useToast()
   const dialogRef = useRef(null)
+  useBodyScrollLock()
   const [qrDataUrl, setQrDataUrl] = useState(null)
 
   const url = `${window.location.origin}/forms/${form.id}`
@@ -49,7 +51,7 @@ export default function ShareFormModal({ form, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4" onClick={onClose}>
       <div
         ref={dialogRef}
         role="dialog"
@@ -87,7 +89,7 @@ export default function ShareFormModal({ form, onClose }) {
           type="button"
           aria-label="Close share dialog"
           onClick={onClose}
-          className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-danger text-white shadow-md hover:scale-105"
+          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-danger text-white shadow-md"
         >
           <span className="material-symbols-outlined text-base">close</span>
         </button>

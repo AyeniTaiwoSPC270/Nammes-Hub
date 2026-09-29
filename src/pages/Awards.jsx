@@ -378,7 +378,7 @@ export default function Awards() {
           ))}
         </div>
 
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 px-5 py-3 backdrop-blur-sm sm:px-6">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-6">
           <div className="mx-auto flex max-w-[900px] flex-col items-center justify-between gap-3 sm:flex-row">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-low text-brand">

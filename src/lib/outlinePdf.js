@@ -1,7 +1,9 @@
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { COLOR, loadLogoDataUrl, academicSession, registerPublicSans } from './timetablePdf'
+import { loadPdfDeps, COLOR, loadLogoDataUrl, academicSession, registerPublicSans } from './timetablePdf'
 import { SEMESTER_LABELS } from '../data/outlines'
+
+// Loaded on demand by the download functions below.
+let jsPDF
+let autoTable
 
 function drawChrome(doc, ctx) {
   doc.setFillColor(...COLOR.forest)
@@ -254,6 +256,7 @@ async function makeContext(doc) {
 }
 
 export async function downloadCourseOutlinePdf(course) {
+  ;({ jsPDF, autoTable } = await loadPdfDeps())
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const ctx = await makeContext(doc)
 
@@ -267,6 +270,7 @@ export async function downloadCourseOutlinePdf(course) {
 }
 
 export async function downloadCourseOutlinesPdf({ level, semester, courses }) {
+  ;({ jsPDF, autoTable } = await loadPdfDeps())
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const ctx = await makeContext(doc)
 
