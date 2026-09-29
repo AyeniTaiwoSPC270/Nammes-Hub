@@ -15,6 +15,7 @@ function setup({ isOwner = true, writeError = null } = {}) {
     auth: { getUser: async () => ({ data: { user: { id: 'u1' } }, error: null }) },
     from: (table) => {
       if (table === 'admins') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { is_owner: isOwner } }) }) }) }
+      if (table === 'feature_flags') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { enabled: false } }) }) }) }
       return { upsert: async (row) => { writes.push([table, row]); return { error: writeError } } }
     },
   }

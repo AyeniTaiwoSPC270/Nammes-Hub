@@ -18,13 +18,20 @@ function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true 
     const q = { select: () => q, eq: () => q, gte: () => q, limit: async () => ({ data }), maybeSingle: async () => ({ data }) }
     return q
   }
+  // feature_flags answers per key: only the broadcasts switch follows the test; two-factor enforcement stays off.
+  const flagsChain = () => {
+    let key
+    const q = { select: () => q, eq: (_col, value) => { key = value; return q },
+      maybeSingle: async () => ({ data: { enabled: key === 'broadcasts' ? flagEnabled : false } }) }
+    return q
+  }
   const client = {
     auth: { getUser: async () => ({ data: { user: { id: CALLER } }, error: null }) },
     rpc: async () => ({ data: [{ email: 'a@x.com' }, { email: 'b@x.com' }], error: null }),
     from: (table) => {
       if (table === 'admins') return chain(adminRow)
       if (table === 'email_templates') return chain(null)
-      if (table === 'feature_flags') return chain({ enabled: flagEnabled })
+      if (table === 'feature_flags') return flagsChain()
       return { ...chain(recent), insert: async (row) => { inserts.push(row); return { error: null } } }
     },
   }
