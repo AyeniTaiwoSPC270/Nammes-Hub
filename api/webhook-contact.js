@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { logError } from './_lib/logError.js'
-import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
+import { enqueueEmails } from './_lib/emailQueue.js'
 import { escapeHtml } from './_lib/emailTemplates.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
 
@@ -17,7 +17,7 @@ function renderAlertHtml({ name, email, message, created_at }) {
 </div>`
 }
 
-export function createWebhookContactHandler({ getClient = getSupabaseAdmin, getResend = getResendClient } = {}) {
+export function createWebhookContactHandler({ getClient = getSupabaseAdmin, enqueue = enqueueEmails } = {}) {
   return async function handler(req, res) {
     if (req.method !== 'POST') {
       res.status(405).json({ error: 'Method not allowed' })
@@ -78,24 +78,25 @@ export function createWebhookContactHandler({ getClient = getSupabaseAdmin, getR
       return
     }
 
-    try {
-      const resend = getResend()
-      for (const to of recipients) {
-        await resend.emails.send({
-          from: FROM_ADDRESS,
-          to,
-          // Fixed subject: visitor text never reaches a header.
-          subject: 'New contact message',
-          html: renderAlertHtml(message),
-          ...(EMAIL_RE.test(message.email) ? { replyTo: message.email } : {}),
-        })
-      }
-      res.status(200).json({ sent: true })
-    } catch (sendError) {
-      console.error('webhook-contact: send failed', sendError)
-      await logError(supabaseAdmin, 'webhook-contact', sendError, 500)
+    const { queued, error: queueError } = await enqueue(
+      supabaseAdmin,
+      recipients.map((to) => ({
+        kind: 'contact-alert',
+        to,
+        // Fixed subject: visitor text never reaches a header.
+        subject: 'New contact message',
+        html: renderAlertHtml(message),
+        replyTo: EMAIL_RE.test(message.email) ? message.email : undefined,
+        dedupeKey: `contact:${message.id}:${to}`,
+      })),
+    )
+    if (queueError) {
+      console.error('webhook-contact: could not queue alert', queueError)
+      await logError(supabaseAdmin, 'webhook-contact', queueError, 500)
       res.status(200).json({ sent: false })
+      return
     }
+    res.status(200).json({ sent: queued > 0 })
   }
 }
 
