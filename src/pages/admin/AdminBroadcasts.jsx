@@ -75,7 +75,7 @@ export default function AdminBroadcasts() {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Template</span>
-              <Link to="/admin/email-templates" className="text-xs font-semibold text-brand no-underline hover:text-orange-500">
+              <Link to="/admin/email-templates" className="py-2 text-xs font-semibold text-brand no-underline hover:text-orange-500">
                 Edit templates
               </Link>
             </div>
@@ -86,7 +86,7 @@ export default function AdminBroadcasts() {
                   type="button"
                   onClick={() => setTemplateId(t.id)}
                   title={t.description}
-                  className={`rounded-md border px-3 py-2 text-left text-xs font-semibold transition-colors duration-150 ${
+                  className={`rounded-md border px-3 py-2.5 text-left text-xs font-semibold transition-colors duration-150 ${
                     templateId === t.id
                       ? 'border-green-900 bg-green-900 text-white'
                       : 'border-hairline bg-surface-low text-ink hover:bg-hairline/20'
