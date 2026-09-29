@@ -40,7 +40,12 @@ describe('logError', () => {
     expect(client.calls[1][1].message).toBe('from object')
   })
   it('never throws, even if the database write fails', async () => {
-    await expect(logError(fakeClient({ failInsert: true }), 'r', new Error('x'), 500)).resolves.toBeUndefined()
-    await expect(logError(null, 'r', new Error('x'), 500)).resolves.toBeUndefined()
+    await expect(logError(fakeClient({ failInsert: true }), 'r', new Error('x'), 500)).resolves.toBe(false)
+    await expect(logError(null, 'r', new Error('x'), 500)).resolves.toBe(false)
+  })
+  it('reports whether the row was written', async () => {
+    await expect(logError(fakeClient(), 'r', new Error('x'), 500)).resolves.toBe(true)
+    const rejecting = { from: () => ({ upsert: async () => ({ error: { message: 'denied' } }) }) }
+    await expect(logError(rejecting, 'r', new Error('x'), 500)).resolves.toBe(false)
   })
 })

@@ -1,8 +1,17 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../lib/AuthContext'
 import { useOwnAdminRowQuery } from '../../data/admins'
 import { useAllUsersQuery } from '../../data/users'
-import { useAuditLogQuery, useErrorLogQuery, useSentryIssuesQuery } from '../../data/systemLogs'
+import {
+  useAuditLogQuery,
+  useErrorLogQuery,
+  useSentryIssuesQuery,
+  fetchErrorLog,
+  fetchSentryIssues,
+  runServerTest,
+} from '../../data/systemLogs'
+import { sendTestError } from '../../lib/errorTracking'
 import Table from '../../components/ui/Table'
 import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
@@ -27,6 +36,89 @@ function Section({ query, rows, empty, children }) {
   }
   if (rows.length === 0) return <p className="text-ink-muted">{empty}</p>
   return <div className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">{children}</div>
+}
+
+// One click checks the whole chain: server can write the error log, the owner can read it back,
+// the browser can deliver an error to Sentry, and the server can read Sentry's issue list.
+function TestPanel() {
+  const queryClient = useQueryClient()
+  const [running, setRunning] = useState(false)
+  const [results, setResults] = useState([])
+
+  async function run() {
+    setRunning(true)
+    const out = []
+    const push = (ok, label) => {
+      out.push({ ok, label })
+      setResults([...out])
+    }
+    setResults([])
+
+    try {
+      await runServerTest()
+      push(true, 'The server wrote a test entry to the error log.')
+    } catch (error) {
+      push(false, `Server error log: ${error.message}`)
+    }
+
+    try {
+      const rows = await fetchErrorLog()
+      const found = rows.some((r) => r.route === 'system-test')
+      push(found, found ? 'The Server errors tab can read that entry back.' : 'The test entry was not found when reading the log back.')
+    } catch (error) {
+      push(false, `Could not read the server error log: ${error.message}`)
+    }
+
+    const sentry = await sendTestError()
+    push(
+      sentry.sent,
+      sentry.sent
+        ? `A test crash reached Sentry (event ${String(sentry.eventId).slice(0, 8)}). It can take up to a minute to appear under App errors.`
+        : `Sentry did not receive the test crash. ${sentry.reason}`,
+    )
+
+    try {
+      const result = await fetchSentryIssues()
+      const count = result.issues.length
+      push(
+        result.configured,
+        result.configured
+          ? `The connection to Sentry works (${count} unresolved issue${count === 1 ? '' : 's'} in the last 14 days).`
+          : 'The connection to Sentry is not set up. Add SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT in Vercel and redeploy.',
+      )
+    } catch (error) {
+      push(false, `Sentry connection: ${error.message}`)
+    }
+
+    setRunning(false)
+    queryClient.invalidateQueries({ queryKey: ['system'] })
+  }
+
+  return (
+    <div className="mt-6 rounded-lg border border-hairline bg-surface p-4 shadow-md">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-ink-900">Test the system</h2>
+          <p className="text-sm text-ink-muted">
+            Sends one harmless test error through the server log and Sentry, then reports what worked.
+          </p>
+        </div>
+        <Button variant="primary" size="sm" onClick={run} disabled={running}>
+          {running ? 'Testing…' : 'Send test error'}
+        </Button>
+      </div>
+      {results.length > 0 && (
+        <ul className="mt-4 flex flex-col gap-2">
+          {results.map((r, i) => (
+            <li key={i} className="flex items-start gap-3 text-sm text-ink">
+              <Badge tone={r.ok ? 'updated' : 'restricted'}>{r.ok ? 'Passed' : 'Failed'}</Badge>
+              <span>{r.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 export default function AdminSystem() {
@@ -78,6 +170,8 @@ export default function AdminSystem() {
           Refresh
         </Button>
       </div>
+
+      <TestPanel />
 
       <div className="mt-6 flex flex-wrap gap-2" role="tablist">
         {SECTIONS.map((s) => (
