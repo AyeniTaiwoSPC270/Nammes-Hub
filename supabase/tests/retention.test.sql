@@ -2,8 +2,8 @@
 do $$
 declare u uuid := gen_random_uuid(); n int;
 begin
-  insert into auth.users (id, email, instance_id, aud, role) values (u, 'retention-test@example.invalid', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated');
-  insert into public.profiles (user_id, student_id, full_name) values (u, '990406999', 'Test Person');
+  insert into auth.users (id, email, instance_id, aud, role, raw_user_meta_data) values (u, 'retention-test@example.invalid', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', '{"student_id":"990406999","full_name":"Test Person"}');
+  select count(*) into n from public.profiles where user_id = u; assert n = 1, 'profile not created';
   insert into public.contact_messages (name, email, message, created_at) values ('Old', 'old@example.invalid', 'x', now() - interval '13 months'), ('New', 'new@example.invalid', 'y', now());
   insert into public.error_log (route, message, bucket, at) values ('t', 'old', 1, now() - interval '31 days'), ('t', 'new', 2, now());
   perform public.purge_old_data();
