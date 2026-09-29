@@ -63,7 +63,7 @@ export default function Contact() {
       <Reveal as="section" className="mx-auto max-w-[1000px] px-5 sm:px-6 py-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <FormField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
+            <FormField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100} />
             <FormField
               label="Email"
               type="email"
@@ -71,6 +71,7 @@ export default function Contact() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
+              maxLength={254}
             />
             <FormField
               label="Message"
@@ -79,6 +80,7 @@ export default function Contact() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="How can we help?"
               required
+              maxLength={5000}
             />
             {formError && <span className="text-xs text-danger">{formError}</span>}
             <Button variant="primary" type="submit" loading={submitMutation.isPending}>
