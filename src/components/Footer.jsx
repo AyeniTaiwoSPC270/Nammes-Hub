@@ -25,6 +25,7 @@ const linkGroups = [
     items: [
       { label: 'CGPA calculator', to: '/cgpa' },
       { label: 'Contact Us', to: '/contact' },
+      { label: 'Privacy', to: '/privacy' },
       { label: 'Sign in', to: '/login' },
     ],
   },
