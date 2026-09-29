@@ -44,7 +44,6 @@ export default function Layout() {
             key={location.pathname}
             initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={reducedMotion ? undefined : { opacity: 0, y: -8 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
           >
             <Suspense fallback={<RouteSkeleton />}>{outlet}</Suspense>

@@ -88,6 +88,7 @@ export default function ResetPassword() {
 
         <FormField
           label="New password"
+          autoComplete="new-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -96,6 +97,7 @@ export default function ResetPassword() {
         />
         <FormField
           label="Confirm new password"
+          autoComplete="new-password"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}

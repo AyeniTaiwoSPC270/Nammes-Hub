@@ -51,7 +51,7 @@ export default function AvatarUploadField({ label, url, onChange }) {
             type="button"
             onClick={() => { markTouched(); onChange('') }}
             aria-label="Remove photo"
-            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105"
+            className="absolute -right-1 -top-1 flex h-9 w-9 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105"
           >
             <span className="material-symbols-outlined text-base">close</span>
           </button>

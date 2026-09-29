@@ -64,6 +64,23 @@
 }
 
 @layer base {
+  /* Fieldsets default to min-width: min-content, which lets wide children push the page sideways on phones. */
+  fieldset {
+    min-width: 0;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  /* Safety net: never let a stray wide element create a horizontal page scroll. */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   body {
     @apply bg-paper text-ink font-body antialiased transition-colors duration-150;
   }
@@ -91,4 +108,24 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   vertical-align: middle;
   line-height: 1;
+}
+
+/* Horizontally scrollable tables: soft edge shadows hint that there is more to swipe to. */
+.nm-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, var(--color-surface) 30%, transparent) left center / 24px 100% no-repeat local,
+    linear-gradient(to left, var(--color-surface) 30%, transparent) right center / 24px 100% no-repeat local,
+    linear-gradient(to right, rgba(0, 0, 0, 0.14), transparent) left center / 10px 100% no-repeat scroll,
+    linear-gradient(to left, rgba(0, 0, 0, 0.14), transparent) right center / 10px 100% no-repeat scroll;
+}
+
+/* iOS Safari zooms the page when a focused field has a font size under 16px. Keep text fields at 16px on touch screens. */
+@media (pointer: coarse) {
+  input:not([type='checkbox'], [type='radio'], [type='file'], [type='range'], [type='color']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

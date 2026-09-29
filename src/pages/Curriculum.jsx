@@ -117,11 +117,11 @@ export default function Curriculum() {
             Download CCMAS PDF
           </a>
 
-          <div className="mt-2 overflow-hidden rounded-lg border border-hairline">
-            <iframe src={CCMAS_PDF} title="MME CCMAS Course Outline" className="h-[80vh] w-full" />
+          <div className="mt-2 hidden overflow-hidden rounded-lg border border-hairline md:block">
+            <iframe src={CCMAS_PDF} title="MME CCMAS Course Outline" className="h-[80dvh] w-full" loading="lazy" />
           </div>
           <p className="text-sm text-ink-muted">
-            Can&rsquo;t see the preview above?{' '}
+            Can&rsquo;t see the preview?{' '}
             <a href={CCMAS_PDF} target="_blank" rel="noopener noreferrer" className="font-semibold text-orange-600 hover:underline">
               Open the PDF in a new tab
             </a>{' '}

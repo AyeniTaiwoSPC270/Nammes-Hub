@@ -19,7 +19,7 @@ function BannerImageRow({ url, index, total, onRemove, onMove }) {
     >
       <button
         type="button"
-        className="cursor-grab touch-none p-1 text-ink-muted hover:text-ink-900 active:cursor-grabbing"
+        className="cursor-grab touch-none p-2 text-ink-muted hover:text-ink-900 active:cursor-grabbing"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
@@ -35,7 +35,7 @@ function BannerImageRow({ url, index, total, onRemove, onMove }) {
           type="button"
           onClick={() => onMove(-1)}
           disabled={index === 0}
-          className="p-1.5 text-ink-muted hover:text-ink-900 disabled:opacity-30"
+          className="p-2.5 text-ink-muted hover:text-ink-900 disabled:opacity-30"
           aria-label="Move up"
         >
           <span className="material-symbols-outlined text-lg">arrow_upward</span>
@@ -44,12 +44,12 @@ function BannerImageRow({ url, index, total, onRemove, onMove }) {
           type="button"
           onClick={() => onMove(1)}
           disabled={index === total - 1}
-          className="p-1.5 text-ink-muted hover:text-ink-900 disabled:opacity-30"
+          className="p-2.5 text-ink-muted hover:text-ink-900 disabled:opacity-30"
           aria-label="Move down"
         >
           <span className="material-symbols-outlined text-lg">arrow_downward</span>
         </button>
-        <button type="button" onClick={onRemove} className="p-1.5 text-ink-muted hover:text-danger" aria-label="Remove image">
+        <button type="button" onClick={onRemove} className="p-2.5 text-ink-muted hover:text-danger" aria-label="Remove image">
           <span className="material-symbols-outlined text-lg">delete</span>
         </button>
       </div>

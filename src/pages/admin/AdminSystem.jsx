@@ -74,7 +74,7 @@ function SwitchesPanel({ query }) {
               <p className="font-medium text-ink">{SWITCH_INFO[flag.key] || flag.key}</p>
               <p className="text-sm text-ink-muted">Changed {formatDateTime(flag.updated_at)}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Badge tone={flag.enabled ? 'new' : 'restricted'}>{flag.enabled ? 'On' : 'Paused'}</Badge>
               {flag.enabled && confirming !== flag.key && (
                 <Button variant="secondary" size="sm" onClick={() => setConfirming(flag.key)}>

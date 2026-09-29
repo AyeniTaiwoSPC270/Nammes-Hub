@@ -4,7 +4,7 @@ import FormField from '../../ui/FormField'
 export default function CategoryEditorCard({ category, index, total, onChange, onRemove, onMoveUp, onMoveDown }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
           Category {index + 1}
         </span>

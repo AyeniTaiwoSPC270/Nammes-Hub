@@ -30,8 +30,8 @@ function ReviewCard({ request, onApprove, onReject, busy }) {
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge tone="new">{request.entity_type}</Badge>
           <Badge tone="neutral">{request.action}</Badge>
         </div>

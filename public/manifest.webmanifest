@@ -1,0 +1,12 @@
+{
+  "name": "NAMMES Hub",
+  "short_name": "NAMMES Hub",
+  "description": "The digital resource center for NAMMES, University of Lagos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fcf9f8",
+  "theme_color": "#0b2417",
+  "icons": [
+    { "src": "/logo-small.png", "sizes": "192x197", "type": "image/png", "purpose": "any" }
+  ]
+}

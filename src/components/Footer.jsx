@@ -63,6 +63,7 @@ export default function Footer() {
             frameBorder="0"
             scrolling="no"
             title="Subscribe to the NAMMES Communique newsletter"
+            loading="lazy"
             className="mt-4 max-w-full rounded-lg"
           />
         )}
@@ -71,7 +72,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-[1080px] flex-wrap justify-between gap-10 px-8 pt-10 pb-8">
         <div className="max-w-88 min-w-56 flex-[2]">
           <span className="inline-flex items-center gap-2 whitespace-nowrap font-display text-2xl font-bold text-white">
-            <img src="/logo.png" alt="" className="h-9 w-9" />
+            <img src="/logo-small.png" alt="" width="36" height="36" loading="lazy" decoding="async" className="h-9 w-9" />
             NAMMES Hub
           </span>
           <span className="mt-2 block h-0.5 w-10 rounded-full bg-orange-500" />

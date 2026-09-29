@@ -78,10 +78,10 @@ export default function AdminAwardCurate() {
       ) : (
         <div className="mt-3 flex flex-col gap-2">
           {nominees.map((n) => (
-            <div key={n.id} className="flex items-center justify-between rounded-lg border border-hairline bg-surface p-4 shadow-sm">
-              <div className="flex items-center gap-3">
+            <div key={n.id} className="flex items-center justify-between gap-3 rounded-lg border border-hairline bg-surface p-4 shadow-sm">
+              <div className="flex min-w-0 items-center gap-3">
                 {n.photo_url && <img src={n.photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />}
-                <span className="font-semibold text-ink-900">{n.name}</span>
+                <span className="break-words font-semibold text-ink-900">{n.name}</span>
               </div>
               <Button
                 variant="destructive"
@@ -110,8 +110,8 @@ export default function AdminAwardCurate() {
             const isAdding = addingKey === key
             return (
               <div key={key} className="rounded-lg border border-hairline bg-surface p-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-ink">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="min-w-0 break-words text-ink">
                     {g.displayName} <span className="text-xs text-ink-muted">({g.count} mention{g.count === 1 ? '' : 's'})</span>
                   </span>
                   {alreadyShortlisted ? (

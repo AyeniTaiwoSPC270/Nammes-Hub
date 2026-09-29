@@ -200,7 +200,7 @@ export default function Home() {
                   >
                     {event.image_url && (
                       <div className="flex aspect-[3/4] w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
-                        <img src={event.image_url} alt="" className="h-full w-full object-contain" />
+                        <img src={event.image_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-contain" />
                       </div>
                     )}
                     <div className="flex flex-col gap-2 p-6">
@@ -255,7 +255,7 @@ export default function Home() {
                 <Reveal key={x.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)} className="flex flex-col items-center gap-2.5 text-center">
                   <div className="flex h-28 w-28 sm:h-40 sm:w-40 items-center justify-center overflow-hidden rounded-full bg-surface shadow-md font-display text-2xl text-brand">
                     {x.photo_url ? (
-                      <img src={x.photo_url} alt="" className="h-full w-full object-cover object-top" />
+                      <img src={x.photo_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-cover object-top" />
                     ) : (
                       (x.name || x.role).charAt(0)
                     )}

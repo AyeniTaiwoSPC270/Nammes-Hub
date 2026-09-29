@@ -68,13 +68,15 @@ export default function Contact() {
       <Reveal as="section" className="mx-auto max-w-[1000px] px-5 sm:px-6 py-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[3fr_2fr]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <FormField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100} />
+            <FormField label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100} autoComplete="name" />
             <FormField
               label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              autoComplete="email"
+              inputMode="email"
               required
               maxLength={254}
             />

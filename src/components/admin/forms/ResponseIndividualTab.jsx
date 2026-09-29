@@ -9,7 +9,7 @@ export default function ResponseIndividualTab({ questions, responses }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-sm text-ink-muted">
           Response {index + 1} of {responses.length} · {new Date(response.submitted_at).toLocaleString()}
         </span>
@@ -26,7 +26,7 @@ export default function ResponseIndividualTab({ questions, responses }) {
         {questions.map((q) => (
           <div key={q.id}>
             <div className="text-sm font-semibold text-ink-900">{q.label}</div>
-            <div className="text-sm text-ink-muted">{formatAnswerForDisplay(q, response.answers?.[q.id])}</div>
+            <div className="break-words text-sm text-ink-muted">{formatAnswerForDisplay(q, response.answers?.[q.id])}</div>
           </div>
         ))}
       </div>

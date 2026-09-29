@@ -25,7 +25,7 @@ export default function AdminResourceList({ config, rows, onEdit, onDelete, empt
         type="button"
         title="Edit"
         onClick={() => onEdit(row)}
-        className="text-ink-muted transition-colors hover:text-brand"
+        className="p-2 text-ink-muted transition-colors hover:text-brand"
       >
         <span className="material-symbols-outlined text-xl">edit</span>
       </button>
@@ -45,7 +45,7 @@ export default function AdminResourceList({ config, rows, onEdit, onDelete, empt
           type="button"
           title="Delete"
           onClick={() => setConfirmingId(row.id)}
-          className="text-ink-muted transition-colors hover:text-danger"
+          className="p-2 text-ink-muted transition-colors hover:text-danger"
         >
           <span className="material-symbols-outlined text-xl">delete</span>
         </button>

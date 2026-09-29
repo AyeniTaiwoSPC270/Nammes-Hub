@@ -77,7 +77,7 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             className={[
-              'absolute bottom-2 right-2 h-4 w-4 cursor-nwse-resize rounded-sm bg-green-900 transition-transform duration-150',
+              'absolute bottom-2 right-2 h-6 w-6 touch-none cursor-nwse-resize rounded-sm bg-green-900 transition-transform duration-150',
               dragging ? 'scale-125 ring-2 ring-orange-500' : '',
             ].join(' ')}
             title="Drag to resize"

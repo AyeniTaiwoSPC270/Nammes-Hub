@@ -1,8 +1,11 @@
 import { useTour } from '../../lib/TourContext'
+import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import Button from '../ui/Button'
 
 export default function WelcomeCarousel() {
   const { phase, carouselSlide, carouselIndex, carouselTotal, nextCarousel, backCarousel, skip } = useTour()
+
+  useBodyScrollLock(phase === 'carousel')
 
   if (phase !== 'carousel') return null
 
@@ -11,7 +14,7 @@ export default function WelcomeCarousel() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4">
-      <div className="w-full max-w-[420px] rounded-lg bg-surface p-6 shadow-md sm:p-8">
+      <div className="max-h-full w-full max-w-[420px] overflow-y-auto rounded-lg bg-surface p-6 shadow-md sm:p-8">
         <div className="mb-6 flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
             {carouselSlide.eyebrow}

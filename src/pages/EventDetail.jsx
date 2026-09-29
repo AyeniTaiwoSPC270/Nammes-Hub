@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
-import JSZip from 'jszip'
 import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
@@ -53,6 +52,7 @@ export default function EventDetail() {
   async function handleDownloadAll() {
     setZipping(true)
     try {
+      const { default: JSZip } = await import('jszip')
       const zip = new JSZip()
       for (let i = 0; i < photos.length; i++) {
         const response = await fetch(photos[i].image_url)
@@ -97,7 +97,7 @@ export default function EventDetail() {
 
       {tab === 'details' ? (
         <Reveal className="mt-6">
-          {event.image_url && <img src={event.image_url} alt="" className="w-full rounded-lg" />}
+          {event.image_url && <img src={event.image_url} decoding="async" alt="" className="w-full rounded-lg" />}
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
             <span>{event.date}</span>
             {event.meta && (
@@ -135,7 +135,7 @@ export default function EventDetail() {
                       onClick={() => setLightboxIndex(i)}
                       className="aspect-[4/3] w-full overflow-hidden rounded-md bg-surface-low shadow-md transition-transform hover:scale-[1.02]"
                     >
-                      <img src={photo.image_url} alt="" className="h-full w-full object-cover" />
+                      <img src={photo.image_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-cover" />
                     </button>
                   </Reveal>
                 ))}

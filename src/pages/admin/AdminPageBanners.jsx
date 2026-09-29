@@ -86,7 +86,7 @@ function BannerFieldset({ page, row }) {
           onChange={(urls) => setForm((f) => ({ ...f, image_urls: urls }))}
         />
         {form.image_urls.length >= 2 && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 font-body">
               <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">Transition</span>
               <select

@@ -1,7 +1,4 @@
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { DAYS, SEMESTER_LABELS } from '../data/timetables'
-import { PUBLIC_SANS_REGULAR, PUBLIC_SANS_BOLD } from '../assets/fonts/publicSans'
 
 export function formatTimeLabel(time) {
   if (!time) return ''
@@ -63,10 +60,23 @@ export function sessionForLevel(entryYear, level, date = new Date()) {
   return `${startYear}/${startYear + 1}`
 }
 
+/** jsPDF, autotable and the embedded font are large; load them only when a PDF is actually requested. */
+export async function loadPdfDeps() {
+  const [{ jsPDF }, { default: autoTable }, fonts] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+    import('../assets/fonts/publicSans'),
+  ])
+  fontFiles = fonts
+  return { jsPDF, autoTable }
+}
+
+let fontFiles = null
+
 export function registerPublicSans(doc) {
-  doc.addFileToVFS('PublicSans-Regular.ttf', PUBLIC_SANS_REGULAR)
+  doc.addFileToVFS('PublicSans-Regular.ttf', fontFiles.PUBLIC_SANS_REGULAR)
   doc.addFont('PublicSans-Regular.ttf', 'PublicSans', 'normal')
-  doc.addFileToVFS('PublicSans-Bold.ttf', PUBLIC_SANS_BOLD)
+  doc.addFileToVFS('PublicSans-Bold.ttf', fontFiles.PUBLIC_SANS_BOLD)
   doc.addFont('PublicSans-Bold.ttf', 'PublicSans', 'bold')
 }
 
@@ -99,6 +109,7 @@ function drawWatermark(doc, logo, pageWidth, pageHeight) {
 }
 
 export async function downloadTimetablePdf({ level, semester, type, rows }) {
+  const { jsPDF, autoTable } = await loadPdfDeps()
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   registerPublicSans(doc)
   const pageWidth = doc.internal.pageSize.getWidth()

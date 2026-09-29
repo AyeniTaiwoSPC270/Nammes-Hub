@@ -326,7 +326,7 @@ export default function Cgpa() {
 
   return (
     <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
             CGPA calculator
@@ -376,7 +376,7 @@ export default function Cgpa() {
 
           return (
             <Reveal key={semester.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
-              <div className="mb-2 flex items-baseline justify-between">
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <h2 className="text-xl">{row.label}</h2>
                 <div className="flex items-center gap-3">
                   <span className="font-mono text-sm text-ink-muted">GPA {row.gpa.toFixed(2)}</span>
@@ -492,7 +492,7 @@ export default function Cgpa() {
                   {matches.map((m) => {
                     const excluded = m.course.counts_toward_cgpa === false
                     return (
-                      <div key={m.course.id} className="mt-1 flex items-center justify-between gap-3">
+                      <div key={m.course.id} className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                         <span>
                           {m.label} &middot; grade {m.course.grade}
                           {excluded ? ' (excluded from CGPA)' : ''}

@@ -108,8 +108,8 @@ export default function AdminEmailTemplates() {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button type="button" variant="primary" size="sm" loading={saveMutation.isPending} disabled={!dirty} onClick={() => saveMutation.mutate()}>
                   Save
                 </Button>
