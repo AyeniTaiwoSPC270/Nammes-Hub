@@ -7,7 +7,7 @@ import { useOwnProfileQuery } from '../data/profiles'
 import { useLatestSeasonQuery } from '../data/awardSeasons'
 import { useMyNominationsQuery, upsertNomination } from '../data/awardNominations'
 import { useNomineesQuery } from '../data/awardNominees'
-import { useMyVotesQuery, useSeasonVotesQuery, submitBallot } from '../data/awardVotes'
+import { useMyVotesQuery, useSeasonTallyQuery, useBallotCountQuery, submitBallot } from '../data/awardVotes'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
@@ -35,7 +35,9 @@ export default function Awards() {
   const categoryIds = season?.categories.map((c) => c.id) ?? []
   const nomineesQuery = useNomineesQuery(categoryIds)
   const myVotesQuery = useMyVotesQuery(season?.id, user?.id)
-  const seasonVotesQuery = useSeasonVotesQuery(season?.phase === 'revealed' ? season.id : undefined)
+  const revealedSeasonId = season?.phase === 'revealed' ? season.id : undefined
+  const seasonTallyQuery = useSeasonTallyQuery(revealedSeasonId)
+  const ballotCountQuery = useBallotCountQuery(revealedSeasonId)
 
   useEffect(() => {
     if (!nominationsQuery.data) return
@@ -119,12 +121,12 @@ export default function Awards() {
   }
 
   if (season.phase === 'revealed') {
-    if (!nomineesQuery.data || !seasonVotesQuery.data) return null
+    if (!nomineesQuery.data || !seasonTallyQuery.data || ballotCountQuery.data === undefined) return null
     const nomineesByCategory = {}
     categoryIds.forEach((id) => {
       nomineesByCategory[id] = nomineesQuery.data.filter((n) => n.category_id === id)
     })
-    const ballotCount = new Set(seasonVotesQuery.data.map((v) => v.voter_id)).size
+    const ballotCount = ballotCountQuery.data
 
     return (
       <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
@@ -162,7 +164,7 @@ export default function Awards() {
         </Reveal>
 
         <Reveal delay={0.06} className="mt-6">
-          <ResultsSummary categories={season.categories} nomineesByCategory={nomineesByCategory} votes={seasonVotesQuery.data} />
+          <ResultsSummary categories={season.categories} nomineesByCategory={nomineesByCategory} tallyRows={seasonTallyQuery.data} />
         </Reveal>
       </div>
     )
