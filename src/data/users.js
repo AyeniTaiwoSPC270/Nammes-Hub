@@ -33,20 +33,24 @@ export function useAllUsersQuery() {
   return useQuery({ queryKey: ['users', 'all'], queryFn: fetchAllUsers })
 }
 
-export async function setUserDisabled(userId, disabled) {
-  const { error } = await supabase.rpc('admin_set_user_disabled', { target: userId, disabled })
-  if (error) throw error
-}
-
-export async function deleteUserAccount(userId) {
+async function postAsSignedInUser(path, payload, fallbackError) {
   const { data: sessionData } = await supabase.auth.getSession()
   const token = sessionData.session?.access_token
-  const response = await fetch('/api/delete-user', {
+  const response = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify(payload),
   })
   const result = await response.json()
-  if (!response.ok) throw new Error(result.error || 'Failed to delete account')
+  if (!response.ok) throw new Error(result.error || fallbackError)
   return result
+}
+
+// Goes through the server so the account is also banned in Supabase Auth, not just flagged.
+export function setUserDisabled(userId, disabled) {
+  return postAsSignedInUser('/api/disable-user', { userId, disabled }, 'Failed to update account')
+}
+
+export function deleteUserAccount(userId) {
+  return postAsSignedInUser('/api/delete-user', { userId }, 'Failed to delete account')
 }

@@ -105,7 +105,7 @@ export default function AdminUsers() {
                 <span key="role" className="text-ink-muted">—</span>
               ),
               <div key="actions" className="flex flex-wrap gap-2">
-                {u.user_id !== user.id && !u.isAdmin && (
+                {u.user_id !== user.id && !u.isAdmin && me?.isOwner && (
                   <Button variant="secondary" size="sm" onClick={() => assignMutation.mutate(u.user_id)}>
                     Make admin
                   </Button>

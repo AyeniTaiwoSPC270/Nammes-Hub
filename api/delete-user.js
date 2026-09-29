@@ -51,13 +51,22 @@ export default async function handler(req, res) {
     return
   }
 
+  // Ban first so the account's existing sign-in stops refreshing even if deletion is blocked below.
+  const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: '876000h' })
+  if (banError) console.error('delete-user: could not ban before delete', banError)
+
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
   if (deleteError) {
     const blocked = /foreign key|violat/i.test(deleteError.message || '')
+    if (!blocked) console.error('delete-user: delete failed', deleteError)
+    if (blocked) {
+      // Deletion refused; undo the ban so a "failed delete" doesn't silently lock the user out.
+      await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: 'none' })
+    }
     res.status(blocked ? 409 : 500).json({
       error: blocked
         ? "Couldn't delete — this account has existing submissions, votes, or forms linked to it. Disable the account instead to preserve those records."
-        : deleteError.message || 'Failed to delete account',
+        : 'Failed to delete account',
     })
     return
   }
