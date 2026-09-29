@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isUuid, isAllowedImageUrl } from './validate.js'
+import { isUuid, isAllowedImageUrl, boundedString } from './validate.js'
 
 describe('isUuid', () => {
   it('accepts a v4 uuid and rejects junk', () => {
@@ -23,5 +23,21 @@ describe('isAllowedImageUrl', () => {
     expect(isAllowedImageUrl('javascript:alert(1)', hosts)).toBe(false)
     expect(isAllowedImageUrl('', hosts)).toBe(false)
     expect(isAllowedImageUrl(null, hosts)).toBe(false)
+  })
+})
+
+describe('boundedString', () => {
+  it('accepts strings inside the bounds', () => {
+    expect(boundedString('hello', 1, 10)).toBe(true)
+    expect(boundedString('a', 1, 1)).toBe(true)
+    expect(boundedString('  padded  ', 1, 6)).toBe(true)
+  })
+  it('rejects too short, too long, blank and non-strings', () => {
+    expect(boundedString('', 1, 10)).toBe(false)
+    expect(boundedString('   ', 1, 10)).toBe(false)
+    expect(boundedString('x'.repeat(11), 1, 10)).toBe(false)
+    expect(boundedString(42, 1, 10)).toBe(false)
+    expect(boundedString(undefined, 1, 10)).toBe(false)
+    expect(boundedString(null, 0, 10)).toBe(false)
   })
 })

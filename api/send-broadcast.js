@@ -3,7 +3,7 @@ import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
 import { renderBroadcastEmail, BROADCAST_TEMPLATES } from './_lib/emailTemplates.js'
 import { bearerToken, getCaller } from './_lib/authz.js'
-import { isAllowedImageUrl } from './_lib/validate.js'
+import { isAllowedImageUrl, boundedString } from './_lib/validate.js'
 
 const VALID_TEMPLATE_IDS = new Set(BROADCAST_TEMPLATES.map((t) => t.id))
 
@@ -17,8 +17,8 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
     }
 
     const { subject, body, imageUrl, templateId } = req.body ?? {}
-    if (typeof subject !== 'string' || typeof body !== 'string' || !subject.trim() || !body.trim()) {
-      res.status(400).json({ error: 'subject and body are required' })
+    if (!boundedString(subject, 1, 200) || !boundedString(body, 1, 20000)) {
+      res.status(400).json({ error: 'subject (max 200 characters) and body (max 20000) are required' })
       return
     }
     if (imageUrl && !isAllowedImageUrl(imageUrl, [new URL(process.env.VITE_SUPABASE_URL).hostname])) {
@@ -40,6 +40,13 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
       return
     }
     const userData = { user: caller.user }
+
+    // Kill switch: the owner can pause broadcasts (update feature_flags set enabled = false where key = 'broadcasts').
+    const { data: flag } = await supabaseAdmin.from('feature_flags').select('enabled').eq('key', 'broadcasts').maybeSingle()
+    if (flag && flag.enabled === false) {
+      res.status(503).json({ error: 'Broadcasts are temporarily switched off' })
+      return
+    }
 
     // Guard against double-clicks and replays: the same message from the same sender within 10 minutes is refused.
     const since = new Date(Date.now() - DUPLICATE_WINDOW_MS).toISOString()
