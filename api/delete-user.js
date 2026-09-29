@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { logError } from './_lib/logError.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -53,12 +54,18 @@ export default async function handler(req, res) {
 
   // Ban first so the account's existing sign-in stops refreshing even if deletion is blocked below.
   const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: '876000h' })
-  if (banError) console.error('delete-user: could not ban before delete', banError)
+  if (banError) {
+    console.error('delete-user: could not ban before delete', banError)
+    await logError(supabaseAdmin, 'delete-user', banError, 500)
+  }
 
   const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
   if (deleteError) {
     const blocked = /foreign key|violat/i.test(deleteError.message || '')
-    if (!blocked) console.error('delete-user: delete failed', deleteError)
+    if (!blocked) {
+      console.error('delete-user: delete failed', deleteError)
+      await logError(supabaseAdmin, 'delete-user', deleteError, 500)
+    }
     if (blocked) {
       // Deletion refused; undo the ban so a "failed delete" doesn't silently lock the user out.
       await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: 'none' })

@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { logError } from './_lib/logError.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { escapeHtml } from './_lib/emailTemplates.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
@@ -92,6 +93,7 @@ export function createWebhookContactHandler({ getClient = getSupabaseAdmin, getR
       res.status(200).json({ sent: true })
     } catch (sendError) {
       console.error('webhook-contact: send failed', sendError)
+      await logError(supabaseAdmin, 'webhook-contact', sendError, 500)
       res.status(200).json({ sent: false })
     }
   }

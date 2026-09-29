@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { logError } from './_lib/logError.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { renderWelcomeEmail } from './_lib/emailTemplates.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
@@ -29,6 +30,7 @@ export default async function handler(req, res) {
   const { data, error } = await supabaseAdmin.auth.admin.getUserById(record.user_id)
   if (error || !data?.user?.email) {
     console.error('webhook-welcome: could not resolve email', error)
+    await logError(supabaseAdmin, 'webhook-welcome', error, 500)
     res.status(200).json({ sent: false })
     return
   }
@@ -43,6 +45,7 @@ export default async function handler(req, res) {
     res.status(200).json({ sent: true })
   } catch (sendError) {
     console.error('webhook-welcome: send failed', sendError)
+    await logError(supabaseAdmin, 'webhook-welcome', sendError, 500)
     res.status(200).json({ sent: false })
   }
 }

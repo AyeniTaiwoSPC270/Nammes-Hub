@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { logError } from './_lib/logError.js'
 import { getCaller, bearerToken } from './_lib/authz.js'
 import { isUuid } from './_lib/validate.js'
 
@@ -51,6 +52,7 @@ export function createDisableUserHandler(getClient) {
       .eq('user_id', userId)
     if (profileError) {
       console.error('disable-user: profile update failed', profileError)
+      await logError(supabaseAdmin, 'disable-user', profileError, 500)
       res.status(500).json({ error: 'Could not update the account' })
       return
     }
@@ -60,6 +62,7 @@ export function createDisableUserHandler(getClient) {
     })
     if (banError) {
       console.error('disable-user: auth ban update failed', banError)
+      await logError(supabaseAdmin, 'disable-user', banError, 500)
       res.status(502).json({ error: 'Account flagged, but sign-in could not be updated. Try again.' })
       return
     }
