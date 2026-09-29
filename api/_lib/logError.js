@@ -1,4 +1,4 @@
-// Best-effort error log for routes that need a login, plus the webhooks. Never throws:
+// Best-effort error log (resolves true if the row was written, false otherwise) for routes that need a login, plus the webhooks. Never throws:
 // logging must not turn a handled failure into a new one. Public routes are deliberately not
 // logged here, because anyone could trigger errors on purpose to fill the table.
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
@@ -19,11 +19,13 @@ export function scrubForLog(text) {
 export async function logError(supabaseAdmin, route, error, status, nowMs = Date.now()) {
   try {
     const raw = typeof error === 'string' ? error : (error?.message ?? String(error))
-    await supabaseAdmin.from('error_log').upsert(
+    const { error: writeError } = await supabaseAdmin.from('error_log').upsert(
       { route, status: status ?? null, message: scrubForLog(raw), bucket: Math.floor(nowMs / 60000) },
       { onConflict: 'route,message,bucket', ignoreDuplicates: true },
     )
+    return !writeError
   } catch {
     // Swallowed on purpose; the original console.error already recorded the failure in Vercel logs.
+    return false
   }
 }

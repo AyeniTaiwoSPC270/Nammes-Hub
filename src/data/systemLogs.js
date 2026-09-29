@@ -36,3 +36,12 @@ export const useErrorLogQuery = (enabled = true) =>
   useQuery({ queryKey: ['system', 'errors'], queryFn: fetchErrorLog, enabled })
 export const useSentryIssuesQuery = (enabled = true) =>
   useQuery({ queryKey: ['system', 'sentry'], queryFn: fetchSentryIssues, enabled, retry: false })
+
+export async function runServerTest() {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const token = sessionData.session?.access_token
+  const response = await fetch('/api/system-test', { method: 'POST', headers: { Authorization: `Bearer ${token}` } })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(result.error || 'The server could not write the test entry')
+  return result
+}
