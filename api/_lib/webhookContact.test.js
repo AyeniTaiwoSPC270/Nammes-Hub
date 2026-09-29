@@ -31,8 +31,8 @@ function setup({ signatureOk = true, message, recentCount = 1, owners = [{ user_
       }
     },
   }
-  const resend = { emails: { send: async (m) => { sent.push(m) } } }
-  const handler = createWebhookContactHandler({ getClient: () => client, getResend: () => resend })
+  const enqueue = async (_client, rows) => { sent.push(...rows); return { queued: rows.length, error: null } }
+  const handler = createWebhookContactHandler({ getClient: () => client, enqueue })
   return { handler, sent, rpcCalls }
 }
 

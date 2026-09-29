@@ -11,8 +11,9 @@ function fakeRes() {
   return res
 }
 
-function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true } = {}) {
+function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true, queueFails = false } = {}) {
   const sent = []
+  const cleanups = []
   const inserts = []
   const chain = (data) => {
     const q = { select: () => q, eq: () => q, gte: () => q, limit: async () => ({ data }), maybeSingle: async () => ({ data }) }
@@ -32,25 +33,39 @@ function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true 
       if (table === 'admins') return chain(adminRow)
       if (table === 'email_templates') return chain(null)
       if (table === 'feature_flags') return flagsChain()
+      if (table === 'email_outbox') return { delete: () => ({ like: async (_col, pattern) => { cleanups.push(pattern); return { error: null } } }) }
       return { ...chain(recent), insert: async (row) => { inserts.push(row); return { error: null } } }
     },
   }
-  const resend = { batch: { send: async (msgs) => { sent.push(...msgs) } } }
-  const handler = createSendBroadcastHandler({ getClient: () => client, getResend: () => resend })
-  return { handler, sent, inserts }
+  const enqueue = async (_client, rows) => {
+    if (queueFails) return { queued: 1, error: { message: 'db down' } }
+    sent.push(...rows)
+    return { queued: rows.length, error: null }
+  }
+  const handler = createSendBroadcastHandler({ getClient: () => client, enqueue })
+  return { handler, sent, inserts, cleanups }
 }
 
 const req = (body) => ({ method: 'POST', headers: { authorization: 'Bearer tok' }, body })
 const good = { subject: 'Hello', body: 'World', templateId: 'default' }
 
 describe('send-broadcast handler', () => {
-  it('sends to all recipients and records the broadcast for an owner', async () => {
+  it('queues one email per recipient and records the broadcast for an owner', async () => {
     const { handler, sent, inserts } = setup()
     const res = fakeRes()
     await handler(req(good), res)
     expect(res.statusCode).toBe(200)
     expect(sent).toHaveLength(2)
     expect(inserts).toHaveLength(1)
+  })
+  it('removes partly queued emails and refuses if queueing fails', async () => {
+    const { handler, inserts, cleanups } = setup({ queueFails: true })
+    const res = fakeRes()
+    await handler(req(good), res)
+    expect(res.statusCode).toBe(502)
+    expect(cleanups).toHaveLength(1)
+    expect(cleanups[0]).toMatch(/^broadcast:[0-9a-f-]{36}:%$/)
+    expect(inserts).toHaveLength(0)
   })
   it('rejects an admin who is not the owner', async () => {
     const { handler, sent } = setup({ adminRow: { is_owner: false } })

@@ -21,6 +21,10 @@
       "destination": "/api/system?action=system-test"
     },
     {
+      "source": "/api/email-worker",
+      "destination": "/api/system?action=email-worker"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

@@ -1,10 +1,12 @@
 import adminIssues from './_lib/handlers/admin-issues.js'
 import systemTest from './_lib/handlers/system-test.js'
+import emailWorker from './_lib/handlers/email-worker.js'
 
-// One function for the owner's System page routes (see api/account.js for why routes share functions).
+// One function for the System page routes and the email worker (see api/account.js for why routes share functions).
 const ACTIONS = {
   'admin-issues': adminIssues,
   'system-test': systemTest,
+  'email-worker': emailWorker,
 }
 
 export default function handler(req, res) {

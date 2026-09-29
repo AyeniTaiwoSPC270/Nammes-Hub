@@ -31,11 +31,7 @@ export default function AdminBroadcasts() {
       setBody('')
       setImageUrl('')
       setTemplateId('default')
-      toast.success(
-        result.sentCount === result.recipientCount
-          ? `Sent to ${result.sentCount} recipient(s).`
-          : `Sent to ${result.sentCount} of ${result.recipientCount} recipient(s) — check logs for failures.`,
-      )
+      toast.success(`Queued for ${result.sentCount} recipient(s). Delivery starts within a minute or two.`)
     },
     onError: (error) => toast.error(error.message),
   })

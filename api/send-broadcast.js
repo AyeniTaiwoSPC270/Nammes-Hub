@@ -1,7 +1,6 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { logError } from './_lib/logError.js'
-import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
-import { chunk } from './_lib/chunk.js'
+import { enqueueEmails } from './_lib/emailQueue.js'
 import { renderBroadcastEmail, BROADCAST_TEMPLATES } from './_lib/emailTemplates.js'
 import { bearerToken, getCaller } from './_lib/authz.js'
 import { isAllowedImageUrl, boundedString } from './_lib/validate.js'
@@ -10,7 +9,7 @@ const VALID_TEMPLATE_IDS = new Set(BROADCAST_TEMPLATES.map((t) => t.id))
 
 const DUPLICATE_WINDOW_MS = 10 * 60 * 1000
 
-export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getResend = getResendClient } = {}) {
+export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, enqueue = enqueueEmails } = {}) {
   return async function handler(req, res) {
     if (req.method !== 'POST') {
       res.status(405).json({ error: 'Method not allowed' })
@@ -76,8 +75,6 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
       .eq('template_id', safeTemplateId)
       .maybeSingle()
 
-    const emails = recipients.map((r) => r.email)
-    const resend = getResend()
     const html = renderBroadcastEmail({
       subject,
       body,
@@ -85,19 +82,26 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
       templateId: safeTemplateId,
       customHtml: templateRow?.html || undefined,
     })
-    let sentCount = 0
-    for (const batch of chunk(emails, 100)) {
-      try {
-        await resend.batch.send(batch.map((email) => ({ from: FROM_ADDRESS, to: email, subject, html })))
-        sentCount += batch.length
-      } catch (sendError) {
-        console.error('send-broadcast: batch send failed', sendError)
-        await logError(supabaseAdmin, 'send-broadcast', sendError, 500)
-      }
+    // Queued, not sent from this request: the worker delivers them within a minute or two and retries failures.
+    // The batch id keeps two different broadcasts to the same person from colliding.
+    const batchId = crypto.randomUUID()
+    const { queued, error: queueError } = await enqueue(
+      supabaseAdmin,
+      recipients.map((r) => ({ kind: 'broadcast', to: r.email, subject, html, dedupeKey: `broadcast:${batchId}:${r.email}` })),
+    )
+    if (queueError) {
+      console.error('send-broadcast: could not queue emails', queueError)
+      await logError(supabaseAdmin, 'send-broadcast', queueError, 500)
     }
+    const emails = recipients
+    // All or nothing: if queueing failed part-way, remove what was queued so a retry cannot send twice.
+    if (queueError) {
+      await supabaseAdmin.from('email_outbox').delete().like('dedupe_key', `broadcast:${batchId}:%`)
+    }
+    const sentCount = queueError ? 0 : queued
 
     if (emails.length > 0 && sentCount === 0) {
-      res.status(502).json({ error: 'Failed to send to any recipients' })
+      res.status(502).json({ error: 'Could not queue the broadcast' })
       return
     }
 
@@ -114,7 +118,7 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
       await logError(supabaseAdmin, 'send-broadcast', insertError, 500)
     }
 
-    res.status(200).json({ recipientCount: emails.length, sentCount })
+    res.status(200).json({ recipientCount: emails.length, sentCount, queued: true })
   }
 }
 

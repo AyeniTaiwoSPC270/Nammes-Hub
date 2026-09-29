@@ -46,6 +46,15 @@ export async function runServerTest() {
   return result
 }
 
+export async function fetchEmailQueueStats() {
+  const { data, error } = await supabase.rpc('email_queue_stats')
+  if (error) throw error
+  return data?.[0] ?? { pending: 0, failed: 0, sent_24h: 0, oldest_pending: null }
+}
+
+export const useEmailQueueQuery = (enabled = true) =>
+  useQuery({ queryKey: ['system', 'email-queue'], queryFn: fetchEmailQueueStats, enabled })
+
 export async function fetchFeatureFlags() {
   const { data, error } = await supabase.from('feature_flags').select('key, enabled, updated_at').order('key')
   if (error) throw error

@@ -11,6 +11,7 @@ import {
   fetchSentryIssues,
   runServerTest,
   useFeatureFlagsQuery,
+  useEmailQueueQuery,
   setFeatureFlag,
 } from '../../data/systemLogs'
 import { sendTestError } from '../../lib/errorTracking'
@@ -22,6 +23,7 @@ import { SkeletonTable } from '../../components/ui/Skeleton'
 
 const SECTIONS = [
   { id: 'switches', label: 'Switches' },
+  { id: 'email', label: 'Email queue' },
   { id: 'activity', label: 'Activity' },
   { id: 'server', label: 'Server errors' },
   { id: 'app', label: 'App errors' },
@@ -97,6 +99,42 @@ function SwitchesPanel({ query }) {
             </div>
           </li>
         ))}
+      </ul>
+    </div>
+  )
+}
+
+const STUCK_AFTER_MS = 10 * 60 * 1000
+
+function EmailQueuePanel({ query }) {
+  if (query.isLoading) return <SkeletonTable columns={2} rows={4} />
+  if (query.isError) return <ErrorState message={query.error?.message || 'Could not load the email queue.'} onRetry={query.refetch} />
+  const { pending, failed, sent_24h: sent, oldest_pending: oldest } = query.data
+  const stuck = oldest && Date.now() - new Date(oldest).getTime() > STUCK_AFTER_MS
+  return (
+    <div className="max-w-[720px]">
+      <p className="text-ink-muted">
+        Emails are queued and sent by a worker every minute, retrying failures. Pending should normally be zero or
+        clearing quickly.
+      </p>
+      {stuck && (
+        <p className="mt-3 rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">
+          The oldest pending email has been waiting since {formatDateTime(oldest)}. The worker may not be running.
+        </p>
+      )}
+      <ul className="mt-4 divide-y divide-hairline rounded-md border border-hairline">
+        <li className="flex justify-between px-4 py-3">
+          <span>Waiting to send</span>
+          <Badge tone={pending > 0 ? 'updated' : 'neutral'}>{pending}</Badge>
+        </li>
+        <li className="flex justify-between px-4 py-3">
+          <span>Given up after retries</span>
+          <Badge tone={failed > 0 ? 'restricted' : 'neutral'}>{failed}</Badge>
+        </li>
+        <li className="flex justify-between px-4 py-3">
+          <span>Sent in the last 24 hours</span>
+          <Badge tone="new">{sent}</Badge>
+        </li>
       </ul>
     </div>
   )
@@ -205,6 +243,7 @@ export default function AdminSystem() {
   const isOwner = Boolean(adminRow.data?.is_owner)
   const [section, setSection] = useState('switches')
   const flagsQuery = useFeatureFlagsQuery(isOwner && section === 'switches')
+  const emailQuery = useEmailQueueQuery(isOwner && section === 'email')
 
   const usersQuery = useAllUsersQuery()
   const auditQuery = useAuditLogQuery(isOwner && section === 'activity')
@@ -212,7 +251,7 @@ export default function AdminSystem() {
   const sentryQuery = useSentryIssuesQuery(isOwner && section === 'app')
 
   const names = new Map((usersQuery.data ?? []).map((u) => [u.user_id, u.full_name || u.student_id]))
-  const active = { switches: flagsQuery, activity: auditQuery, server: errorQuery, app: sentryQuery }[section]
+  const active = { switches: flagsQuery, email: emailQuery, activity: auditQuery, server: errorQuery, app: sentryQuery }[section]
 
   if (adminRow.isLoading) {
     return (
@@ -269,6 +308,8 @@ export default function AdminSystem() {
 
       <div className="mt-6">
         {section === 'switches' && <SwitchesPanel query={flagsQuery} />}
+
+        {section === 'email' && <EmailQueuePanel query={emailQuery} />}
 
         {section === 'activity' && (
           <Section query={auditQuery} rows={auditRows} empty="No activity recorded yet.">
