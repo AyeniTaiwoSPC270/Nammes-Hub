@@ -1,6 +1,8 @@
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { COLOR, loadLogoDataUrl, academicSession, sessionForLevel, registerPublicSans } from './timetablePdf'
+import { loadPdfDeps, COLOR, loadLogoDataUrl, academicSession, sessionForLevel, registerPublicSans } from './timetablePdf'
+
+// Loaded on demand by the download functions below.
+let jsPDF
+let autoTable
 
 function drawChrome(doc, ctx) {
   doc.setFillColor(...COLOR.forest)
@@ -109,6 +111,7 @@ function courseTable(doc, ctx, courses, y) {
 }
 
 export async function downloadCgpaReportPdf({ profile, semesters, stats }) {
+  ;({ jsPDF, autoTable } = await loadPdfDeps())
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const ctx = await makeContext(doc)
 

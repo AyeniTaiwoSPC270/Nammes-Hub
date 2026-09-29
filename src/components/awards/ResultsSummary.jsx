@@ -39,7 +39,7 @@ export default function ResultsSummary({ categories, nomineesByCategory, tallyRo
                 <div className="flex items-center gap-3">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-hairline bg-surface">
                     {winner.nominee.photo_url ? (
-                      <img src={winner.nominee.photo_url} alt="" className="h-full w-full object-cover" />
+                      <img src={winner.nominee.photo_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-cover" />
                     ) : (
                       <span className="text-ink-muted">
                         <span className="material-symbols-outlined text-2xl">person</span>
@@ -83,7 +83,7 @@ export default function ResultsSummary({ categories, nomineesByCategory, tallyRo
                     <span className="w-4 shrink-0 text-xs font-bold text-ink-muted">{i + 1}</span>
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline bg-surface-low">
                       {nominee.photo_url ? (
-                        <img src={nominee.photo_url} alt="" className="h-full w-full object-cover" />
+                        <img src={nominee.photo_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-cover" />
                       ) : (
                         <span className="text-ink-muted">
                           <span className="material-symbols-outlined text-base">person</span>

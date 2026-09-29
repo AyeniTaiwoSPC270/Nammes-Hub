@@ -16,7 +16,7 @@ export default function Maintenance() {
     <div className="flex min-h-svh flex-col items-center justify-between bg-green-900 px-4 py-6 text-white sm:px-6 sm:py-8">
       <header className="flex w-full max-w-4xl items-center justify-between py-2">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="" className="h-8 w-8 object-contain" />
+          <img src="/logo-small.png" alt="" width="32" height="32" className="h-8 w-8 object-contain" />
           <span className="font-display text-xl font-bold text-white">NAMMES Hub</span>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80">

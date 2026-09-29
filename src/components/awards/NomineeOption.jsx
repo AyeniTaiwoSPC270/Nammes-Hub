@@ -8,7 +8,7 @@ export default function NomineeOption({ nominee, selected, onSelect, onShare }) 
     >
       <button type="button" onClick={onSelect} className="relative flex aspect-[4/5] w-full items-center justify-center bg-surface-low">
         {nominee.photo_url ? (
-          <img src={nominee.photo_url} alt="" className="h-full w-full object-cover" />
+          <img src={nominee.photo_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-cover" />
         ) : (
           <span className="text-ink-muted">
             <span className="material-symbols-outlined text-4xl">person</span>

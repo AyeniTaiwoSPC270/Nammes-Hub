@@ -18,12 +18,12 @@ export default function Toast({ tone = 'success', onDismiss, actionLabel, onActi
         <button
           type="button"
           onClick={onAction}
-          className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold hover:bg-white/25"
+          className="rounded-full bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25"
         >
           {actionLabel}
         </button>
       )}
-      <button type="button" onClick={onDismiss} className="rounded-full text-white/80 hover:text-white" aria-label="Dismiss">
+      <button type="button" onClick={onDismiss} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/80 hover:text-white" aria-label="Dismiss">
         ✕
       </button>
     </div>

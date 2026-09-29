@@ -61,7 +61,7 @@ export default function Card({
                 ].join(' ')
           }
         >
-          <img src={image.src} alt="" aria-hidden="true" className="h-full w-full object-contain" />
+          <img src={image.src} loading="lazy" decoding="async" alt="" aria-hidden="true" className="h-full w-full object-contain" />
         </div>
       )}
       <div
@@ -72,7 +72,7 @@ export default function Card({
         ].join(' ')}
       >
         {image && imageVariant === 'icon' && (
-          <img src={image.src} alt="" aria-hidden="true" className="h-16 w-16 object-contain" />
+          <img src={image.src} loading="lazy" decoding="async" alt="" aria-hidden="true" className="h-16 w-16 object-contain" />
         )}
         {eyebrow && (
           <div className={['text-xs uppercase tracking-[.05em] font-bold', t.eyebrow].join(' ')}>{eyebrow}</div>

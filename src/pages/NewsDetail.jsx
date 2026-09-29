@@ -58,6 +58,7 @@ export default function NewsDetail() {
         {post.image_url && (
           <img
             src={post.image_url}
+            decoding="async"
             alt=""
             style={{ width: `${post.image_width_pct || 100}%` }}
             className="mt-6 rounded-lg"

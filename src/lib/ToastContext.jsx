@@ -32,7 +32,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:right-4 sm:items-end">
+      <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:top-auto sm:bottom-4 sm:right-4 sm:items-end sm:px-0">
         {toasts.map((t) => (
           <Toast key={t.id} tone={t.tone} actionLabel={t.actionLabel} onAction={t.onAction} onDismiss={() => dismiss(t.id)}>
             {t.message}

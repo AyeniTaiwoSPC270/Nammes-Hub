@@ -37,7 +37,7 @@ export default function QuestionField({ question, value, onChange, error }) {
   }
 
   const controlClass = [
-    'rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
+    'min-h-11 rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
     'focus:outline-none focus:border-brand',
     error ? 'border-danger' : 'border-hairline',
   ].join(' ')

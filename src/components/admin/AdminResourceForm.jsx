@@ -94,7 +94,7 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {groupFields(config.fields).map((row) =>
         row.length === 2 ? (
-          <div key={row[0].field} className="grid grid-cols-2 gap-3">
+          <div key={row[0].field} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {row.map((f) => renderField(f))}
           </div>
         ) : (

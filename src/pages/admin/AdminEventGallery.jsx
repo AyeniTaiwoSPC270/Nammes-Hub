@@ -140,7 +140,7 @@ export default function AdminEventGallery() {
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {photos.map((photo) => (
             <div key={photo.id} className="relative aspect-[4/3] overflow-hidden rounded-md bg-surface-low shadow-md">
-              <img src={photo.image_url} alt="" className="h-full w-full object-cover" />
+              <img src={photo.image_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => deleteMutation.mutate(photo)}

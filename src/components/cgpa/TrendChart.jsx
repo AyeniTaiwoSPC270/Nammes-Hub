@@ -69,7 +69,7 @@ export default function TrendChart({ rows }) {
             x={p.x}
             y={HEIGHT - 8}
             textAnchor="middle"
-            className="fill-ink-muted font-mono text-[10px] uppercase"
+            className="fill-ink-muted font-mono text-[16px] uppercase"
           >
             {p.label}
           </text>
