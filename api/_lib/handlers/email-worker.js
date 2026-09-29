@@ -20,7 +20,7 @@ export function createEmailWorkerHandler({ getClient = getSupabaseAdmin, getRese
     }
 
     const supabaseAdmin = getClient()
-    // Signed requests only: the legacy shared-secret header is deliberately not accepted here.
+    // The headers are picked out explicitly so nothing else is ever treated as credentials.
     const authentic = await isWebhookAuthentic(supabaseAdmin, {
       headers: {
         'x-webhook-timestamp': req.headers['x-webhook-timestamp'],
