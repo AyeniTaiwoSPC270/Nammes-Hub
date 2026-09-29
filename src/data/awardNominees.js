@@ -27,6 +27,7 @@ export async function createNominee({ categoryId, name, photoUrl }) {
 }
 
 export async function deleteNominee(id) {
-  const { error } = await supabase.from('award_nominees').delete().eq('id', id)
+  const { data, error } = await supabase.from('award_nominees').delete().eq('id', id).select('id')
   if (error) throw error
+  if (!data?.length) throw new Error('No changes were saved — only the owner can delete nominees.')
 }
