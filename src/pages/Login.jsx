@@ -5,6 +5,8 @@ import Button from '../components/ui/Button'
 import MfaChallenge from '../components/MfaChallenge'
 import { supabase } from '../lib/supabaseClient'
 import { getAalStatus } from '../lib/mfa'
+import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
+import { captchaOptions, canSubmitWithCaptcha } from '../lib/turnstile'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -15,6 +17,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [needsCode, setNeedsCode] = useState(false)
+  const captcha = useTurnstile()
 
   const justCreated = searchParams.get('created') === '1'
   const justReset = searchParams.get('reset') === '1'
@@ -25,10 +28,15 @@ export default function Login() {
     setError('')
     setBusy(true)
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: captchaOptions(captcha.token),
+    })
 
     if (signInError) {
       setBusy(false)
+      captcha.reset()
       setError('Wrong email or password')
       return
     }
@@ -147,7 +155,15 @@ export default function Login() {
           {error && <span className="text-xs text-danger">{error}</span>}
         </div>
 
-        <Button variant="primary" type="submit" loading={busy} className="justify-center">
+        <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+
+        <Button
+          variant="primary"
+          type="submit"
+          loading={busy}
+          disabled={!canSubmitWithCaptcha(captcha)}
+          className="justify-center"
+        >
           Sign In
           <span className="material-symbols-outlined text-base">arrow_forward</span>
         </Button>
