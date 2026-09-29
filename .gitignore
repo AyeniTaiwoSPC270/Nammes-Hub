@@ -28,3 +28,8 @@ dist-ssr
 
 .vercel
 .env*
+
+# Supabase CLI local artefacts
+supabase/.temp/
+supabase/.branches/
+perf_advisors_full.json
