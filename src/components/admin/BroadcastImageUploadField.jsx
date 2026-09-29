@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { useRevertableUrl, ClearImageButton, RevertImageButton } from './ImageFieldControls'
 
 export default function BroadcastImageUploadField({ label, url, onChange }) {
+  const { original, markTouched } = useRevertableUrl(url)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,6 +28,7 @@ export default function BroadcastImageUploadField({ label, url, onChange }) {
       return
     }
     const { data } = supabase.storage.from('broadcast-images').getPublicUrl(path)
+    markTouched()
     onChange(data.publicUrl)
   }
 
@@ -40,17 +43,12 @@ export default function BroadcastImageUploadField({ label, url, onChange }) {
       </label>
       {error && <span className="text-xs text-danger">{error}</span>}
       {url && (
-        <div className="mt-2 flex items-start justify-between gap-3 rounded-md bg-surface-low p-2">
+        <div className="relative mt-2 w-fit max-w-full rounded-md bg-surface-low p-2">
           <img src={url} alt="" className="max-w-[240px] rounded-sm" />
-          <button
-            type="button"
-            onClick={() => onChange('')}
-            className="text-xs font-semibold text-danger hover:underline"
-          >
-            Remove
-          </button>
+          <ClearImageButton onClick={() => { markTouched(); onChange('') }} />
         </div>
       )}
+      <RevertImageButton url={url} original={original} onRevert={() => onChange(original)} />
     </div>
   )
 }

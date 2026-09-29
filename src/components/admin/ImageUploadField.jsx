@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { clampImageWidth } from '../../lib/adminFields'
+import { useRevertableUrl, ClearImageButton, RevertImageButton } from './ImageFieldControls'
 
 export default function ImageUploadField({ label, url, widthPct, onChange }) {
+  const { original, markTouched } = useRevertableUrl(url)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [dragging, setDragging] = useState(false)
@@ -30,6 +32,7 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
       return
     }
     const { data } = supabase.storage.from('news-images').getPublicUrl(path)
+    markTouched()
     onChange({ url: data.publicUrl, widthPct: widthPct || 100 })
   }
 
@@ -80,8 +83,10 @@ export default function ImageUploadField({ label, url, widthPct, onChange }) {
             title="Drag to resize"
           />
           <span className="mt-1 block text-xs text-ink-muted">{widthPct || 100}% width</span>
+          <ClearImageButton onClick={() => { markTouched(); onChange({ url: '', widthPct: 100 }) }} />
         </div>
       )}
+      <RevertImageButton url={url} original={original} onRevert={() => onChange({ url: original, widthPct: widthPct || 100 })} />
     </div>
   )
 }
