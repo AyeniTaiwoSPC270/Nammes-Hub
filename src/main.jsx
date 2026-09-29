@@ -10,6 +10,9 @@ import { ToastProvider } from './lib/ToastContext.jsx'
 import { TourProvider } from './lib/TourContext.jsx'
 import { queryClient } from './lib/queryClient.js'
 import { notifyIfNewDeploy } from './lib/appUpdate.js'
+import { initErrorTracking } from './lib/errorTracking.js'
+
+initErrorTracking()
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
