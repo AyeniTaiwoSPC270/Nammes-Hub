@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { useRevertableUrl, ClearImageButton, RevertImageButton } from './ImageFieldControls'
 
 export default function AvatarUploadField({ label, url, onChange }) {
+  const { original, markTouched } = useRevertableUrl(url)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,6 +28,7 @@ export default function AvatarUploadField({ label, url, onChange }) {
       return
     }
     const { data } = supabase.storage.from('exco-photos').getPublicUrl(path)
+    markTouched()
     onChange(data.publicUrl)
   }
 
@@ -46,7 +49,7 @@ export default function AvatarUploadField({ label, url, onChange }) {
           </div>
           <button
             type="button"
-            onClick={() => onChange('')}
+            onClick={() => { markTouched(); onChange('') }}
             aria-label="Remove photo"
             className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105"
           >
@@ -54,6 +57,7 @@ export default function AvatarUploadField({ label, url, onChange }) {
           </button>
         </div>
       )}
+      <RevertImageButton url={url} original={original} onRevert={() => onChange(original)} />
     </div>
   )
 }

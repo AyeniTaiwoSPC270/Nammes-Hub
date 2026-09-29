@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../lib/AuthContext'
 import { ownFolderPath } from '../../lib/uploadPath'
+import { useRevertableUrl, ClearImageButton, RevertImageButton } from '../admin/ImageFieldControls'
 
 export default function NomineePhotoUploadField({ label, url, onChange, required = false }) {
   const { user } = useAuth()
+  const { original, markTouched } = useRevertableUrl(url)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
@@ -29,6 +31,7 @@ export default function NomineePhotoUploadField({ label, url, onChange, required
       return
     }
     const { data } = supabase.storage.from('award-nominee-photos').getPublicUrl(path)
+    markTouched()
     onChange(data.publicUrl)
   }
 
@@ -47,10 +50,14 @@ export default function NomineePhotoUploadField({ label, url, onChange, required
       </label>
       {error && <span className="text-xs text-danger">{error}</span>}
       {url && (
-        <div className="mt-2 aspect-square w-full max-w-[160px] overflow-hidden rounded-md bg-surface-low shadow-md">
-          <img src={url} alt="" className="h-full w-full object-cover" />
+        <div className="relative mt-2 w-full max-w-[160px]">
+          <div className="aspect-square w-full overflow-hidden rounded-md bg-surface-low shadow-md">
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          </div>
+          <ClearImageButton onClick={() => { markTouched(); onChange('') }} />
         </div>
       )}
+      <RevertImageButton url={url} original={original} onRevert={() => onChange(original)} />
     </div>
   )
 }
