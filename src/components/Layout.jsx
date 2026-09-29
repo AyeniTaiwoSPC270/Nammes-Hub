@@ -39,7 +39,7 @@ export default function Layout() {
     <div className="min-h-svh flex flex-col bg-paper">
       <Navbar />
       <main className="flex-1">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
             initial={reducedMotion ? false : { opacity: 0, y: 8 }}

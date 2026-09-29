@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useToast } from '../lib/ToastContext'
-import { onUpdateAvailable } from '../lib/appUpdate'
+import { getBaselineEntry, hasNewDeploy, onUpdateAvailable } from '../lib/appUpdate'
 
 const CHECK_INTERVAL = 5 * 60 * 1000
-const ENTRY_SCRIPT_PATTERN = /\/assets\/index-[\w-]+\.js/
 
 export default function AppUpdateNotifier() {
   const toast = useToast()
@@ -22,20 +21,11 @@ export default function AppUpdateNotifier() {
 
     const unsubscribe = onUpdateAvailable(announce)
 
-    const currentScript = document.querySelector('script[type="module"][src*="/assets/"]')
-    const baseline = currentScript?.getAttribute('src')?.match(ENTRY_SCRIPT_PATTERN)?.[0]
-    if (!baseline) return unsubscribe
+    if (!getBaselineEntry()) return unsubscribe
 
     async function checkForUpdate() {
       if (notifiedRef.current || document.visibilityState !== 'visible') return
-      try {
-        const res = await fetch('/index.html', { cache: 'no-store' })
-        const html = await res.text()
-        const latest = html.match(ENTRY_SCRIPT_PATTERN)?.[0]
-        if (latest && latest !== baseline) announce()
-      } catch {
-        // network hiccup — try again next interval
-      }
+      if (await hasNewDeploy()) announce()
     }
 
     const interval = setInterval(checkForUpdate, CHECK_INTERVAL)

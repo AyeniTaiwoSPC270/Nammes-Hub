@@ -9,11 +9,11 @@ import { ThemeProvider } from './lib/ThemeContext.jsx'
 import { ToastProvider } from './lib/ToastContext.jsx'
 import { TourProvider } from './lib/TourContext.jsx'
 import { queryClient } from './lib/queryClient.js'
-import { notifyUpdateAvailable } from './lib/appUpdate.js'
+import { notifyIfNewDeploy } from './lib/appUpdate.js'
 
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
-  notifyUpdateAvailable()
+  notifyIfNewDeploy()
 })
 
 createRoot(document.getElementById('root')).render(
