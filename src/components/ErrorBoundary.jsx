@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import ErrorState from './ui/ErrorState'
+import { reportError } from '../lib/errorTracking'
 
 export default class ErrorBoundary extends Component {
   state = { hasError: false }
@@ -10,6 +11,7 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('Unhandled render error:', error, info)
+    reportError(error, { componentStack: info?.componentStack })
   }
 
   render() {
