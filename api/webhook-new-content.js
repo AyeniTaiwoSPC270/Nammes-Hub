@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { logError } from './_lib/logError.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
 import { renderNewContentEmail, SITE_URL } from './_lib/emailTemplates.js'
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
   const { data: recipients, error } = await supabaseAdmin.rpc('get_notification_recipients')
   if (error) {
     console.error('webhook-new-content: could not load recipients', error)
+    await logError(supabaseAdmin, 'webhook-new-content', error, 500)
     res.status(200).json({ sent: 0 })
     return
   }
@@ -60,6 +62,7 @@ export default async function handler(req, res) {
       sent += batch.length
     } catch (sendError) {
       console.error('webhook-new-content: batch send failed', sendError)
+      await logError(supabaseAdmin, 'webhook-new-content', sendError, 500)
     }
   }
 

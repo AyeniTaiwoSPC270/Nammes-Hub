@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
+import { logError } from './_lib/logError.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
 import { renderBroadcastEmail, BROADCAST_TEMPLATES } from './_lib/emailTemplates.js'
@@ -91,6 +92,7 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
         sentCount += batch.length
       } catch (sendError) {
         console.error('send-broadcast: batch send failed', sendError)
+        await logError(supabaseAdmin, 'send-broadcast', sendError, 500)
       }
     }
 
@@ -107,7 +109,10 @@ export function createSendBroadcastHandler({ getClient = getSupabaseAdmin, getRe
       sent_by: userData.user.id,
       recipient_count: sentCount,
     })
-    if (insertError) console.error('send-broadcast: failed to record broadcast', insertError)
+    if (insertError) {
+      console.error('send-broadcast: failed to record broadcast', insertError)
+      await logError(supabaseAdmin, 'send-broadcast', insertError, 500)
+    }
 
     res.status(200).json({ recipientCount: emails.length, sentCount })
   }

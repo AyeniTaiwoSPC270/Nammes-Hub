@@ -69,6 +69,13 @@ export const ADMIN_SECTIONS = [
     description: 'View every account and manage admin access.',
   },
   {
+    path: '/admin/system',
+    label: 'System',
+    icon: 'monitor_heart',
+    category: 'Directory',
+    description: 'Admin activity, server errors and app errors (owner only).',
+  },
+  {
     path: '/admin/messages',
     label: 'Messages',
     icon: 'mail',
