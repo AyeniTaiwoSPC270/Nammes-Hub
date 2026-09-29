@@ -33,3 +33,7 @@ dist-ssr
 supabase/.temp/
 supabase/.branches/
 perf_advisors_full.json
+
+# local backups (contain personal data)
+backups/
+storage-backup/
