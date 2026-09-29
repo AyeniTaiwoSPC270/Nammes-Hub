@@ -1,5 +1,5 @@
-import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { bearerToken, getCaller } from './_lib/authz.js'
+import { getSupabaseAdmin } from '../supabaseAdmin.js'
+import { bearerToken, getCaller } from '../authz.js'
 
 const SLUG_RE = /^[a-z0-9_-]{1,80}$/i
 

@@ -1,5 +1,5 @@
-import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { logError } from './_lib/logError.js'
+import { getSupabaseAdmin } from '../supabaseAdmin.js'
+import { logError } from '../logError.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

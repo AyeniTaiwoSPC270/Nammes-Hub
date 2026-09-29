@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../lib/AuthContext'
 import { useToast } from '../../lib/ToastContext'
-import { useAllUsersQuery, setUserDisabled, deleteUserAccount } from '../../data/users'
+import { useAllUsersQuery, setUserDisabled, deleteUserAccount, anonymiseUserAccount } from '../../data/users'
 import { assignAdmin, revokeAdmin, transferOwnership } from '../../data/admins'
 import Table from '../../components/ui/Table'
 import Badge from '../../components/ui/Badge'
@@ -64,6 +64,15 @@ export default function AdminUsers() {
     onSuccess: () => {
       invalidate()
       toast.success('Account deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  const anonymiseMutation = useMutation({
+    mutationFn: anonymiseUserAccount,
+    onSuccess: () => {
+      invalidate()
+      toast.success('Account anonymised.')
     },
     onError: (error) => toast.error(error.message),
   })
@@ -152,6 +161,23 @@ export default function AdminUsers() {
                     }}
                   >
                     Delete
+                  </Button>
+                )}
+                {u.user_id !== user.id && !u.isOwner && !u.isAdmin && me?.isOwner && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `Anonymise ${u.full_name || u.student_id}? Their name, matric number, CGPA data and email are removed and they can no longer sign in. Their votes and submissions are kept. This can't be undone.`,
+                        )
+                      ) {
+                        anonymiseMutation.mutate(u.user_id)
+                      }
+                    }}
+                  >
+                    Anonymise
                   </Button>
                 )}
               </div>,

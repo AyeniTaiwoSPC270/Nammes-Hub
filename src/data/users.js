@@ -54,3 +54,7 @@ export function setUserDisabled(userId, disabled) {
 export function deleteUserAccount(userId) {
   return postAsSignedInUser('/api/delete-user', { userId }, 'Failed to delete account')
 }
+
+export function anonymiseUserAccount(userId) {
+  return postAsSignedInUser('/api/anonymise-user', { userId }, 'Failed to anonymise account')
+}

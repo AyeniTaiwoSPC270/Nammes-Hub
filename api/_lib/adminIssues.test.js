@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createAdminIssuesHandler } from '../admin-issues.js'
+import { createAdminIssuesHandler } from './handlers/admin-issues.js'
 
 function fakeRes() {
   const res = { statusCode: null, body: null, headers: {} }

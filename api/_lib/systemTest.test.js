@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createSystemTestHandler } from '../system-test.js'
+import { createSystemTestHandler } from './handlers/system-test.js'
 
 function fakeRes() {
   const res = { statusCode: null, body: null, headers: {} }
