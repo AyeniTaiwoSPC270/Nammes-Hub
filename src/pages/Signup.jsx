@@ -4,7 +4,7 @@ import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
-import { validateStudentId, isStudentIdTaken } from '../data/profiles'
+import { validateStudentId } from '../data/profiles'
 
 export default function Signup() {
   const navigate = useNavigate()
@@ -42,13 +42,6 @@ export default function Signup() {
     setErrors({})
     setBusy(true)
 
-    const taken = await isStudentIdTaken(studentId)
-    if (taken) {
-      setBusy(false)
-      setErrors({ studentId: 'This matric number is already registered to another account.' })
-      return
-    }
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -61,7 +54,12 @@ export default function Signup() {
     setBusy(false)
 
     if (error) {
-      setFormError(error.message)
+      // A duplicate matric number fails inside the database trigger and surfaces as this generic message.
+      setFormError(
+        /database error/i.test(error.message)
+          ? 'We could not create this account. If you already registered, sign in instead; otherwise check that your matric number is correct.'
+          : error.message,
+      )
       return
     }
 

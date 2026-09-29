@@ -10,12 +10,6 @@ export function validateStudentId(value) {
   return null
 }
 
-export async function isStudentIdTaken(studentId) {
-  const { data, error } = await supabase.rpc('is_student_id_taken', { p_student_id: studentId.trim() })
-  if (error) throw error
-  return data
-}
-
 export async function fetchOwnProfile(userId) {
   const { data, error } = await supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle()
   if (error) throw error
