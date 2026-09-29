@@ -1,7 +1,7 @@
-import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { logError } from './_lib/logError.js'
-import { getCaller, bearerToken } from './_lib/authz.js'
-import { isUuid } from './_lib/validate.js'
+import { getSupabaseAdmin } from '../supabaseAdmin.js'
+import { logError } from '../logError.js'
+import { getCaller, bearerToken } from '../authz.js'
+import { isUuid } from '../validate.js'
 
 // ~100 years: Supabase Auth has no "banned forever" option, so this is the standard workaround.
 const BAN_FOREVER = '876000h'

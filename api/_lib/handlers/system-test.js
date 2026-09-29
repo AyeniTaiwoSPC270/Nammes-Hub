@@ -1,6 +1,6 @@
-import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
-import { bearerToken, getCaller } from './_lib/authz.js'
-import { logError } from './_lib/logError.js'
+import { getSupabaseAdmin } from '../supabaseAdmin.js'
+import { bearerToken, getCaller } from '../authz.js'
+import { logError } from '../logError.js'
 
 // Owner-only self-test used by the System page: writes one labelled row to the server error log,
 // proving the API can reach the database with the service role and that the log is readable.

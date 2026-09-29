@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createAnonymiseUserHandler } from '../anonymise-user.js'
+import { createAnonymiseUserHandler } from './handlers/anonymise-user.js'
 
 const CALLER = '11111111-1111-4111-8111-111111111111'
 const TARGET = '22222222-2222-4222-8222-222222222222'

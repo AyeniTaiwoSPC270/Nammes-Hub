@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createDisableUserHandler } from '../disable-user.js'
+import { createDisableUserHandler } from './handlers/disable-user.js'
 
 const CALLER = '11111111-1111-4111-8111-111111111111'
 const TARGET = '22222222-2222-4222-8222-222222222222'
