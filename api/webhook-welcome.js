@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { renderWelcomeEmail } from './_lib/emailTemplates.js'
+import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,17 +9,19 @@ export default async function handler(req, res) {
     return
   }
   const record = req.body?.record
-  if (!record?.user_id) {
-    res.status(400).json({ error: 'Missing record.user_id' })
+  if (!isSafeRecordKey(record?.user_id)) {
+    res.status(400).json({ error: 'Missing or invalid record.user_id' })
     return
   }
 
   const supabaseAdmin = getSupabaseAdmin()
 
-  const { data: isValidSecret } = await supabaseAdmin.rpc('verify_webhook_secret', {
-    candidate: req.headers['x-webhook-secret'] || '',
+  const authentic = await isWebhookAuthentic(supabaseAdmin, {
+    headers: req.headers,
+    table: 'profiles',
+    key: record.user_id,
   })
-  if (!isValidSecret) {
+  if (!authentic) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
