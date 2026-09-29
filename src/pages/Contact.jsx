@@ -7,7 +7,9 @@ import { usePageBanner } from '../data/pageBanners'
 import FormField from '../components/ui/FormField'
 import Button from '../components/ui/Button'
 import SocialIcons from '../components/SocialIcons'
-import { supabase } from '../lib/supabaseClient'
+import { submitPublic } from '../data/publicSubmit'
+import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
+import { canSubmitWithCaptcha } from '../lib/turnstile'
 import { useToast } from '../lib/ToastContext'
 
 export default function Contact() {
@@ -18,19 +20,22 @@ export default function Contact() {
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [formError, setFormError] = useState('')
+  const captcha = useTurnstile()
 
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!name.trim() || !email.trim() || !message.trim()) {
         throw new Error('Fill in your name, email, and message.')
       }
-      const { error } = await supabase.from('contact_messages').insert({
+      await submitPublic({
+        type: 'contact',
+        token: captcha.token,
         name: name.trim(),
         email: email.trim(),
         message: message.trim(),
       })
-      if (error) throw error
     },
+    onSettled: () => captcha.reset(),
     onSuccess: () => {
       toast.success("Thanks for reaching out — we'll get back to you soon.")
       setName('')
@@ -83,7 +88,13 @@ export default function Contact() {
               maxLength={5000}
             />
             {formError && <span className="text-xs text-danger">{formError}</span>}
-            <Button variant="primary" type="submit" loading={submitMutation.isPending}>
+            <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+            <Button
+              variant="primary"
+              type="submit"
+              loading={submitMutation.isPending}
+              disabled={!canSubmitWithCaptcha(captcha)}
+            >
               Send message
             </Button>
           </form>

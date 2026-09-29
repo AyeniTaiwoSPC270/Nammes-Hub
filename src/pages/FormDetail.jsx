@@ -12,6 +12,9 @@ import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
 import Reveal from '../components/ui/Reveal'
 import { linkifyText } from '../lib/linkify'
+import { submitPublic } from '../data/publicSubmit'
+import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
+import { canSubmitWithCaptcha } from '../lib/turnstile'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -31,6 +34,7 @@ export default function FormDetail() {
   const [answers, setAnswers] = useState({})
   const [editing, setEditing] = useState(false)
   const [formError, setFormError] = useState('')
+  const captcha = useTurnstile()
 
   const form = formQuery.data
 
@@ -38,6 +42,12 @@ export default function FormDetail() {
     mutationFn: async () => {
       const validationError = validateAnswers(form.questions, answers)
       if (validationError) throw new Error(validationError)
+
+      if (!user) {
+        // Anonymous responses go through the server, which checks the verification token.
+        await submitPublic({ type: 'form_response', token: captcha.token, formId: id, answers })
+        return
+      }
 
       if (myResponseQuery.data) {
         const { error: updateError } = await supabase
@@ -61,6 +71,7 @@ export default function FormDetail() {
       setFormError('')
       setEditing(false)
     },
+    onSettled: () => captcha.reset(),
     onError: (error) => setFormError(error.message),
   })
 
@@ -164,7 +175,19 @@ export default function FormDetail() {
 
       {formError && <p className="mt-4 text-sm text-danger">{formError}</p>}
 
-      <Button variant="primary" className="mt-6" onClick={() => submitMutation.mutate()} loading={submitMutation.isPending}>
+      {!user && (
+        <div className="mt-6">
+          <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+        </div>
+      )}
+
+      <Button
+        variant="primary"
+        className="mt-6"
+        onClick={() => submitMutation.mutate()}
+        loading={submitMutation.isPending}
+        disabled={!user && !canSubmitWithCaptcha(captcha)}
+      >
         Submit
       </Button>
     </div>
