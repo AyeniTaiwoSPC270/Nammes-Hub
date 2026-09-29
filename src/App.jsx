@@ -54,6 +54,7 @@ const AdminExcos = lazyRetry(() => import('./pages/admin/AdminExcos'))
 const AdminUsers = lazyRetry(() => import('./pages/admin/AdminUsers'))
 const AdminMessages = lazyRetry(() => import('./pages/admin/AdminMessages'))
 const AdminSystem = lazyRetry(() => import('./pages/admin/AdminSystem'))
+const AdminSecurity = lazyRetry(() => import('./pages/admin/AdminSecurity'))
 const AdminReviews = lazyRetry(() => import('./pages/admin/AdminReviews'))
 const AdminBroadcasts = lazyRetry(() => import('./pages/admin/AdminBroadcasts'))
 const AdminEmailTemplates = lazyRetry(() => import('./pages/admin/AdminEmailTemplates'))
@@ -147,6 +148,7 @@ export default function App() {
                 <Route path="admin/users" element={<AdminUsers />} />
                 <Route path="admin/messages" element={<AdminMessages />} />
                 <Route path="admin/system" element={<AdminSystem />} />
+                <Route path="admin/security" element={<AdminSecurity />} />
                 <Route path="admin/reviews" element={<AdminReviews />} />
                 <Route path="admin/broadcasts" element={<AdminBroadcasts />} />
                 <Route path="admin/email-templates" element={<AdminEmailTemplates />} />
