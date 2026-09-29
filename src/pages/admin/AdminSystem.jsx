@@ -10,6 +10,8 @@ import {
   fetchErrorLog,
   fetchSentryIssues,
   runServerTest,
+  useFeatureFlagsQuery,
+  setFeatureFlag,
 } from '../../data/systemLogs'
 import { sendTestError } from '../../lib/errorTracking'
 import Table from '../../components/ui/Table'
@@ -19,10 +21,86 @@ import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 
 const SECTIONS = [
+  { id: 'switches', label: 'Switches' },
   { id: 'activity', label: 'Activity' },
   { id: 'server', label: 'Server errors' },
   { id: 'app', label: 'App errors' },
 ]
+
+const SWITCH_INFO = {
+  voting: 'Award voting',
+  nominations: 'Award nominations',
+  uploads: 'Member file uploads (admins are not affected)',
+  broadcasts: 'Email broadcasts',
+  public_forms: 'Contact form and public form responses',
+  require_admin_mfa: 'Require two-factor login for admin powers',
+}
+
+function SwitchesPanel({ query }) {
+  const queryClient = useQueryClient()
+  const [confirming, setConfirming] = useState(null)
+  const [busyKey, setBusyKey] = useState(null)
+  const [error, setError] = useState('')
+
+  async function change(key, enabled) {
+    setBusyKey(key)
+    setError('')
+    try {
+      await setFeatureFlag(key, enabled)
+      await queryClient.invalidateQueries({ queryKey: ['system', 'flags'] })
+    } catch (e) {
+      setError(e.message || 'Could not change that switch')
+    } finally {
+      setBusyKey(null)
+      setConfirming(null)
+    }
+  }
+
+  if (query.isLoading) return <SkeletonTable columns={3} rows={4} />
+  if (query.isError) return <ErrorState message={query.error?.message || 'Could not load the switches.'} onRetry={query.refetch} />
+
+  return (
+    <div className="max-w-[720px]">
+      <p className="text-ink-muted">
+        Pause a feature for everyone if something goes wrong. Turning a switch back on restores it immediately.
+      </p>
+      {error && <p className="mt-3 rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{error}</p>}
+      <ul className="mt-4 divide-y divide-hairline rounded-md border border-hairline">
+        {(query.data ?? []).map((flag) => (
+          <li key={flag.key} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div>
+              <p className="font-medium text-ink">{SWITCH_INFO[flag.key] || flag.key}</p>
+              <p className="text-sm text-ink-muted">Changed {formatDateTime(flag.updated_at)}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge tone={flag.enabled ? 'new' : 'restricted'}>{flag.enabled ? 'On' : 'Paused'}</Badge>
+              {flag.enabled && confirming !== flag.key && (
+                <Button variant="secondary" size="sm" onClick={() => setConfirming(flag.key)}>
+                  Pause
+                </Button>
+              )}
+              {flag.enabled && confirming === flag.key && (
+                <>
+                  <Button variant="primary" size="sm" loading={busyKey === flag.key} onClick={() => change(flag.key, false)}>
+                    Confirm pause
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
+                    Cancel
+                  </Button>
+                </>
+              )}
+              {!flag.enabled && (
+                <Button variant="primary" size="sm" loading={busyKey === flag.key} onClick={() => change(flag.key, true)}>
+                  Turn on
+                </Button>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 function formatDateTime(value) {
   return value ? new Date(value).toLocaleString() : '—'
@@ -125,7 +203,8 @@ export default function AdminSystem() {
   const { user } = useAuth()
   const adminRow = useOwnAdminRowQuery(user.id)
   const isOwner = Boolean(adminRow.data?.is_owner)
-  const [section, setSection] = useState('activity')
+  const [section, setSection] = useState('switches')
+  const flagsQuery = useFeatureFlagsQuery(isOwner && section === 'switches')
 
   const usersQuery = useAllUsersQuery()
   const auditQuery = useAuditLogQuery(isOwner && section === 'activity')
@@ -133,7 +212,7 @@ export default function AdminSystem() {
   const sentryQuery = useSentryIssuesQuery(isOwner && section === 'app')
 
   const names = new Map((usersQuery.data ?? []).map((u) => [u.user_id, u.full_name || u.student_id]))
-  const active = { activity: auditQuery, server: errorQuery, app: sentryQuery }[section]
+  const active = { switches: flagsQuery, activity: auditQuery, server: errorQuery, app: sentryQuery }[section]
 
   if (adminRow.isLoading) {
     return (
@@ -189,6 +268,8 @@ export default function AdminSystem() {
       </div>
 
       <div className="mt-6">
+        {section === 'switches' && <SwitchesPanel query={flagsQuery} />}
+
         {section === 'activity' && (
           <Section query={auditQuery} rows={auditRows} empty="No activity recorded yet.">
             <Table

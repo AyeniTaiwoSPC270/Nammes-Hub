@@ -45,3 +45,20 @@ export async function runServerTest() {
   if (!response.ok) throw new Error(result.error || 'The server could not write the test entry')
   return result
 }
+
+export async function fetchFeatureFlags() {
+  const { data, error } = await supabase.from('feature_flags').select('key, enabled, updated_at').order('key')
+  if (error) throw error
+  return data
+}
+
+export async function setFeatureFlag(key, enabled) {
+  const { error } = await supabase
+    .from('feature_flags')
+    .update({ enabled, updated_at: new Date().toISOString() })
+    .eq('key', key)
+  if (error) throw error
+}
+
+export const useFeatureFlagsQuery = (enabled = true) =>
+  useQuery({ queryKey: ['system', 'flags'], queryFn: fetchFeatureFlags, enabled })
