@@ -23,31 +23,42 @@ export async function submitBallot(choices) {
   if (error) throw error
 }
 
-export async function fetchVotesForSeason(seasonId) {
-  const { data, error } = await supabase
-    .from('award_votes')
-    .select('*, award_categories!inner(season_id)')
-    .eq('award_categories.season_id', seasonId)
+// Vote counts come from aggregate-only database functions; raw vote rows (which carry voter_id)
+// are readable only by the voter who cast them.
+export async function fetchSeasonTally(seasonId) {
+  const { data, error } = await supabase.rpc('award_tally', { p_season_id: seasonId })
   if (error) throw error
   return data
 }
-export function useSeasonVotesQuery(seasonId) {
+export function useSeasonTallyQuery(seasonId) {
   return useQuery({
-    queryKey: ['award_votes', 'season', seasonId],
-    queryFn: () => fetchVotesForSeason(seasonId),
+    queryKey: ['award_tally', seasonId],
+    queryFn: () => fetchSeasonTally(seasonId),
     enabled: Boolean(seasonId),
   })
 }
 
-export function buildTally(votes, nominees) {
-  const counts = {}
-  nominees.forEach((n) => {
-    counts[n.id] = 0
+export async function fetchBallotCount(seasonId) {
+  const { data, error } = await supabase.rpc('award_ballot_count', { p_season_id: seasonId })
+  if (error) throw error
+  return Number(data)
+}
+export function useBallotCountQuery(seasonId) {
+  return useQuery({
+    queryKey: ['award_ballot_count', seasonId],
+    queryFn: () => fetchBallotCount(seasonId),
+    enabled: Boolean(seasonId),
   })
-  votes.forEach((v) => {
-    if (counts[v.nominee_id] !== undefined) counts[v.nominee_id] += 1
-  })
+}
+
+// tallyRows: rows of { category_id, nominee_id, votes } — pass only the rows for one category's nominees.
+export function buildTallyFromCounts(tallyRows, nominees) {
+  const counts = new Map(tallyRows.map((r) => [r.nominee_id, Number(r.votes)]))
   return nominees
-    .map((n) => ({ nominee: n, count: counts[n.id] || 0 }))
+    .map((nominee) => ({ nominee, count: counts.get(nominee.id) ?? 0 }))
     .sort((a, b) => b.count - a.count)
+}
+
+export function sumVotes(tallyRows) {
+  return tallyRows.reduce((total, r) => total + Number(r.votes), 0)
 }

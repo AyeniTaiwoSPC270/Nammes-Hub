@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useSeasonQuery } from '../../data/awardSeasons'
 import { useNomineesQuery } from '../../data/awardNominees'
-import { useSeasonVotesQuery } from '../../data/awardVotes'
+import { useSeasonTallyQuery, sumVotes } from '../../data/awardVotes'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import ErrorState from '../../components/ui/ErrorState'
 import ResultsSummary from '../../components/awards/ResultsSummary'
@@ -12,7 +12,7 @@ export default function AdminAwardResults() {
   const categories = seasonQuery.data?.categories ?? []
   const categoryIds = categories.map((c) => c.id)
   const nomineesQuery = useNomineesQuery(categoryIds)
-  const votesQuery = useSeasonVotesQuery(seasonId)
+  const tallyQuery = useSeasonTallyQuery(seasonId)
 
   if (seasonQuery.isError) {
     return (
@@ -21,8 +21,9 @@ export default function AdminAwardResults() {
       </div>
     )
   }
-  if (!seasonQuery.data || !nomineesQuery.data || !votesQuery.data) return null
+  if (!seasonQuery.data || !nomineesQuery.data || !tallyQuery.data) return null
 
+  const totalVotes = sumVotes(tallyQuery.data)
   const nomineesByCategory = {}
   categoryIds.forEach((id) => {
     nomineesByCategory[id] = nomineesQuery.data.filter((n) => n.category_id === id)
@@ -37,9 +38,9 @@ export default function AdminAwardResults() {
         { label: 'Results' },
       ]} />
       <h1 className="text-3xl font-bold text-ink-900">Results: {seasonQuery.data.title}</h1>
-      <p className="text-ink-muted">{votesQuery.data.length} vote{votesQuery.data.length === 1 ? '' : 's'} cast so far.</p>
+      <p className="text-ink-muted">{totalVotes} vote{totalVotes === 1 ? '' : 's'} cast so far.</p>
       <div className="mt-6">
-        <ResultsSummary categories={categories} nomineesByCategory={nomineesByCategory} votes={votesQuery.data} />
+        <ResultsSummary categories={categories} nomineesByCategory={nomineesByCategory} tallyRows={tallyQuery.data} />
       </div>
     </div>
   )

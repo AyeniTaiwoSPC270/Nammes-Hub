@@ -1,4 +1,4 @@
-import { buildTally } from '../../data/awardVotes'
+import { buildTallyFromCounts } from '../../data/awardVotes'
 import { shareOrDownloadCard } from '../../lib/shareCard'
 
 async function handleDownloadWinnerCard(categoryId, winnerName) {
@@ -14,13 +14,13 @@ async function handleDownloadWinnerCard(categoryId, winnerName) {
   }
 }
 
-export default function ResultsSummary({ categories, nomineesByCategory, votes }) {
+export default function ResultsSummary({ categories, nomineesByCategory, tallyRows }) {
   return (
     <div className="flex flex-col gap-5">
       {categories.map((category) => {
         const nominees = nomineesByCategory[category.id] || []
-        const categoryVotes = votes.filter((v) => v.category_id === category.id)
-        const tally = buildTally(categoryVotes, nominees)
+        const categoryRows = tallyRows.filter((r) => r.category_id === category.id)
+        const tally = buildTallyFromCounts(categoryRows, nominees)
         const totalVotes = tally.reduce((sum, t) => sum + t.count, 0)
         const max = Math.max(...tally.map((t) => t.count), 1)
         const winner = tally.length > 0 && tally[0].count > 0 ? tally[0] : null
