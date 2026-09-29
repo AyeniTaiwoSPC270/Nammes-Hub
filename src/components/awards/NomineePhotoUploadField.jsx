@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { useAuth } from '../../lib/AuthContext'
+import { ownFolderPath } from '../../lib/uploadPath'
 
 export default function NomineePhotoUploadField({ label, url, onChange, required = false }) {
+  const { user } = useAuth()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
     if (!file.type.startsWith('image/')) {
       setError('Please choose an image file.')
       return
@@ -18,7 +21,7 @@ export default function NomineePhotoUploadField({ label, url, onChange, required
     }
     setError('')
     setUploading(true)
-    const path = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`
+    const path = ownFolderPath(user.id, file.name)
     const { error: uploadError } = await supabase.storage.from('award-nominee-photos').upload(path, file)
     setUploading(false)
     if (uploadError) {

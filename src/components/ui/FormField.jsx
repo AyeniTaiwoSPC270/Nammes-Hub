@@ -9,6 +9,7 @@ export default function FormField({
   options,
   required = false,
   success = false,
+  maxLength,
 }) {
   const controlClass = [
     'rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
@@ -34,6 +35,7 @@ export default function FormField({
           placeholder={placeholder}
           required={required}
           rows={5}
+          maxLength={maxLength}
           className={controlClass}
         />
       ) : (
@@ -43,6 +45,7 @@ export default function FormField({
           onChange={onChange}
           placeholder={placeholder}
           required={required}
+          maxLength={maxLength}
           className={controlClass}
         />
       )}
