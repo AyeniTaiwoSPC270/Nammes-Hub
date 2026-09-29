@@ -3,6 +3,7 @@ import { getResendClient, FROM_ADDRESS } from './_lib/resend.js'
 import { chunk } from './_lib/chunk.js'
 import { renderNewContentEmail, SITE_URL } from './_lib/emailTemplates.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
+import { boundedString } from './_lib/validate.js'
 
 const CONTENT_META = {
   news: { eyebrow: 'News Update', subjectPrefix: 'News update' },
@@ -16,7 +17,7 @@ export default async function handler(req, res) {
   }
   const { table, record } = req.body ?? {}
   const meta = CONTENT_META[table]
-  if (!meta || !record?.title || !isSafeRecordKey(record?.id)) {
+  if (!meta || !boundedString(record?.title, 1, 300) || !isSafeRecordKey(record?.id)) {
     res.status(400).json({ error: 'Unsupported table, missing record.title or invalid record.id' })
     return
   }

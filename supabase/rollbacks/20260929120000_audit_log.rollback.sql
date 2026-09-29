@@ -1,0 +1,10 @@
+drop trigger if exists admins_audit on public.admins;
+drop trigger if exists broadcasts_audit on public.broadcasts;
+drop trigger if exists email_templates_audit on public.email_templates;
+drop trigger if exists news_audit_del on public.news;
+drop trigger if exists events_audit_del on public.events;
+drop trigger if exists forms_audit_del on public.forms;
+drop trigger if exists profiles_disable_audit on public.profiles;
+drop function if exists public.log_change();
+drop function if exists public.log_profile_disable();
+drop table if exists public.audit_log;

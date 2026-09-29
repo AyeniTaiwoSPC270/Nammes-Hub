@@ -15,3 +15,10 @@ export function isAllowedImageUrl(value, allowedHosts) {
   }
   return parsed.protocol === 'https:' && allowedHosts.includes(parsed.hostname)
 }
+
+// True for a string whose trimmed length is between min and max (inclusive).
+export function boundedString(value, min, max) {
+  if (typeof value !== 'string') return false
+  const length = value.trim().length
+  return length >= min && length <= max
+}

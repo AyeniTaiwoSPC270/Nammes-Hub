@@ -11,7 +11,7 @@ function fakeRes() {
   return res
 }
 
-function setup({ adminRow = { is_owner: true }, recent = [] } = {}) {
+function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true } = {}) {
   const sent = []
   const inserts = []
   const chain = (data) => {
@@ -24,6 +24,7 @@ function setup({ adminRow = { is_owner: true }, recent = [] } = {}) {
     from: (table) => {
       if (table === 'admins') return chain(adminRow)
       if (table === 'email_templates') return chain(null)
+      if (table === 'feature_flags') return chain({ enabled: flagEnabled })
       return { ...chain(recent), insert: async (row) => { inserts.push(row); return { error: null } } }
     },
   }
@@ -70,5 +71,21 @@ describe('send-broadcast handler', () => {
     const res = fakeRes()
     await handler(req({ ...good, imageUrl: 'https://proj.supabase.co/storage/v1/object/public/broadcast-images/a.png' }), res)
     expect(res.statusCode).toBe(200)
+  })
+  it('is switched off by the broadcasts kill switch', async () => {
+    const { handler, sent } = setup({ flagEnabled: false })
+    const res = fakeRes()
+    await handler(req(good), res)
+    expect(res.statusCode).toBe(503)
+    expect(sent).toHaveLength(0)
+  })
+  it('rejects an oversized subject or body', async () => {
+    const { handler, sent } = setup()
+    const a = fakeRes()
+    await handler(req({ ...good, subject: 'x'.repeat(201) }), a)
+    const b = fakeRes()
+    await handler(req({ ...good, body: 'x'.repeat(20001) }), b)
+    expect([a.statusCode, b.statusCode]).toEqual([400, 400])
+    expect(sent).toHaveLength(0)
   })
 })
