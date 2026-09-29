@@ -145,7 +145,7 @@ export default function AdminEventGallery() {
                 type="button"
                 onClick={() => deleteMutation.mutate(photo)}
                 aria-label="Delete photo"
-                className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105"
+                className="absolute right-1.5 top-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105"
               >
                 <span className="material-symbols-outlined text-base">close</span>
               </button>

@@ -21,7 +21,7 @@ export function ClearImageButton({ onClick, className = '' }) {
       onClick={onClick}
       aria-label="Remove image"
       className={[
-        'absolute -right-2 -top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105',
+        'absolute -right-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105',
         className,
       ].join(' ')}
     >

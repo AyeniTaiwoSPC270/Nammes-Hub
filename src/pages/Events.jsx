@@ -24,7 +24,7 @@ function EventCard({ event }) {
         </div>
       )}
       <div className="flex flex-grow flex-col gap-2 p-6">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           {event.meta && <span className="text-sm text-ink-muted">{event.meta}</span>}
           <div className="ml-auto flex items-center gap-1 text-sm text-ink-muted">
             <span className="material-symbols-outlined text-[16px]">calendar_today</span>

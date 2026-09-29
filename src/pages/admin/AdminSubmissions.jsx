@@ -144,7 +144,7 @@ export default function AdminSubmissions() {
               key={row.id}
               className="flex flex-col gap-2 rounded-lg border border-hairline bg-surface p-4 shadow-md sm:flex-row sm:items-center sm:justify-between"
             >
-              <div>
+              <div className="min-w-0">
                 <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
                   {outlineById.get(row.outline_id)?.code ?? row.outline_id} &middot; {row.type}
                   {row.session ? ` · ${row.session}` : ''}
@@ -153,13 +153,13 @@ export default function AdminSubmissions() {
                   href={row.file_url || row.external_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-ink-900 hover:underline"
+                  className="break-words font-semibold text-ink-900 hover:underline"
                 >
                   {row.title}
                 </a>
-                <div className="text-xs text-ink-muted">Submitted by {row.submitted_by_email}</div>
+                <div className="break-all text-xs text-ink-muted">Submitted by {row.submitted_by_email}</div>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 {tab === 'pending' ? (
                   <>
                     <Button

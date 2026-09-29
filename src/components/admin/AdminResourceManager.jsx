@@ -172,7 +172,7 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
             {gated && ' Creates and edits need the owner’s approval before they go live.'}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {filteredRows.length > 0 && (
             <Button variant="destructive" onClick={() => setConfirmingDeleteAll(true)}>
               <span className="material-symbols-outlined text-base">delete_sweep</span>
@@ -244,13 +244,13 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-8">
+          <div className="min-w-0 lg:col-span-8">
             {pendingInserts.length > 0 && (
               <div className="mb-4 flex flex-col gap-2 rounded-lg border border-hairline bg-surface-low p-4">
                 <h3 className="text-sm font-semibold text-ink-900">Awaiting the owner&rsquo;s approval</h3>
                 {pendingInserts.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between text-sm text-ink-muted">
-                    <span>{r.payload.title || r.payload.id}</span>
+                  <div key={r.id} className="flex items-center justify-between gap-3 text-sm text-ink-muted">
+                    <span className="min-w-0 break-words">{r.payload.title || r.payload.id}</span>
                     <Badge tone="new">Pending</Badge>
                   </div>
                 ))}

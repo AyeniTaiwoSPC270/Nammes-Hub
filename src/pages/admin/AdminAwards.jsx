@@ -76,7 +76,7 @@ export default function AdminAwards() {
                 <span className="font-semibold text-ink-900">{season.title}</span>
                 <Badge tone={PHASE_TONE[season.phase]}>{season.phase}</Badge>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 <Link to={`/admin/awards/${season.id}/edit`}>
                   <Button variant="secondary" size="sm">Manage</Button>
                 </Link>

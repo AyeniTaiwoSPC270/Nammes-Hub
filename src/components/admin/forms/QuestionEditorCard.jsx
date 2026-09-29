@@ -63,10 +63,10 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button type="button" onClick={() => setExpanded(true)} className="p-1.5 text-ink-muted hover:text-ink-900" aria-label="Expand">
+          <button type="button" onClick={() => setExpanded(true)} className="p-2.5 text-ink-muted hover:text-ink-900" aria-label="Expand">
             <span className="material-symbols-outlined text-lg">expand_more</span>
           </button>
-          <button type="button" onClick={onRemove} className="p-1.5 text-ink-muted hover:text-danger" aria-label="Remove question">
+          <button type="button" onClick={onRemove} className="p-2.5 text-ink-muted hover:text-danger" aria-label="Remove question">
             <span className="material-symbols-outlined text-lg">delete</span>
           </button>
         </div>
@@ -80,15 +80,15 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
       style={style}
       className={['flex flex-col gap-3 rounded-lg border border-hairline bg-surface p-5 shadow-sm', isDragging ? 'opacity-50' : ''].join(' ')}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 basis-56 items-center gap-2">
           {dragHandle}
           <span className="shrink-0 rounded-md bg-surface-low px-2 py-0.5 text-xs font-semibold text-ink-muted">#{index + 1}</span>
           <input
             value={question.label}
             onChange={(e) => update({ label: e.target.value })}
             placeholder="Question"
-            className="flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-base font-semibold text-ink focus:outline-none focus:border-brand"
+            className="min-w-0 flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-base font-semibold text-ink focus:outline-none focus:border-brand"
           />
         </div>
         <select
@@ -120,9 +120,9 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
                 value={option}
                 onChange={(e) => updateOption(i, e.target.value)}
                 placeholder={`Option ${i + 1}`}
-                className="flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-brand"
+                className="min-w-0 flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-sm text-ink focus:outline-none focus:border-brand"
               />
-              <button type="button" onClick={() => removeOption(i)} className="text-ink-muted hover:text-danger">
+              <button type="button" onClick={() => removeOption(i)} aria-label="Remove option" className="p-2 text-ink-muted hover:text-danger">
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
@@ -158,13 +158,13 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-hairline pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
         <Toggle checked={question.required} onChange={(checked) => update({ required: checked })} label="Required" />
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => setExpanded(false)} className="p-1.5 text-ink-muted hover:text-ink-900" aria-label="Collapse">
+          <button type="button" onClick={() => setExpanded(false)} className="p-2.5 text-ink-muted hover:text-ink-900" aria-label="Collapse">
             <span className="material-symbols-outlined text-lg">expand_less</span>
           </button>
-          <button type="button" onClick={onRemove} className="p-1.5 text-ink-muted hover:text-danger" aria-label="Remove question">
+          <button type="button" onClick={onRemove} className="p-2.5 text-ink-muted hover:text-danger" aria-label="Remove question">
             <span className="material-symbols-outlined text-lg">delete</span>
           </button>
         </div>

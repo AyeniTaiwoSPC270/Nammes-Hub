@@ -109,7 +109,7 @@ export default function AdminForms() {
                   {counts[form.id] ?? 0} response{(counts[form.id] ?? 0) === 1 ? '' : 's'}
                 </div>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setSharingForm(form)}>
                   Share
                 </Button>

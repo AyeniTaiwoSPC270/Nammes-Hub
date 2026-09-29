@@ -344,7 +344,7 @@ export default function Awards() {
         <div className="mt-6 flex flex-col gap-6">
           {votableCategories.map((c, i) => (
             <Reveal key={c.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-900 text-xs font-bold text-white">
                     {String(i + 1).padStart(2, '0')}

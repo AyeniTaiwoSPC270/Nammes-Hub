@@ -201,8 +201,8 @@ export default function AdminAwardSeason() {
           <div className="flex flex-col gap-2">
             <p className="text-sm text-ink-muted">Categories are locked once nominations close.</p>
             {categories.map((c) => (
-              <div key={c.id} className="flex items-center justify-between rounded-lg border border-hairline bg-surface p-4 shadow-sm">
-                <span className="font-semibold text-ink-900">{c.title}</span>
+              <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border border-hairline bg-surface p-4 shadow-sm">
+                <span className="min-w-0 break-words font-semibold text-ink-900">{c.title}</span>
                 {seasonId && phase !== 'nominating' && (
                   <Link to={`/admin/awards/${seasonId}/categories/${c.id}/curate`}>
                     <Button variant="secondary" size="sm">Curate</Button>
