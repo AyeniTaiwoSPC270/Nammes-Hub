@@ -2,12 +2,16 @@ import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { QUESTION_TYPES } from '../../../data/forms'
+import { normalizeQuestionStyle, normalizeTheme } from '../../../lib/formTheme'
+import ImageAdjuster from './ImageAdjuster'
+import { TextStyleControls } from './DesignControls'
 import Button from '../../ui/Button'
 import FormField from '../../ui/FormField'
 import Toggle from '../../ui/Toggle'
 
-export default function QuestionEditorCard({ question, index, onChange, onRemove }) {
+export default function QuestionEditorCard({ question, index, onChange, onRemove, theme }) {
   const [expanded, setExpanded] = useState(!question.label)
+  const [showLook, setShowLook] = useState(false)
   const type = QUESTION_TYPES.find((t) => t.value === question.type) ?? QUESTION_TYPES[0]
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: question.id })
@@ -15,6 +19,19 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
 
   function update(patch) {
     onChange({ ...question, ...patch })
+  }
+
+  // Per-question text style is stored as the difference from the form-wide question style,
+  // so changing the form-wide style still flows through to questions that haven't overridden it.
+  const baseStyle = normalizeTheme(theme).question
+  const effectiveStyle = { ...baseStyle, ...(question.style ?? {}) }
+
+  function updateStyle(next) {
+    const diff = {}
+    for (const key of ['size', 'bold', 'italic', 'underline', 'align', 'color']) {
+      if (next[key] !== baseStyle[key]) diff[key] = next[key]
+    }
+    update({ style: normalizeQuestionStyle(diff) })
   }
 
   function updateOption(i, value) {
@@ -157,6 +174,41 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
           />
         </div>
       )}
+
+      <div className="flex flex-col gap-2 rounded-md border border-hairline">
+        <button
+          type="button"
+          onClick={() => setShowLook((v) => !v)}
+          aria-expanded={showLook}
+          className="flex min-h-11 items-center justify-between gap-2 px-3 text-left text-sm font-semibold text-ink hover:bg-surface-low"
+        >
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg">palette</span>
+            Image &amp; text style
+            {(question.image?.url || question.style) && (
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs uppercase text-orange-600">Customized</span>
+            )}
+          </span>
+          <span className="material-symbols-outlined text-lg">{showLook ? 'expand_less' : 'expand_more'}</span>
+        </button>
+        {showLook && (
+          <div className="flex flex-col gap-4 px-3 pb-3">
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Question image</span>
+              <ImageAdjuster label="Image" folder="forms/questions" value={question.image} onChange={(image) => update({ image })} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Question text</span>
+              <TextStyleControls value={effectiveStyle} onChange={updateStyle} sizeMin={12} sizeMax={32} colorFallback="#000000" />
+              {question.style && (
+                <button type="button" onClick={() => update({ style: null })} className="self-start text-xs font-semibold text-brand hover:underline">
+                  Use the form&rsquo;s question style
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-hairline pt-3">
         <Toggle checked={question.required} onChange={(checked) => update({ required: checked })} label="Required" />
