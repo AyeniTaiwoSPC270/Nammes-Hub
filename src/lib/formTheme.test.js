@@ -14,6 +14,10 @@ import {
   imageFilter,
   hasTheme,
   themeToSave,
+  normalizeCardLayout,
+  cardLayoutStyle,
+  computeResize,
+  aspectRatioOf,
 } from './formTheme'
 
 describe('normalizeTheme', () => {
@@ -139,5 +143,68 @@ describe('presets', () => {
     expect(hasTheme(null)).toBe(false)
     expect(themeToSave({})).toBeNull()
     expect(themeToSave({ accent: '#ff0000' }).accent).toBe('#ff0000')
+  })
+})
+
+describe('per-card layout', () => {
+  it('keeps only the keys that were set and clamps them', () => {
+    expect(normalizeCardLayout(null)).toBeNull()
+    expect(normalizeCardLayout({})).toBeNull()
+    expect(normalizeCardLayout({ widthPct: 5, minHeight: 99999, align: 'nope' })).toEqual({ widthPct: 30, minHeight: 1200, align: 'center' })
+    expect(normalizeCardLayout({ widthPct: 60.4 })).toEqual({ widthPct: 60 })
+  })
+
+  it('turns a layout into css', () => {
+    expect(cardLayoutStyle(null)).toEqual({})
+    const s = cardLayoutStyle({ widthPct: 60, align: 'left', minHeight: 200, vAlign: 'center' })
+    expect(s.width).toBe('60%')
+    expect(s.marginRight).toBe('auto')
+    expect(s.marginLeft).toBe(0)
+    expect(s.minHeight).toBe('200px')
+    expect(s.justifyContent).toBe('center')
+  })
+
+  it('is stored on questions and on the theme', () => {
+    expect(normalizeQuestionStyle({ card: { widthPct: 70 } })).toEqual({ card: { widthPct: 70 } })
+    expect(normalizeTheme({ headerCard: { minHeight: 300 } }).headerCard).toEqual({ minHeight: 300 })
+    expect(normalizeTheme({}).headerCard).toEqual({})
+  })
+})
+
+describe('computeResize', () => {
+  const base = { startWidthPct: 60, startHeight: 200, containerWidth: 600, align: 'center' }
+
+  it('widens a centered card twice as fast as the pointer moves', () => {
+    expect(computeResize({ ...base, handle: 'e', dx: 30, dy: 0 })).toEqual({ widthPct: 70 })
+  })
+  it('the west handle widens when dragged left', () => {
+    expect(computeResize({ ...base, handle: 'w', dx: -30, dy: 0 })).toEqual({ widthPct: 70 })
+  })
+  it('a left-aligned card grows one edge only', () => {
+    expect(computeResize({ ...base, align: 'left', handle: 'e', dx: 60, dy: 0 })).toEqual({ widthPct: 70 })
+  })
+  it('clamps between the minimum and full width, snapping near full', () => {
+    expect(computeResize({ ...base, handle: 'e', dx: -9999, dy: 0 }).widthPct).toBe(30)
+    expect(computeResize({ ...base, handle: 'e', dx: 9999, dy: 0 }).widthPct).toBe(100)
+    expect(computeResize({ ...base, startWidthPct: 90, handle: 'e', dx: 22, dy: 0 }).widthPct).toBe(100)
+  })
+  it('the bottom handle changes height only', () => {
+    expect(computeResize({ ...base, handle: 's', dx: 50, dy: 40 })).toEqual({ height: 240 })
+  })
+  it('corners change both', () => {
+    expect(computeResize({ ...base, handle: 'se', dx: 30, dy: -50 })).toEqual({ widthPct: 70, height: 150 })
+  })
+  it('never goes below zero height', () => {
+    expect(computeResize({ ...base, handle: 's', dx: 0, dy: -999 }).height).toBe(0)
+  })
+})
+
+describe('custom image ratio', () => {
+  it('uses image.ratio when the aspect is custom', () => {
+    const img = normalizeImage({ url: 'https://a.co/i.png', aspect: 'custom', ratio: 2.5 })
+    expect(aspectRatioOf(img)).toBe(2.5)
+  })
+  it('clamps the ratio', () => {
+    expect(normalizeImage({ url: 'https://a.co/i.png', aspect: 'custom', ratio: 99 }).ratio).toBe(5)
   })
 })

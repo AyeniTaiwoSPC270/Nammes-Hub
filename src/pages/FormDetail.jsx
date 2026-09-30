@@ -147,7 +147,6 @@ export default function FormDetail() {
 
   const themed = hasTheme(form.theme)
   const showProgress = !themed || normalizeTheme(form.theme).showProgress
-  const cardStyle = questionCardStyle(form.theme)
 
   return (
     <FormThemeShell theme={form.theme}>
@@ -171,7 +170,7 @@ export default function FormDetail() {
             key={q.id}
             delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}
             className={themed ? '' : 'rounded-lg border border-hairline bg-surface p-5 shadow-sm'}
-            style={cardStyle}
+            style={questionCardStyle(form.theme, q.style?.card)}
           >
             <QuestionField
               question={q}

@@ -7,16 +7,22 @@ import {
   FORM_WIDTHS,
   PAGE_TYPES,
   applyPreset,
+  aspectRatioOf,
   cardGap,
+  cardLayoutStyle,
   cardPadding,
   cardStyle,
+  normalizeImage,
+  normalizeQuestionStyle,
   normalizeTheme,
   pageBackground,
 } from '../../../lib/formTheme'
 import FormThemeShell, { FormHeaderCard } from '../../forms/FormThemeShell'
+import AdjustableImage from '../../forms/AdjustableImage'
 import QuestionField from '../../forms/QuestionField'
+import ResizableFrame from '../../forms/ResizableFrame'
 import Toggle from '../../ui/Toggle'
-import { ColorField, ControlSection, FontSelect, Segmented, Slider, TextStyleControls } from './DesignControls'
+import { ColorField, ControlSection, FontSelect, Segmented, Slider, TextStyleControls, ToggleIcon } from './DesignControls'
 import ImageAdjuster from './ImageAdjuster'
 
 const TABS = [
@@ -65,21 +71,60 @@ function PresetButton({ preset, active, onPick }) {
   )
 }
 
-function PreviewQuestions({ questions, theme }) {
+const IMAGE_MARGINS = {
+  left: { marginLeft: 0, marginRight: 'auto' },
+  center: { marginLeft: 'auto', marginRight: 'auto' },
+  right: { marginLeft: 'auto', marginRight: 0 },
+}
+
+const same = (a, b) => a?.kind === b?.kind && a?.id === b?.id
+
+function PreviewQuestions({ questions, theme, selection, onSelect, onResizeCard, onResizeImage }) {
   const [answers, setAnswers] = useState({})
   const card = { ...cardStyle(theme), padding: cardPadding(theme) }
   return (
     <div className="mt-4 flex flex-col" style={{ gap: cardGap(theme) }}>
-      {questions.map((q) => (
-        <div key={q.id} style={card}>
-          <QuestionField
-            question={{ ...q, label: q.label || 'Untitled question' }}
-            value={answers[q.id]}
-            onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
-            theme={theme}
-          />
-        </div>
-      ))}
+      {questions.map((q) => {
+        const layout = q.style?.card ?? {}
+        const cardSel = { kind: 'card', id: q.id }
+        const imageSel = { kind: 'image', id: q.id }
+        return (
+          <ResizableFrame
+            key={q.id}
+            selected={same(selection, cardSel)}
+            onSelect={() => onSelect(cardSel)}
+            onResize={(res) => onResizeCard(q, res)}
+            widthPct={layout.widthPct ?? theme.card?.widthPct ?? 100}
+            align={layout.align ?? 'center'}
+            style={{ ...card, ...cardLayoutStyle(layout) }}
+          >
+            <QuestionField
+              question={{ ...q, label: q.label || 'Untitled question' }}
+              value={answers[q.id]}
+              onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+              theme={theme}
+              renderImage={(image) => {
+                const img = normalizeImage(image)
+                if (!img) return null
+                return (
+                  <ResizableFrame
+                    selected={same(selection, imageSel)}
+                    onSelect={() => onSelect(imageSel)}
+                    onResize={(res, info) => onResizeImage(q, img, res, info)}
+                    widthPct={img.widthPct}
+                    align={img.align}
+                    minWidthPct={10}
+                    className="mb-1"
+                    style={{ width: `${img.widthPct}%`, ...IMAGE_MARGINS[img.align] }}
+                  >
+                    <AdjustableImage image={{ ...img, widthPct: 100 }} fill />
+                  </ResizableFrame>
+                )
+              }}
+            />
+          </ResizableFrame>
+        )
+      })}
       <div>
         <span className="inline-flex min-h-11 items-center rounded-md bg-green-900 px-7 py-3 font-body font-bold text-white">Submit</span>
       </div>
@@ -87,10 +132,55 @@ function PreviewQuestions({ questions, theme }) {
   )
 }
 
-export default function FormDesignModal({ theme, onChange, form, questions, onClose }) {
+/** Precise controls for whatever is selected in the preview (handles are fiddly on a phone). */
+function SelectionBar({ label, values, onChange, onReset, onDeselect, isImage }) {
+  return (
+    <div data-resize-frame="" className="sticky top-0 z-30 border-b border-hairline bg-surface px-3 py-2.5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-bold text-ink-900">{label}</p>
+        <div className="flex items-center gap-1">
+          <ToggleIcon icon="format_align_left" label="Align left" active={values.align === 'left'} onClick={() => onChange({ align: 'left' })} />
+          <ToggleIcon icon="format_align_center" label="Align center" active={values.align === 'center'} onClick={() => onChange({ align: 'center' })} />
+          <ToggleIcon icon="format_align_right" label="Align right" active={values.align === 'right'} onClick={() => onChange({ align: 'right' })} />
+          <button type="button" onClick={onReset} className="min-h-10 rounded-md border border-hairline bg-surface px-3 text-xs font-semibold text-ink hover:bg-surface-low">
+            Reset size
+          </button>
+          <button type="button" onClick={onDeselect} aria-label="Done resizing" className="flex h-10 w-10 items-center justify-center rounded-md text-ink-muted hover:text-ink-900">
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+      </div>
+      <div className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+        <Slider label="Width" value={values.widthPct} min={isImage ? 10 : 30} max={100} unit="%" onChange={(widthPct) => onChange({ widthPct })} />
+        {isImage ? (
+          <Slider label="Shape (wide ↔ tall)" value={values.ratio} min={0.25} max={5} step={0.05} onChange={(ratio) => onChange({ ratio })} />
+        ) : (
+          <Slider label="Minimum height" value={values.minHeight} min={0} max={800} step={4} unit="px" onChange={(minHeight) => onChange({ minHeight })} />
+        )}
+      </div>
+      {!isImage && values.minHeight > 0 && (
+        <div className="mt-1">
+          <Segmented
+            label="Content position"
+            value={values.vAlign}
+            options={[
+              { value: 'top', label: 'Top' },
+              { value: 'center', label: 'Middle' },
+            ]}
+            onChange={(vAlign) => onChange({ vAlign })}
+          />
+        </div>
+      )}
+      <p className="mt-1 text-xs text-ink-muted">Drag the dots on the edges to resize, or use the sliders. Cards never cut off their content.</p>
+    </div>
+  )
+}
+
+export default function FormDesignModal({ theme, onChange, form, questions, onQuestionChange, onClose }) {
   useBodyScrollLock()
   const [tab, setTab] = useState('themes')
   const [mobilePane, setMobilePane] = useState('controls')
+  const [selection, setSelection] = useState(null)
   const t = theme ? normalizeTheme(theme) : DEFAULT_THEME
 
   useEffect(() => {
@@ -103,6 +193,75 @@ export default function FormDesignModal({ theme, onChange, form, questions, onCl
 
   const update = (patch) => onChange(normalizeTheme({ ...t, ...patch }))
   const updateIn = (key, patch) => update({ [key]: { ...t[key], ...patch } })
+
+  // Sizes of the title card, each question card and each image. Question and image sizes live on the
+  // questions themselves (saved with the form); the title card's lives in the theme.
+  const selQuestion = selection && selection.kind !== 'header' ? questions.find((q) => q.id === selection.id) : null
+  const selValid = selection && (selection.kind === 'header' || selQuestion)
+
+  function patchFromResize(res) {
+    const patch = {}
+    if (res.widthPct !== undefined) patch.widthPct = res.widthPct
+    if (res.height !== undefined) patch.minHeight = res.height
+    return patch
+  }
+
+  function setHeaderLayout(patch) {
+    update({ headerCard: { ...t.headerCard, ...patch } })
+  }
+
+  function setCardLayout(q, patch) {
+    const style = normalizeQuestionStyle({ ...(q.style ?? {}), card: { ...(q.style?.card ?? {}), ...patch } })
+    onQuestionChange?.(q.id, { style })
+  }
+
+  function setImageLayout(q, patch) {
+    const current = normalizeImage(q.image)
+    if (!current) return
+    const next = { ...current, ...patch }
+    if (patch.ratio !== undefined) next.aspect = 'custom'
+    onQuestionChange?.(q.id, { image: next })
+  }
+
+  function resizeImage(q, img, res, info) {
+    const patch = {}
+    if (res.widthPct !== undefined) patch.widthPct = res.widthPct
+    if (res.height !== undefined && info?.widthPx) patch.ratio = Math.min(5, Math.max(0.25, info.widthPx / Math.max(res.height, 24)))
+    setImageLayout(q, patch)
+  }
+
+  function selectionValues() {
+    if (!selValid) return null
+    if (selection.kind === 'header') {
+      const h = t.headerCard
+      return { label: 'Title card', isImage: false, values: { widthPct: h.widthPct ?? t.card.widthPct, align: h.align ?? 'center', minHeight: h.minHeight ?? 0, vAlign: h.vAlign ?? 'top' } }
+    }
+    const index = questions.indexOf(selQuestion) + 1
+    if (selection.kind === 'image') {
+      const img = normalizeImage(selQuestion.image)
+      const ratio = img ? aspectRatioOf(img) ?? 1.5 : 1.5
+      return { label: `Question ${index} image`, isImage: true, values: { widthPct: img?.widthPct ?? 100, align: img?.align ?? 'center', ratio } }
+    }
+    const l = selQuestion.style?.card ?? {}
+    return { label: `Question ${index} card`, isImage: false, values: { widthPct: l.widthPct ?? t.card.widthPct, align: l.align ?? 'center', minHeight: l.minHeight ?? 0, vAlign: l.vAlign ?? 'top' } }
+  }
+
+  function changeSelection(patch) {
+    if (!selValid) return
+    if (selection.kind === 'header') setHeaderLayout(patch)
+    else if (selection.kind === 'card') setCardLayout(selQuestion, patch)
+    else setImageLayout(selQuestion, patch)
+  }
+
+  function resetSelection() {
+    if (!selValid) return
+    if (selection.kind === 'header') update({ headerCard: {} })
+    else if (selection.kind === 'card') {
+      onQuestionChange?.(selQuestion.id, { style: normalizeQuestionStyle({ ...(selQuestion.style ?? {}), card: null }) })
+    } else setImageLayout(selQuestion, { widthPct: 100, aspect: 'free', ratio: 1.5 })
+  }
+
+  const sel = selectionValues()
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Design form" className="fixed inset-0 z-50 flex flex-col bg-paper">
@@ -282,10 +441,40 @@ export default function FormDesignModal({ theme, onChange, form, questions, onCl
           </div>
         </div>
 
-        <div className={['min-h-0 overflow-y-auto bg-surface-low lg:block', mobilePane === 'preview' ? 'block' : 'hidden'].join(' ')}>
+        <div
+          className={['min-h-0 overflow-y-auto bg-surface-low lg:block', mobilePane === 'preview' ? 'block' : 'hidden'].join(' ')}
+          onPointerDown={(e) => {
+            if (!e.target.closest('[data-resize-frame]')) setSelection(null)
+          }}
+        >
+          {sel && (
+            <SelectionBar
+              label={sel.label}
+              values={sel.values}
+              isImage={sel.isImage}
+              onChange={changeSelection}
+              onReset={resetSelection}
+              onDeselect={() => setSelection(null)}
+            />
+          )}
           <FormThemeShell theme={theme ? t : {}} contained>
-            <FormHeaderCard form={form} theme={theme ? t : {}} />
-            <PreviewQuestions questions={questions} theme={theme ? t : {}} />
+            <FormHeaderCard
+              form={form}
+              theme={theme ? t : {}}
+              interactive={{
+                selected: selection?.kind === 'header',
+                onSelect: () => setSelection({ kind: 'header' }),
+                onResize: (res) => setHeaderLayout(patchFromResize(res)),
+              }}
+            />
+            <PreviewQuestions
+              questions={questions}
+              theme={theme ? t : {}}
+              selection={selection}
+              onSelect={setSelection}
+              onResizeCard={(q, res) => setCardLayout(q, patchFromResize(res))}
+              onResizeImage={resizeImage}
+            />
           </FormThemeShell>
         </div>
       </div>

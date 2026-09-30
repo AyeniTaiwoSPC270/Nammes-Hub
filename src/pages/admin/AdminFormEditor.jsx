@@ -298,6 +298,7 @@ export default function AdminFormEditor() {
           onChange={setTheme}
           form={{ title: title || 'Untitled form', description }}
           questions={questions}
+          onQuestionChange={(qid, patch) => setQuestions((prev) => prev.map((q) => (q.id === qid ? { ...q, ...patch } : q)))}
           onClose={() => setDesigning(false)}
         />
       )}
