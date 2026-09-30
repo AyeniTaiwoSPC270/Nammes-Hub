@@ -11,10 +11,10 @@ const STALE_BUILD_MS = 6 * 60 * 1000
 // publishes it to the public `handbook` bucket, and points the footer/About download link at it.
 export function createHandbookBuildHandler({
   getClient = getSupabaseAdmin,
-  build = async (overrides) => {
+  build = async (overrides, supabase) => {
     // Loaded on demand so the other routes sharing this function do not pay for the browser and PDF libraries.
     const { buildHandbookPdf } = await import('../handbookBuild.js')
-    return buildHandbookPdf({ overrides })
+    return buildHandbookPdf({ overrides, supabase })
   },
   overridesFromRows = async (settings, chapters) => (await import('../handbookBuild.js')).overridesFromRows(settings, chapters),
   now = () => Date.now(),
@@ -57,14 +57,14 @@ export function createHandbookBuildHandler({
 
     try {
       const [settingsResult, chaptersResult] = await Promise.all([
-        supabaseAdmin.from('handbook_settings').select('edition, as_of, foreword_html').eq('id', 1).maybeSingle(),
+        supabaseAdmin.from('handbook_settings').select('edition, as_of, foreword_html, texts, authors').eq('id', 1).maybeSingle(),
         supabaseAdmin.from('handbook_chapters').select('id, title, intro, html'),
       ])
       if (settingsResult.error) throw settingsResult.error
       if (chaptersResult.error) throw chaptersResult.error
 
       const overrides = await overridesFromRows(settingsResult.data, chaptersResult.data)
-      const { pdf, pages } = await build(overrides)
+      const { pdf, pages } = await build(overrides, supabaseAdmin)
 
       const stamp = new Date(now()).toISOString().replace(/[-:T]/g, '').slice(0, 14)
       const file = `NAMMES-Hub-Handbook-${stamp}.pdf`
@@ -87,6 +87,21 @@ export function createHandbookBuildHandler({
         if (old.length) await supabaseAdmin.storage.from(BUCKET).remove(old)
       } catch (cleanupError) {
         console.error('handbook-build cleanup failed', cleanupError?.message)
+      }
+
+      // Author photos no longer used. Files under a day old are kept: an admin may have uploaded one and not saved yet.
+      try {
+        const inUse = new Set(
+          (overrides.authors?.people ?? []).map((p) => p.photo).filter((x) => x?.startsWith('store:')).map((x) => x.slice(6)),
+        )
+        const { data: photos } = await supabaseAdmin.storage.from(BUCKET).list('authors', { limit: 200 })
+        const cutoff = now() - 24 * 60 * 60 * 1000
+        const unused = (photos ?? [])
+          .filter((f) => !inUse.has(`authors/${f.name}`) && f.created_at && new Date(f.created_at).getTime() < cutoff)
+          .map((f) => `authors/${f.name}`)
+        if (unused.length) await supabaseAdmin.storage.from(BUCKET).remove(unused)
+      } catch (cleanupError) {
+        console.error('handbook-build photo cleanup failed', cleanupError?.message)
       }
 
       res.status(200).json({ url: publicUrl.publicUrl, pages })

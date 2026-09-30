@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
+import { safeFileName } from '../lib/uploadPath'
 import { useSiteContentQuery } from './siteContent'
 
 // The copy of the handbook shipped with the site. Used until an admin publishes a newer build from Admin > Handbook.
@@ -67,18 +68,40 @@ export function useRestoreChapterMutation() {
   })
 }
 
+/** Saves any of: edition, as_of, foreword_html, texts, authors. Empty values are stored as null (= use the original). */
 export function useSaveSettingsMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ edition, as_of, foreword_html }) => {
-      const { error } = await supabase
-        .from('handbook_settings')
-        .update({ edition: edition || null, as_of: as_of || null, foreword_html: foreword_html || null })
-        .eq('id', 1)
+    mutationFn: async (fields) => {
+      const update = Object.fromEntries(
+        Object.entries(fields).map(([key, value]) => [key, value === '' || (value && typeof value === 'object' && !Object.keys(value).length) ? null : value]),
+      )
+      const { error } = await supabase.from('handbook_settings').update(update).eq('id', 1)
       if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
   })
+}
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024
+
+/** Uploads a picture for an author and returns the reference the book stores ('store:<path>'). */
+export async function uploadAuthorPhoto(file) {
+  if (!file.type.startsWith('image/')) throw new Error('Please choose an image file.')
+  if (file.size > MAX_PHOTO_BYTES) throw new Error('The picture must be smaller than 5 MB.')
+  const path = `authors/${Date.now()}-${safeFileName(file.name)}`
+  const { error } = await supabase.storage.from('handbook').upload(path, file, { contentType: file.type })
+  if (error) throw error
+  return `store:${path}`
+}
+
+/** A URL the admin page can show for an author's photo reference. */
+export function authorPhotoUrl(photo, bundled = {}) {
+  if (!photo) return ''
+  if (photo.startsWith('builtin:')) return bundled[photo.slice(8)] ?? ''
+  if (photo.startsWith('store:')) return supabase.storage.from('handbook').getPublicUrl(photo.slice(6)).data.publicUrl
+  if (photo.startsWith('url:')) return photo.slice(4)
+  return ''
 }
 
 export function useBuildPdfMutation() {

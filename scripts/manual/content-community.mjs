@@ -190,8 +190,8 @@ ${bullets(['<strong>Who We Are</strong>: the history of the department (created 
 ${pills(['Unity', 'Integrity', 'Leadership', 'Excellence', 'Innovation', 'Advocacy'], true)}
 
 <h2>Meet the Excos</h2>
-<p>The <strong>Excos</strong> are the Executive Council: the students elected to run NAMMES for the session, currently <strong>The Aegis 26/27</strong>. The <em>Meet the Excos</em> page shows each of them on a card with their <strong>photo, name and role</strong>, plus an <strong>email</strong> and <strong>phone number</strong> when they have chosen to share them (tap to write or call).</p>
-${shot('excos', 'The Aegis 26/27, the Executive Council for the 2026/2027 session.', { url: '/excos', crop: 88 })}
+<p>The <strong>Excos</strong> are the Executive Council: the students elected to run NAMMES for the session, currently <strong>{{team}} {{session}}</strong>. The <em>Meet the Excos</em> page shows each of them on a card with their <strong>photo, name and role</strong>, plus an <strong>email</strong> and <strong>phone number</strong> when they have chosen to share them (tap to write or call).</p>
+${shot('excos', '{{team}} {{session}}, the Executive Council for the {{session_long}} session.', { url: '/excos', crop: 88 })}
 <p>A shorter version, <em>Our Executives</em>, also appears near the bottom of the home page. The names and roles of the ten people who wrote this handbook are in Appendix D.</p>
 
 <h2>The Contact page</h2>

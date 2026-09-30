@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { buildBookHtml } from '../../scripts/manual/book-lib.mjs'
+import { makeContext } from '../../scripts/manual/book-content.mjs'
 import { createHandbookBuildHandler } from './handlers/handbook-build.js'
 import { escapeText, sanitizeHtml, overridesFromRows } from './handbookBuild.js'
 
@@ -104,7 +106,56 @@ describe('handbook text safety', () => {
 
   it('builds overrides from rows, blanking nothing that was left empty', () => {
     const o = overridesFromRows({ edition: 'X', as_of: '', foreword_html: '' }, [{ id: 'welcome', title: 'T <i>', intro: null, html: '<p>ok</p>' }])
-    expect(o.settings).toEqual({ edition: 'X', as_of: '', foreword_html: '' })
+    expect(o.settings).toEqual({ edition: 'X', as_of: '', foreword_html: '', texts: {} })
+    expect(o.authors).toBeNull()
     expect(o.chapters.welcome).toEqual({ title: 'T &lt;i&gt;', intro: '', html: '<p>ok</p>' })
+  })
+})
+
+describe('front and back matter overrides', () => {
+  it('keeps only valid text, photo references and a sane number of people', () => {
+    const o = overridesFromRows(
+      {
+        texts: { cover_title: 'My Book', finder: ['a', 'b'], junk: 5 },
+        authors: {
+          team: 'The Phoenix',
+          session: '27/28',
+          people: [
+            { name: 'Ada Obi', role: 'President', photo: 'store:authors/1-a.jpg' },
+            { name: 'Bad Path', role: 'VP', photo: 'store:../secrets.jpg' },
+            { name: '', role: 'nobody', photo: '' },
+          ],
+        },
+      },
+      [],
+    )
+    expect(o.settings.texts).toEqual({ cover_title: 'My Book', finder: ['a', 'b'] })
+    expect(o.authors.people).toEqual([
+      { name: 'Ada Obi', role: 'President', photo: 'store:authors/1-a.jpg' },
+      { name: 'Bad Path', role: 'VP', photo: '' },
+    ])
+  })
+
+  it('fills team, session, title and authors through every page of the book', async () => {
+    const ctx = makeContext({
+      settings: { texts: { cover_title: 'The NAMMES Hub Guide', back_heading: 'Read <this>' } },
+      authors: { team: 'The Phoenix', session: '27/28', people: [{ name: 'Ada <b>Obi', role: 'President', photo: 'builtin:soyemi-eniola' }] },
+    })
+    const html = await buildBookHtml(ctx, () => '00')
+    expect(html).toContain('The Phoenix 27/28')
+    expect(html).toContain('2027/2028 session')
+    expect(html).toContain('The NAMMES <span>Hub</span> Guide')
+    expect(html).toContain('Read &lt;this&gt;')
+    expect(html).toContain('Ada &lt;b&gt;Obi')
+    expect(html).not.toContain('Aegis')
+    expect(html).not.toMatch(/\{\{(team|session|session_long|title|edition|as_of|site)\}\}/)
+  })
+
+  it('draws a placeholder instead of failing when a photo cannot be fetched', async () => {
+    const { resolvePhotos } = await import('./handbookBuild.js')
+    const ctx = makeContext({ authors: { people: [{ name: 'Ada Obi', role: 'President', photo: 'store:authors/missing.jpg' }] } })
+    const supabase = { storage: { from: () => ({ download: async () => ({ data: null, error: new Error('gone') }) }) } }
+    await resolvePhotos(ctx, { supabase })
+    expect(ctx.people[0].img).toMatch(/^data:image\/svg\+xml/)
   })
 })

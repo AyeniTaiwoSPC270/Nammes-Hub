@@ -7,6 +7,10 @@ import { tip, note, warn, adminBox } from '../../scripts/manual/helpers.mjs'
 const screenshots = import.meta.glob('../../scripts/manual/screens/*.jpg', { eager: true, query: '?url', import: 'default' })
 const SCREEN_URLS = Object.fromEntries(Object.entries(screenshots).map(([file, url]) => [file.split('/').pop(), url]))
 
+// The bundled author photos, keyed by file slug, for previews in the authors panel.
+const authorPhotos = import.meta.glob('../../scripts/manual/authors/*.jpg', { eager: true, query: '?url', import: 'default' })
+export const AUTHOR_URLS = Object.fromEntries(Object.entries(authorPhotos).map(([file, url]) => [file.split('/').pop().replace(/\.jpg$/, ''), url]))
+
 export const CALLOUTS = {
   tip: () => tip('<p>Write your tip here.</p>'),
   note: () => note('<p>Write the note here.</p>'),
@@ -68,3 +72,14 @@ export function htmlToText(html) {
 export function textToHtml(text) {
   return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
+
+// The pages of the book that are not chapters: covers, title page, copyright, foreword, contents, authors.
+export const BOOK_PANELS = [
+  { id: 'cover', label: 'Front cover', blurb: 'The first thing anyone sees. The authors’ faces along the bottom come from Meet the authors.' },
+  { id: 'title', label: 'Title page and dedication', blurb: 'The pages right after the cover.' },
+  { id: 'copyright', label: 'Copyright page', blurb: 'Who published the book, and the date it describes.' },
+  { id: 'foreword', label: 'Foreword', blurb: 'The short letter before the contents.' },
+  { id: 'contents', label: 'Contents pages', blurb: 'Chapter names and page numbers fill in by themselves; you can change the headings and the “Where do I find…?” shortcuts.' },
+  { id: 'authors', label: 'Meet the authors (team and session)', blurb: 'Change this for every new set of executives: team name, session, and each person’s name, role and photo.' },
+  { id: 'back', label: 'Back cover', blurb: 'The last page.' },
+]

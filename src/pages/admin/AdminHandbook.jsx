@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import BookPanel from '../../components/admin/HandbookBookPanels'
 import HandbookEditor from '../../components/admin/HandbookEditor'
 import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
@@ -11,14 +12,26 @@ import {
   useHandbookQuery,
   useRestoreChapterMutation,
   useSaveChapterMutation,
-  useSaveSettingsMutation,
 } from '../../data/handbook'
-import { APPENDICES, CHAPTERS, DEFAULT_AS_OF, DEFAULT_EDITION, DEFAULT_FOREWORD, EDITABLE } from '../../../scripts/manual/book-content.mjs'
-import { htmlToText, textToHtml } from '../../lib/handbookEditor'
+import { APPENDICES, CHAPTERS, EDITABLE, TEXT_FIELDS } from '../../../scripts/manual/book-content.mjs'
+import { BOOK_PANELS, htmlToText, textToHtml } from '../../lib/handbookEditor'
 import { useToast } from '../../lib/ToastContext'
 
-const BOOK_ID = '__book'
+const BOOK_PREFIX = 'book:'
 const BASE = Object.fromEntries([...CHAPTERS, ...APPENDICES].map((section) => [section.id, section]))
+
+/** A small "Edited" tag on the sidebar entry when something on that page has been changed. */
+function isBookPanelEdited(id, settings) {
+  if (!settings) return false
+  const texts = settings.texts ?? {}
+  const has = (panel) => TEXT_FIELDS.some((f) => f.panel === panel && f.key in texts)
+  if (id === 'cover') return has('cover') || Boolean(settings.edition)
+  if (id === 'copyright') return has('copyright') || Boolean(settings.as_of)
+  if (id === 'contents') return has('contents') || Boolean(texts.finder)
+  if (id === 'foreword') return Boolean(settings.foreword_html)
+  if (id === 'authors') return Boolean(settings.authors) || has('authors')
+  return has(id)
+}
 
 function formatWhen(iso) {
   return iso ? new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : null
@@ -29,7 +42,7 @@ export default function AdminHandbook() {
   const query = useHandbookQuery()
   const pdfUrl = useHandbookPdfUrl()
   const buildMutation = useBuildPdfMutation()
-  const [selected, setSelected] = useState(BOOK_ID)
+  const [selected, setSelected] = useState(`${BOOK_PREFIX}cover`)
   const [dirty, setDirty] = useState(false)
   const [pendingSelect, setPendingSelect] = useState(null)
 
@@ -121,13 +134,19 @@ export default function AdminHandbook() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <nav aria-label="Handbook sections" className="flex flex-col gap-4 lg:max-h-[80vh] lg:overflow-y-auto lg:pr-1">
-          <SidebarButton
-            active={selected === BOOK_ID}
-            edited={Boolean(settings?.edition || settings?.as_of || settings?.foreword_html)}
-            onClick={() => choose(BOOK_ID)}
-          >
-            Book details and foreword
-          </SidebarButton>
+          <div className="flex flex-col gap-1">
+            <div className="px-2 text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Covers and front pages</div>
+            {BOOK_PANELS.map((panel) => (
+              <SidebarButton
+                key={panel.id}
+                active={selected === BOOK_PREFIX + panel.id}
+                edited={isBookPanelEdited(panel.id, settings)}
+                onClick={() => choose(BOOK_PREFIX + panel.id)}
+              >
+                {panel.label}
+              </SidebarButton>
+            ))}
+          </div>
           {groups.map((group) => (
             <div key={group.part} className="flex flex-col gap-1">
               <div className="px-2 text-xs font-semibold uppercase tracking-[.05em] text-orange-600">{group.part}</div>
@@ -154,8 +173,8 @@ export default function AdminHandbook() {
           )}
           {query.isLoading ? (
             <SkeletonText lines={8} />
-          ) : selected === BOOK_ID ? (
-            <BookDetailsPanel key={BOOK_ID} settings={settings} onDirty={() => setDirty(true)} onSaved={() => setDirty(false)} />
+          ) : selected.startsWith(BOOK_PREFIX) ? (
+            <BookPanel key={selected} id={selected.slice(BOOK_PREFIX.length)} settings={settings} onDirty={() => setDirty(true)} onSaved={() => setDirty(false)} />
           ) : (
             <SectionPanel key={selected} id={selected} row={saved[selected]} onDirty={() => setDirty(true)} onSaved={() => setDirty(false)} />
           )}
@@ -284,65 +303,6 @@ function SectionPanel({ id, row, onDirty, onSaved }) {
             </Button>
           </>
         )}
-      </div>
-    </div>
-  )
-}
-
-function BookDetailsPanel({ settings, onDirty, onSaved }) {
-  const toast = useToast()
-  const editor = useRef(null)
-  const saveMutation = useSaveSettingsMutation()
-  const [edition, setEdition] = useState(settings?.edition || DEFAULT_EDITION)
-  const [asOf, setAsOf] = useState(settings?.as_of || DEFAULT_AS_OF)
-
-  function save() {
-    const cleanEdition = textToHtml(edition.trim())
-    const cleanAsOf = textToHtml(asOf.trim())
-    saveMutation.mutate(
-      {
-        edition: cleanEdition === DEFAULT_EDITION ? '' : cleanEdition,
-        as_of: cleanAsOf === DEFAULT_AS_OF ? '' : cleanAsOf,
-        foreword_html: editor.current.getHtml(),
-      },
-      {
-        onSuccess: () => {
-          onSaved()
-          toast.success('Saved. Rebuild the PDF to publish it.')
-        },
-        onError: (error) => toast.error(error.message),
-      },
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <FormField
-          label="Edition line (cover and copyright page)"
-          value={edition}
-          onChange={(e) => {
-            setEdition(e.target.value)
-            onDirty()
-          }}
-        />
-        <FormField
-          label="As it stood on (copyright page date)"
-          value={asOf}
-          onChange={(e) => {
-            setAsOf(e.target.value)
-            onDirty()
-          }}
-        />
-      </div>
-      <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">Foreword: A Word Before You Begin</div>
-        <HandbookEditor ref={editor} html={settings?.foreword_html || DEFAULT_FOREWORD} bodyClass="foreword" onDirty={onDirty} />
-      </div>
-      <div>
-        <Button variant="primary" size="sm" loading={saveMutation.isPending} onClick={save}>
-          Save changes
-        </Button>
       </div>
     </div>
   )

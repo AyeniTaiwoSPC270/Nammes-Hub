@@ -32,6 +32,31 @@ export function sanitizeHtml(html) {
     .replace(/\scontenteditable(?:\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/gi, '')
 }
 
+const PHOTO_RE = /^(builtin:[a-z0-9-]{1,80}|store:authors\/[A-Za-z0-9._-]{1,160}|url:https:\/\/[^\s"'<>]{1,400})$/
+const clip = (value, max) => (typeof value === 'string' ? value.slice(0, max) : '')
+
+/** Keeps only what the book understands from the saved front/back-matter text. Plain text: the layout escapes it. */
+function cleanTexts(raw) {
+  if (!raw || typeof raw !== 'object') return {}
+  const out = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (key === 'finder' && Array.isArray(value)) out.finder = value.slice(0, 40).map((v) => clip(v, 200))
+    else if (typeof value === 'string') out[key] = clip(value, 6000)
+  }
+  return out
+}
+
+function cleanAuthors(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const people = Array.isArray(raw.people)
+    ? raw.people
+        .slice(0, 14)
+        .map((p) => ({ name: clip(p?.name, 120).trim(), role: clip(p?.role, 120).trim(), photo: PHOTO_RE.test(p?.photo ?? '') ? p.photo : '' }))
+        .filter((p) => p.name)
+    : []
+  return { team: clip(raw.team, 80).trim(), session: clip(raw.session, 40).trim(), people }
+}
+
 /** Turns rows from handbook_settings / handbook_chapters into the `overrides` shape book-content.mjs expects, made safe. */
 export function overridesFromRows(settingsRow, chapterRows) {
   const chapters = {}
@@ -47,9 +72,10 @@ export function overridesFromRows(settingsRow, chapterRows) {
         edition: escapeText(settingsRow.edition ?? ''),
         as_of: escapeText(settingsRow.as_of ?? ''),
         foreword_html: settingsRow.foreword_html ? sanitizeHtml(settingsRow.foreword_html) : '',
+        texts: cleanTexts(settingsRow.texts),
       }
     : null
-  return { settings, chapters }
+  return { settings, chapters, authors: cleanAuthors(settingsRow?.authors) }
 }
 
 /* ------------------------------------------------------------------ assets */
@@ -84,6 +110,60 @@ export async function inlineAssets(html) {
   out = await replaceAsync(out, /\.\.\/\.\.\/\.\.\/public\/logo\.png/g, () => dataUri(LOGO))
   out = await replaceAsync(out, /\.\.\/\.\.\/api\/_lib\/fonts\/([A-Za-z0-9._-]+)/g, (_m, name) => dataUri(path.join(FONTS, name)))
   return out
+}
+
+/* ------------------------------------------------------------------ author photos */
+
+const PHOTO_SIZE = 360
+
+function placeholderPhoto(name) {
+  const initials = String(name).split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
+  const safe = initials.replace(/[^A-Z0-9]/g, '') || '?'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PHOTO_SIZE}" height="${PHOTO_SIZE}"><rect width="100%" height="100%" fill="#0b2417"/><text x="50%" y="56%" font-family="sans-serif" font-size="140" font-weight="700" fill="#ff5a1f" text-anchor="middle">${safe}</text></svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
+
+/** Crops any uploaded picture to a face-friendly square and shrinks it, so the PDF stays small. */
+export async function squarePhoto(bytes) {
+  const { createCanvas, loadImage } = await import('@napi-rs/canvas')
+  const image = await loadImage(bytes)
+  const side = Math.min(image.width, image.height)
+  const sx = (image.width - side) / 2
+  const sy = image.height > image.width ? Math.min((image.height - side) * 0.15, image.height - side) : 0
+  const canvas = createCanvas(PHOTO_SIZE, PHOTO_SIZE)
+  canvas.getContext('2d').drawImage(image, sx, sy, side, side, 0, 0, PHOTO_SIZE, PHOTO_SIZE)
+  return `data:image/jpeg;base64,${canvas.toBuffer('image/jpeg', 82).toString('base64')}`
+}
+
+async function fetchPhotoBytes(photo, { supabase, env = process.env }) {
+  if (photo.startsWith('store:')) {
+    const { data, error } = await supabase.storage.from('handbook').download(photo.slice(6))
+    if (error) throw error
+    return Buffer.from(await data.arrayBuffer())
+  }
+  // Pictures already on the site (Meet the Excos): only our own public storage, nothing else on the internet.
+  const url = new URL(photo.slice(4))
+  const own = new URL(env.VITE_SUPABASE_URL)
+  if (url.host !== own.host || !url.pathname.startsWith('/storage/v1/object/public/')) throw new Error('Photo address not allowed')
+  const response = await fetch(url, { signal: AbortSignal.timeout(15000) })
+  if (!response.ok) throw new Error(`Photo download failed (${response.status})`)
+  return Buffer.from(await response.arrayBuffer())
+}
+
+/** Fills in each author's `img`. Bundled photos keep their file path; uploaded ones become inline data. */
+export async function resolvePhotos(ctx, deps) {
+  await Promise.all(
+    ctx.people.map(async (person) => {
+      if (String(person.photo).startsWith('builtin:') && person.img) return
+      try {
+        if (!person.photo) throw new Error('No photo')
+        person.img = await squarePhoto(await fetchPhotoBytes(person.photo, deps))
+      } catch (error) {
+        console.error('handbook photo failed for', person.name, error?.message)
+        person.img = placeholderPhoto(person.name)
+      }
+    }),
+  )
 }
 
 /* ------------------------------------------------------------------ rendering */
@@ -143,13 +223,14 @@ export async function pdfPageTexts(buffer, norm) {
  * (and an extra notes page if the total is odd, so the back cover falls on an even page), pass 3 only if numbers moved.
  * Returns { pdf, pages }.
  */
-export async function buildHandbookPdf({ overrides, launch = defaultLaunch }) {
+export async function buildHandbookPdf({ overrides, launch = defaultLaunch, supabase }) {
   const [{ buildBookHtml, locate, norm }, { makeContext }] = await Promise.all([
     import('../../scripts/manual/book-lib.mjs'),
     import('../../scripts/manual/book-content.mjs'),
   ])
   const css = await fs.readFile(path.join(MANUAL, 'book.css'), 'utf8')
   const ctx = makeContext(overrides, css)
+  await resolvePhotos(ctx, { supabase })
   const render = async (browser, pageOf, opts) => renderPdf(browser, await inlineAssets(await buildBookHtml(ctx, pageOf, opts)))
 
   const browser = await launch()

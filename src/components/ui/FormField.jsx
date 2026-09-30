@@ -10,6 +10,7 @@ export default function FormField({
   required = false,
   success = false,
   maxLength,
+  rows = 5,
 }) {
   const controlClass = [
     'min-h-11 rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
@@ -34,7 +35,7 @@ export default function FormField({
           onChange={onChange}
           placeholder={placeholder}
           required={required}
-          rows={5}
+          rows={rows}
           maxLength={maxLength}
           className={controlClass}
         />
