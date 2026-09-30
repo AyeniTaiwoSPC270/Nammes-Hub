@@ -31,6 +31,9 @@ export function fakeDb(seed = {}) {
     quiz_teams: [],
     quiz_practice_runs: [],
     quiz_practice_answers: [],
+    quiz_battles: [],
+    quiz_battle_sides: [],
+    quiz_battle_answers: [],
     ...seed,
   }
   let n = 0
@@ -38,6 +41,8 @@ export function fakeDb(seed = {}) {
   const uniqueViolation = (table, row) => {
     if (table === 'quiz_players') return tables.quiz_players.some((p) => p.session_id === row.session_id && p.nickname.toLowerCase() === row.nickname.toLowerCase())
     if (table === 'quiz_sessions') return tables.quiz_sessions.some((s) => s.join_code === row.join_code && s.state !== 'finished')
+    if (table === 'quiz_battles') return tables.quiz_battles.some((b) => b.code === row.code)
+    if (table === 'quiz_battle_sides') return tables.quiz_battle_sides.some((s) => (s.battle_id === row.battle_id && s.slot === row.slot) || (row.token_hash && s.token_hash === row.token_hash))
     if (table === 'quiz_powerup_uses') return tables.quiz_powerup_uses.some((u) => u.player_id === row.player_id && u.question_id === row.question_id)
     return false
   }
@@ -64,6 +69,8 @@ export function fakeDb(seed = {}) {
         if (table === 'quiz_sessions') Object.assign(row, { state: 'lobby', current_question_index: -1, question_started_at: null, finished_at: null })
         if (table === 'quiz_players') row.total_score = 0
         if (table === 'quiz_practice_runs') Object.assign(row, { total_score: 0, finished_at: null })
+        if (table === 'quiz_battle_sides') Object.assign(row, { finished_at: null, bot_skill: null, ...payload })
+        if (table === 'quiz_battles') Object.assign(row, { winner_slot: null, question_started_at: null, reveal_started_at: null, bot_skill: null, ...payload })
         tables[table].push(row)
         return { rows: [row] }
       }
@@ -76,6 +83,11 @@ export function fakeDb(seed = {}) {
       }
       if (op === 'delete') {
         tables[table] = tables[table].filter((r) => !match(r))
+        if (table === 'quiz_battles') {
+          const gone = new Set(rows.map((r) => r.id))
+          tables.quiz_battle_sides = tables.quiz_battle_sides.filter((s) => !gone.has(s.battle_id))
+          tables.quiz_battle_answers = tables.quiz_battle_answers.filter((a) => !gone.has(a.battle_id))
+        }
         // Deleting a player also removes their token and answers (on delete cascade in the real database).
         if (table === 'quiz_players') {
           const gone = new Set(rows.map((r) => r.id))
@@ -122,7 +134,13 @@ export function fakeDb(seed = {}) {
         tables.quiz_players.find((p) => p.id === a.p_player).team_id = pick.id
         return { data: pick.id, error: null }
       }
-      if (name === 'quiz_practice_cleanup') return { data: 0, error: null }
+      if (name === 'quiz_practice_cleanup' || name === 'quiz_battle_cleanup') return { data: 0, error: null }
+      if (name === 'quiz_battle_record') {
+        if (tables.quiz_battle_answers.some((x) => x.battle_id === a.p_battle && x.slot === a.p_slot && x.question_id === a.p_question)) return { data: false, error: null }
+        tables.quiz_battle_answers.push({ battle_id: a.p_battle, slot: a.p_slot, question_id: a.p_question, chosen_index: a.p_chosen, answer_text: a.p_text, correct: a.p_correct, points_awarded: a.p_points, elapsed_ms: a.p_elapsed })
+        tables.quiz_battle_sides.find((s) => s.battle_id === a.p_battle && s.slot === a.p_slot).total_score += a.p_points
+        return { data: true, error: null }
+      }
       if (name === 'quiz_practice_record') {
         if (tables.quiz_practice_answers.some((x) => x.run_id === a.p_run && x.question_id === a.p_question)) return { data: false, error: null }
         tables.quiz_practice_answers.push({ run_id: a.p_run, question_id: a.p_question, chosen_index: a.p_chosen, answer_text: a.p_text, correct: a.p_correct, points_awarded: a.p_points })

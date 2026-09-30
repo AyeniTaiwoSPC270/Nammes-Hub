@@ -62,7 +62,7 @@ export function createQuizPracticeHandler(
 
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme').eq('id', id).maybeSingle()
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme').eq('id', id).maybeSingle()
       return data && data.practice_enabled ? data : null
     }
     async function playableQuestions(id) {
@@ -204,7 +204,7 @@ export function createQuizPracticeHandler(
       }
       const questions = await playableQuestions(quiz.id)
       const { data: finished } = await supabaseAdmin.from('quiz_practice_runs').select('id').eq('quiz_id', quiz.id).not('finished_at', 'is', null)
-      res.status(200).json({ title: quiz.title, questionCount: questions.length, ghostCount: (finished ?? []).length, theme: sanitizeTheme(quiz.theme, { quizId: quiz.id }) })
+      res.status(200).json({ title: quiz.title, questionCount: questions.length, battleEnabled: quiz.battle_enabled === true, ghostCount: (finished ?? []).length, theme: sanitizeTheme(quiz.theme, { quizId: quiz.id }) })
       return
     }
 

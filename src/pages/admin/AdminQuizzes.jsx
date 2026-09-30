@@ -207,6 +207,7 @@ export default function AdminQuizzes() {
                 <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                   <span>{quiz.questionCount} question{quiz.questionCount === 1 ? '' : 's'}</span>
                   {quiz.practice_enabled && <Badge tone="updated">Practice on</Badge>}
+                  {quiz.battle_enabled && <Badge tone="updated">Battles on</Badge>}
                   {(quiz.tags ?? []).map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
                 </div>
               </div>

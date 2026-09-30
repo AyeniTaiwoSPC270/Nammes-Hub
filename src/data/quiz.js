@@ -173,7 +173,7 @@ export function useQuizQuery(id) {
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
 // edited and reordered questions; questions the admin removed are deleted first. Pictures are uploaded first
 // (under a fresh name, so phones never show a stale cached copy) and the old files are removed afterwards.
-export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled }) {
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled, battleEnabled }) {
   const cleaned = questions.map(cleanQuestion)
   const teamFields = teamSettings
     ? {
@@ -189,6 +189,7 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
     tags: cleanTags(tags),
     ...teamFields,
     ...(practiceEnabled === undefined ? {} : { practice_enabled: Boolean(practiceEnabled) }),
+    ...(battleEnabled === undefined ? {} : { battle_enabled: Boolean(battleEnabled) }),
   }
   const staleFiles = []
   let quizId = id
