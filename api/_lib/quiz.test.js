@@ -11,6 +11,7 @@ import {
   createRateLimiter,
   ANSWER_GRACE_MS,
   isAvatarId,
+  isMaxPlayers,
 } from './quiz.js'
 
 describe('generateJoinCode', () => {
@@ -125,5 +126,12 @@ describe('isAvatarId', () => {
   it('accepts whole numbers 0 to 49 only', () => {
     for (const ok of [0, 1, 49]) expect(isAvatarId(ok)).toBe(true)
     for (const bad of [-1, 50, 1.5, '3', null, undefined, NaN]) expect(isAvatarId(bad)).toBe(false)
+  })
+})
+
+describe('isMaxPlayers', () => {
+  it('accepts whole numbers from 2 to 150 only', () => {
+    for (const ok of [2, 50, 150]) expect(isMaxPlayers(ok)).toBe(true)
+    for (const bad of [0, 1, 151, 12.5, '12', null, undefined, NaN]) expect(isMaxPlayers(bad)).toBe(false)
   })
 })

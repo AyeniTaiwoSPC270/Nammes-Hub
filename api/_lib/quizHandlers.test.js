@@ -23,6 +23,7 @@ function fakeDb(seed = {}) {
   const tables = {
     admins: [{ user_id: ADMIN, is_owner: true }],
     feature_flags: [],
+    quizzes: [{ id: QUIZ, max_players: 40 }],
     quiz_questions: [
       { id: 'q1', quiz_id: QUIZ, position: 0, text: 'Q1?', options: ['a', 'b', 'c'], correct_index: 1, time_limit_seconds: 20, points: 1000 },
       { id: 'q2', quiz_id: QUIZ, position: 1, text: 'Q2?', options: ['a', 'b'], correct_index: 0, time_limit_seconds: 10, points: 1000 },
@@ -47,8 +48,10 @@ function fakeDb(seed = {}) {
     let payload = null
     let head = false
     let selectAfter = false
+    let limitN = Infinity
     const run = () => {
-      const match = (r) => filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : r[col] !== val))
+      const match = (r) =>
+        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : r[col] !== val))
       const rows = tables[table].filter(match)
       if (op === 'insert') {
         if (uniqueViolation(table, payload)) return { rows: [], error: { code: '23505' } }
@@ -66,7 +69,7 @@ function fakeDb(seed = {}) {
         tables[table] = tables[table].filter((r) => !match(r))
         return { rows }
       }
-      return { rows }
+      return { rows: rows.slice(0, limitN) }
     }
     const api = {
       select: (_cols, opts) => { if (op === 'select') { head = Boolean(opts?.head) } else selectAfter = true; api.count = opts?.count; return api },
@@ -75,6 +78,9 @@ function fakeDb(seed = {}) {
       delete: () => { op = 'delete'; return api },
       eq: (c, v) => { filters.push(['eq', c, v]); return api },
       neq: (c, v) => { filters.push(['neq', c, v]); return api },
+      is: (c) => { filters.push(['is', c]); return api },
+      order: () => api,
+      limit: (n) => { limitN = n; return api },
       maybeSingle: async () => { const r = run(); return { data: r.rows[0] ?? null, error: r.error ?? null } },
       single: async () => { const r = run(); return { data: r.rows[0] ?? null, error: r.error ?? null } },
       then: (resolve) => {
@@ -126,6 +132,18 @@ describe('quiz-create', () => {
     await createQuizCreateHandler(() => db)(admin({ quizId: QUIZ }), res)
     expect(res.statusCode).toBe(403)
   })
+  it("uses the quiz's own player limit unless the admin sets one, and rejects silly limits", async () => {
+    const db = fakeDb()
+    let res = fakeRes(); await createQuizCreateHandler(() => db, { makeCode: () => '111111' })(admin({ quizId: QUIZ }), res)
+    expect(res.body.maxPlayers).toBe(40)
+    expect(db.tables.quiz_sessions[0].max_players).toBe(40)
+    res = fakeRes(); await createQuizCreateHandler(() => db, { makeCode: () => '222222' })(admin({ quizId: QUIZ, maxPlayers: 12 }), res)
+    expect(res.body.maxPlayers).toBe(12)
+    for (const bad of [1, 151, 12.5, '12', null]) {
+      res = fakeRes(); await createQuizCreateHandler(() => db)(admin({ quizId: QUIZ, maxPlayers: bad }), res)
+      expect(res.statusCode).toBe(400)
+    }
+  })
   it('creates a lobby with a six-digit code and retries a code clash', async () => {
     const db = fakeDb({ quiz_sessions: [{ id: 'old', quiz_id: QUIZ, join_code: '111111', state: 'lobby' }] })
     const codes = ['111111', '222222']
@@ -172,6 +190,45 @@ describe('quiz-join', () => {
     expect((await joinPlayer(db, 'Cy', '123456', 50)).statusCode).toBe(400)
     expect((await joinPlayer(db, 'Di', '123456', -1)).statusCode).toBe(400)
     expect((await joinPlayer(db, 'Ed', '123456', 'x')).statusCode).toBe(400)
+  })
+  it("enforces the game's player limit and starts the full-lobby countdown exactly once", async () => {
+    const db = fakeDb({ quiz_sessions: [{ id: SESSION, quiz_id: QUIZ, join_code: '123456', state: 'lobby', current_question_index: -1, max_players: 2 }] })
+    const at = new Date('2026-10-01T10:00:00Z')
+    const join = (nickname) => {
+      const res = fakeRes()
+      return createQuizJoinHandler(() => db, { allow: () => true, now: () => at })(anon({ code: '123456', nickname }), res).then(() => res)
+    }
+    expect((await join('Ada')).statusCode).toBe(200)
+    expect(db.tables.quiz_sessions[0].full_at).toBeUndefined()
+    expect((await join('Bob')).statusCode).toBe(200)
+    expect(db.tables.quiz_sessions[0].full_at).toBe('2026-10-01T10:00:00.000Z')
+    const third = await join('Cy')
+    expect(third.statusCode).toBe(403)
+    expect(third.body.error).toMatch(/full/i)
+    expect(db.tables.quiz_players).toHaveLength(2)
+    expect(db.tables.quiz_sessions[0].full_at).toBe('2026-10-01T10:00:00.000Z')
+  })
+  it('steps a player back out if two joins raced past the limit check', async () => {
+    const db = fakeDb({ quiz_sessions: [{ id: SESSION, quiz_id: QUIZ, join_code: '123456', state: 'lobby', current_question_index: -1, max_players: 1 }] })
+    // Someone else already took the only seat, but the count the handler reads is stale (as in a real race).
+    const realFrom = db.from
+    let first = true
+    db.from = (t) => {
+      const q = realFrom(t)
+      if (t === 'quiz_players' && first) {
+        const origSelect = q.select
+        q.select = (cols, opts) => {
+          if (opts?.head) { first = false; return { eq: () => ({ then: (r) => r({ data: [], count: 0, error: null }) }) } }
+          return origSelect(cols, opts)
+        }
+      }
+      return q
+    }
+    db.tables.quiz_players.push({ id: 'early', session_id: SESSION, nickname: 'Early', total_score: 0, avatar_id: 0 })
+    const res = fakeRes()
+    await createQuizJoinHandler(() => db, { allow: () => true })(anon({ code: '123456', nickname: 'Late' }), res)
+    expect(res.statusCode).toBe(403)
+    expect(db.tables.quiz_players.map((p) => p.nickname)).toEqual(['Early'])
   })
   it('rate limits by IP', async () => {
     const db = lobby()
@@ -244,6 +301,13 @@ describe('answering and the answer-leak rule', () => {
     const score = (id) => db.tables.quiz_players.find((p) => p.id === id).total_score
     expect(score(a.playerId)).toBe(950)
     expect(score(b.playerId)).toBe(0)
+  })
+  it('tells phones the limit and when the lobby filled up', async () => {
+    const { db, a, state } = await setup()
+    db.tables.quiz_sessions[0].max_players = 30
+    db.tables.quiz_sessions[0].full_at = '2026-10-01T10:00:00.000Z'
+    const res = await state(a.token)
+    expect(res.body.session).toMatchObject({ maxPlayers: 30, fullAt: '2026-10-01T10:00:00.000Z' })
   })
   it('does not send the correct answer to phones while the question is open', async () => {
     const { a, state } = await setup()

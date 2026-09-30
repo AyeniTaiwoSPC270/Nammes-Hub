@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
-import { hostAction, OPTION_STYLES, secondsRemaining, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS } from '../data/quiz'
+import { hostAction, OPTION_STYLES, secondsRemaining, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { useCountUp } from '../lib/useCountUp'
 import { AnswerShape, Avatar, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
@@ -57,7 +58,7 @@ function ActionButton({ children, onClick, disabled, tone = 'accent', icon }) {
 }
 
 // Reveal and leaderboard move on by themselves; the host can pause that, or just click ahead.
-function AutoAdvance({ auto }) {
+function AutoAdvance({ auto, noun = 'auto-advance' }) {
   return (
     <button
       type="button"
@@ -65,7 +66,7 @@ function AutoAdvance({ auto }) {
       className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-bold text-ink-900 hover:bg-surface-low"
     >
       <span className="material-symbols-outlined" aria-hidden="true">{auto.on ? 'pause' : 'play_arrow'}</span>
-      {auto.on ? 'Pause auto-advance' : 'Resume auto-advance'}
+      {auto.on ? `Pause ${noun}` : `Resume ${noun}`}
     </button>
   )
 }
@@ -74,10 +75,12 @@ function withCountdown(label, auto) {
   return auto.on ? `${label} (${auto.secondsLeft}s)` : label
 }
 
-function Lobby({ session, title, players, questionCount, onStart, busy }) {
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto }) {
   const [qr, setQr] = useState('')
   const joinUrl = `${window.location.origin}/play?code=${session.join_code}`
   const digits = session.join_code.split('')
+  const isFull = fullLeft !== null
+  const fillPercent = Math.min(100, Math.round((players.length / maxPlayers) * 100))
 
   useEffect(() => {
     let cancelled = false
@@ -95,11 +98,19 @@ function Lobby({ session, title, players, questionCount, onStart, busy }) {
       chip={<Chip>{questionCount} question{questionCount === 1 ? '' : 's'}</Chip>}
       footer={
         <>
-          <span className="text-ink-muted">
-            {players.length === 0 ? 'Players will appear here as they join.' : 'Everyone in? Start when you are ready.'}
-          </span>
+          {isFull ? (
+            <AutoAdvance auto={auto} noun="auto-start" />
+          ) : (
+            <span className="text-ink-muted">
+              {players.length === 0 ? 'Players will appear here as they join.' : 'Everyone in? Start when you are ready.'}
+            </span>
+          )}
           <ActionButton onClick={onStart} disabled={busy || players.length === 0} icon="play_arrow">
-            {players.length === 0 ? 'Waiting for players…' : `Start game (${players.length})`}
+            {players.length === 0
+              ? 'Waiting for players…'
+              : isFull
+                ? withCountdown('Start now', { on: auto.on, secondsLeft: fullLeft })
+                : `Start game (${players.length})`}
           </ActionButton>
         </>
       }
@@ -149,8 +160,24 @@ function Lobby({ session, title, players, questionCount, onStart, busy }) {
       <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-md sm:p-8">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">Players</h2>
-          <span className="flex h-9 min-w-9 items-center justify-center rounded-full bg-orange-500 px-3 text-lg font-bold text-white">{players.length}</span>
+          <span className="flex h-9 min-w-9 items-center justify-center rounded-full bg-orange-500 px-3 text-lg font-bold text-white">
+            {players.length} / {maxPlayers}
+          </span>
+          <div className="ml-2 hidden h-3 flex-1 overflow-hidden rounded-full bg-hairline/60 sm:block" aria-hidden="true">
+            <div className="h-full rounded-full bg-orange-500 transition-[width] duration-500" style={{ width: `${fillPercent}%` }} />
+          </div>
         </div>
+        {isFull && (
+          <div role="status" className="qz-pop mt-4 flex items-center gap-4 rounded-2xl bg-orange-500 p-4 text-white shadow-md">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20 text-3xl font-bold">{auto.on ? fullLeft : '⏸'}</span>
+            <div>
+              <p className="text-xl font-bold">Lobby full!</p>
+              <p className="text-white/90">
+                {auto.on ? `The game starts in ${fullLeft} second${fullLeft === 1 ? '' : 's'}, or press Start now.` : 'Auto-start is paused. Press Start now when you are ready.'}
+              </p>
+            </div>
+          </div>
+        )}
         {players.length === 0 ? (
           <p className="mt-6 flex items-center gap-3 text-lg text-ink-muted">
             <span className="qz-float inline-block text-3xl" aria-hidden="true">π</span>
@@ -305,13 +332,104 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto }) {
-  const ranked = useMemo(() => rankPlayers(players), [players])
-  const previous = useMemo(
-    () => new Map(rankPlayers(players.map((p) => ({ ...p, total_score: p.total_score - (gains.get(p.id) ?? 0) }))).map((p) => [p.id, p.rank])),
-    [players, gains],
+// The leaderboard replays the round: rows start in last round's order with last round's scores, the scores count up,
+// then the rows slide into their new places. Risers spring up and their characters jump; fallers sink and look sad.
+const ROW_H = 88
+const ROW_GAP = 12
+const PITCH = ROW_H + ROW_GAP
+const SHOWN = 5
+const COUNT_DELAY_MS = 450
+const COUNT_MS = 900
+const REORDER_AFTER_MS = 1500
+const REORDER_MS = 850
+
+function ScoreCounter({ from, to, className }) {
+  const value = useCountUp(from, to, { durationMs: COUNT_MS, delayMs: COUNT_DELAY_MS })
+  return <span className={className}>{formatScore(value)}</span>
+}
+
+function AnimatedBoard({ players, gains }) {
+  const [phase, setPhase] = useState('before')
+  useEffect(() => {
+    const timer = setTimeout(() => setPhase('after'), REORDER_AFTER_MS)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const rows = useMemo(() => {
+    const now = rankPlayers(players)
+    const before = rankPlayers(players.map((p) => ({ ...p, total_score: p.total_score - (gains.get(p.id) ?? 0) })))
+    const beforeIndex = new Map(before.map((p, i) => [p.id, i]))
+    const beforeRank = new Map(before.map((p) => [p.id, p.rank]))
+    return now.map((p, i) => ({
+      ...p,
+      index: i,
+      beforeIndex: beforeIndex.get(p.id) ?? i,
+      beforeRank: beforeRank.get(p.id) ?? p.rank,
+      gain: gains.get(p.id) ?? 0,
+    }))
+  }, [players, gains])
+
+  const visible = rows.filter((r) => r.index < SHOWN || r.beforeIndex < SHOWN)
+  const height = Math.max(1, Math.min(SHOWN, rows.length)) * PITCH - ROW_GAP
+  const after = phase === 'after'
+
+  return (
+    <ol className="relative mx-auto w-full max-w-4xl" style={{ height }}>
+      {visible.map((p) => {
+        const position = after ? p.index : p.beforeIndex
+        const rank = after ? p.rank : p.beforeRank
+        const moved = p.beforeRank - p.rank
+        const rising = after && moved > 0
+        const falling = after && moved < 0
+        const mood = rank === 1 && after ? 'dance' : rising ? 'happy' : falling ? 'sad' : 'idle'
+        return (
+          <li
+            key={p.id}
+            className="absolute inset-x-0 top-0"
+            style={{
+              height: ROW_H,
+              transform: `translateY(${position * PITCH}px)`,
+              opacity: position < SHOWN ? 1 : 0,
+              zIndex: rising ? 2 : 1,
+              transition: `transform ${REORDER_MS}ms ${rising ? 'cubic-bezier(0.2, 1.25, 0.35, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'}, opacity 400ms ease`,
+            }}
+          >
+            <div
+              className={[
+                'qz-rise flex h-full items-center gap-3 rounded-2xl border px-4 shadow-sm transition-colors duration-500 sm:gap-4 sm:px-5',
+                rank === 1 ? 'border-orange-500 bg-orange-500/10' : rising ? 'border-green-600 bg-green-600/10' : falling ? 'border-red-600/60 bg-surface' : 'border-hairline bg-surface',
+              ].join(' ')}
+              style={{ animationDelay: `${Math.min(p.beforeIndex, SHOWN) * 70}ms` }}
+            >
+              <span className="w-12 shrink-0 text-center text-3xl font-bold" aria-label={`Rank ${rank}`}>{MEDALS[rank - 1] ?? rank}</span>
+              <Avatar name={p.nickname} avatarId={p.avatar_id} mood={mood} className="h-14 w-14 shrink-0" />
+              <span className="min-w-0 flex-1 truncate text-2xl font-bold sm:text-3xl">{p.nickname}</span>
+              {after && moved !== 0 && (
+                <span
+                  className={`qz-pop hidden items-center text-lg font-bold sm:flex ${moved > 0 ? 'text-green-600' : 'text-red-600'}`}
+                  aria-label={moved > 0 ? `Up ${moved}` : `Down ${-moved}`}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">{moved > 0 ? 'arrow_upward' : 'arrow_downward'}</span>
+                  {Math.abs(moved)}
+                </span>
+              )}
+              {p.gain > 0 && (
+                <span className="qz-pop rounded-full bg-green-600/15 px-3 py-1 text-lg font-bold text-green-600" style={{ animationDelay: `${COUNT_DELAY_MS - 150}ms` }}>
+                  +{formatScore(p.gain)}
+                </span>
+              )}
+              <ScoreCounter from={p.total_score - p.gain} to={p.total_score} className="w-28 shrink-0 text-right text-3xl font-bold tabular-nums sm:w-36 sm:text-4xl" />
+            </div>
+          </li>
+        )
+      })}
+    </ol>
   )
-  const top = ranked.slice(0, 5)
+}
+
+function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto }) {
+  // If the round's points arrive a moment after the screen opens (for example after a page reload), start the replay again.
+  const replayKey = [...gains.values()].join(',')
 
   return (
     <Stage
@@ -325,34 +443,7 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
       }
     >
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Leaderboard</h1>
-      <ol className="mx-auto flex w-full max-w-4xl flex-col gap-3">
-        {top.map((p, i) => {
-          const moved = (previous.get(p.id) ?? p.rank) - p.rank
-          const gain = gains.get(p.id) ?? 0
-          return (
-            <li
-              key={p.id}
-              className={[
-                'qz-rise flex items-center gap-4 rounded-2xl border p-4 shadow-sm sm:p-5',
-                i === 0 ? 'border-orange-500 bg-orange-500/10' : 'border-hairline bg-surface',
-              ].join(' ')}
-              style={{ animationDelay: `${i * 90}ms` }}
-            >
-              <span className="w-12 text-center text-3xl font-bold" aria-label={`Rank ${p.rank}`}>{MEDALS[p.rank - 1] ?? p.rank}</span>
-              <Avatar name={p.nickname} avatarId={p.avatar_id} mood={p.rank === 1 ? 'dance' : gain > 0 ? 'happy' : 'idle'} className="h-16 w-16" />
-              <span className="min-w-0 flex-1 truncate text-2xl font-bold sm:text-3xl">{p.nickname}</span>
-              {moved !== 0 && (
-                <span className={`hidden items-center text-lg font-bold sm:flex ${moved > 0 ? 'text-green-600' : 'text-red-600'}`} aria-label={moved > 0 ? `Up ${moved}` : `Down ${-moved}`}>
-                  <span className="material-symbols-outlined" aria-hidden="true">{moved > 0 ? 'arrow_upward' : 'arrow_downward'}</span>
-                  {Math.abs(moved)}
-                </span>
-              )}
-              {gain > 0 && <span className="rounded-full bg-green-600/15 px-3 py-1 text-lg font-bold text-green-600">+{formatScore(gain)}</span>}
-              <span className="w-28 text-right text-3xl font-bold tabular-nums sm:w-36 sm:text-4xl">{formatScore(p.total_score)}</span>
-            </li>
-          )
-        })}
-      </ol>
+      <AnimatedBoard key={replayKey} players={players} gains={gains} />
       {question && (
         <p className="mx-auto max-w-4xl text-center text-ink-muted">
           The answer to that one was <span className="font-bold text-ink-900">{question.options[question.correct_index]}</span>.
@@ -458,9 +549,19 @@ export default function HostQuiz() {
   const [autoOn, setAutoOn] = useState(true)
   // When the current step (question, reveal, leaderboard...) first appeared on this screen; drives the auto-advance countdown.
   const enteredRef = useRef({ key: '', ms: 0 })
+  // When this screen first saw the lobby fill up; the 10-second auto-start counts from here.
+  const fullRef = useRef({ key: '', ms: 0 })
+  // The latest game row and "a move is in flight" flag, read by advance(). Timers and live updates call advance() later
+  // than the render that created them, so it must not rely on the values captured at that render.
+  const sessionRef = useRef(null)
+  const busyRef = useRef(false)
 
   const applySession = useCallback((row, live) => {
+    sessionRef.current = row
     setSession(row)
+    if (row.full_at && fullRef.current.key !== row.full_at) {
+      fullRef.current = { key: row.full_at, ms: live ? Date.now() : new Date(row.full_at).getTime() }
+    }
     const enterKey = `${row.state}:${row.current_question_index}`
     if (enteredRef.current.key !== enterKey) enteredRef.current = { key: enterKey, ms: Date.now() }
     if (row.state === 'question') {
@@ -549,11 +650,17 @@ export default function HostQuiz() {
     }
   }, [sessionId, questionId, state])
 
+  // Refresh everyone's totals as soon as the reveal shows, so the leaderboard that follows starts from settled scores.
   useEffect(() => {
-    if (state !== 'question' && state !== 'reveal' && state !== 'leaderboard') return undefined
+    if (state === 'reveal') loadPlayers()
+  }, [state, loadPlayers])
+
+  useEffect(() => {
+    const lobbyFull = state === 'lobby' && Boolean(session?.full_at)
+    if (state !== 'question' && state !== 'reveal' && state !== 'leaderboard' && !lobbyFull) return undefined
     const timer = setInterval(() => setNowMs(Date.now()), 250)
     return () => clearInterval(timer)
-  }, [state])
+  }, [state, session?.full_at])
 
   // After the reveal and after the leaderboard the game moves on by itself, so the host does not have to keep
   // clicking. The last leaderboard finishes the game. The server ignores a repeat, so a click at the same moment is harmless.
@@ -564,21 +671,33 @@ export default function HostQuiz() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOn, state, session?.current_question_index])
 
+  // A full lobby starts by itself after 10 seconds (the host can press Start sooner, or pause this).
+  useEffect(() => {
+    if (!autoOn || state !== 'lobby' || !session?.full_at) return undefined
+    const wait = Math.max(0, FULL_LOBBY_COUNTDOWN_MS - (Date.now() - fullRef.current.ms))
+    const timer = setTimeout(() => advance(), wait)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOn, state, session?.full_at])
+
   async function advance() {
-    if (busy || !session) return
+    const current = sessionRef.current
+    if (busyRef.current || !current) return
+    busyRef.current = true
     setBusy(true)
     setError('')
     try {
       const { session: next } = await hostAction('advance', {
         sessionId,
-        expectedState: session.state,
-        expectedIndex: session.current_question_index,
+        expectedState: current.state,
+        expectedIndex: current.current_question_index,
       })
       applySession(next, true)
     } catch (e) {
       if (e.status === 409 && e.data?.session) applySession(e.data.session, true)
       else setError(e.message)
     } finally {
+      busyRef.current = false
       setBusy(false)
     }
   }
@@ -629,7 +748,22 @@ export default function HostQuiz() {
   const shared = { title: quizTitle, index: session.current_question_index, total: questions.length, busy }
   let screen
   if (session.state === 'lobby') {
-    screen = <Lobby session={session} title={quizTitle} players={players} questionCount={questions.length} onStart={advance} busy={busy} />
+    const fullLeft = session.full_at
+      ? autoSecondsLeft({ enteredMs: fullRef.current.ms, nowMs, totalMs: FULL_LOBBY_COUNTDOWN_MS })
+      : null
+    screen = (
+      <Lobby
+        session={session}
+        title={quizTitle}
+        players={players}
+        questionCount={questions.length}
+        onStart={advance}
+        busy={busy}
+        maxPlayers={session.max_players}
+        fullLeft={fullLeft}
+        auto={auto}
+      />
+    )
   } else if (session.state === 'question' && question) {
     screen = (
       <QuestionScreen {...shared} question={question} remaining={remaining} answered={answers.length} playerCount={players.length} onEnd={advance} />

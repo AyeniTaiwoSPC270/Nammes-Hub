@@ -4,7 +4,16 @@ import { createHash, randomBytes, randomInt } from 'node:crypto'
 // Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
 
 export const MAX_PLAYERS = 150
+export const DEFAULT_MAX_PLAYERS = 50
+export const MIN_PLAYERS_LIMIT = 2
+// How long a full lobby waits before the game starts by itself (the host can start it sooner).
+export const FULL_LOBBY_COUNTDOWN_MS = 10_000
 export const AVATAR_COUNT = 50
+
+// The limit an admin sets for a game: a whole number from 2 up to the hard ceiling.
+export function isMaxPlayers(value) {
+  return Number.isInteger(value) && value >= MIN_PLAYERS_LIMIT && value <= MAX_PLAYERS
+}
 
 export function isAvatarId(value) {
   return Number.isInteger(value) && value >= 0 && value < AVATAR_COUNT

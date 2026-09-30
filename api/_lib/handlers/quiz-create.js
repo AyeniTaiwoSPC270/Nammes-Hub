@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
-import { generateJoinCode } from '../quiz.js'
+import { generateJoinCode, isMaxPlayers, DEFAULT_MAX_PLAYERS } from '../quiz.js'
 
 const CODE_ATTEMPTS = 8
 
@@ -14,9 +14,13 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { quizId } = req.body ?? {}
+    const { quizId, maxPlayers } = req.body ?? {}
     if (!isUuid(quizId)) {
       res.status(400).json({ error: 'quizId (uuid) is required' })
+      return
+    }
+    if (maxPlayers !== undefined && !isMaxPlayers(maxPlayers)) {
+      res.status(400).json({ error: 'Max players must be a whole number from 2 to 150' })
       return
     }
 
@@ -46,15 +50,22 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
       return
     }
 
+    // No limit given: use the quiz's own default. The game keeps its own copy, so later edits never change a running game.
+    let limit = maxPlayers
+    if (limit === undefined) {
+      const { data: quiz } = await supabaseAdmin.from('quizzes').select('max_players').eq('id', quizId).maybeSingle()
+      limit = quiz?.max_players ?? DEFAULT_MAX_PLAYERS
+    }
+
     // The code only has to be unique among running games, so a clash is rare; retry a few times if it happens.
     for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
       const { data, error } = await supabaseAdmin
         .from('quiz_sessions')
-        .insert({ quiz_id: quizId, join_code: makeCode() })
+        .insert({ quiz_id: quizId, join_code: makeCode(), max_players: limit })
         .select('id, join_code')
         .single()
       if (!error) {
-        res.status(200).json({ sessionId: data.id, joinCode: data.join_code })
+        res.status(200).json({ sessionId: data.id, joinCode: data.join_code, maxPlayers: limit })
         return
       }
       if (error.code !== '23505') {
