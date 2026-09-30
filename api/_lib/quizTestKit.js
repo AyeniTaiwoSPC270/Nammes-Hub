@@ -31,6 +31,7 @@ export function fakeDb(seed = {}) {
     quiz_teams: [],
     quiz_practice_runs: [],
     quiz_practice_answers: [],
+    quiz_bracket_matches: [],
     ...seed,
   }
   let n = 0
@@ -38,6 +39,7 @@ export function fakeDb(seed = {}) {
   const uniqueViolation = (table, row) => {
     if (table === 'quiz_players') return tables.quiz_players.some((p) => p.session_id === row.session_id && p.nickname.toLowerCase() === row.nickname.toLowerCase())
     if (table === 'quiz_sessions') return tables.quiz_sessions.some((s) => s.join_code === row.join_code && s.state !== 'finished')
+    if (table === 'quiz_bracket_matches') return tables.quiz_bracket_matches.some((m) => m.session_id === row.session_id && m.round === row.round && m.slot === row.slot)
     if (table === 'quiz_powerup_uses') return tables.quiz_powerup_uses.some((u) => u.player_id === row.player_id && u.question_id === row.question_id)
     return false
   }

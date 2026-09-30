@@ -12,6 +12,8 @@ import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar,
 import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
+import { BracketBoard, BracketPodium, BracketPanel } from '../components/quiz/BracketParts'
+import { isRoundEnd, roundOfQuestion } from '../../api/_lib/quizBracketMath.js'
 import BotPanel from '../components/quiz/BotPanel'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
@@ -131,9 +133,10 @@ function ControlButton({ icon, label, onClick, disabled, active }) {
   )
 }
 
-function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots }) {
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots, onSetBracket }) {
   const [menuFor, setMenuFor] = useState(null)
   const [botsOpen, setBotsOpen] = useState(false)
+  const [bracketOpen, setBracketOpen] = useState(false)
   const botCount = players.filter((p) => p.bot_skill).length
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
   // In a team game players are listed team by team, each with a coloured tag.
@@ -166,6 +169,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
         <>
           <div className="flex flex-wrap items-center gap-3">
             <ControlButton icon={locked ? 'lock' : 'lock_open'} label={locked ? 'Unlock lobby' : 'Lock lobby'} onClick={onToggleLock} active={locked} />
+            {!teams.length && <ControlButton icon="account_tree" label={session.bracket_mode ? 'Bracket on' : 'Bracket'} onClick={() => setBracketOpen((v) => !v)} active={bracketOpen || session.bracket_mode} />}
             <ControlButton icon="smart_toy" label={botCount > 0 ? `Test bots (${botCount})` : 'Test bots'} onClick={() => setBotsOpen((v) => !v)} active={botsOpen} />
             {isFull ? (
               <AutoAdvance auto={auto} noun="auto-start" />
@@ -229,6 +233,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
         </section>
       </div>
       <SponsorStrip placement="lobby" />
+      {bracketOpen && !teams.length && <BracketPanel session={session} playerCount={players.length} questionCount={questionCount} busy={busy} onChange={onSetBracket} />}
       {botsOpen && <BotPanel botCount={botCount} spotsLeft={Math.max(0, maxPlayers - players.length)} busy={busy} onAdd={onAddBots} onRemove={onRemoveBots} />}
 
       <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-md sm:p-8">
@@ -704,7 +709,7 @@ function TeamStandings({ teams, players, scoring, big = false }) {
   )
 }
 
-function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto, teams, scoring }) {
+function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto, teams, scoring, bracket }) {
   // If the round's points arrive a moment after the screen opens (for example after a page reload), start the replay again.
   const replayKey = [...gains.values()].join(',')
   const type = question?.type ?? 'multiple'
@@ -728,6 +733,11 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
       }
     >
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Leaderboard</h1>
+      {bracket && bracket.matches.length > 0 && (
+        isRoundEnd(index, bracket.length)
+          ? <BracketBoard matches={bracket.matches} round={roundOfQuestion(index, bracket.length)} rounds={bracket.rounds} length={bracket.length} />
+          : <p className="text-center text-lg font-semibold text-orange-500">Round {roundOfQuestion(index, bracket.length) + 1}{bracket.rounds ? ` of ${bracket.rounds}` : ''} · question {(index % bracket.length) + 1} of {bracket.length}</p>
+      )}
       {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} />}
       <AnimatedBoard key={replayKey} sig={boardSignature(players, gains)} players={players} gains={gains} />
       {answerLabel && (
@@ -757,7 +767,7 @@ const PODIUM = [
   { place: 3, height: 'h-32 sm:h-40', block: 'border border-hairline bg-surface text-ink-900', delay: 200 },
 ]
 
-function FinishedScreen({ title, players, teams, scoring }) {
+function FinishedScreen({ title, players, teams, scoring, bracket }) {
   const ranked = useMemo(() => rankPlayers(players), [players])
   const byPlace = (place) => ranked[place - 1]
   return (
@@ -777,6 +787,7 @@ function FinishedScreen({ title, players, teams, scoring }) {
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Final results</h1>
       <p className="text-center text-lg text-ink-muted">{ranked.length} player{ranked.length === 1 ? '' : 's'} took part</p>
       {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} big />}
+      {bracket?.champion && <BracketPodium matches={bracket.matches} championId={bracket.champion} players={players} />}
 
       <div className="mx-auto flex w-full max-w-3xl items-end justify-center gap-3 sm:gap-5">
         {PODIUM.map(({ place, height, block, delay }) => {
@@ -943,6 +954,25 @@ export default function HostQuiz() {
       clearInterval(timer)
     }
   }, [sessionId, questionId, state])
+
+  // A bracket game's matches. They change when a round is settled (as the game leaves a reveal), so the board is read
+  // again a moment after every step, in case the settling finished just after the screen changed.
+  const [bracketMatches, setBracketMatches] = useState([])
+  const bracketOn = Boolean(session?.bracket_mode)
+  useEffect(() => {
+    if (!bracketOn || !['question', 'reveal', 'leaderboard', 'finished'].includes(state)) return undefined
+    let cancelled = false
+    const load = async () => {
+      const { data } = await supabase.from('quiz_bracket_matches').select('*').eq('session_id', sessionId)
+      if (!cancelled && data) setBracketMatches(data)
+    }
+    load()
+    const timers = [setTimeout(load, 1200), setTimeout(load, 3500)]
+    return () => {
+      cancelled = true
+      timers.forEach(clearTimeout)
+    }
+  }, [bracketOn, state, session?.current_question_index, sessionId])
 
   // Refresh everyone's totals as soon as the reveal shows, so the leaderboard that follows starts from settled scores.
   useEffect(() => {
@@ -1180,6 +1210,7 @@ export default function HostQuiz() {
         onRename={(player) => runOp('rename', { playerId: player.id })}
         onAddBots={(count, skill) => runOp('addBots', { count, skill })}
         onRemoveBots={() => runOp('removeBots')}
+        onSetBracket={(change) => runOp('setBracket', { enabled: session.bracket_mode, length: session.bracket_length, botSkill: session.bracket_bot_skill, ...change })}
       />
     )
   } else if (session.state === 'question' && question) {
@@ -1214,9 +1245,9 @@ export default function HostQuiz() {
       />
     )
   } else if (session.state === 'leaderboard') {
-    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} />
+    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} bracket={session.bracket_mode ? { length: session.bracket_length, rounds: session.bracket_rounds, matches: bracketMatches } : null} />
   } else {
-    screen = <FinishedScreen title={quizTitle} players={players} teams={teams} scoring={session.team_scoring} />
+    screen = <FinishedScreen title={quizTitle} players={players} teams={teams} scoring={session.team_scoring} bracket={session.bracket_mode ? { champion: session.bracket_champion, matches: bracketMatches } : null} />
   }
 
   return (

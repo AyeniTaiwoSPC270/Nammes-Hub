@@ -3,6 +3,7 @@ import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeb
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
 import { rankTeams } from '../quizTeams.js'
+import { bracketViewFor } from '../quizBracket.js'
 
 const TOP_N = 10
 
@@ -60,6 +61,9 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
       : []
     const myTeam = teamRows.find((t) => t.id === (players ?? []).find((p) => p.id === player.id)?.team_id) ?? null
     const me = ranked.find((p) => p.id === player.id)
+    const bracket = session.bracket_mode
+      ? bracketViewFor(((await supabaseAdmin.from('quiz_bracket_matches').select('*').eq('session_id', session.id)).data ?? []), player.id, session)
+      : null
 
     const out = {
       serverNow: now(),
@@ -76,6 +80,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         pausedAt: session.paused_at ?? null,
         pausedTotalMs: session.paused_total_ms ?? 0,
         timeBonusMs: session.time_bonus_ms ?? 0,
+        bracket,
       },
       theme: sanitizeTheme(session.theme, { quizId: session.quiz_id }),
       me: {
