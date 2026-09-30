@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, avatarInfo, normalizeAvatarId, AVATAR_COUNT, OPTION_STYLES } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, avatarInfo, normalizeAvatarId, AVATAR_COUNT, OPTION_STYLES } from './quiz'
 
 function question(over = {}) {
   return { ...blankQuestion(), text: 'Capital of Nigeria?', options: ['Lagos', 'Abuja', '', ''], correct_index: 1, ...over }
@@ -79,5 +79,16 @@ describe('avatar catalogue', () => {
     expect(avatarInfo(0).name).toBe('Coral Blob')
     expect(avatarInfo(49).name).toBe('Bubblegum Ghost')
     for (const bad of [-1, 50, 2.5, null, undefined, '7']) expect(normalizeAvatarId(bad)).toBe(0)
+  })
+})
+
+describe('autoSecondsLeft', () => {
+  it('counts down from five seconds, rounding up, and never goes negative', () => {
+    expect(AUTO_ADVANCE_MS).toBe(5000)
+    expect(autoSecondsLeft({ enteredMs: 0, nowMs: 0 })).toBe(5)
+    expect(autoSecondsLeft({ enteredMs: 0, nowMs: 1200 })).toBe(4)
+    expect(autoSecondsLeft({ enteredMs: 0, nowMs: 4999 })).toBe(1)
+    expect(autoSecondsLeft({ enteredMs: 0, nowMs: 9000 })).toBe(0)
+    expect(autoSecondsLeft({ enteredMs: 1000, nowMs: 0 })).toBe(5) // a clock reading slightly behind the start
   })
 })

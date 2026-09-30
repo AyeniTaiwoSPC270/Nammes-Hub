@@ -58,6 +58,16 @@ export function randomAvatarId() {
   return Math.floor(Math.random() * AVATAR_COUNT)
 }
 
+// How long the answer reveal and the leaderboard stay up before the game moves on by itself.
+export const AUTO_ADVANCE_MS = 5000
+
+// Whole seconds left before the automatic move on, counting down from `totalMs` (never below zero or above the total,
+// even if the clock reading is a moment behind).
+export function autoSecondsLeft({ enteredMs, nowMs, totalMs = AUTO_ADVANCE_MS }) {
+  const left = Math.ceil((totalMs - (nowMs - enteredMs)) / 1000)
+  return Math.min(Math.ceil(totalMs / 1000), Math.max(0, left))
+}
+
 export function initialOf(nickname) {
   const first = [...String(nickname).trim()][0]
   return first ? first.toUpperCase() : '?'

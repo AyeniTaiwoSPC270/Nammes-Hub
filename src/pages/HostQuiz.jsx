@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
-import { hostAction, OPTION_STYLES, secondsRemaining, rankPlayers, formatScore } from '../data/quiz'
+import { hostAction, OPTION_STYLES, secondsRemaining, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS } from '../data/quiz'
 import { AnswerShape, Avatar, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
@@ -54,6 +54,24 @@ function ActionButton({ children, onClick, disabled, tone = 'accent', icon }) {
       {children}
     </button>
   )
+}
+
+// Reveal and leaderboard move on by themselves; the host can pause that, or just click ahead.
+function AutoAdvance({ auto }) {
+  return (
+    <button
+      type="button"
+      onClick={auto.toggle}
+      className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-bold text-ink-900 hover:bg-surface-low"
+    >
+      <span className="material-symbols-outlined" aria-hidden="true">{auto.on ? 'pause' : 'play_arrow'}</span>
+      {auto.on ? 'Pause auto-advance' : 'Resume auto-advance'}
+    </button>
+  )
+}
+
+function withCountdown(label, auto) {
+  return auto.on ? `${label} (${auto.secondsLeft}s)` : label
 }
 
 function Lobby({ session, title, players, questionCount, onStart, busy }) {
@@ -210,7 +228,7 @@ function QuestionScreen({ title, question, index, total, remaining, answered, pl
   )
 }
 
-function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast }) {
+function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto }) {
   const max = Math.max(1, ...counts)
   const correctCount = counts[question.correct_index] ?? 0
   const percentCorrect = answers.length > 0 ? Math.round((correctCount / answers.length) * 100) : 0
@@ -228,8 +246,8 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
       chip={<Chip>Question {index + 1} of {total} · Time&apos;s up</Chip>}
       footer={
         <>
-          <span className="text-ink-muted">Points are already added to the leaderboard.</span>
-          <ActionButton onClick={onNext} disabled={busy} icon="arrow_forward">{isLast ? 'Show results' : 'Leaderboard'}</ActionButton>
+          <AutoAdvance auto={auto} />
+          <ActionButton onClick={onNext} disabled={busy} icon="arrow_forward">{withCountdown(isLast ? 'Final standings' : 'Leaderboard', auto)}</ActionButton>
         </>
       }
     >
@@ -287,7 +305,7 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast }) {
+function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto }) {
   const ranked = useMemo(() => rankPlayers(players), [players])
   const previous = useMemo(
     () => new Map(rankPlayers(players.map((p) => ({ ...p, total_score: p.total_score - (gains.get(p.id) ?? 0) }))).map((p) => [p.id, p.rank])),
@@ -301,8 +319,8 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
       chip={<Chip>After question {index + 1} of {total}</Chip>}
       footer={
         <>
-          <span className="text-ink-muted">{isLast ? 'That was the last question.' : `Up next: question ${index + 2}.`}</span>
-          <ActionButton onClick={onNext} disabled={busy} icon="arrow_forward">{isLast ? 'Finish' : 'Next question'}</ActionButton>
+          <AutoAdvance auto={auto} />
+          <ActionButton onClick={onNext} disabled={busy} icon="arrow_forward">{withCountdown(isLast ? 'Final results' : 'Next question', auto)}</ActionButton>
         </>
       }
     >
@@ -437,9 +455,14 @@ export default function HostQuiz() {
   // with a slightly wrong clock still counts down correctly). On a page reload we fall back to the server time.
   const startedRef = useRef({ key: '', ms: 0 })
   const autoKeyRef = useRef('')
+  const [autoOn, setAutoOn] = useState(true)
+  // When the current step (question, reveal, leaderboard...) first appeared on this screen; drives the auto-advance countdown.
+  const enteredRef = useRef({ key: '', ms: 0 })
 
   const applySession = useCallback((row, live) => {
     setSession(row)
+    const enterKey = `${row.state}:${row.current_question_index}`
+    if (enteredRef.current.key !== enterKey) enteredRef.current = { key: enterKey, ms: Date.now() }
     if (row.state === 'question') {
       const key = `${row.id}:${row.current_question_index}`
       if (startedRef.current.key !== key) {
@@ -527,10 +550,19 @@ export default function HostQuiz() {
   }, [sessionId, questionId, state])
 
   useEffect(() => {
-    if (state !== 'question') return undefined
+    if (state !== 'question' && state !== 'reveal' && state !== 'leaderboard') return undefined
     const timer = setInterval(() => setNowMs(Date.now()), 250)
     return () => clearInterval(timer)
   }, [state])
+
+  // After the reveal and after the leaderboard the game moves on by itself, so the host does not have to keep
+  // clicking. The last leaderboard finishes the game. The server ignores a repeat, so a click at the same moment is harmless.
+  useEffect(() => {
+    if (!autoOn || (state !== 'reveal' && state !== 'leaderboard')) return undefined
+    const timer = setTimeout(() => advance(), AUTO_ADVANCE_MS)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOn, state, session?.current_question_index])
 
   async function advance() {
     if (busy || !session) return
@@ -588,6 +620,11 @@ export default function HostQuiz() {
   }
 
   const isLast = session.current_question_index >= questions.length - 1
+  const auto = {
+    on: autoOn,
+    toggle: () => setAutoOn((on) => !on),
+    secondsLeft: autoSecondsLeft({ enteredMs: enteredRef.current.ms, nowMs }),
+  }
   const counts = question ? question.options.map((_, i) => answers.filter((a) => a.chosen_index === i).length) : []
   const shared = { title: quizTitle, index: session.current_question_index, total: questions.length, busy }
   let screen
@@ -609,10 +646,11 @@ export default function HostQuiz() {
         playerCount={players.length}
         onNext={advance}
         isLast={isLast}
+        auto={auto}
       />
     )
   } else if (session.state === 'leaderboard') {
-    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} />
+    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} />
   } else {
     screen = <FinishedScreen title={quizTitle} players={players} />
   }
