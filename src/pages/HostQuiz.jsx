@@ -4,7 +4,8 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, OPTION_STYLES, secondsRemaining, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { useCountUp } from '../lib/useCountUp'
-import { AnswerShape, Avatar, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
 // (/api/quiz?action=advance); everything else here is reading. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -14,7 +15,7 @@ const POLL_MS = 2500
 function Stage({ title, chip, footer, children }) {
   return (
     <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
-      <MathBackdrop />
+      <QuizBackdrop />
       <QuizTopBar title={title}>{chip}</QuizTopBar>
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 sm:px-8">{children}</main>
       {footer && (
@@ -79,6 +80,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
   const [qr, setQr] = useState('')
   const joinUrl = `${window.location.origin}/play?code=${session.join_code}`
   const digits = session.join_code.split('')
+  const theme = useQuizTheme()
   const isFull = fullLeft !== null
   const fillPercent = Math.min(100, Math.round((players.length / maxPlayers) * 100))
 
@@ -116,12 +118,14 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
       }
     >
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <section className="qz-rise flex flex-col justify-between gap-8 rounded-3xl bg-gradient-to-br from-green-900 to-[#17492f] p-8 text-white shadow-xl sm:p-10">
+        <section className="qz-rise flex flex-col justify-between gap-8 rounded-3xl qz-deep p-8 text-white shadow-xl sm:p-10">
           <div>
+            {theme.headline && <h2 className="mb-4 text-3xl font-bold leading-tight sm:text-5xl">{theme.headline}</h2>}
             <p className="text-lg font-semibold uppercase tracking-[0.14em] text-orange-100/80">Join the game</p>
             <p className="mt-1 text-2xl font-semibold sm:text-3xl">
               Go to <span className="text-orange-100">{window.location.host}/play</span> and enter
             </p>
+            {theme.tagline && <p className="mt-3 text-xl text-white/80">{theme.tagline}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3" aria-label={`Game code ${digits.join(' ')}`}>
             {digits.map((d, i) => (
@@ -466,7 +470,7 @@ function downloadCsv(ranked, quizTitle) {
 }
 
 const PODIUM = [
-  { place: 2, height: 'h-44 sm:h-56', block: 'bg-green-900 text-white', delay: 600 },
+  { place: 2, height: 'h-44 sm:h-56', block: 'qz-deep text-white', delay: 600 },
   { place: 1, height: 'h-60 sm:h-80', block: 'bg-gradient-to-b from-orange-500 to-orange-600 text-white', delay: 1000 },
   { place: 3, height: 'h-32 sm:h-40', block: 'border border-hairline bg-surface text-ink-900', delay: 200 },
 ]
@@ -790,13 +794,13 @@ export default function HostQuiz() {
   }
 
   return (
-    <>
+    <QuizThemeScope theme={session.theme}>
       {screen}
       {error && (
         <div role="alert" className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-2xl bg-danger px-5 py-3 text-white shadow-lg">
           {error}
         </div>
       )}
-    </>
+    </QuizThemeScope>
   )
 }

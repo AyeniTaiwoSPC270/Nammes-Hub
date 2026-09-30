@@ -71,6 +71,7 @@ const AdminAwardCurate = lazyRetry(() => import('./pages/admin/AdminAwardCurate'
 const AdminAwardResults = lazyRetry(() => import('./pages/admin/AdminAwardResults'))
 const AdminQuizzes = lazyRetry(() => import('./pages/admin/AdminQuizzes'))
 const AdminQuizEditor = lazyRetry(() => import('./pages/admin/AdminQuizEditor'))
+const AdminQuizStudio = lazyRetry(() => import('./pages/admin/AdminQuizStudio'))
 const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
 const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
 
@@ -187,6 +188,7 @@ export default function App() {
                 <Route path="admin/quizzes" element={<AdminQuizzes />} />
                 <Route path="admin/quizzes/new" element={<AdminQuizEditor />} />
                 <Route path="admin/quizzes/:id/edit" element={<AdminQuizEditor />} />
+                <Route path="admin/quizzes/:id/studio" element={<AdminQuizStudio />} />
                 <Route path="admin/awards" element={<AdminAwards />} />
                 <Route path="admin/awards/new" element={<AdminAwardSeason />} />
                 <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />

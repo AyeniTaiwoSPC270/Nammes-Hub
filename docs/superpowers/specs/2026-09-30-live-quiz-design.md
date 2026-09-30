@@ -1,7 +1,7 @@
 # Live Quiz (Kahoot-style) — Design Spec
 
 Date: 2026-09-30
-Status: Built on branch `feat/live-quiz` with a plain UI, ready for your designs. The migration has NOT been applied to Supabase yet.
+Status: Built and live. Later additions are listed under "Design Studio and characters" at the end.
 
 ## Goal
 
@@ -121,3 +121,8 @@ UI is designed externally by the user and brought back as code. Build logic and 
 - Do results get shown publicly on the hub, or only to admins?
 - Should a quiz be replayable (multiple sessions per quiz)? Assumed yes.
 - Any need for a "no nickname repeats across sessions" or login-linked players? Assumed no.
+
+## Design Studio and characters
+
+- **Design Studio** (`/admin/quizzes/:id/studio`): per quiz, pick a colour scheme, accent colour, faint backdrop pattern, celebration style (maths symbols, stars, petals, none), and an optional event headline and tagline, with a live projector/phone preview. Stored in `quizzes.theme` (jsonb); a game copies it into `quiz_sessions.theme` when it starts, so editing a quiz never restyles a running game. `api/_lib/quizTheme.js` cleans every theme (only `#rrggbb` colours, fixed lists for everything else) on the server and in the studio, so a theme can never put free text into CSS. Phones receive the cleaned theme from `/api/quiz?action=state`.
+- **50 unique characters** (`src/data/quizCharacters.js`): each has its own name, body, headpiece, face, outfit, optional floating maths prop, colour, and its own idle move, win move, sad move and hello gesture. A test checks that no two characters share a name, colour, body and headpiece, full look, or idle and win moves. The studio's Characters tab shows all 50 in every mood.

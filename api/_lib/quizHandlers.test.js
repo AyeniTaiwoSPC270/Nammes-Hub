@@ -144,6 +144,18 @@ describe('quiz-create', () => {
       expect(res.statusCode).toBe(400)
     }
   })
+  it("copies the quiz's look into the game, cleaned, so editing the quiz later never restyles a running game", async () => {
+    const db = fakeDb({ quizzes: [{ id: QUIZ, max_players: 40, theme: { look: 'royal', accent: '#FF00AA', pattern: 'nope', headline: '  Freshers   Night ', evil: '</style>' } }] })
+    const res = fakeRes()
+    await createQuizCreateHandler(() => db, { makeCode: () => '333333' })(admin({ quizId: QUIZ }), res)
+    expect(res.statusCode).toBe(200)
+    expect(db.tables.quiz_sessions.at(-1).theme).toEqual({ look: 'royal', accent: '#ff00aa', pattern: 'math', confetti: 'math', headline: 'Freshers Night', tagline: '' })
+  })
+  it('gives a quiz with no look the default one', async () => {
+    const db = fakeDb()
+    await createQuizCreateHandler(() => db, { makeCode: () => '444444' })(admin({ quizId: QUIZ }), fakeRes())
+    expect(db.tables.quiz_sessions.at(-1).theme).toMatchObject({ look: 'classic', accent: null, pattern: 'math' })
+  })
   it('creates a lobby with a six-digit code and retries a code clash', async () => {
     const db = fakeDb({ quiz_sessions: [{ id: 'old', quiz_id: QUIZ, join_code: '111111', state: 'lobby' }] })
     const codes = ['111111', '222222']
@@ -308,6 +320,12 @@ describe('answering and the answer-leak rule', () => {
     db.tables.quiz_sessions[0].full_at = '2026-10-01T10:00:00.000Z'
     const res = await state(a.token)
     expect(res.body.session).toMatchObject({ maxPlayers: 30, fullAt: '2026-10-01T10:00:00.000Z' })
+  })
+  it("sends phones the game's look, cleaned", async () => {
+    const { db, a, state } = await setup()
+    db.tables.quiz_sessions[0].theme = { look: 'ocean', headline: 'Hello', accent: 'red; background:url(x)' }
+    const res = await state(a.token)
+    expect(res.body.theme).toEqual({ look: 'ocean', accent: null, pattern: 'math', confetti: 'math', headline: 'Hello', tagline: '' })
   })
   it('does not send the correct answer to phones while the question is open', async () => {
     const { a, state } = await setup()

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
-import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
+import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
 import { useCountUp } from '../lib/useCountUp'
 
@@ -36,7 +37,7 @@ function saveSaved(value) {
 function Phone({ me, children }) {
   return (
     <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
-      <MathBackdrop />
+      <QuizBackdrop />
       <QuizTopBar compact>
         {me && (
           <span className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3 text-sm font-bold">
@@ -53,7 +54,7 @@ function Phone({ me, children }) {
 
 // Full-colour result screens (green for right, red for wrong, deep green otherwise).
 function ResultScreen({ tone, children }) {
-  const bg = tone === 'good' ? 'bg-green-700' : tone === 'bad' ? 'bg-red-700' : 'bg-green-900'
+  const bg = tone === 'good' ? 'bg-green-700' : tone === 'bad' ? 'bg-red-700' : 'qz-deep'
   return (
     <div className={`relative flex min-h-[100dvh] flex-col text-white ${bg}`}>
       <div className="flex justify-end p-4">
@@ -231,6 +232,17 @@ function RankMove({ delta }) {
 }
 
 export default function PlayQuiz() {
+  // The look of the game (set by the host in the studio) arrives with the game state, so the screens read it from here.
+  const [theme, setTheme] = useState(null)
+  return (
+    <QuizThemeScope theme={theme}>
+      <PlayQuizGame onTheme={setTheme} />
+    </QuizThemeScope>
+  )
+}
+
+function PlayQuizGame({ onTheme }) {
+  const theme = useQuizTheme()
   const [saved, setSaved] = useState(loadSaved)
   const [game, setGame] = useState(null)
   const [offset, setOffset] = useState(0) // server clock minus this phone's clock
@@ -284,6 +296,13 @@ export default function PlayQuiz() {
       supabase.removeChannel(channel)
     }
   }, [sessionId, refresh])
+
+  const gameTheme = game?.theme ?? null
+  const gameThemeKey = JSON.stringify(gameTheme)
+  useEffect(() => {
+    onTheme(gameTheme)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameThemeKey, onTheme])
 
   const state = game?.session.state
   const lobbyFull = state === 'lobby' && Boolean(game?.session.fullAt)
@@ -358,6 +377,7 @@ export default function PlayQuiz() {
           <div className="qz-rise" style={{ animationDelay: '120ms' }}>
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">You&apos;re in</p>
             <h1 className="text-4xl font-bold">{me.nickname}</h1>
+            {theme.headline && <p className="mt-2 text-lg font-semibold text-ink-muted">{theme.headline}</p>}
           </div>
         </div>
         <div className="qz-rise rounded-3xl border border-hairline bg-surface p-5 text-center shadow-md" style={{ animationDelay: '220ms' }}>
@@ -479,7 +499,7 @@ export default function PlayQuiz() {
   if (session.state === 'leaderboard') {
     return (
       <Phone me={me}>
-        <section className="qz-pop rounded-3xl bg-gradient-to-br from-green-900 to-[#17492f] p-6 text-center text-white shadow-xl">
+        <section className="qz-pop rounded-3xl qz-deep p-6 text-center text-white shadow-xl">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">Your position</p>
           <p className="mt-1 text-7xl font-bold">{me.rank ? `#${me.rank}` : '—'}</p>
           <div className="mt-2 flex items-center justify-center gap-3 text-xl font-semibold">
@@ -517,7 +537,7 @@ export default function PlayQuiz() {
     return (
       <Phone me={me}>
         {podium && <Confetti count={30} />}
-        <section className="qz-pop mt-2 rounded-3xl bg-gradient-to-br from-green-900 to-[#17492f] p-8 text-center text-white shadow-xl">
+        <section className="qz-pop mt-2 rounded-3xl qz-deep p-8 text-center text-white shadow-xl">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">{podium ? 'You made the podium!' : 'Final result'}</p>
           <Avatar name={me.nickname} avatarId={me.avatarId} mood={podium ? 'dance' : 'happy'} className="mx-auto mt-2 h-32 w-32" />
           <p className="mt-2 text-6xl font-bold">{me.rank ? (MEDALS[me.rank - 1] ?? `#${me.rank}`) : '—'}</p>

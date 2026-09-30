@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { avatarStyle, initialOf } from '../../data/quiz'
 import QuizThemeToggle from './QuizThemeToggle'
 import Character from './Character'
+import { useQuizTheme } from './QuizTheme'
 
 // Small building blocks shared by the host (projector) and player (phone) quiz screens.
 
@@ -82,51 +83,99 @@ export function CountdownRing({ seconds, total, size = 96, stroke = 9 }) {
 }
 
 const GLYPHS = ['π', 'Σ', '∫', '√', 'Δ', 'λ', 'θ', '∞', '≈', '±']
+const SPARKLES = ['✦', '✧', '★', '✶']
 
-// Very faint maths symbols behind the page: a nod to the department without hurting legibility.
-export function MathBackdrop() {
+// Faint symbols scattered behind the page. Positions come from the index so it renders the same every time.
+function GlyphField({ glyphs, count = 14 }) {
   const items = useMemo(
     () =>
-      Array.from({ length: 14 }, (_, i) => ({
-        glyph: GLYPHS[i % GLYPHS.length],
+      Array.from({ length: count }, (_, i) => ({
+        glyph: glyphs[i % glyphs.length],
         left: (i * 37 + 8) % 92,
         top: (i * 53 + 5) % 90,
         size: 28 + ((i * 17) % 44),
         rotate: ((i * 41) % 50) - 25,
       })),
-    [],
+    [glyphs, count],
   )
+  return items.map((item, i) => (
+    <span
+      key={i}
+      className="absolute select-none font-bold text-brand opacity-[0.05]"
+      style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, transform: `rotate(${item.rotate}deg)` }}
+    >
+      {item.glyph}
+    </span>
+  ))
+}
+
+const WAVE = 'M0 40Q90 0 180 40T360 40T540 40T720 40V80H0z'
+
+// The page background chosen in the studio: a soft two-colour glow plus one pattern, all very faint so text stays readable.
+export function QuizBackdrop() {
+  const { pattern } = useQuizTheme()
   return (
-    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
-      {items.map((item, i) => (
-        <span
-          key={i}
-          className="absolute select-none font-bold text-brand opacity-[0.05]"
-          style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, transform: `rotate(${item.rotate}deg)` }}
-        >
-          {item.glyph}
-        </span>
-      ))}
+    <div
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      aria-hidden="true"
+      style={{
+        backgroundImage:
+          'radial-gradient(60rem 40rem at 0% -10%, color-mix(in srgb, var(--qz-glow-a, #ff5a1f) 14%, transparent), transparent 70%), radial-gradient(50rem 36rem at 100% 0%, color-mix(in srgb, var(--qz-glow-b, #0b2417) 12%, transparent), transparent 70%)',
+      }}
+    >
+      {pattern === 'math' && <GlyphField glyphs={GLYPHS} />}
+      {pattern === 'stars' && <GlyphField glyphs={SPARKLES} count={18} />}
+      {pattern === 'dots' && (
+        <div
+          className="absolute inset-0 text-brand opacity-[0.09]"
+          style={{ backgroundImage: 'radial-gradient(currentColor 1.6px, transparent 1.8px)', backgroundSize: '26px 26px' }}
+        />
+      )}
+      {pattern === 'grid' && (
+        <div
+          className="absolute inset-0 text-brand opacity-[0.06]"
+          style={{
+            backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
+            backgroundSize: '44px 44px',
+          }}
+        />
+      )}
+      {pattern === 'waves' && (
+        <svg className="absolute inset-x-0 bottom-0 h-56 w-full text-brand opacity-[0.07]" viewBox="0 0 720 80" preserveAspectRatio="none">
+          <path d={WAVE} fill="currentColor" />
+          <path d={WAVE} fill="currentColor" transform="translate(-140 14)" />
+        </svg>
+      )}
     </div>
   )
 }
 
 const CONFETTI_COLORS = ['text-red-600', 'text-blue-600', 'text-amber-500', 'text-green-600', 'text-orange-500']
+const CONFETTI_GLYPHS = {
+  math: [...GLYPHS, '★', '✦'],
+  stars: ['★', '✦', '✧', '✶', '✷'],
+  petals: ['❀', '✿', '❁', '✾', '❃'],
+}
 
-// Maths symbols raining down for the winners. Positions come from the index so it renders the same every time.
+// Symbols raining down for the winners, in the style chosen in the studio (or none).
 export function Confetti({ count = 36 }) {
+  const { confetti } = useQuizTheme()
+  const glyphs = CONFETTI_GLYPHS[confetti]
   const pieces = useMemo(
     () =>
-      Array.from({ length: count }, (_, i) => ({
-        glyph: [...GLYPHS, '★', '✦'][i % (GLYPHS.length + 2)],
-        left: (i * 29 + 3) % 100,
-        size: 16 + ((i * 13) % 22),
-        delay: ((i * 7) % 30) / 10,
-        duration: 4 + ((i * 11) % 30) / 10,
-        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      })),
-    [count],
+      glyphs
+        ? Array.from({ length: count }, (_, i) => ({
+            glyph: glyphs[i % glyphs.length],
+            left: (i * 29 + 3) % 100,
+            size: 16 + ((i * 13) % 22),
+            delay: ((i * 7) % 30) / 10,
+            duration: 4 + ((i * 11) % 30) / 10,
+            color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+          }))
+        : [],
+    [count, glyphs],
   )
+  if (!glyphs) return null
   return (
     <div className="pointer-events-none fixed inset-0 z-10 overflow-hidden" aria-hidden="true">
       {pieces.map((p, i) => (

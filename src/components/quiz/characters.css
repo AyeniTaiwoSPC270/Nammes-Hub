@@ -1,0 +1,108 @@
+/* Moves for the 50 quiz characters. Every character has its own idle move, win move, sad move and hello gesture
+   (see src/data/quizCharacters.js); Character.jsx puts them on the svg as qz-i-*, qz-w-*, qz-s-* and qz-h-* classes.
+   Mood decides which one plays: idle and wave use the idle move, happy and dance use the win move, sad uses the
+   sad move. Wave, happy and dance also play the hello gesture with the arms. */
+
+.qz-char { overflow: visible; }
+.qz-char .qz-body { transform-box: fill-box; transform-origin: 50% 100%; }
+.qz-char .qz-arm { transform-box: fill-box; }
+.qz-char .qz-arm-r { transform-origin: 0% 0%; }
+.qz-char .qz-arm-l { transform-origin: 100% 0%; }
+
+/* ---- idle moves (while waiting) ---- */
+@keyframes qz-i-bob { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.03); } }
+@keyframes qz-i-sway { 0%, 100% { transform: rotate(-3.5deg); } 50% { transform: rotate(3.5deg); } }
+@keyframes qz-i-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(0.97, 1.05); } }
+@keyframes qz-i-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes qz-i-nervous { 0%, 70%, 100% { transform: translateX(0); } 74% { transform: translateX(-1.2px); } 78% { transform: translateX(1.2px); } 82% { transform: translateX(-1.2px); } 86% { transform: translateX(1.2px); } 90% { transform: translateX(0); } }
+@keyframes qz-i-hop { 0%, 55%, 100% { transform: translateY(0) scale(1, 1); } 65% { transform: translateY(1px) scale(1.06, 0.92); } 78% { transform: translateY(-7px) scale(0.96, 1.06); } 90% { transform: translateY(0) scale(1.04, 0.95); } }
+@keyframes qz-i-tilt { 0%, 15%, 100% { transform: rotate(0); } 30%, 45% { transform: rotate(-7deg); } 60%, 70% { transform: rotate(0); } 82%, 92% { transform: rotate(7deg); } }
+@keyframes qz-i-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes qz-i-doze { 0%, 100% { transform: rotate(0) translateY(0); } 40%, 60% { transform: rotate(6deg) translateY(2px); } 75% { transform: rotate(-1deg) translateY(0); } }
+@keyframes qz-i-glitch { 0%, 88%, 100% { transform: translateX(0) skewX(0); } 90% { transform: translateX(2.5px) skewX(-8deg); } 93% { transform: translateX(-2.5px) skewX(6deg); } 96% { transform: translateX(1px) skewX(0); } }
+@keyframes qz-i-wobble { 0%, 100% { transform: scale(1.05, 0.95); } 50% { transform: scale(0.95, 1.05); } }
+.qz-i-bob { --idle: qz-i-bob 3s ease-in-out infinite; }
+.qz-i-sway { --idle: qz-i-sway 3.4s ease-in-out infinite; }
+.qz-i-breathe { --idle: qz-i-breathe 3.6s ease-in-out infinite; }
+.qz-i-hover { --idle: qz-i-hover 2.6s ease-in-out infinite; }
+.qz-i-nervous { --idle: qz-i-nervous 3s linear infinite; }
+.qz-i-hop { --idle: qz-i-hop 2.4s ease-in-out infinite; }
+.qz-i-tilt { --idle: qz-i-tilt 5s ease-in-out infinite; }
+.qz-i-pulse { --idle: qz-i-pulse 1.8s ease-in-out infinite; }
+.qz-i-doze { --idle: qz-i-doze 5s ease-in-out infinite; }
+.qz-i-glitch { --idle: qz-i-glitch 3s steps(1, end) infinite; }
+.qz-i-wobble { --idle: qz-i-wobble 1.6s ease-in-out infinite; }
+
+/* ---- win moves (right answers, the podium). Dance plays the same move faster. ---- */
+.qz-mood-dance { --t: 0.7; }
+@keyframes qz-w-jump { 0%, 100% { transform: translateY(0) scale(1, 1); } 40%, 60% { transform: translateY(-9px) scale(0.96, 1.05); } 85% { transform: translateY(0) scale(1.06, 0.94); } }
+@keyframes qz-w-spin { 0% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-8px) rotate(180deg); } 100% { transform: translateY(0) rotate(360deg); } }
+@keyframes qz-w-flip { 0%, 100% { transform: translateY(0) rotate(0); } 35% { transform: translateY(-13px) rotate(-180deg); } 70% { transform: translateY(0) rotate(-360deg); } }
+@keyframes qz-w-shimmy { 0%, 100% { transform: translateX(-5px) rotate(-6deg); } 50% { transform: translateX(5px) rotate(6deg); } }
+@keyframes qz-w-pogo { 0%, 100% { transform: translateY(0) scale(1.05, 0.93); } 50% { transform: translateY(-8px) scale(0.95, 1.06); } }
+@keyframes qz-w-headbang { 0%, 100% { transform: rotate(-11deg); } 50% { transform: rotate(9deg); } }
+@keyframes qz-w-stretch { 0%, 100% { transform: scale(0.92, 1.14); } 50% { transform: scale(1.08, 0.92); } }
+@keyframes qz-w-zoom { 0%, 100% { transform: scale(1) rotate(-4deg); } 50% { transform: scale(1.2) rotate(4deg); } }
+@keyframes qz-w-moonwalk { 0%, 100% { transform: translateX(-6px) skewX(-8deg); } 50% { transform: translateX(6px) skewX(8deg); } }
+@keyframes qz-w-tada { 0%, 100% { transform: scale(1) rotate(0); } 12% { transform: scale(0.9) rotate(-4deg); } 30%, 70% { transform: scale(1.14) rotate(4deg); } 50% { transform: scale(1.14) rotate(-4deg); } }
+.qz-w-jump { --win: qz-w-jump calc(0.9s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-spin { --win: qz-w-spin calc(1.3s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-flip { --win: qz-w-flip calc(1.6s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-shimmy { --win: qz-w-shimmy calc(0.5s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-pogo { --win: qz-w-pogo calc(0.45s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-headbang { --win: qz-w-headbang calc(0.4s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-stretch { --win: qz-w-stretch calc(0.6s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-zoom { --win: qz-w-zoom calc(0.8s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-moonwalk { --win: qz-w-moonwalk calc(1.3s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-tada { --win: qz-w-tada calc(1.1s * var(--t, 1)) ease-in-out infinite; }
+.qz-w-spin .qz-body, .qz-w-flip .qz-body { transform-origin: 50% 55%; }
+
+/* ---- sad moves ---- */
+@keyframes qz-s-droop { 0%, 100% { transform: translateY(1px) scaleY(0.97); } 50% { transform: translateY(3px) scaleY(0.94); } }
+@keyframes qz-s-shake { 0%, 100% { transform: translateY(2px) rotate(-3deg); } 50% { transform: translateY(2px) rotate(3deg); } }
+@keyframes qz-s-sink { 0%, 100% { transform: translateY(3px) scale(0.96); } 50% { transform: translateY(6px) scale(0.92); } }
+@keyframes qz-s-tremble { 0%, 100% { transform: translate(-1px, 3px); } 50% { transform: translate(1px, 3px); } }
+.qz-s-droop { --sad: qz-s-droop 2.4s ease-in-out infinite; }
+.qz-s-shake { --sad: qz-s-shake 1.6s ease-in-out infinite; }
+.qz-s-sink { --sad: qz-s-sink 3s ease-in-out infinite; }
+.qz-s-tremble { --sad: qz-s-tremble 0.14s linear infinite; }
+
+/* ---- hello gestures (arms). R is the right arm, L the left; angles turn the resting arm about the shoulder. ---- */
+@keyframes qz-h-wave-r { from { transform: rotate(-112deg); } to { transform: rotate(-68deg); } }
+@keyframes qz-h-salute-r { from { transform: rotate(-152deg); } to { transform: rotate(-144deg); } }
+@keyframes qz-h-flex-r { from { transform: rotate(-104deg); } to { transform: rotate(-90deg); } }
+@keyframes qz-h-flex-l { from { transform: rotate(104deg); } to { transform: rotate(90deg); } }
+@keyframes qz-h-cheer-r { from { transform: rotate(-138deg); } to { transform: rotate(-112deg); } }
+@keyframes qz-h-cheer-l { from { transform: rotate(138deg); } to { transform: rotate(112deg); } }
+@keyframes qz-h-point-r { from { transform: rotate(-62deg); } to { transform: rotate(-44deg); } }
+@keyframes qz-h-hips-r { from { transform: rotate(-22deg); } to { transform: rotate(-16deg); } }
+@keyframes qz-h-hips-l { from { transform: rotate(22deg); } to { transform: rotate(16deg); } }
+@keyframes qz-h-clap-r { from { transform: rotate(32deg); } to { transform: rotate(84deg); } }
+@keyframes qz-h-clap-l { from { transform: rotate(-32deg); } to { transform: rotate(-84deg); } }
+@keyframes qz-h-shrug-r { from { transform: rotate(-78deg); } to { transform: rotate(-58deg); } }
+@keyframes qz-h-shrug-l { from { transform: rotate(78deg); } to { transform: rotate(58deg); } }
+.qz-h-wave { --hr: qz-h-wave-r 0.6s ease-in-out infinite alternate; }
+.qz-h-salute { --hr: qz-h-salute-r 0.9s ease-in-out infinite alternate; }
+.qz-h-flex { --hr: qz-h-flex-r 0.7s ease-in-out infinite alternate; --hl: qz-h-flex-l 0.7s ease-in-out infinite alternate; }
+.qz-h-cheer { --hr: qz-h-cheer-r 0.4s ease-in-out infinite alternate; --hl: qz-h-cheer-l 0.4s ease-in-out 0.2s infinite alternate; }
+.qz-h-point { --hr: qz-h-point-r 0.5s ease-in-out infinite alternate; }
+.qz-h-hips { --hr: qz-h-hips-r 1.2s ease-in-out infinite alternate; --hl: qz-h-hips-l 1.2s ease-in-out infinite alternate; }
+.qz-h-clap { --hr: qz-h-clap-r 0.35s ease-in infinite alternate; --hl: qz-h-clap-l 0.35s ease-in infinite alternate; }
+.qz-h-shrug { --hr: qz-h-shrug-r 0.8s ease-in-out infinite alternate; --hl: qz-h-shrug-l 0.8s ease-in-out infinite alternate; }
+
+/* ---- which move plays for which mood ---- */
+.qz-mood-idle .qz-body, .qz-mood-wave .qz-body { animation: var(--idle); }
+.qz-mood-happy .qz-body, .qz-mood-dance .qz-body { animation: var(--win); }
+.qz-mood-sad .qz-body { animation: var(--sad); }
+.qz-mood-wave .qz-arm-r, .qz-mood-happy .qz-arm-r, .qz-mood-dance .qz-arm-r { animation: var(--hr, none); }
+.qz-mood-wave .qz-arm-l, .qz-mood-happy .qz-arm-l, .qz-mood-dance .qz-arm-l { animation: var(--hl, none); }
+
+/* ---- small extras ---- */
+@keyframes qz-prop-float { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-3px) rotate(4deg); } }
+@keyframes qz-halo-glow { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+.qz-char .qz-prop { transform-box: fill-box; transform-origin: 50% 50%; animation: qz-prop-float 2.6s ease-in-out infinite; }
+.qz-char .qz-halo { animation: qz-halo-glow 2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qz-char .qz-body, .qz-char .qz-arm, .qz-char .qz-prop, .qz-char .qz-halo { animation: none !important; }
+}

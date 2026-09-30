@@ -121,6 +121,9 @@ export default function AdminQuizzes() {
                 <Link to={`/admin/quizzes/${quiz.id}/edit`}>
                   <Button variant="secondary" size="sm">Edit</Button>
                 </Link>
+                <Link to={`/admin/quizzes/${quiz.id}/studio`}>
+                  <Button variant="secondary" size="sm">Design</Button>
+                </Link>
                 <Button variant="destructive" size="sm" onClick={() => handleDelete(quiz)} loading={deleteMutation.isPending}>
                   Delete
                 </Button>
