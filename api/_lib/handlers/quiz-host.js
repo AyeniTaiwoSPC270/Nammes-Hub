@@ -10,8 +10,9 @@ import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_
 import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion } from '../quizBracket.js'
 import { settleRound } from '../quizBracketEngine.js'
 
-const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay', 'setBracket']
+const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay', 'setBracket', 'end']
 const STEP_OPS = ['pause', 'resume', 'extend', 'skip', 'botsPlay']
+const GUARDED_OPS = [...STEP_OPS, 'end'] // ops that say which step they mean
 
 // Admin controls for a running game: kick or rename a player, lock the lobby, pause, add time, skip a question.
 // Ops that act on the current question say which question they mean (expectedState / expectedIndex), exactly like
@@ -32,7 +33,7 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
       res.status(400).json({ error: 'playerId is required' })
       return
     }
-    if (STEP_OPS.includes(op) && (typeof expectedState !== 'string' || !Number.isInteger(expectedIndex))) {
+    if (GUARDED_OPS.includes(op) && (typeof expectedState !== 'string' || !Number.isInteger(expectedIndex))) {
       res.status(400).json({ error: 'expectedState and expectedIndex are required' })
       return
     }
@@ -91,6 +92,22 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
     }
 
     if (op === 'lock' || op === 'unlock') return done({ locked: op === 'lock' })
+
+    // End the game now, from any step after the lobby: everyone sees the final results, and the report keeps what was played.
+    if (op === 'end') {
+      if (session.state !== expectedState || session.current_question_index !== expectedIndex) {
+        res.status(409).json({ error: 'The game has already moved on', session })
+        return
+      }
+      if (session.state === 'lobby') {
+        res.status(409).json({ error: 'Nothing has been played yet. Delete the game instead.', session })
+        return
+      }
+      return done(
+        { state: 'finished', finished_at: nowIso, paused_at: null, ...(session.bracket_mode && !session.bracket_done ? { bracket_done: true } : {}) },
+        { endedAt: session.state, index: session.current_question_index },
+      )
+    }
 
     if (op === 'pause') {
       if (session.paused_at) {
