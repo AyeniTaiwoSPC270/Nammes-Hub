@@ -1,8 +1,8 @@
 import PageBanner from '../components/PageBanner'
 import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
+import { HANDBOOK_DOWNLOAD_NAME, useHandbookPdfUrl } from '../data/handbook'
 
-const HANDBOOK_PDF = '/documents/NAMMES-Hub-Handbook.pdf'
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
 
@@ -54,15 +54,12 @@ const coreValues = [
 
 export default function About() {
   const banner = usePageBanner('about')
+  const handbookUrl = useHandbookPdfUrl()
 
   return (
     <div>
       <PageBanner
-        images={
-          banner?.image_urls?.length
-            ? banner.image_urls
-            : ['https://images.unsplash.com/photo-1584365098838-50ccef838f4a?auto=format&fit=crop&w=1600&q=80']
-        }
+        images={banner?.image_urls}
         transition={banner?.transition}
         intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'About NAMMES'}
@@ -140,8 +137,8 @@ export default function About() {
             using the CGPA calculator to running the awards. It includes a full section for admins.
           </p>
           <a
-            href={HANDBOOK_PDF}
-            download="NAMMES-Hub-Handbook.pdf"
+            href={handbookUrl}
+            download={HANDBOOK_DOWNLOAD_NAME}
             className="inline-flex items-center gap-2 rounded-md border border-orange-500 bg-orange-500 px-7 py-3.5 font-body text-base font-bold text-white no-underline transition-[background-color,border-color,transform] duration-150 ease-out hover:scale-[1.03] hover:border-orange-600 hover:bg-orange-600 hover:text-white active:scale-[0.98]"
           >
             <span className="material-symbols-outlined text-xl">download</span>

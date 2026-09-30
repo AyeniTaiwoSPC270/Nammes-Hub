@@ -43,6 +43,7 @@ const ForgotPassword = lazyRetry(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazyRetry(() => import('./pages/ResetPassword'))
 const Admin = lazyRetry(() => import('./pages/Admin'))
 const AdminNews = lazyRetry(() => import('./pages/admin/AdminNews'))
+const AdminHandbook = lazyRetry(() => import('./pages/admin/AdminHandbook'))
 const AdminOpportunities = lazyRetry(() => import('./pages/admin/AdminOpportunities'))
 const AdminEvents = lazyRetry(() => import('./pages/admin/AdminEvents'))
 const AdminEventGallery = lazyRetry(() => import('./pages/admin/AdminEventGallery'))
@@ -140,6 +141,7 @@ export default function App() {
                 <Route path="admin/links" element={<AdminSiteLinks />} />
                 <Route path="admin/banners" element={<AdminPageBanners />} />
                 <Route path="admin/news" element={<AdminNews />} />
+                <Route path="admin/handbook" element={<AdminHandbook />} />
                 <Route path="admin/opportunities" element={<AdminOpportunities />} />
                 <Route path="admin/events" element={<AdminEvents />} />
                 <Route path="admin/events/:id/gallery" element={<AdminEventGallery />} />

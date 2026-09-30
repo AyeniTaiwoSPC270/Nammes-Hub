@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
 import SocialIcons from './SocialIcons'
 import { useSiteContentQuery } from '../data/siteContent'
-
-const HANDBOOK_PDF = '/documents/NAMMES-Hub-Handbook.pdf'
+import { HANDBOOK_DOWNLOAD_NAME, useHandbookPdfUrl } from '../data/handbook'
 
 const linkGroups = [
   {
@@ -20,7 +19,7 @@ const linkGroups = [
       { label: 'Resources', to: '/resources' },
       { label: 'News', to: '/news' },
       { label: 'Opportunities', to: '/opportunities' },
-      { label: 'User handbook (PDF)', href: HANDBOOK_PDF, download: 'NAMMES-Hub-Handbook.pdf' },
+      { label: 'User handbook (PDF)', handbook: true },
     ],
   },
   {
@@ -37,6 +36,7 @@ export default function Footer() {
   const year = new Date().getFullYear()
   const contentQuery = useSiteContentQuery()
   const substackUrl = contentQuery.data?.substack_url
+  const handbookUrl = useHandbookPdfUrl()
 
   return (
     <footer className="mt-auto bg-green-900 text-white/72">
@@ -93,8 +93,8 @@ export default function Footer() {
               </div>
               <div className="flex flex-col gap-2">
                 {group.items.map((item) =>
-                  item.href ? (
-                    <a key={item.label} href={item.href} download={item.download} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
+                  item.handbook ? (
+                    <a key={item.label} href={handbookUrl} download={HANDBOOK_DOWNLOAD_NAME} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
                       {item.label}
                     </a>
                   ) : (

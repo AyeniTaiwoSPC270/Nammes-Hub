@@ -99,7 +99,7 @@ ${warn('The red <strong>Delete All</strong> button at the top of a section remov
     num: 17,
     title: 'Managing the Site\'s Content',
     intro: 'The home page, links, banners, news, events, resources, opportunities and the excos: everything members see first.',
-    inThis: ['Home page', 'Site links and maintenance mode', 'Page banners', 'News', 'Events and event galleries', 'Resources, Opportunities and Excos'],
+    inThis: ['Home page', 'Site links and maintenance mode', 'Page banners', 'News', 'Events and event galleries', 'Resources, Opportunities and Excos', 'The Handbook: edit this book'],
     html: `
 <h2 class="first">Home page</h2>
 <p><span class="path">Admin → Home Page</span> edits the two big things on the front page.</p>
@@ -152,6 +152,11 @@ ${table(['Section', 'Fields to fill in', 'Tips'], [
   ['Excos', 'Role, Name (optional), Display order, Email, Phone, Photo', 'Display order is a number: <strong>1</strong> appears first. A role with no name shows a placeholder, so you can list vacancies.'],
 ])}
 ${tip('When a new executive council takes over, edit the existing Exco rows (name, photo, contact) instead of deleting them, and update the session label in the Page Banners for Meet the Excos.')}
+
+<h2>The Handbook: edit this book</h2>
+<p><span class="path">Admin &rarr; Handbook</span> lets you change the wording of this very handbook without any technical tools. The list on the left holds <em>Book details and foreword</em>, then every chapter and appendix; a small <strong>Edited</strong> tag marks pages you have changed.</p>
+${steps(['Choose a page from the list. It opens on a page that looks like the printed book.', 'Click into the text and type. Use the toolbar for bold, italic, headings, lists and links, or <strong>Add box</strong> to insert a Tip, Good to know, Careful or Admin only box.', 'Choose <strong>Save changes</strong>. Your edit is stored, but the download has not changed yet.', 'When you have finished all your edits, choose <strong>Rebuild PDF</strong> at the top and wait a minute or two. The Download buttons in the footer and on the About page then serve the new version.'])}
+<p>Screenshots are fixed (only their captions can be edited), and the contents page renumbers itself when the PDF is rebuilt. <strong>Restore original text</strong> on a page brings back the wording that shipped with the site. Any admin can edit and rebuild, and the PDF is built from <em>saved</em> text only, so save first.</p>
 `,
   },
 
@@ -478,6 +483,7 @@ ${table(['Section', 'Address', 'Purpose'], [
   ['Site Links', '/admin/links', 'Newsletter, socials, maintenance mode.'],
   ['Page Banners', '/admin/banners', 'Top-of-page pictures and text.'],
   ['News · Events · Opportunities · Resources · Excos', '/admin/news …', 'Add, edit, delete content.'],
+  ['Handbook', '/admin/handbook', 'Edit this handbook and rebuild its PDF.'],
   ['Event Gallery', '/admin/events/…/gallery', 'Photos for one event.'],
   ['Outlines · Submissions · Timetable', '/admin/outlines …', 'Academics management.'],
   ['Forms', '/admin/forms', 'List, new, edit, responses.'],
