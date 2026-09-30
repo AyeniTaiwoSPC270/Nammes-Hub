@@ -57,6 +57,7 @@ export default function PracticeList() {
               ))}
             </ul>
           )}
+          <Link to="/make" className="text-center text-sm font-semibold text-orange-500">Want to use your own questions? Make a quiz</Link>
         </main>
       </div>
     </QuizThemeScope>

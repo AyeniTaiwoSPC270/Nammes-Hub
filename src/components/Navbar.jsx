@@ -31,6 +31,7 @@ const navItems = [
       { to: '/awards', label: 'Awards' },
       { to: '/play', label: 'Live quiz' },
       { to: '/practice', label: 'Practice quizzes' },
+      { to: '/make', label: 'Make your own quiz' },
       { to: '/battle', label: 'Quiz battles' },
     ],
   },

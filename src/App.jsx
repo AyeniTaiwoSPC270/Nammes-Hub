@@ -79,6 +79,8 @@ const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
 const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
 const PlayBattle = lazyRetry(() => import('./pages/PlayBattle'))
 const PracticeList = lazyRetry(() => import('./pages/PracticeList'))
+const MakeQuiz = lazyRetry(() => import('./pages/MakeQuiz'))
+const CustomSet = lazyRetry(() => import('./pages/CustomSet'))
 
 function MaintenanceGate({ children }) {
   const location = useLocation()
@@ -135,6 +137,22 @@ export default function App() {
               }
             />
           ))}
+          <Route
+            path="make"
+            element={
+              <Suspense fallback={null}>
+                <MakeQuiz />
+              </Suspense>
+            }
+          />
+          <Route
+            path="set/:code"
+            element={
+              <Suspense fallback={null}>
+                <CustomSet />
+              </Suspense>
+            }
+          />
           <Route
             path="practice"
             element={

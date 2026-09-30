@@ -44,6 +44,7 @@ export function fakeDb(seed = {}) {
     if (table === 'quiz_players') return tables.quiz_players.some((p) => p.session_id === row.session_id && p.nickname.toLowerCase() === row.nickname.toLowerCase())
     if (table === 'quiz_sessions') return tables.quiz_sessions.some((s) => s.join_code === row.join_code && s.state !== 'finished')
     if (table === 'quiz_bracket_matches') return tables.quiz_bracket_matches.some((m) => m.session_id === row.session_id && m.round === row.round && m.slot === row.slot)
+    if (table === 'quizzes') return Boolean(row.custom_code) && tables.quizzes.some((q) => q.custom_code === row.custom_code)
     if (table === 'quiz_battles') return tables.quiz_battles.some((b) => b.code === row.code)
     if (table === 'quiz_battle_ratings') return tables.quiz_battle_ratings.some((r) => r.tag_hash === row.tag_hash)
     if (table === 'quiz_battle_sides') return tables.quiz_battle_sides.some((s) => (s.battle_id === row.battle_id && s.slot === row.slot) || (row.token_hash && s.token_hash === row.token_hash))
@@ -87,6 +88,10 @@ export function fakeDb(seed = {}) {
       }
       if (op === 'delete') {
         tables[table] = tables[table].filter((r) => !match(r))
+        if (table === 'quizzes') {
+          const goneQuizzes = new Set(rows.map((r) => r.id))
+          tables.quiz_questions = tables.quiz_questions.filter((q) => !goneQuizzes.has(q.quiz_id))
+        }
         if (table === 'quiz_battles') {
           const gone = new Set(rows.map((r) => r.id))
           tables.quiz_battle_sides = tables.quiz_battle_sides.filter((s) => !gone.has(s.battle_id))
@@ -140,7 +145,7 @@ export function fakeDb(seed = {}) {
         tables.quiz_players.find((p) => p.id === a.p_player).team_id = pick.id
         return { data: pick.id, error: null }
       }
-      if (name === 'quiz_practice_cleanup' || name === 'quiz_battle_cleanup') return { data: 0, error: null }
+      if (name === 'quiz_practice_cleanup' || name === 'quiz_battle_cleanup' || name === 'quiz_custom_cleanup') return { data: 0, error: null }
       if (name === 'quiz_battle_record') {
         if (tables.quiz_battle_answers.some((x) => x.battle_id === a.p_battle && x.slot === a.p_slot && x.question_id === a.p_question)) return { data: false, error: null }
         tables.quiz_battle_answers.push({ battle_id: a.p_battle, slot: a.p_slot, question_id: a.p_question, chosen_index: a.p_chosen, answer_text: a.p_text, correct: a.p_correct, points_awarded: a.p_points, elapsed_ms: a.p_elapsed })

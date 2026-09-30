@@ -60,8 +60,9 @@ export function createQuizBattleHandler(
     // ---- loading ----
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, battle_enabled, theme').eq('id', id).maybeSingle()
-      return data && data.battle_enabled ? data : null
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, battle_enabled, theme, expires_at').eq('id', id).maybeSingle()
+      const expired = data?.expires_at && new Date(data.expires_at).getTime() < now()
+      return data && data.battle_enabled && !expired ? data : null
     }
     async function quizQuestionsFor(id) {
       const { data } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', id)
@@ -151,6 +152,9 @@ export function createQuizBattleHandler(
       const a = sides.find((s) => s.slot === 'a')
       const b = sides.find((s) => s.slot === 'b')
       if (!a || !b || a.bot_skill || b.bot_skill || !a.tag_hash || !b.tag_hash || a.tag_hash === b.tag_hash) return
+      // Home-made quizzes never count towards the ranking (an easy custom quiz would be too easy to farm).
+      const { data: quizRow } = await supabaseAdmin.from('quizzes').select('is_custom').eq('id', finished.quiz_id).maybeSingle()
+      if (quizRow?.is_custom) return
       const { data: claimed } = await supabaseAdmin.from('quiz_battles').update({ rated: true }).eq('id', finished.id).eq('rated', false).select('id').maybeSingle()
       if (!claimed) return
       const { data: rows } = await supabaseAdmin.from('quiz_battle_ratings').select('*').in('tag_hash', [a.tag_hash, b.tag_hash])
@@ -355,9 +359,11 @@ export function createQuizBattleHandler(
 
     // ---- list: quizzes open for battles ----
     if (op === 'list') {
-      const { data: quizzes } = await supabaseAdmin.from('quizzes').select('id, title, theme').eq('battle_enabled', true)
+      const { data: all } = await supabaseAdmin.from('quizzes').select('id, title, theme, is_custom, expires_at').eq('battle_enabled', true)
+      // A community set is only listed when asked for by its id (the link someone shared), never to everyone.
+      const quizzes = (all ?? []).filter((q) => (!q.is_custom || (q.id === quizId && !(q.expires_at && new Date(q.expires_at).getTime() < now()))))
       const out = []
-      for (const q of quizzes ?? []) {
+      for (const q of quizzes) {
         const playable = (await quizQuestionsFor(q.id)).filter((x) => (x.type ?? 'multiple') !== 'poll')
         if (playable.length > 0) out.push({ id: q.id, title: q.title, questionCount: Math.min(playable.length, 10) })
       }

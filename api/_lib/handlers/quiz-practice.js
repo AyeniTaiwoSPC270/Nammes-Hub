@@ -62,8 +62,9 @@ export function createQuizPracticeHandler(
 
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme').eq('id', id).maybeSingle()
-      return data && data.practice_enabled ? data : null
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, expires_at').eq('id', id).maybeSingle()
+      const expired = data?.expires_at && new Date(data.expires_at).getTime() < now()
+      return data && data.practice_enabled && !expired ? data : null
     }
     async function playableQuestions(id) {
       const { data } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', id)
@@ -197,9 +198,9 @@ export function createQuizPracticeHandler(
 
     // ---- list: every quiz open for practice (for the public practice page) ----
     if (op === 'list') {
-      const { data: quizzes } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, archived_at').eq('practice_enabled', true)
+      const { data: quizzes } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, archived_at, is_custom').eq('practice_enabled', true)
       const out = []
-      for (const q of (quizzes ?? []).filter((x) => !x.archived_at)) {
+      for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
         const count = (await playableQuestions(q.id)).length
         if (count > 0) out.push({ id: q.id, title: q.title, questionCount: count, battleEnabled: q.battle_enabled === true })
       }
@@ -302,8 +303,8 @@ export function createQuizPracticeHandler(
     // ---- state / answer / next need a run ----
     const run = await runFromToken()
     if (!run) return
-    const { data: quiz } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme').eq('id', run.quiz_id).maybeSingle()
-    if (!quiz || !quiz.practice_enabled) {
+    const { data: quiz } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme, expires_at').eq('id', run.quiz_id).maybeSingle()
+    if (!quiz || !quiz.practice_enabled || (quiz.expires_at && new Date(quiz.expires_at).getTime() < now())) {
       res.status(404).json({ error: 'This quiz is not open for practice any more' })
       return
     }
