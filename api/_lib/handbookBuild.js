@@ -205,6 +205,9 @@ export async function renderPdf(browser, html) {
 /** Reads the text of every page, so the builder can see which page each chapter opens on. */
 export async function pdfPageTexts(buffer, norm) {
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  // pdf.js normally finds its worker file by path at run time, which the serverless bundler cannot see and leaves out.
+  // Importing it here by name gets it bundled, and handing it over directly skips the path lookup.
+  globalThis.pdfjsWorker ??= await import('pdfjs-dist/legacy/build/pdf.worker.mjs')
   const task = pdfjs.getDocument({ data: new Uint8Array(buffer), useSystemFonts: false, verbosity: 0 })
   const doc = await task.promise
   const pages = []
