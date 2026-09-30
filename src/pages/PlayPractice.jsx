@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
@@ -335,6 +335,9 @@ export default function PlayPractice() {
               ))}
             </ol>
           </div>
+        )}
+        {info.battleEnabled && (
+          <Link to={`/battle?quiz=${quizId}`} className="flex min-h-14 items-center justify-center rounded-2xl border-2 border-orange-500 px-6 text-xl font-bold text-orange-500">Challenge a friend</Link>
         )}
         <button type="button" onClick={restart} className="min-h-14 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md">Try again</button>
       </Shell>

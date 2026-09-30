@@ -149,6 +149,9 @@ export default function AdminQuizzes() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setImporting(true)}>Import from spreadsheet</Button>
+          <Link to="/admin/quizzes/battles">
+            <Button variant="secondary">Battles</Button>
+          </Link>
           <Link to="/admin/quizzes/new">
             <Button variant="primary">New quiz</Button>
           </Link>
@@ -207,6 +210,7 @@ export default function AdminQuizzes() {
                 <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                   <span>{quiz.questionCount} question{quiz.questionCount === 1 ? '' : 's'}</span>
                   {quiz.practice_enabled && <Badge tone="updated">Practice on</Badge>}
+                  {quiz.battle_enabled && <Badge tone="updated">Battles on</Badge>}
                   {(quiz.tags ?? []).map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
                 </div>
               </div>

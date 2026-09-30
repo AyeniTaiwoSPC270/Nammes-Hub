@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
@@ -144,6 +144,7 @@ function JoinForm({ onJoined, notice }) {
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Campus challenge</p>
         <h1 className="text-4xl font-bold">Join a game</h1>
         <p className="text-ink-muted">Enter the code on the big screen to get in.</p>
+        <Link to="/battle" className="text-sm font-semibold text-orange-500">Want to challenge a friend instead? Battle mode</Link>
       </div>
 
       <form onSubmit={submit} className="qz-rise mt-2 flex flex-col gap-5 rounded-3xl border border-hairline bg-surface p-5 shadow-md" style={{ animationDelay: '100ms' }}>

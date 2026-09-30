@@ -73,9 +73,11 @@ const AdminQuizzes = lazyRetry(() => import('./pages/admin/AdminQuizzes'))
 const AdminQuizEditor = lazyRetry(() => import('./pages/admin/AdminQuizEditor'))
 const AdminQuizStudio = lazyRetry(() => import('./pages/admin/AdminQuizStudio'))
 const AdminQuizReport = lazyRetry(() => import('./pages/admin/AdminQuizReport'))
+const AdminBattles = lazyRetry(() => import('./pages/admin/AdminBattles'))
 const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
 const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
 const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
+const PlayBattle = lazyRetry(() => import('./pages/PlayBattle'))
 
 function MaintenanceGate({ children }) {
   const location = useLocation()
@@ -121,6 +123,17 @@ export default function App() {
               </Suspense>
             }
           />
+          {['battle', 'battle/:code'].map((path) => (
+            <Route
+              key={path}
+              path={path}
+              element={
+                <Suspense fallback={null}>
+                  <PlayBattle />
+                </Suspense>
+              }
+            />
+          ))}
           <Route
             path="practice/:quizId"
             element={
@@ -200,6 +213,7 @@ export default function App() {
                 <Route path="admin/quizzes/:id/edit" element={<AdminQuizEditor />} />
                 <Route path="admin/quizzes/:id/studio" element={<AdminQuizStudio />} />
                 <Route path="admin/quizzes/games/:sessionId" element={<AdminQuizReport />} />
+                <Route path="admin/quizzes/battles" element={<AdminBattles />} />
                 <Route path="admin/awards" element={<AdminAwards />} />
                 <Route path="admin/awards/new" element={<AdminAwardSeason />} />
                 <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />

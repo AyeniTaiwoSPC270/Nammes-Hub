@@ -51,6 +51,7 @@ export default function AdminQuizEditor() {
   const [tags, setTags] = useState('')
   const [teamSettings, setTeamSettings] = useState(DEFAULT_TEAM_SETTINGS)
   const [practiceEnabled, setPracticeEnabled] = useState(false)
+  const [battleEnabled, setBattleEnabled] = useState(false)
   const [dialog, setDialog] = useState(null) // 'import' or 'bank'
 
   useEffect(() => {
@@ -65,12 +66,13 @@ export default function AdminQuizEditor() {
       teams: (quizQuery.data.team_presets ?? []).map((t) => ({ name: t.name, color: t.color, avatarId: t.avatarId ?? 0 })),
     })
     setPracticeEnabled(Boolean(quizQuery.data.practice_enabled))
+    setBattleEnabled(Boolean(quizQuery.data.battle_enabled))
     setQuestions(quizQuery.data.questions.map(questionFromRow))
     setLoaded(true)
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled, battleEnabled }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -168,6 +170,20 @@ export default function AdminQuizEditor() {
                 <span className="block text-sm text-ink-muted">
                   Anyone with the link can replay this quiz on their own phone, without a host, and see the answers as they go.
                   {id ? <> The link is <code>{window.location.origin}/practice/{id}</code>.</> : ' Save the quiz to get its link.'}
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
+          <fieldset className="rounded-lg border border-hairline bg-surface p-4">
+            <legend className="px-1 text-sm font-bold text-ink-900">Battle mode</legend>
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" className="mt-1 h-5 w-5" checked={battleEnabled} onChange={(e) => setBattleEnabled(e.target.checked)} />
+              <span>
+                <span className="block font-semibold text-ink-900">Open for battles</span>
+                <span className="block text-sm text-ink-muted">
+                  Players can challenge a friend or play a live duel (even against a bot) on this quiz, without a host. Each battle uses up to 10 of the quiz&apos;s questions.
+                  {' '}Players start at <code>{window.location.origin}/battle</code>.
                 </span>
               </span>
             </label>
