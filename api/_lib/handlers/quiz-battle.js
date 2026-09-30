@@ -21,7 +21,7 @@ import {
 // about it (there is no background timer). A duel can be against a bot.
 //
 // One route with an `op`: list, info, create, join, state, answer, next. Phones never read the tables.
-const OPS = ['list', 'info', 'create', 'join', 'state', 'answer', 'next', 'ranking']
+const OPS = ['list', 'info', 'create', 'join', 'state', 'answer', 'next', 'ranking', 'leave']
 const MODES = ['challenge', 'duel']
 
 export function createQuizBattleHandler(
@@ -420,7 +420,7 @@ export function createQuizBattleHandler(
         supabaseAdmin.from('quizzes').select('id, title, theme').eq('id', battle.quiz_id).maybeSingle().then((r) => r.data),
       ])
       const a = sides.find((s) => s.slot === 'a')
-      const expired = battle.mode === 'challenge' ? new Date(battle.expires_at).getTime() < now() : battle.state === 'cancelled'
+      const expired = battle.state === 'cancelled' || (battle.mode === 'challenge' && new Date(battle.expires_at).getTime() < now())
       const seatFree = sides.length < 2 && !expired && battle.state === 'open' && (battle.mode === 'duel' || Boolean(a?.finished_at))
       res.status(200).json({
         mode: battle.mode,
@@ -637,6 +637,27 @@ export function createQuizBattleHandler(
     const nowMs = now()
     await supabaseAdmin.from('quiz_battle_sides').update({ last_seen_at: iso(nowMs) }).eq('battle_id', battle.id).eq('slot', seat.side.slot)
     let ctx = await everything(battle, { ...seat.side, last_seen_at: iso(nowMs) })
+
+    // leave: walk away from a battle. Nothing is lost if nobody has joined; leaving a duel that is under way loses it.
+    if (op === 'leave') {
+      if (battle.state === 'finished' || battle.state === 'cancelled') {
+        res.status(200).json({ left: true })
+        return
+      }
+      const cancel = () => supabaseAdmin.from('quiz_battles').update({ state: 'cancelled' }).eq('id', battle.id).in('state', ['open', 'question', 'reveal'])
+      if (battle.mode === 'duel') {
+        const other = ctx.sides.find((s) => s.slot !== seat.side.slot)
+        if (battle.state === 'open' || !other || other.bot_skill) await cancel()
+        else await finish(battle, ctx.sides, ctx.answers, { forfeitWinner: other.slot })
+      } else if (seat.side.slot === 'a') {
+        await cancel() // the challenge link stops working
+      } else if (!seat.side.finished_at) {
+        // the friend changes their mind: the seat is free again for someone else
+        await supabaseAdmin.from('quiz_battle_sides').delete().eq('battle_id', battle.id).eq('slot', 'b')
+      }
+      res.status(200).json({ left: true })
+      return
+    }
 
     if (op === 'state') {
       if (battle.mode === 'duel') {

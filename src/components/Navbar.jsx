@@ -29,6 +29,8 @@ const navItems = [
       { to: '/news', label: 'News' },
       { to: '/opportunities', label: 'Opportunities' },
       { to: '/awards', label: 'Awards' },
+      { to: '/play', label: 'Live quiz' },
+      { to: '/battle', label: 'Quiz battles' },
     ],
   },
   { to: '/forms', label: 'Forms' },

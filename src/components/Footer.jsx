@@ -10,6 +10,8 @@ const linkGroups = [
       { label: 'Home', to: '/' },
       { label: 'Outlines', to: '/outlines' },
       { label: 'Events', to: '/events' },
+      { label: 'Live quiz', to: '/play' },
+      { label: 'Quiz battles', to: '/battle' },
       { label: 'Meet the Excos', to: '/excos' },
     ],
   },
