@@ -2,6 +2,7 @@ import PageBanner from '../components/PageBanner'
 import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
 
+const HANDBOOK_PDF = '/documents/NAMMES-Hub-Handbook.pdf'
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
 
@@ -128,6 +129,24 @@ export default function About() {
               <p className="mt-2 leading-relaxed text-ink-muted">{item.body}</p>
             </Reveal>
           ))}
+        </div>
+      </Reveal>
+
+      <Reveal className="w-full bg-surface-low py-14">
+        <div className="mx-auto flex max-w-[900px] flex-col items-start gap-4 px-5 sm:px-6">
+          <h2 className="text-2xl sm:text-[28px] font-bold text-brand">The NAMMES Hub Handbook</h2>
+          <p className="max-w-2xl leading-relaxed text-ink-muted">
+            New here? Download our free step-by-step guide to every page of the Hub, from creating your account and
+            using the CGPA calculator to running the awards. It includes a full section for admins.
+          </p>
+          <a
+            href={HANDBOOK_PDF}
+            download="NAMMES-Hub-Handbook.pdf"
+            className="inline-flex items-center gap-2 rounded-md border border-orange-500 bg-orange-500 px-7 py-3.5 font-body text-base font-bold text-white no-underline transition-[background-color,border-color,transform] duration-150 ease-out hover:scale-[1.03] hover:border-orange-600 hover:bg-orange-600 hover:text-white active:scale-[0.98]"
+          >
+            <span className="material-symbols-outlined text-xl">download</span>
+            Download the handbook (PDF)
+          </a>
         </div>
       </Reveal>
     </div>
