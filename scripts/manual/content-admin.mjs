@@ -154,9 +154,9 @@ ${table(['Section', 'Fields to fill in', 'Tips'], [
 ${tip('When a new executive council takes over, edit the existing Exco rows (name, photo, contact) instead of deleting them, and update the session label in the Page Banners for Meet the Excos.')}
 
 <h2>The Handbook: edit this book</h2>
-<p><span class="path">Admin &rarr; Handbook</span> lets you change the wording of this very handbook without any technical tools. The list on the left holds <em>Book details and foreword</em>, then every chapter and appendix; a small <strong>Edited</strong> tag marks pages you have changed.</p>
-${steps(['Choose a page from the list. It opens on a page that looks like the printed book.', 'Click into the text and type. Use the toolbar for bold, italic, headings, lists and links, or <strong>Add box</strong> to insert a Tip, Good to know, Careful or Admin only box.', 'Choose <strong>Save changes</strong>. Your edit is stored, but the download has not changed yet.', 'When you have finished all your edits, choose <strong>Rebuild PDF</strong> at the top and wait a minute or two. The Download buttons in the footer and on the About page then serve the new version.'])}
-<p>Screenshots are fixed (only their captions can be edited), and the contents page renumbers itself when the PDF is rebuilt. <strong>Restore original text</strong> on a page brings back the wording that shipped with the site. Any admin can edit and rebuild, and the PDF is built from <em>saved</em> text only, so save first.</p>
+<p><span class="path">Admin &rarr; Handbook</span> lets you change the wording of this very handbook. The list on the left starts with the covers and front pages (front cover, title page, copyright, foreword, contents, <em>Meet the authors</em>, back cover), then every chapter and appendix. A small <strong>Edited</strong> tag marks pages you have changed.</p>
+${steps(['Choose a page and click into the text. Use the toolbar for bold, italic, headings, lists, links and <strong>Add box</strong> (Tip, Careful and so on). Screenshots are fixed; captions can be edited.', 'Choose <strong>Save changes</strong>. The download has not changed yet, and <strong>Restore original text</strong> undoes your edits to a page.', 'When you have finished, choose <strong>Rebuild PDF</strong> at the top and wait a minute or two. The footer and About page then serve the new version, with the contents renumbered.'])}
+${tip('<strong>New executive council?</strong> Open <em>Meet the authors</em>, change the team name and session, then choose <em>Load from Meet the Excos</em> or edit each name, role and photo by hand. Save and rebuild: the covers, title page, foreword and contents pick up the new names and session by themselves.')}
 `,
   },
 
@@ -503,7 +503,7 @@ ${table(['Section', 'Address', 'Purpose'], [
 ${table(['Term', 'Meaning'], [
   ['Admin', 'An executive or trusted member allowed to open the Admin area and manage content.'],
   ['Owner', 'The one admin who also approves changes, manages people and controls the System page.'],
-  ['Aegis 26/27', 'The name of the current Executive Council, for the 2026/2027 session.'],
+  ['{{team}} {{session}}', 'The name of the current Executive Council, for the {{session_long}} session.'],
   ['Breadcrumbs', 'The clickable trail (Outlines › 100 Level › …) that shows where you are.'],
   ['Broadcast', 'One announcement email sent to every member who has notifications on.'],
   ['CCMAS', 'Core Curriculum and Minimum Academic Standards, the NUC\'s official degree blueprint.'],

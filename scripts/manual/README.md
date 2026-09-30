@@ -19,7 +19,8 @@ Admins can also edit the text in the browser and rebuild the PDF without a compu
 them). **Rebuild PDF** calls `/api/handbook-build`, which renders the same book with a serverless Chromium
 (`api/_lib/handbookBuild.js`), uploads it to the public `handbook` storage bucket and sets `site_content.handbook_pdf_url`,
 which the footer and About page use. This folder's PDF is only the fallback until that first rebuild.
-Saved edits win over these files, so after changing a chapter here, use **Restore original text** on that page in the admin.
+The covers, front pages, team name, session and the authors' names, roles and photos are editable too (defaults live in
+`book-content.mjs`; `{{team}}` / `{{session}}` tokens fill in wherever they appear). Saved edits win over these files, so after changing a chapter here, use **Restore original text** on that page in the admin.
 
 ## Where things live
 
