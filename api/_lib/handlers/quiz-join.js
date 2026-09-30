@@ -80,6 +80,8 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
         })
         return
       }
+      // "Put me anywhere" is settled by the database after the player is added (see below), so phones that join in the
+      // same instant cannot all be sent to the same team. Until then a placeholder stands in.
       team = teamId === 'auto' ? pickAutoTeam(list, members ?? []) : list.find((t) => t.id === teamId) ?? null
       if (!team) {
         res.status(400).json({ error: 'Pick one of the teams' })
@@ -89,7 +91,7 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
 
     const { data: player, error } = await supabaseAdmin
       .from('quiz_players')
-      .insert({ session_id: session.id, nickname: checked.value, avatar_id: avatarId, ...(team ? { team_id: team.id } : {}) })
+      .insert({ session_id: session.id, nickname: checked.value, avatar_id: avatarId, ...(team && teamId !== 'auto' ? { team_id: team.id } : {}) })
       .select('id')
       .single()
     if (error) {
@@ -126,6 +128,17 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       await supabaseAdmin.from('quiz_players').delete().eq('id', player.id)
       res.status(500).json({ error: 'Could not join the game' })
       return
+    }
+
+    if (team && teamId === 'auto') {
+      const { data: assigned, error: assignError } = await supabaseAdmin.rpc('quiz_assign_auto_team', { p_session: session.id, p_player: player.id })
+      if (assignError || !assigned) {
+        console.error('quiz-join: auto team failed', assignError)
+        await supabaseAdmin.from('quiz_players').delete().eq('id', player.id)
+        res.status(500).json({ error: 'Could not join the game' })
+        return
+      }
+      team = (await supabaseAdmin.from('quiz_teams').select('id, name, color').eq('id', assigned).maybeSingle()).data ?? team
     }
 
     // The join that fills the lobby starts the 10-second countdown (only the first to get here sets it).
