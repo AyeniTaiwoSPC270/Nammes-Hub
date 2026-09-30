@@ -10,7 +10,7 @@ import { publicImageUrl } from '../quizImage.js'
 import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
 import {
   generateBattleCode, isBattleCode, pickBattleQuestions, battleQuestionPoints, decideWinner, speedOf, headToHead, duelNextStep, presence,
-  BATTLE_CHALLENGE_DAYS, DUEL_START_DELAY_MS, DUEL_NEXT_DELAY_MS, DUEL_OPEN_TTL_MS,
+  BATTLE_CHALLENGE_DAYS, DUEL_START_DELAY_MS, DUEL_NEXT_DELAY_MS, DUEL_OPEN_TTL_MS, eloUpdate, RATING_START,
 } from '../quizBattle.js'
 
 // Battle mode. Spec: docs/superpowers/specs/2026-10-01-quiz-battle-mode.md
@@ -21,7 +21,7 @@ import {
 // about it (there is no background timer). A duel can be against a bot.
 //
 // One route with an `op`: list, info, create, join, state, answer, next. Phones never read the tables.
-const OPS = ['list', 'info', 'create', 'join', 'state', 'answer', 'next']
+const OPS = ['list', 'info', 'create', 'join', 'state', 'answer', 'next', 'ranking']
 const MODES = ['challenge', 'duel']
 
 export function createQuizBattleHandler(
@@ -42,7 +42,7 @@ export function createQuizBattleHandler(
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { op, quizId, code, token, nickname, avatarId = 0, mode, vsBot, botSkill = 'average', tag, chosenIndex, answerText } = req.body ?? {}
+    const { op, quizId, code, token, nickname, avatarId = 0, mode, vsBot, botSkill = 'average', tag, chosenIndex, answerText, period = 'all' } = req.body ?? {}
     if (!OPS.includes(op)) {
       res.status(400).json({ error: 'Unknown request' })
       return
@@ -142,7 +142,31 @@ export function createQuizBattleHandler(
         .in('state', ['open', 'question', 'reveal'])
         .select('*')
         .maybeSingle()
+      if (data) await rateBattle(data, sides)
       return data ?? (await battleById(battle.id))
+    }
+
+    // A finished battle between two real players changes both ratings, once. Bots never count.
+    async function rateBattle(finished, sides) {
+      const a = sides.find((s) => s.slot === 'a')
+      const b = sides.find((s) => s.slot === 'b')
+      if (!a || !b || a.bot_skill || b.bot_skill || !a.tag_hash || !b.tag_hash || a.tag_hash === b.tag_hash) return
+      const { data: claimed } = await supabaseAdmin.from('quiz_battles').update({ rated: true }).eq('id', finished.id).eq('rated', false).select('id').maybeSingle()
+      if (!claimed) return
+      const { data: rows } = await supabaseAdmin.from('quiz_battle_ratings').select('*').in('tag_hash', [a.tag_hash, b.tag_hash])
+      const mine = (hash) => (rows ?? []).find((r) => r.tag_hash === hash)
+      const next = eloUpdate(mine(a.tag_hash)?.rating ?? RATING_START, mine(b.tag_hash)?.rating ?? RATING_START, finished.winner_slot)
+      const outcome = (slot) => (finished.winner_slot === null ? 'draws' : finished.winner_slot === slot ? 'wins' : 'losses')
+      for (const [side, rating] of [[a, next.a], [b, next.b]]) {
+        const existing = mine(side.tag_hash)
+        const field = outcome(side.slot)
+        const stamp = iso(now())
+        if (existing) {
+          await supabaseAdmin.from('quiz_battle_ratings').update({ rating, nickname: side.nickname, avatar_id: side.avatar_id, [field]: existing[field] + 1, updated_at: stamp }).eq('tag_hash', side.tag_hash)
+        } else {
+          await supabaseAdmin.from('quiz_battle_ratings').insert({ tag_hash: side.tag_hash, nickname: side.nickname, avatar_id: side.avatar_id, rating, wins: 0, losses: 0, draws: 0, [field]: 1, updated_at: stamp })
+        }
+      }
     }
 
     // ---- moving a duel along ----
@@ -338,6 +362,45 @@ export function createQuizBattleHandler(
         if (playable.length > 0) out.push({ id: q.id, title: q.title, questionCount: Math.min(playable.length, 10) })
       }
       res.status(200).json({ quizzes: out })
+      return
+    }
+
+    // ---- ranking: the champions list ----
+    if (op === 'ranking') {
+      const entry = (r, i) => ({ rank: i + 1, nickname: r.nickname, avatarId: r.avatar_id, rating: r.rating, wins: r.wins, losses: r.losses, draws: r.draws })
+      let top
+      if (period === 'week') {
+        const since = iso(now() - 7 * 86_400_000)
+        const { data: battles } = await supabaseAdmin.from('quiz_battles').select('id, winner_slot').eq('state', 'finished').eq('rated', true).gte('finished_at', since).limit(500)
+        const { data: sides } = (battles ?? []).length > 0
+          ? await supabaseAdmin.from('quiz_battle_sides').select('battle_id, slot, tag_hash').in('battle_id', battles.map((x) => x.id))
+          : { data: [] }
+        const tally = new Map()
+        const bump = (hash, key) => tally.set(hash, { wins: 0, losses: 0, draws: 0, ...tally.get(hash), [key]: (tally.get(hash)?.[key] ?? 0) + 1 })
+        for (const battle of battles ?? []) {
+          for (const s of (sides ?? []).filter((x) => x.battle_id === battle.id && x.tag_hash)) {
+            bump(s.tag_hash, battle.winner_slot === null ? 'draws' : battle.winner_slot === s.slot ? 'wins' : 'losses')
+          }
+        }
+        const hashes = [...tally.keys()]
+        const { data: people } = hashes.length > 0 ? await supabaseAdmin.from('quiz_battle_ratings').select('*').in('tag_hash', hashes) : { data: [] }
+        top = (people ?? [])
+          .map((p) => ({ ...p, ...tally.get(p.tag_hash) }))
+          .sort((x, y) => y.wins - x.wins || x.losses - y.losses || y.rating - x.rating)
+          .slice(0, 10)
+      } else {
+        const { data } = await supabaseAdmin.from('quiz_battle_ratings').select('*').order('rating', { ascending: false }).limit(10)
+        top = [...(data ?? [])].sort((x, y) => y.rating - x.rating).slice(0, 10)
+      }
+      let you = null
+      if (tagHash) {
+        const { data: row } = await supabaseAdmin.from('quiz_battle_ratings').select('*').eq('tag_hash', tagHash).maybeSingle()
+        if (row) {
+          const { count } = await supabaseAdmin.from('quiz_battle_ratings').select('tag_hash', { count: 'exact', head: true }).gt('rating', row.rating)
+          you = { nickname: row.nickname, rating: row.rating, wins: row.wins, losses: row.losses, draws: row.draws, rank: (count ?? 0) + 1 }
+        }
+      }
+      res.status(200).json({ period: period === 'week' ? 'week' : 'all', top: top.map(entry), you })
       return
     }
 

@@ -1,6 +1,6 @@
 # Live quiz: battle mode (spec)
 
-Status: proposed. Follows `2026-09-30-live-quiz-premium-features.md` (practice mode, test bots, team mode are built).
+Status: built (all four phases), see section 11 for what differs from the plan. Follows `2026-09-30-live-quiz-premium-features.md` (practice mode, test bots, team mode are built).
 
 Battle mode lets players challenge each other. There are three ways to do it, and all three ship, in phases. They share one
 foundation, so each phase is small once the first is done.
@@ -142,3 +142,30 @@ Each phase is one pull request, merged on its own, so the site keeps working the
   questions so a rematch feels new]
 - Ranking: on from the start or later? [later, phase D]
 - Battle entry point for players: from the practice finish screen and a "Battle" button on the join page [both]
+
+## 11. As built
+
+All four phases are implemented, each as its own pull request. Differences from the plan above:
+
+- **One route, `?action=battle`** with ops `list`, `info`, `create`, `join`, `state`, `answer`, `next`, `ranking`. Phones never read the battle tables.
+- **Challenge starts in the battle flow.** The challenger plays inside `/battle` (not by converting a finished practice run). The
+  practice finish screen has a **Challenge a friend** button (when the quiz has battles on) that opens `/battle?quiz=<id>`.
+  Each battle uses up to 10 random questions of the quiz, the same for both sides; a **New battle** button on the result screen
+  starts another with a fresh mix.
+- **Duels** are driven by the phones' polling (about once a second): whichever phone asks next moves the duel along, using
+  compare-and-set updates so two phones can never skip a step. Countdown before question 1 is 4 seconds; reveal lasts 5 seconds.
+  The score bar only counts settled questions, so it never gives away who answered well. Silent for 20 s shows "dropped out",
+  silent for 45 s loses by default; an open duel nobody joins is dropped after 10 minutes.
+- **Duel against a bot** reuses `quizBots.js`: the bot answers once its thinking time has passed, recorded by the server.
+- **Bracket ties.** A tied match is settled by the faster total time on right answers, then a repeatable coin flip. There is no
+  extra sudden-death question, because a game only has the questions the quiz has. If the quiz is too short for everyone to be
+  knocked out, the highest total score among the survivors is champion. Everyone keeps answering every question; only players
+  still in the bracket count towards it. Team games cannot also be brackets.
+- **Bracket control** lives in the host lobby (a **Bracket** button next to **Test bots**), stored on the session
+  (`bracket_mode`, `bracket_length`, `bracket_bot_skill`), so no quiz-editor change was needed.
+- **Rankings** (Elo, start 1000, K = 32) only count finished battles between two real players on different devices; bots and
+  self-battles never count. Weekly standings come from wins in the last 7 days. Admins get **Battles** in the Live Quiz page:
+  ranking (remove a player, reset all) and the latest battles.
+
+Migrations: `20261001170000_quiz_battles` (A and B), `20261001180000_quiz_bracket` (C), `20261001190000_quiz_battle_rankings` (D),
+each additive with a rollback in `supabase/rollbacks/`.

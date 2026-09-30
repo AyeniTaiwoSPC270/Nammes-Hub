@@ -123,8 +123,47 @@ function Profile({ nickname, setNickname, avatarId, setAvatarId }) {
 
 const bigButton = 'min-h-14 rounded-2xl px-6 text-xl font-bold shadow-md disabled:cursor-not-allowed disabled:opacity-50'
 
+// The champions list on the battle page: this week or all time, plus the player's own record.
+function Champions({ ranking, period, onPeriod }) {
+  if (!ranking) return null
+  const { top, you } = ranking
+  return (
+    <section className="flex flex-col gap-3 rounded-3xl border border-hairline bg-surface p-5 shadow-md" aria-label="Champions">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xl font-bold">Champions</h2>
+        <div className="flex gap-1 rounded-full bg-paper p-1 text-sm font-bold" role="group" aria-label="Period">
+          {[['week', 'This week'], ['all', 'All time']].map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={period === value} onClick={() => onPeriod(value)} className={`rounded-full px-3 py-1 ${period === value ? 'bg-orange-500 text-white' : 'text-ink-muted'}`}>{label}</button>
+          ))}
+        </div>
+      </div>
+      {you && (
+        <p className="rounded-2xl bg-orange-500/12 px-4 py-2 text-sm font-semibold">
+          Your record: rating {you.rating} · {you.wins}W {you.losses}L {you.draws}D · #{you.rank}
+        </p>
+      )}
+      {top.length === 0 ? (
+        <p className="text-center text-ink-muted">{period === 'week' ? 'No finished battles this week yet. Be the first!' : 'No ranked battles yet.'}</p>
+      ) : (
+        <ol className="flex flex-col gap-2">
+          {top.map((p) => (
+            <li key={p.rank} className="flex items-center gap-3 rounded-2xl border border-hairline bg-paper p-2">
+              <span className="w-8 text-center text-lg font-bold">{MEDALS[p.rank - 1] ?? p.rank}</span>
+              <Avatar name={p.nickname} avatarId={p.avatarId} mood="static" className="h-10 w-10" />
+              <span className="min-w-0 flex-1 truncate font-semibold">{p.nickname}</span>
+              <span className="text-right text-sm text-ink-muted">{p.wins}W {p.losses}L</span>
+              {period === 'all' && <span className="w-12 text-right font-bold tabular-nums">{p.rating}</span>}
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className="text-xs text-ink-muted">Records follow this device. Clearing your browser starts a new one. Bots are never ranked.</p>
+    </section>
+  )
+}
+
 // /battle: choose a quiz and how to battle, or join with a code.
-function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz }) {
+function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, period, onPeriod }) {
   const [nickname, setNickname] = useState('')
   const [avatarId, setAvatarId] = useState(randomAvatarId)
   const [quizId, setQuizId] = useState(presetQuiz ?? '')
@@ -182,6 +221,7 @@ function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz }) {
         />
         <button type="submit" disabled={code.length !== 6} className={`${bigButton} bg-orange-500 text-white`}>Go</button>
       </form>
+      <Champions ranking={ranking} period={period} onPeriod={onPeriod} />
     </Shell>
   )
 }
@@ -376,6 +416,8 @@ export default function PlayBattle() {
   const [error, setError] = useState('')
   const [typed, setTyped] = useState('')
   const [pageError, setPageError] = useState('')
+  const [ranking, setRanking] = useState(null)
+  const [period, setPeriod] = useState('week')
   const timedOutFor = useRef(-1)
   const token = saved?.token
   const lastAction = useRef(null)
@@ -402,11 +444,13 @@ export default function PlayBattle() {
       callQuiz('battle', { op: 'info', code: linkCode.toUpperCase() }).then((d) => !cancelled && setInfo(d)).catch((e) => !cancelled && setPageError(e.message))
     } else {
       callQuiz('battle', { op: 'list' }).then((d) => !cancelled && setQuizzes(d.quizzes)).catch((e) => !cancelled && setPageError(e.message))
+      callQuiz('battle', { op: 'ranking', period, tag: deviceTag() }).then((d) => !cancelled && setRanking(d)).catch(() => {})
     }
     return () => {
       cancelled = true
     }
-  }, [token, linkCode, accept])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, linkCode, accept, period])
 
   const state = view?.state
   const ticking = state === 'question' || state === 'open' || state === 'reveal'
@@ -512,6 +556,9 @@ export default function PlayBattle() {
           busy={busy}
           error={error}
           onJoinCode={(c) => navigate(`/battle/${c}`)}
+          ranking={ranking}
+          period={period}
+          onPeriod={setPeriod}
         />
       )
     } else body = <Shell><p className="mt-24 text-center text-xl text-ink-muted">Loading…</p></Shell>

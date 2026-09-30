@@ -291,3 +291,95 @@ describe('battle: duel against a bot', () => {
     expect(w.db.tables.quiz_battle_answers.filter((x) => x.slot === 'b')).toHaveLength(3)
   })
 })
+
+describe('battle: rankings', () => {
+  const TAG_A = 'tag-aaaaaaaaaaaaaaaa'
+  const TAG_B = 'tag-bbbbbbbbbbbbbbbb'
+
+  // Two real players duel, A answers everything right and B nothing, and the duel plays to the end.
+  async function playDuel(w, { tagB = TAG_B, vsBot = false } = {}) {
+    const a = await w.create({ mode: 'duel', vsBot, tag: TAG_A })
+    let b = null
+    if (!vsBot) {
+      w.at(START + 1000)
+      b = (await w.join(a.code, { tag: tagB })).body
+    }
+    let t = vsBot ? START + DUEL_START_DELAY_MS : START + 1000 + DUEL_START_DELAY_MS
+    for (let q = 0; q < 3; q++) {
+      t += 1000
+      w.at(t)
+      await w.call({ op: 'answer', token: a.token, ...RIGHT[q] })
+      if (b) await w.call({ op: 'answer', token: b.token, ...WRONG[q] })
+      for (let i = 0; i < 40; i++) {
+        t += 1000
+        w.at(t)
+        const v = (await w.call({ op: 'state', token: a.token })).body
+        if (v.state === 'reveal' || v.state === 'finished') break
+      }
+      t += DUEL_REVEAL_MS
+      w.at(t)
+      await w.call({ op: 'state', token: a.token })
+      if (b) await w.call({ op: 'state', token: b.token })
+    }
+    return { a, b }
+  }
+
+  it('changes both ratings once when two real players finish a duel', async () => {
+    const w = world()
+    const { a, b } = await playDuel(w)
+    expect((await w.call({ op: 'state', token: a.token })).body.state).toBe('finished')
+    await w.call({ op: 'state', token: b.token })
+    await w.call({ op: 'state', token: a.token })
+    const rows = w.db.tables.quiz_battle_ratings
+    expect(rows).toHaveLength(2)
+    const mine = rows.find((r) => r.nickname === 'Ada')
+    const theirs = rows.find((r) => r.nickname === 'Bayo')
+    expect(mine).toMatchObject({ rating: 1016, wins: 1, losses: 0 })
+    expect(theirs).toMatchObject({ rating: 984, wins: 0, losses: 1 })
+    expect(JSON.stringify(rows)).not.toContain(TAG_A) // only hashes are stored
+    expect(w.db.tables.quiz_battles[0].rated).toBe(true)
+  })
+
+  it('never rates a duel against a bot, or a player against themselves', async () => {
+    const vsBot = world()
+    await playDuel(vsBot, { vsBot: true })
+    expect(vsBot.db.tables.quiz_battle_ratings).toHaveLength(0)
+    const same = world()
+    await playDuel(same, { tagB: TAG_A })
+    expect(same.db.tables.quiz_battle_ratings).toHaveLength(0)
+  })
+
+  it('counts a forfeit, and a player without a tag is simply not ranked', async () => {
+    const w = world()
+    const a = await w.create({ mode: 'duel', tag: TAG_A })
+    w.at(START + 1000)
+    await w.join(a.code, { tag: TAG_B })
+    w.at(START + 1000 + DUEL_FORFEIT_MS + 5000)
+    await w.call({ op: 'state', token: a.token })
+    expect(w.db.tables.quiz_battle_ratings.find((r) => r.nickname === 'Ada')).toMatchObject({ wins: 1 })
+    const untagged = world()
+    const c = await untagged.create({ mode: 'duel', tag: undefined })
+    untagged.at(START + 1000)
+    await untagged.join(c.code, { tag: undefined })
+    untagged.at(START + 1000 + DUEL_FORFEIT_MS + 5000)
+    await untagged.call({ op: 'state', token: c.token })
+    expect(untagged.db.tables.quiz_battle_ratings).toHaveLength(0)
+  })
+
+  it('lists the champions, all time and this week, and tells a player their own record', async () => {
+    const w = world()
+    await playDuel(w)
+    const all = (await w.call({ op: 'ranking', period: 'all', tag: TAG_B })).body
+    expect(all.top.map((r) => r.nickname)).toEqual(['Ada', 'Bayo'])
+    expect(all.top[0]).toMatchObject({ rank: 1, rating: 1016, wins: 1 })
+    expect(all.you).toMatchObject({ nickname: 'Bayo', rank: 2, losses: 1 })
+    expect(JSON.stringify(all)).not.toMatch(/tag_hash|token/)
+    const week = (await w.call({ op: 'ranking', period: 'week' })).body
+    expect(week.period).toBe('week')
+    expect(week.top[0]).toMatchObject({ nickname: 'Ada', wins: 1, losses: 0 })
+    // a month later nobody has played this week
+    w.at(START + 30 * 86_400_000)
+    expect((await w.call({ op: 'ranking', period: 'week' })).body.top).toEqual([])
+    expect((await w.call({ op: 'ranking', period: 'all' })).body.you).toBeNull()
+  })
+})

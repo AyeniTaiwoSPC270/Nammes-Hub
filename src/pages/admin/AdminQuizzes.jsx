@@ -149,6 +149,9 @@ export default function AdminQuizzes() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => setImporting(true)}>Import from spreadsheet</Button>
+          <Link to="/admin/quizzes/battles">
+            <Button variant="secondary">Battles</Button>
+          </Link>
           <Link to="/admin/quizzes/new">
             <Button variant="primary">New quiz</Button>
           </Link>

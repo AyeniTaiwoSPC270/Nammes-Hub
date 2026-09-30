@@ -90,3 +90,17 @@ describe('presence', () => {
     expect(presence(iso(START), START + DUEL_FORFEIT_MS + 1)).toBe('gone')
   })
 })
+
+describe('eloUpdate', () => {
+  it('moves both ratings by the same amount, more for an upset', async () => {
+    const { eloUpdate } = await import('./quizBattle.js')
+    const even = eloUpdate(1000, 1000, 'a')
+    expect(even).toEqual({ a: 1016, b: 984, change: 16 })
+    const upset = eloUpdate(800, 1200, 'a')
+    expect(upset.change).toBeGreaterThan(16)
+    expect(eloUpdate(1000, 1000, null).change).toBe(0)
+    expect(eloUpdate(1200, 800, 'b').a).toBeLessThan(1200)
+    const out = eloUpdate(1100, 1000, 'b')
+    expect(out.a + out.b).toBe(2100)
+  })
+})
