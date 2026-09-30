@@ -129,3 +129,21 @@
     font-size: 16px;
   }
 }
+
+/* Themed forms: text on an accent fill follows the accent's brightness, answer text follows the
+   form's answer size, and links take the accent so they stay readable on any background. */
+.form-themed .bg-green-900.text-white,
+.form-themed .bg-green-900 .text-white {
+  color: var(--form-on-accent);
+}
+
+.form-themed input,
+.form-themed textarea,
+.form-themed select,
+.form-themed .form-choice {
+  font-size: var(--form-answer-size, 1rem);
+}
+
+.form-themed a {
+  color: var(--color-brand);
+}

@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
+import { hasTheme, questionLabelStyle } from '../../lib/formTheme'
+import AdjustableImage from './AdjustableImage'
 
 const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
-export default function QuestionField({ question, value, onChange, error }) {
+export default function QuestionField({ question, value, onChange, error, theme }) {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
@@ -36,6 +38,8 @@ export default function QuestionField({ question, value, onChange, error }) {
     onChange(current.includes(option) ? current.filter((o) => o !== option) : [...current, option])
   }
 
+  const styled = hasTheme(theme) || Boolean(question.style)
+
   const controlClass = [
     'min-h-11 rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
     'focus:outline-none focus:border-brand',
@@ -44,13 +48,17 @@ export default function QuestionField({ question, value, onChange, error }) {
 
   const choiceRowClass = (checked) =>
     [
-      'flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 text-sm transition-colors duration-150',
+      'form-choice flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 text-sm transition-colors duration-150',
       checked ? 'border-brand bg-surface-low' : 'border-hairline bg-surface hover:bg-surface-low',
     ].join(' ')
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-semibold text-ink-900">
+      {question.image?.url && <AdjustableImage image={question.image} className="mb-1" />}
+      <label
+        className={styled ? 'text-ink-900' : 'text-sm font-semibold text-ink-900'}
+        style={styled ? { ...questionLabelStyle(theme, question.style), lineHeight: 1.35 } : undefined}
+      >
         {question.label}
         {question.required && <span className="text-danger"> *</span>}
       </label>

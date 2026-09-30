@@ -7,11 +7,12 @@ import { useToast } from '../lib/ToastContext'
 import { useFormQuery, isFormOpen, validateAnswers } from '../data/forms'
 import { useMyResponseQuery, formatAnswerForDisplay } from '../data/formResponses'
 import QuestionField from '../components/forms/QuestionField'
+import FormThemeShell, { FormHeaderCard, questionCardStyle } from '../components/forms/FormThemeShell'
+import { hasTheme, normalizeTheme } from '../lib/formTheme'
 import Button from '../components/ui/Button'
 import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
 import Reveal from '../components/ui/Reveal'
-import { linkifyText } from '../lib/linkify'
 import { submitPublic } from '../data/publicSubmit'
 import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
 import { canSubmitWithCaptcha } from '../lib/turnstile'
@@ -87,28 +88,28 @@ export default function FormDetail() {
 
   if (!isFormOpen(form)) {
     return (
-      <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
+      <FormThemeShell theme={form.theme}>
         <EmptyState icon="event_busy" title="This form is closed" description="It isn't accepting responses anymore." />
-      </div>
+      </FormThemeShell>
     )
   }
 
   if (form.require_signin && !user) {
     return (
-      <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
+      <FormThemeShell theme={form.theme}>
         <h1 className="text-3xl font-bold text-ink-900">{form.title}</h1>
         <p className="mt-4 text-ink-muted">Sign in to respond to this form.</p>
         <Link to="/login" state={{ from: { pathname: `/forms/${id}` } }}>
           <Button variant="primary" className="mt-4">Sign in</Button>
         </Link>
-      </div>
+      </FormThemeShell>
     )
   }
 
   const existingResponse = myResponseQuery.data
   if (form.one_response_per_person && existingResponse && !editing) {
     return (
-      <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
+      <FormThemeShell theme={form.theme}>
         <h1 className="text-3xl font-bold text-ink-900">{form.title}</h1>
         <p className="mt-2 text-ink-muted">
           You&rsquo;ve already responded to this form{form.allow_edit_after_submit ? '.' : ' — thank you!'}
@@ -136,7 +137,7 @@ export default function FormDetail() {
             Edit response
           </Button>
         )}
-      </div>
+      </FormThemeShell>
     )
   }
 
@@ -144,12 +145,15 @@ export default function FormDetail() {
   const answeredCount = form.questions.filter((q) => isAnswered(answers[q.id])).length
   const progressPct = totalCount > 0 ? Math.round((answeredCount / totalCount) * 100) : 0
 
-  return (
-    <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-ink-900">{form.title}</h1>
-      {form.description && <p className="mt-2 text-ink-muted">{linkifyText(form.description)}</p>}
+  const themed = hasTheme(form.theme)
+  const showProgress = !themed || normalizeTheme(form.theme).showProgress
+  const cardStyle = questionCardStyle(form.theme)
 
-      {totalCount > 0 && (
+  return (
+    <FormThemeShell theme={form.theme}>
+      <FormHeaderCard form={form} theme={form.theme} />
+
+      {totalCount > 0 && showProgress && (
         <div className="mt-6">
           <div className="mb-1.5 flex items-center justify-between text-xs text-ink-muted">
             <span>{answeredCount} of {totalCount} answered</span>
@@ -163,11 +167,17 @@ export default function FormDetail() {
 
       <div className="mt-6 flex flex-col gap-4">
         {form.questions.map((q, i) => (
-          <Reveal key={q.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)} className="rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+          <Reveal
+            key={q.id}
+            delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}
+            className={themed ? 'p-5' : 'rounded-lg border border-hairline bg-surface p-5 shadow-sm'}
+            style={cardStyle}
+          >
             <QuestionField
               question={q}
               value={answers[q.id]}
               onChange={(value) => setAnswers((prev) => ({ ...prev, [q.id]: value }))}
+              theme={form.theme}
             />
           </Reveal>
         ))}
@@ -190,6 +200,6 @@ export default function FormDetail() {
       >
         Submit
       </Button>
-    </div>
+    </FormThemeShell>
   )
 }

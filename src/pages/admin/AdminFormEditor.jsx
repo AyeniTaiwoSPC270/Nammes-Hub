@@ -14,6 +14,8 @@ import Toggle from '../../components/ui/Toggle'
 import ErrorState from '../../components/ui/ErrorState'
 import QuestionEditorCard from '../../components/admin/forms/QuestionEditorCard'
 import ShareFormModal from '../../components/admin/ShareFormModal'
+import FormDesignModal from '../../components/admin/forms/FormDesignModal'
+import { normalizeImage, normalizeQuestionStyle, themeToSave } from '../../lib/formTheme'
 
 function assertRowsChanged(rows) {
   if (!rows || rows.length === 0) {
@@ -33,6 +35,8 @@ function newQuestion() {
     scale_max: 5,
     scale_min_label: '',
     scale_max_label: '',
+    image: null,
+    style: null,
   }
 }
 
@@ -49,6 +53,8 @@ function questionToRow(q, formId, position) {
     scale_max: q.type === 'linear_scale' ? Number(q.scale_max) : null,
     scale_min_label: q.scale_min_label?.trim() || null,
     scale_max_label: q.scale_max_label?.trim() || null,
+    image: normalizeImage(q.image),
+    style: normalizeQuestionStyle(q.style),
   }
 }
 
@@ -98,6 +104,8 @@ export default function AdminFormEditor() {
   const [questions, setQuestions] = useState([newQuestion()])
   const [formError, setFormError] = useState('')
   const [sharing, setSharing] = useState(false)
+  const [designing, setDesigning] = useState(false)
+  const [theme, setTheme] = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -115,6 +123,7 @@ export default function AdminFormEditor() {
     setRequireSignin(form.require_signin)
     setOneResponsePerPerson(form.one_response_per_person)
     setAllowEditAfterSubmit(form.allow_edit_after_submit)
+    setTheme(form.theme ?? null)
     setQuestions(form.questions.length > 0 ? form.questions : [newQuestion()])
     setHydrated(true)
   }, [formQuery.data, hydrated])
@@ -135,6 +144,7 @@ export default function AdminFormEditor() {
         require_signin: requireSignin,
         one_response_per_person: requireSignin ? oneResponsePerPerson : false,
         allow_edit_after_submit: allowEditAfterSubmit,
+        theme: themeToSave(theme),
       }
 
       let formId = id
@@ -194,11 +204,17 @@ export default function AdminFormEditor() {
 
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-3xl font-bold text-ink-900">{id ? 'Edit form' : 'New form'}</h1>
-        {id && (
-          <Button variant="secondary" size="sm" type="button" onClick={() => setSharing(true)}>
-            Share
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" type="button" onClick={() => setDesigning(true)}>
+            <span className="material-symbols-outlined text-base">palette</span>
+            Design
           </Button>
-        )}
+          {id && (
+            <Button variant="secondary" size="sm" type="button" onClick={() => setSharing(true)}>
+              Share
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
@@ -255,6 +271,7 @@ export default function AdminFormEditor() {
                 index={i}
                 onChange={(next) => updateQuestion(i, next)}
                 onRemove={() => removeQuestion(i)}
+                theme={theme}
               />
             ))}
           </SortableContext>
@@ -275,6 +292,15 @@ export default function AdminFormEditor() {
         </Link>
       </div>
 
+      {designing && (
+        <FormDesignModal
+          theme={theme}
+          onChange={setTheme}
+          form={{ title: title || 'Untitled form', description }}
+          questions={questions}
+          onClose={() => setDesigning(false)}
+        />
+      )}
       {sharing && id && <ShareFormModal form={{ id, title }} onClose={() => setSharing(false)} />}
     </div>
   )
