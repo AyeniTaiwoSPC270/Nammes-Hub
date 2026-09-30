@@ -33,17 +33,17 @@ export function hashToken(token) {
   return createHash('sha256').update(String(token)).digest('hex')
 }
 
-// Nicknames are shown on a projector to a room, so keep them short, plain and free of the obvious rude words.
-const BLOCKED = ['fuck', 'shit', 'bitch', 'cunt', 'nigg', 'dick', 'pussy', 'whore', 'slut', 'rape', 'asshole']
+export { hasBlockedWord } from './quizText.js'
+import { hasBlockedWord } from './quizText.js'
 
+// Nicknames are shown on a projector to a room, so keep them short, plain and free of the obvious rude words.
 export function validateNickname(raw) {
   if (typeof raw !== 'string') return { ok: false, error: 'Enter a nickname' }
   // eslint-disable-next-line no-control-regex
   const nickname = raw.replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim()
   if (nickname.length < 1) return { ok: false, error: 'Enter a nickname' }
   if (nickname.length > 20) return { ok: false, error: 'Nicknames can be at most 20 characters' }
-  const squashed = nickname.toLowerCase().replace(/[^a-z]/g, '')
-  if (BLOCKED.some((word) => squashed.includes(word))) return { ok: false, error: 'Please pick a different nickname' }
+  if (hasBlockedWord(nickname)) return { ok: false, error: 'Please pick a different nickname' }
   return { ok: true, value: nickname }
 }
 

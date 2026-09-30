@@ -9,6 +9,7 @@ import Character from '../components/quiz/Character'
 import { useCountUp } from '../lib/useCountUp'
 import { quizSound, buzz } from '../lib/quizSound'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
+import { teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
@@ -115,18 +116,24 @@ function JoinForm({ onJoined, notice }) {
   const [avatarId, setAvatarId] = useState(randomAvatarId)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [teams, setTeams] = useState(null) // the teams to choose from, once the game says it is a team game
 
-  async function submit(event) {
-    event.preventDefault()
+  async function attempt(teamId) {
     setBusy(true)
     setError('')
     try {
-      const joined = await callQuiz('join', { code, nickname, avatarId })
+      const joined = await callQuiz('join', { code, nickname, avatarId, ...(teamId ? { teamId } : {}) })
       onJoined(joined)
     } catch (e) {
-      setError(e.message)
+      if (e.data?.needsTeam) setTeams(e.data.teams)
+      else setError(e.message)
       setBusy(false)
     }
+  }
+
+  function submit(event) {
+    event.preventDefault()
+    attempt(null)
   }
 
   return (
@@ -190,6 +197,28 @@ function JoinForm({ onJoined, notice }) {
             ))}
           </div>
         </div>
+        {teams && (
+          <div className="flex flex-col gap-3" role="group" aria-label="Pick your team">
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Pick your team</span>
+            <div className="grid grid-cols-2 gap-2">
+              {teams.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => attempt(t.id)}
+                  className={`flex min-h-16 flex-col items-start justify-center rounded-2xl px-4 py-2 text-left text-white shadow-md active:scale-[0.97] disabled:opacity-60 ${teamStyle(t.color).bg}`}
+                >
+                  <span className="text-lg font-bold">{t.name}</span>
+                  <span className="text-xs opacity-90">{t.members} player{t.members === 1 ? '' : 's'}</span>
+                </button>
+              ))}
+            </div>
+            <button type="button" disabled={busy} onClick={() => attempt('auto')} className="min-h-12 rounded-2xl border-2 border-hairline font-semibold text-ink-900 disabled:opacity-60">
+              Put me anywhere
+            </button>
+          </div>
+        )}
         {notice && !error && (
           <p role="status" className="flex items-center gap-2 rounded-2xl bg-orange-500/12 px-4 py-3 text-sm font-semibold text-ink-900">
             <span className="material-symbols-outlined text-orange-500" aria-hidden="true">info</span>
@@ -207,7 +236,7 @@ function JoinForm({ onJoined, notice }) {
           disabled={busy || code.length !== 6 || !nickname.trim()}
           className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? 'Joining…' : 'Join game'}
+          {busy ? 'Joining…' : teams ? 'Join with another team' : 'Join game'}
           {!busy && <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>}
         </button>
       </form>
@@ -228,6 +257,22 @@ function WaitingDots() {
         <span key={i} className="h-2 w-2 animate-pulse rounded-full bg-orange-500" style={{ animationDelay: `${i * 200}ms` }} />
       ))}
     </span>
+  )
+}
+
+// Team standings on a phone: one row per team, the player's own team highlighted.
+function TeamList({ teams, myTeamId }) {
+  return (
+    <ol className="flex flex-col gap-2" aria-label="Team standings">
+      {teams.map((t) => (
+        <li key={t.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${t.id === myTeamId ? 'border-orange-500 bg-orange-500/12' : 'border-hairline bg-surface'}`}>
+          <span className="w-8 text-center text-xl font-bold">{MEDALS[t.rank - 1] ?? t.rank}</span>
+          <span className={`h-8 w-2 rounded-full ${teamStyle(t.color).bg}`} aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-lg font-semibold">{t.name}{t.id === myTeamId ? ' (you)' : ''}</span>
+          <span className="text-lg font-bold tabular-nums">{formatScore(t.score)}</span>
+        </li>
+      ))}
+    </ol>
   )
 }
 
@@ -428,6 +473,9 @@ function PlayQuizGame({ onTheme }) {
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">You&apos;re in</p>
             <h1 className="text-4xl font-bold">{me.nickname}</h1>
             {theme.headline && <p className="mt-2 text-lg font-semibold text-ink-muted">{theme.headline}</p>}
+            {me.team && (
+              <p className={`mt-2 inline-block rounded-full px-4 py-1 text-sm font-bold text-white ${teamStyle(me.team.color).bg}`}>Team {me.team.name}</p>
+            )}
           </div>
         </div>
         <div className="qz-rise rounded-3xl border border-hairline bg-surface p-5 text-center shadow-md" style={{ animationDelay: '220ms' }}>
@@ -693,6 +741,7 @@ function PlayQuizGame({ onTheme }) {
             <RankMove delta={rankDelta} />
           </div>
         </section>
+        {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} scoring={game.session.teamScoring} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 5).map((p, i) => {
             const mine = p.nickname === me.nickname
@@ -730,6 +779,7 @@ function PlayQuizGame({ onTheme }) {
           {me.rank && me.rank > 3 && <p className="text-3xl font-bold">You finished #{me.rank}</p>}
           <p className="mt-2 text-2xl font-semibold">{formatScore(me.score)} points</p>
         </section>
+        {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 3).map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface p-3">

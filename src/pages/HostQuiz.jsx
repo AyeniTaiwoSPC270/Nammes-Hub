@@ -4,6 +4,7 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, hostOp, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
+import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
 import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl } from '../components/quiz/QuizParts'
@@ -125,8 +126,14 @@ function ControlButton({ icon, label, onClick, disabled, active }) {
   )
 }
 
-function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename }) {
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams }) {
   const [menuFor, setMenuFor] = useState(null)
+  const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
+  // In a team game players are listed team by team, each with a coloured tag.
+  const orderedPlayers = useMemo(
+    () => (teams.length ? [...players].sort((a, b) => (teamById.get(a.team_id)?.position ?? 99) - (teamById.get(b.team_id)?.position ?? 99)) : players),
+    [players, teams, teamById],
+  )
   const [qr, setQr] = useState('')
   const joinUrl = `${window.location.origin}/play?code=${session.join_code}`
   const digits = session.join_code.split('')
@@ -235,6 +242,15 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             </div>
           </div>
         )}
+        {teams.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Teams">
+            {teams.map((t) => (
+              <li key={t.id} className={`rounded-full px-3 py-1 text-sm font-bold ${teamStyle(t.color).soft} ${teamStyle(t.color).text}`}>
+                {t.name} · {players.filter((p) => p.team_id === t.id).length}
+              </li>
+            ))}
+          </ul>
+        )}
         {players.length === 0 ? (
           <p className="mt-6 flex items-center gap-3 text-lg text-ink-muted">
             <span className="qz-float inline-block text-3xl" aria-hidden="true">π</span>
@@ -242,10 +258,13 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
           </p>
         ) : (
           <div className="mt-5 flex flex-wrap gap-3">
-            {players.map((p) => (
+            {orderedPlayers.map((p) => (
               <span key={p.id} className="qz-pop relative inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
                 <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-12 w-12" />
                 {p.nickname}
+                {teamById.get(p.team_id) && (
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
+                )}
                 <button
                   type="button"
                   onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
@@ -630,7 +649,40 @@ function AnimatedBoard({ players, gains }) {
   )
 }
 
-function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto }) {
+// Team scores: a bar per team, longest first. Teams with nobody on them are left out.
+function TeamStandings({ teams, players, scoring, big = false }) {
+  const ranked = useMemo(() => rankTeams({ teams, players, scoring }), [teams, players, scoring])
+  const top = Math.max(1, ...ranked.map((t) => t.score))
+  if (ranked.length === 0) return null
+  return (
+    <section className={`mx-auto w-full rounded-3xl border border-hairline bg-surface p-5 shadow-md ${big ? 'max-w-4xl' : 'max-w-4xl'}`} aria-label="Team standings">
+      <h2 className="mb-3 text-lg font-bold uppercase tracking-[0.12em] text-ink-muted">Teams · {scoring === 'total' ? 'total score' : 'average score'}</h2>
+      <ol className="flex flex-col gap-3">
+        {ranked.map((t) => {
+          const style = teamStyle(t.color)
+          return (
+            <li key={t.id} className="flex items-center gap-3">
+              <span className="w-8 shrink-0 text-center text-2xl font-bold">{MEDALS[t.rank - 1] ?? t.rank}</span>
+              <Avatar name={t.name} avatarId={t.avatarId} className={big ? 'h-14 w-14 shrink-0' : 'h-11 w-11 shrink-0'} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className={`truncate font-bold ${big ? 'text-3xl' : 'text-xl'}`}>{t.name}</span>
+                  <span className={`shrink-0 font-bold tabular-nums ${big ? 'text-3xl' : 'text-xl'}`}>{formatScore(t.score)}</span>
+                </div>
+                <div className="mt-1 h-3 overflow-hidden rounded-full bg-hairline/60">
+                  <div className={`h-full rounded-full transition-[width] duration-700 ${style.bg}`} style={{ width: `${(t.score / top) * 100}%` }} />
+                </div>
+                <div className="mt-0.5 text-xs text-ink-muted">{t.members} player{t.members === 1 ? '' : 's'}</div>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto, teams, scoring }) {
   // If the round's points arrive a moment after the screen opens (for example after a page reload), start the replay again.
   const replayKey = [...gains.values()].join(',')
   const type = question?.type ?? 'multiple'
@@ -654,6 +706,7 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
       }
     >
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Leaderboard</h1>
+      {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} />}
       <AnimatedBoard key={replayKey} players={players} gains={gains} />
       {answerLabel && (
         <p className="mx-auto max-w-4xl text-center text-ink-muted">
@@ -682,7 +735,7 @@ const PODIUM = [
   { place: 3, height: 'h-32 sm:h-40', block: 'border border-hairline bg-surface text-ink-900', delay: 200 },
 ]
 
-function FinishedScreen({ title, players }) {
+function FinishedScreen({ title, players, teams, scoring }) {
   const ranked = useMemo(() => rankPlayers(players), [players])
   const byPlace = (place) => ranked[place - 1]
   return (
@@ -701,6 +754,7 @@ function FinishedScreen({ title, players }) {
       {ranked.length > 0 && <Confetti />}
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Final results</h1>
       <p className="text-center text-lg text-ink-muted">{ranked.length} player{ranked.length === 1 ? '' : 's'} took part</p>
+      {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} big />}
 
       <div className="mx-auto flex w-full max-w-3xl items-end justify-center gap-3 sm:gap-5">
         {PODIUM.map(({ place, height, block, delay }) => {
@@ -748,6 +802,7 @@ export default function HostQuiz() {
   const [quizTitle, setQuizTitle] = useState('')
   const [questions, setQuestions] = useState([])
   const [players, setPlayers] = useState([])
+  const [teams, setTeams] = useState([])
   const [answerSet, setAnswerSet] = useState({ questionId: null, rows: [] })
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState('')
@@ -784,7 +839,7 @@ export default function HostQuiz() {
   }, [])
 
   const loadPlayers = useCallback(async () => {
-    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, streak').eq('session_id', sessionId)
+    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, streak, team_id').eq('session_id', sessionId)
     if (data) setPlayers(data)
   }, [sessionId])
 
@@ -812,6 +867,10 @@ export default function HostQuiz() {
         ])
         if (cancelled) return
         if (qs) setQuestions(qs)
+        if (data.team_mode) {
+          const { data: teamRows } = await supabase.from('quiz_teams').select('*').eq('session_id', sessionId).order('position')
+          if (!cancelled && teamRows) setTeams(teamRows)
+        }
         if (quiz) setQuizTitle(quiz.title)
       }
     }
@@ -1072,6 +1131,7 @@ export default function HostQuiz() {
         maxPlayers={session.max_players}
         fullLeft={fullLeft}
         auto={auto}
+        teams={teams}
         locked={Boolean(session.locked)}
         onToggleLock={() => runOp(session.locked ? 'unlock' : 'lock')}
         onKick={(player, block) => runOp('kick', { playerId: player.id, block })}
@@ -1110,9 +1170,9 @@ export default function HostQuiz() {
       />
     )
   } else if (session.state === 'leaderboard') {
-    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} />
+    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} />
   } else {
-    screen = <FinishedScreen title={quizTitle} players={players} />
+    screen = <FinishedScreen title={quizTitle} players={players} teams={teams} scoring={session.team_scoring} />
   }
 
   return (

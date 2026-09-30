@@ -4,6 +4,7 @@ import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { quizImagePath, IMAGE_BUCKET, IMAGE_ALT_MAX } from '../../api/_lib/quizImage.js'
 import { sanitizeGameOptions } from '../../api/_lib/quizGrading.js'
 import { cleanQuestion, validateQuestion, cleanTags, MAX_QUESTIONS } from './quizQuestions'
+import { validateTeamSettings, cleanTeams } from './quizTeams'
 
 // Live quiz: the four answer colours (the same on the projector and on phones), input rules for the
 // editor, timing helpers and the small client for /api/quiz. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -76,11 +77,13 @@ export {
   TIME_LIMIT_CHOICES, POINT_CHOICES, MAX_QUESTIONS, MAX_TAGS, TAG_MAX_LENGTH, cleanTags, QUESTION_TYPE_INFO, blankQuestion, questionFromRow, cleanQuestion, validateQuestion,
 } from './quizQuestions'
 
-export function validateQuizDraft({ title, questions, maxPlayers = DEFAULT_MAX_PLAYERS }) {
+export function validateQuizDraft({ title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, teamSettings }) {
   if (!title || !title.trim()) return 'A title is required.'
   if (title.trim().length > 120) return 'The title must be 120 characters or fewer.'
   const limitProblem = validateMaxPlayers(maxPlayers)
   if (limitProblem) return limitProblem
+  const teamProblem = teamSettings ? validateTeamSettings(teamSettings) : null
+  if (teamProblem) return teamProblem
   if (questions.length === 0) return 'Add at least one question.'
   if (questions.length > MAX_QUESTIONS) return `A quiz can have at most ${MAX_QUESTIONS} questions.`
   for (const [i, raw] of questions.entries()) {
@@ -170,9 +173,23 @@ export function useQuizQuery(id) {
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
 // edited and reordered questions; questions the admin removed are deleted first. Pictures are uploaded first
 // (under a fresh name, so phones never show a stale cached copy) and the old files are removed afterwards.
-export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [] }) {
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled }) {
   const cleaned = questions.map(cleanQuestion)
-  const quizFields = { title: title.trim(), max_players: maxPlayers, game_options: sanitizeGameOptions(gameOptions), tags: cleanTags(tags) }
+  const teamFields = teamSettings
+    ? {
+        team_mode: Boolean(teamSettings.teamMode),
+        team_scoring: teamSettings.teamScoring === 'total' ? 'total' : 'average',
+        team_presets: cleanTeams(teamSettings.teams).teams ?? [],
+      }
+    : {}
+  const quizFields = {
+    title: title.trim(),
+    max_players: maxPlayers,
+    game_options: sanitizeGameOptions(gameOptions),
+    tags: cleanTags(tags),
+    ...teamFields,
+    ...(practiceEnabled === undefined ? {} : { practice_enabled: Boolean(practiceEnabled) }),
+  }
   const staleFiles = []
   let quizId = id
   if (quizId) {
@@ -336,14 +353,15 @@ export async function fetchGameReport(sessionId) {
   const { data: session, error } = await supabase.from('quiz_sessions').select('*, quizzes(title)').eq('id', sessionId).maybeSingle()
   if (error) throw error
   if (!session) throw new Error('Game not found')
-  const [questions, players, questionStats, distribution, playerStats] = await Promise.all([
+  const [questions, players, questionStats, distribution, playerStats, teams] = await Promise.all([
     supabase.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).order('position'),
-    supabase.from('quiz_players').select('id, nickname, total_score, avatar_id').eq('session_id', sessionId),
+    supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id').eq('session_id', sessionId),
     supabase.from('quiz_question_stats').select('*').eq('session_id', sessionId),
     supabase.from('quiz_answer_distribution').select('*').eq('session_id', sessionId),
     supabase.from('quiz_player_stats').select('*').eq('session_id', sessionId),
+    supabase.from('quiz_teams').select('*').eq('session_id', sessionId).order('position'),
   ])
-  for (const result of [questions, players, questionStats, distribution, playerStats]) if (result.error) throw result.error
+  for (const result of [questions, players, questionStats, distribution, playerStats, teams]) if (result.error) throw result.error
   return {
     session,
     questions: questions.data,
@@ -351,6 +369,8 @@ export async function fetchGameReport(sessionId) {
     questionStats: questionStats.data,
     distribution: distribution.data,
     playerStats: playerStats.data,
+    teams: teams.data,
+    teamScoring: session.team_scoring,
   }
 }
 

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { isJoinCode, isAvatarId, validateNickname, newPlayerToken, hashToken, createRateLimiter, clientIp, MAX_PLAYERS } from '../quiz.js'
+import { pickAutoTeam } from '../quizTeams.js'
 
 // Anyone with a join code can join with a nickname. No account. The player gets a secret token that
 // proves who they are on later calls, and only its hash is stored.
@@ -14,7 +15,7 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       res.status(429).json({ error: 'Too many tries. Wait a moment and try again.' })
       return
     }
-    const { code, nickname, avatarId = 0 } = req.body ?? {}
+    const { code, nickname, avatarId = 0, teamId } = req.body ?? {}
     if (!isJoinCode(code)) {
       res.status(400).json({ error: 'Enter the 6-digit game code' })
       return
@@ -32,7 +33,7 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
     const supabaseAdmin = getClient()
     const { data: session } = await supabaseAdmin
       .from('quiz_sessions')
-      .select('id, state, max_players, locked, blocked_nicknames')
+      .select('id, state, max_players, locked, blocked_nicknames, team_mode')
       .eq('join_code', code)
       .neq('state', 'finished')
       .maybeSingle()
@@ -61,9 +62,34 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       return
     }
 
+    // In team mode every player is on a team. A phone that has not picked one is sent the list to choose from.
+    let team = null
+    if (session.team_mode) {
+      const [{ data: teams }, { data: members }] = await Promise.all([
+        supabaseAdmin.from('quiz_teams').select('id, name, color, avatar_id, position').eq('session_id', session.id).order('position', { ascending: true }),
+        supabaseAdmin.from('quiz_players').select('id, team_id').eq('session_id', session.id),
+      ])
+      const list = teams ?? []
+      if (teamId === undefined || teamId === null) {
+        const sizes = new Map(list.map((t) => [t.id, 0]))
+        for (const m of members ?? []) if (sizes.has(m.team_id)) sizes.set(m.team_id, sizes.get(m.team_id) + 1)
+        res.status(409).json({
+          error: 'Pick a team',
+          needsTeam: true,
+          teams: list.map((t) => ({ id: t.id, name: t.name, color: t.color, avatarId: t.avatar_id, members: sizes.get(t.id) })),
+        })
+        return
+      }
+      team = teamId === 'auto' ? pickAutoTeam(list, members ?? []) : list.find((t) => t.id === teamId) ?? null
+      if (!team) {
+        res.status(400).json({ error: 'Pick one of the teams' })
+        return
+      }
+    }
+
     const { data: player, error } = await supabaseAdmin
       .from('quiz_players')
-      .insert({ session_id: session.id, nickname: checked.value, avatar_id: avatarId })
+      .insert({ session_id: session.id, nickname: checked.value, avatar_id: avatarId, ...(team ? { team_id: team.id } : {}) })
       .select('id')
       .single()
     if (error) {
@@ -112,7 +138,14 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       if (fullError) console.error('quiz-join: could not mark the lobby full', fullError)
     }
 
-    res.status(200).json({ token, playerId: player.id, sessionId: session.id, nickname: checked.value, avatarId })
+    res.status(200).json({
+      token,
+      playerId: player.id,
+      sessionId: session.id,
+      nickname: checked.value,
+      avatarId,
+      ...(team ? { team: { id: team.id, name: team.name, color: team.color } } : {}),
+    })
   }
 }
 

@@ -28,6 +28,7 @@ export function fakeDb(seed = {}) {
     quiz_answers: [],
     quiz_host_log: [],
     quiz_powerup_uses: [],
+    quiz_teams: [],
     ...seed,
   }
   let n = 0
@@ -50,6 +51,11 @@ export function fakeDb(seed = {}) {
       const match = (r) =>
         filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : r[col] !== val))
       const rows = tables[table].filter(match)
+      if (op === 'insert' && Array.isArray(payload)) {
+        const made = payload.map((p) => ({ id: uid(), ...p }))
+        tables[table].push(...made)
+        return { rows: made }
+      }
       if (op === 'insert') {
         if (uniqueViolation(table, payload)) return { rows: [], error: { code: '23505' } }
         const row = { id: uid(), ...payload }

@@ -10,6 +10,8 @@ export default function HostQuizModal({ quiz, busy, onHost, onClose }) {
   useBodyScrollLock()
   const [maxPlayers, setMaxPlayers] = useState(String(quiz.max_players ?? DEFAULT_MAX_PLAYERS))
   const problem = validateMaxPlayers(maxPlayers)
+  const hasTeams = (quiz.team_presets ?? []).length >= 2
+  const [teamMode, setTeamMode] = useState(Boolean(quiz.team_mode) && hasTeams)
 
   useEffect(() => {
     dialogRef.current?.focus()
@@ -25,7 +27,7 @@ export default function HostQuizModal({ quiz, busy, onHost, onClose }) {
 
   function handleSubmit(event) {
     event.preventDefault()
-    if (!problem) onHost(Number(maxPlayers))
+    if (!problem) onHost(Number(maxPlayers), hasTeams ? { teamMode } : {})
   }
 
   return (
@@ -49,6 +51,15 @@ export default function HostQuizModal({ quiz, busy, onHost, onClose }) {
           error={maxPlayers !== '' && problem ? problem : undefined}
           helper={`From ${MIN_PLAYERS_LIMIT} to ${MAX_PLAYERS_LIMIT}. When the lobby fills up, the game starts by itself after 10 seconds. You can press Start sooner.`}
         />
+        {hasTeams && (
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" className="mt-1 h-5 w-5" checked={teamMode} onChange={(e) => setTeamMode(e.target.checked)} />
+            <span>
+              <span className="block font-semibold text-ink-900">Play in teams</span>
+              <span className="block text-sm text-ink-muted">{quiz.team_presets.map((t) => t.name).join(', ')}</span>
+            </span>
+          </label>
+        )}
         <Button type="submit" variant="accent" className="w-full justify-center" loading={busy} disabled={Boolean(problem)}>
           Open lobby
         </Button>

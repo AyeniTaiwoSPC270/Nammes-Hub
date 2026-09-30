@@ -9,6 +9,7 @@ import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
 import { Avatar } from '../../components/quiz/QuizParts'
+import { teamStyle } from '../../data/quizTeams'
 
 // How a finished game went: headline numbers, every question's accuracy and answers, the hardest and easiest
 // questions, and a table of players. Admin only. "Print" gives an A4 page (or a PDF) without the site chrome.
@@ -179,6 +180,24 @@ export default function AdminQuizReport() {
         <Callout title="Hardest questions" rows={report.hardest} />
         <Callout title="Easiest questions" rows={report.easiest} />
       </section>
+
+      {report.teams.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xl font-bold text-ink-900">Teams</h2>
+          <p className="text-sm text-ink-muted">Scored by the {report.teamScoring === 'total' ? 'total' : 'average'} of each team&apos;s players.</p>
+          <ol className="mt-3 flex flex-col gap-2">
+            {report.teams.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 rounded-xl border border-hairline bg-surface px-4 py-3">
+                <span className="w-8 text-center text-xl font-bold">{t.rank}</span>
+                <span className={`h-6 w-2 rounded-full ${teamStyle(t.color).bg}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate font-semibold">{t.name}</span>
+                <span className="text-sm text-ink-muted">{t.members} player{t.members === 1 ? '' : 's'}</span>
+                <strong className="tabular-nums">{formatScore(t.score)}</strong>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="text-xl font-bold text-ink-900">Question by question</h2>

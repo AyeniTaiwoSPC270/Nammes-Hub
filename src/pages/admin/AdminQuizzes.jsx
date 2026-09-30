@@ -92,10 +92,10 @@ export default function AdminQuizzes() {
     }
   }
 
-  async function handleHost(quiz, maxPlayers) {
+  async function handleHost(quiz, maxPlayers, extra = {}) {
     setHostingId(quiz.id)
     try {
-      const { sessionId } = await hostAction('create', { quizId: quiz.id, maxPlayers })
+      const { sessionId } = await hostAction('create', { quizId: quiz.id, maxPlayers, ...extra })
       navigate(`/host/${sessionId}`)
     } catch (error) {
       toast.error(error.message)
@@ -264,7 +264,7 @@ export default function AdminQuizzes() {
         <HostQuizModal
           quiz={hostingQuiz}
           busy={hostingId === hostingQuiz.id}
-          onHost={(maxPlayers) => handleHost(hostingQuiz, maxPlayers)}
+          onHost={(maxPlayers, extra) => handleHost(hostingQuiz, maxPlayers, extra)}
           onClose={() => setHostingQuiz(null)}
         />
       )}

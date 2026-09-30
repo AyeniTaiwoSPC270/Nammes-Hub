@@ -69,6 +69,24 @@ describe('buildReport', () => {
   })
 })
 
+describe('team results in a report', () => {
+  it('ranks teams from the players and adds them to the CSV', () => {
+    const teams = [{ id: 't1', name: 'Red', color: 'red', position: 0, avatar_id: 0 }, { id: 't2', name: 'Blue', color: 'blue', position: 1, avatar_id: 1 }]
+    const withTeams = buildReport({
+      questions,
+      players: [{ ...players[0], team_id: 't1' }, { ...players[1], team_id: 't2' }, { ...players[2], team_id: 't2' }],
+      questionStats,
+      distribution,
+      playerStats,
+      teams,
+    })
+    expect(withTeams.teams.map((t) => [t.name, t.score, t.members])).toEqual([['Red', 3000, 1], ['Blue', 1000, 2]])
+    expect(reportToCsv(withTeams)).toContain('Team rank,Team,Score,Players')
+    expect(report.teams).toEqual([])
+    expect(reportToCsv(report)).not.toContain('Team rank')
+  })
+})
+
 describe('reportToCsv', () => {
   it('lists players then questions and protects formula-looking text', () => {
     const csv = reportToCsv(buildReport({ questions: [{ ...questions[0], text: '=HYPERLINK("x")' }], players: [{ id: 'p1', nickname: '+bad, name', total_score: 5, avatar_id: 0 }], questionStats: [], distribution: [], playerStats: [] }))

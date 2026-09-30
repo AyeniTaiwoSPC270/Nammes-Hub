@@ -1,5 +1,6 @@
 import { rankPlayers } from './quiz'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
+import { rankTeams } from '../../api/_lib/quizTeams.js'
 
 // Turns the stored answers of one game into the numbers shown on the report page. Pure: the page fetches the rows
 // (questions, players and the three summary views) and this only adds them up.
@@ -7,7 +8,7 @@ import { isChoiceType } from '../../api/_lib/quizGrading.js'
 const round1 = (n) => Math.round(n * 10) / 10
 const secondsOf = (ms) => (ms == null ? null : round1(ms / 1000))
 
-export function buildReport({ questions, players, questionStats = [], distribution = [], playerStats = [] }) {
+export function buildReport({ questions, players, questionStats = [], distribution = [], playerStats = [], teams = [], teamScoring = 'average' }) {
   const statByQuestion = new Map(questionStats.map((s) => [s.question_id, s]))
   const votesByQuestion = new Map()
   for (const d of distribution) {
@@ -84,6 +85,8 @@ export function buildReport({ questions, players, questionStats = [], distributi
     hardest,
     easiest,
     players: playerRows,
+    teams: rankTeams({ teams, players, scoring: teamScoring }),
+    teamScoring,
   }
 }
 
@@ -98,6 +101,11 @@ export function reportToCsv(report) {
   const lines = []
   lines.push(['Rank', 'Nickname', 'Score', 'Answered', 'Correct', 'Average seconds'].map(cell).join(','))
   for (const p of report.players) lines.push([p.rank, p.nickname, p.score, p.answered, p.correct, p.avgSeconds ?? ''].map(cell).join(','))
+  if (report.teams.length > 0) {
+    lines.push('')
+    lines.push(['Team rank', 'Team', 'Score', 'Players'].map(cell).join(','))
+    for (const t of report.teams) lines.push([t.rank, t.name, t.score, t.members].map(cell).join(','))
+  }
   lines.push('')
   lines.push(['Question', 'Type', 'Text', 'Answered', 'Accuracy %', 'Average seconds'].map(cell).join(','))
   for (const q of report.questions) lines.push([q.index + 1, q.type, q.text, q.answered, q.accuracy ?? '', q.avgSeconds ?? ''].map(cell).join(','))

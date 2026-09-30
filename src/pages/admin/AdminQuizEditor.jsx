@@ -22,6 +22,8 @@ import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
 import QuestionCard from '../../components/admin/quizEditor/QuestionCard'
+import TeamSettings from '../../components/admin/quizEditor/TeamSettings'
+import { DEFAULT_TEAM_SETTINGS } from '../../data/quizTeams'
 import QuizImportModal from '../../components/admin/quizLibrary/QuizImportModal'
 import QuestionBankModal from '../../components/admin/quizLibrary/QuestionBankModal'
 
@@ -47,6 +49,8 @@ export default function AdminQuizEditor() {
   const [loaded, setLoaded] = useState(!id)
   const [addType, setAddType] = useState('multiple')
   const [tags, setTags] = useState('')
+  const [teamSettings, setTeamSettings] = useState(DEFAULT_TEAM_SETTINGS)
+  const [practiceEnabled, setPracticeEnabled] = useState(false)
   const [dialog, setDialog] = useState(null) // 'import' or 'bank'
 
   useEffect(() => {
@@ -55,12 +59,18 @@ export default function AdminQuizEditor() {
     setMaxPlayers(String(quizQuery.data.max_players ?? DEFAULT_MAX_PLAYERS))
     setGameOptions(sanitizeGameOptions(quizQuery.data.game_options))
     setTags((quizQuery.data.tags ?? []).join(', '))
+    setTeamSettings({
+      teamMode: Boolean(quizQuery.data.team_mode),
+      teamScoring: quizQuery.data.team_scoring === 'total' ? 'total' : 'average',
+      teams: (quizQuery.data.team_presets ?? []).map((t) => ({ name: t.name, color: t.color, avatarId: t.avatarId ?? 0 })),
+    })
+    setPracticeEnabled(Boolean(quizQuery.data.practice_enabled))
     setQuestions(quizQuery.data.questions.map(questionFromRow))
     setLoaded(true)
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags) }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -70,7 +80,7 @@ export default function AdminQuizEditor() {
   })
 
   function handleSave() {
-    const problem = validateQuizDraft({ title, questions, maxPlayers })
+    const problem = validateQuizDraft({ title, questions, maxPlayers, teamSettings })
     if (problem) {
       toast.error(problem)
       return
@@ -145,6 +155,22 @@ export default function AdminQuizEditor() {
                 </label>
               ))}
             </div>
+          </fieldset>
+
+          <TeamSettings settings={teamSettings} onChange={setTeamSettings} />
+
+          <fieldset className="rounded-lg border border-hairline bg-surface p-4">
+            <legend className="px-1 text-sm font-bold text-ink-900">Practice mode</legend>
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" className="mt-1 h-5 w-5" checked={practiceEnabled} onChange={(e) => setPracticeEnabled(e.target.checked)} />
+              <span>
+                <span className="block font-semibold text-ink-900">Open for practice</span>
+                <span className="block text-sm text-ink-muted">
+                  Anyone with the link can replay this quiz on their own phone, without a host, and see the answers as they go.
+                  {id ? <> The link is <code>{window.location.origin}/practice/{id}</code>.</> : ' Save the quiz to get its link.'}
+                </span>
+              </span>
+            </label>
           </fieldset>
 
           {questions.map((q, i) => (

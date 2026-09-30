@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeback, isChoiceType, correctText, fiftyFiftyHidden, POWERUPS } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
+import { rankTeams } from '../quizTeams.js'
 
 const TOP_N = 10
 
@@ -49,11 +50,15 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
     }
 
     const [{ data: players }, { count: questionCount }] = await Promise.all([
-      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id').eq('session_id', session.id),
+      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id').eq('session_id', session.id),
       supabaseAdmin.from('quiz_questions').select('id', { count: 'exact', head: true }).eq('quiz_id', session.quiz_id),
     ])
     const gameOptions = sanitizeGameOptions(session.game_options)
     const ranked = rankPlayers(players ?? [])
+    const teamRows = session.team_mode
+      ? ((await supabaseAdmin.from('quiz_teams').select('*').eq('session_id', session.id)).data ?? [])
+      : []
+    const myTeam = teamRows.find((t) => t.id === (players ?? []).find((p) => p.id === player.id)?.team_id) ?? null
     const me = ranked.find((p) => p.id === player.id)
 
     const out = {
@@ -65,6 +70,8 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         startedAt: session.question_started_at,
         maxPlayers: session.max_players,
         fullAt: session.full_at ?? null,
+        teamMode: Boolean(session.team_mode),
+        teamScoring: session.team_scoring ?? 'average',
         paused: Boolean(session.paused_at),
         pausedAt: session.paused_at ?? null,
         pausedTotalMs: session.paused_total_ms ?? 0,
@@ -77,6 +84,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         rank: me?.rank ?? null,
         avatarId: me?.avatar_id ?? 0,
         streak: player.streak ?? 0,
+        team: myTeam ? { id: myTeam.id, name: myTeam.name, color: myTeam.color } : null,
       },
       gameOptions,
       playerCount: ranked.length,
@@ -144,6 +152,9 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
       }
     }
     if (session.state === 'leaderboard' || session.state === 'finished') out.top = ranked.slice(0, TOP_N)
+    if (session.team_mode && (session.state === 'leaderboard' || session.state === 'finished')) {
+      out.teams = rankTeams({ teams: teamRows, players: players ?? [], scoring: session.team_scoring })
+    }
     // Phones fetch the next picture while the leaderboard is up, so the next question does not wait on it.
     if (session.state === 'leaderboard') {
       const { data: upcoming } = await supabaseAdmin
