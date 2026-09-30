@@ -2,6 +2,8 @@
 // and the API all use this one file, so a theme is cleaned the same way everywhere. Nothing in a theme is ever
 // free text that reaches CSS: colours must be #rrggbb and every other choice comes from a fixed list.
 
+import { isQuizImagePath } from './quizImage.js'
+
 export const THEME_LOOKS = {
   classic: { name: 'Classic', accent: '#ff5a1f', glow: ['#ff5a1f', '#0b2417'], deep: ['#0b2417', '#17492f'] },
   midnight: { name: 'Midnight', accent: '#6366f1', glow: ['#6366f1', '#22d3ee'], deep: ['#1e1b4b', '#312e81'] },
@@ -29,6 +31,15 @@ export const THEME_CONFETTI = {
   off: 'None',
 }
 
+export const THEME_MUSIC = {
+  off: 'No music',
+  chill: 'Chill',
+  hype: 'Hype',
+}
+
+export const MAX_SPONSORS = 6
+export const SPONSOR_NAME_MAX = 40
+
 export const THEME_HEADLINE_MAX = 60
 export const THEME_TAGLINE_MAX = 80
 
@@ -39,6 +50,10 @@ export const DEFAULT_THEME = Object.freeze({
   confetti: 'math',
   headline: '',
   tagline: '',
+  sound: Object.freeze({ music: 'off', effects: true }),
+  logo: null,
+  sponsors: Object.freeze([]),
+  showSponsors: Object.freeze({ lobby: true, finish: true }),
 })
 
 const HEX = /^#[0-9a-fA-F]{6}$/
@@ -53,8 +68,31 @@ function cleanText(value, max) {
   return value.replace(/\s+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max)
 }
 
+function cleanSound(input) {
+  const o = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  return { music: Object.hasOwn(THEME_MUSIC, o.music) ? o.music : 'off', effects: o.effects !== false }
+}
+
+// A picture path is only kept if it has the exact shape of an uploaded image and, when the quiz is known, sits in that
+// quiz's own folder. Anything else is dropped, so a theme can never point at some other address.
+function cleanPath(value, quizId) {
+  return isQuizImagePath(value, quizId) ? value.toLowerCase() : null
+}
+
+function cleanSponsors(input, quizId) {
+  if (!Array.isArray(input)) return []
+  const out = []
+  for (const item of input) {
+    const path = cleanPath(item?.path, quizId)
+    const name = cleanText(item?.name, SPONSOR_NAME_MAX)
+    if (path && name) out.push({ name, path })
+    if (out.length === MAX_SPONSORS) break
+  }
+  return out
+}
+
 // Anything goes in, a complete valid theme comes out (bad or missing values fall back to the defaults).
-export function sanitizeTheme(input) {
+export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
   return {
     look: Object.hasOwn(THEME_LOOKS, t.look) ? t.look : DEFAULT_THEME.look,
@@ -63,6 +101,13 @@ export function sanitizeTheme(input) {
     confetti: Object.hasOwn(THEME_CONFETTI, t.confetti) ? t.confetti : DEFAULT_THEME.confetti,
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),
+    sound: cleanSound(t.sound),
+    logo: cleanPath(t.logo, quizId),
+    sponsors: cleanSponsors(t.sponsors, quizId),
+    showSponsors: {
+      lobby: t.showSponsors?.lobby !== false,
+      finish: t.showSponsors?.finish !== false,
+    },
   }
 }
 

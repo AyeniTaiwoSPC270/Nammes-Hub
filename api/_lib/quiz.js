@@ -33,17 +33,17 @@ export function hashToken(token) {
   return createHash('sha256').update(String(token)).digest('hex')
 }
 
-// Nicknames are shown on a projector to a room, so keep them short, plain and free of the obvious rude words.
-const BLOCKED = ['fuck', 'shit', 'bitch', 'cunt', 'nigg', 'dick', 'pussy', 'whore', 'slut', 'rape', 'asshole']
+export { hasBlockedWord } from './quizText.js'
+import { hasBlockedWord } from './quizText.js'
 
+// Nicknames are shown on a projector to a room, so keep them short, plain and free of the obvious rude words.
 export function validateNickname(raw) {
   if (typeof raw !== 'string') return { ok: false, error: 'Enter a nickname' }
   // eslint-disable-next-line no-control-regex
   const nickname = raw.replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim()
   if (nickname.length < 1) return { ok: false, error: 'Enter a nickname' }
   if (nickname.length > 20) return { ok: false, error: 'Nicknames can be at most 20 characters' }
-  const squashed = nickname.toLowerCase().replace(/[^a-z]/g, '')
-  if (BLOCKED.some((word) => squashed.includes(word))) return { ok: false, error: 'Please pick a different nickname' }
+  if (hasBlockedWord(nickname)) return { ok: false, error: 'Please pick a different nickname' }
   return { ok: true, value: nickname }
 }
 
@@ -58,6 +58,38 @@ export function scoreAnswer({ correct, points, timeLimitSeconds, elapsedMs }) {
   if (elapsedMs > limitMs + ANSWER_GRACE_MS) return 0
   const fraction = Math.min(Math.max(elapsedMs, 0), limitMs) / limitMs
   return Math.round(points * (1 - fraction / 2))
+}
+
+export * from './quizGrading.js'
+
+// The two wrong options a 50/50 hides for one player on one question. Stable: asking again gives the same two.
+export function fiftyFiftyHidden({ playerId, questionId, optionCount, correctIndex }) {
+  if (optionCount !== 4) return []
+  const wrong = [0, 1, 2, 3].filter((i) => i !== correctIndex)
+  const weight = (i) => createHash('sha256').update(`${playerId}:${questionId}:${i}`).digest().readUInt32BE(0)
+  return wrong.sort((a, b) => weight(a) - weight(b)).slice(0, 2).sort((a, b) => a - b)
+}
+
+// ---- Timing with pause and extra time (all from server timestamps) ----
+export const EXTEND_STEP_MS = 10_000
+export const MAX_EXTEND_MS = 60_000
+
+function ms(value) {
+  const t = new Date(value).getTime()
+  return Number.isFinite(t) ? t : 0
+}
+
+// Time a question has actually been running: not counting time the host had it paused.
+export function effectiveElapsedMs(session, nowMs) {
+  const started = ms(session.question_started_at)
+  const pausedTotal = session.paused_total_ms ?? 0
+  if (session.paused_at) return Math.max(0, ms(session.paused_at) - started - pausedTotal)
+  return Math.max(0, nowMs - started - pausedTotal)
+}
+
+// The question's full allowance in milliseconds, including any time the host added.
+export function questionLimitMs(session, question) {
+  return question.time_limit_seconds * 1000 + (session.time_bonus_ms ?? 0)
 }
 
 // lobby -> question -> reveal -> leaderboard -> question ... -> finished
@@ -78,6 +110,14 @@ export function nextState(session, questionCount) {
     default:
       return null
   }
+}
+
+// The columns to write when a game moves to `next` (see nextState). Every step starts with a clean clock.
+export function stepUpdate(next, nowIso) {
+  const update = { state: next.state, current_question_index: next.current_question_index, paused_at: null }
+  if (next.startsQuestion) Object.assign(update, { question_started_at: nowIso, time_bonus_ms: 0, paused_total_ms: 0 })
+  if (next.state === 'finished') update.finished_at = nowIso
+  return update
 }
 
 // Rank players by score (ties share the better rank). Used for leaderboards and each player's own position.

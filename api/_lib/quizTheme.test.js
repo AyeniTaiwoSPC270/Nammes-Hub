@@ -9,7 +9,7 @@ describe('sanitizeTheme', () => {
     for (const bad of [undefined, null, 5, 'x', [], {}]) expect(sanitizeTheme(bad)).toEqual(DEFAULT_THEME)
   })
   it('keeps valid choices', () => {
-    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out' }
+    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: { music: 'hype', effects: false }, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -34,6 +34,58 @@ describe('sanitizeTheme', () => {
     const once = sanitizeTheme({ look: 'candy', extra: { a: 1 } })
     expect(once).not.toHaveProperty('extra')
     expect(sanitizeTheme(once)).toEqual(once)
+  })
+})
+
+const QUIZ_A = '11111111-1111-4111-8111-111111111111'
+const QUIZ_B = '22222222-2222-4222-8222-222222222222'
+const FILE = '33333333-3333-4333-8333-333333333333'
+
+describe('branding: logo and sponsors', () => {
+  const good = `${QUIZ_A}/${FILE}-1767261600000.webp`
+  it('keeps an uploaded logo and sponsors that belong to the quiz', () => {
+    const t = sanitizeTheme({ logo: good, sponsors: [{ name: ' Acme  Ltd ', path: good }] }, { quizId: QUIZ_A })
+    expect(t.logo).toBe(good)
+    expect(t.sponsors).toEqual([{ name: 'Acme Ltd', path: good }])
+  })
+  it("drops another quiz's pictures and anything that is not an uploaded-image path", () => {
+    const evil = ['https://evil.example/x.png', '../x.png', `${QUIZ_B}/${FILE}.webp`, `${QUIZ_A}/${FILE}.svg`, 'javascript:alert(1)', 5, null]
+    for (const path of evil) {
+      const t = sanitizeTheme({ logo: path, sponsors: [{ name: 'X', path }] }, { quizId: QUIZ_A })
+      expect(t.logo, String(path)).toBeNull()
+      expect(t.sponsors, String(path)).toEqual([])
+    }
+  })
+  it('still checks the shape when the quiz is not known (the screens)', () => {
+    expect(sanitizeTheme({ logo: `${QUIZ_B}/${FILE}.png` }).logo).toBe(`${QUIZ_B}/${FILE}.png`)
+    expect(sanitizeTheme({ logo: 'https://evil.example/x.png' }).logo).toBeNull()
+  })
+  it('allows at most six sponsors, each with a name, and trims long names', () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({ name: `S${i}`, path: good }))
+    expect(sanitizeTheme({ sponsors: many }, { quizId: QUIZ_A }).sponsors).toHaveLength(6)
+    expect(sanitizeTheme({ sponsors: [{ name: '', path: good }, { path: good }] }, { quizId: QUIZ_A }).sponsors).toEqual([])
+    expect(sanitizeTheme({ sponsors: [{ name: 'n'.repeat(90), path: good }] }, { quizId: QUIZ_A }).sponsors[0].name).toHaveLength(40)
+    expect(sanitizeTheme({ sponsors: 'lots' }).sponsors).toEqual([])
+  })
+  it('shows sponsors on the lobby and the finish unless switched off', () => {
+    expect(sanitizeTheme({}).showSponsors).toEqual({ lobby: true, finish: true })
+    expect(sanitizeTheme({ showSponsors: { lobby: false } }).showSponsors).toEqual({ lobby: false, finish: true })
+  })
+  it('stays small enough for the database limit even at the maximum', () => {
+    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })) }, { quizId: QUIZ_A })
+    expect(JSON.stringify(full).length).toBeLessThan(2000)
+  })
+})
+
+describe('sound settings', () => {
+  it('default to quiet music and effects on', () => {
+    expect(sanitizeTheme({}).sound).toEqual({ music: 'off', effects: true })
+  })
+  it('only accept known music styles, and effects are on unless switched off', () => {
+    expect(sanitizeTheme({ sound: { music: 'chill' } }).sound).toEqual({ music: 'chill', effects: true })
+    expect(sanitizeTheme({ sound: { music: '__proto__', effects: 'no' } }).sound).toEqual({ music: 'off', effects: true })
+    expect(sanitizeTheme({ sound: { effects: false } }).sound.effects).toBe(false)
+    expect(sanitizeTheme({ sound: 'loud' }).sound).toEqual({ music: 'off', effects: true })
   })
 })
 

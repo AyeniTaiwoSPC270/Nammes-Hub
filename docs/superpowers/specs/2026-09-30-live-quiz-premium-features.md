@@ -1,7 +1,7 @@
 # Live Quiz: premium features (spec)
 
 Date: 2026-09-30
-Status: Proposed. Nothing here is built. Builds on `2026-09-30-live-quiz-design.md` (the game, the 50 characters and the Design Studio are live).
+Status: Built on branch `feat/quiz-premium` (see "As built" at the end). Migrations not applied to production yet. Builds on `2026-09-30-live-quiz-design.md` (the game, the 50 characters and the Design Studio are live).
 
 ## 1. Purpose
 
@@ -393,3 +393,20 @@ Each feature ships as its own branch and pull request with its migration applied
 4. **Sponsors.** Who approves sponsor logos before they appear on a projector in front of the whole department?
 5. **Report sharing.** Should results ever be shareable with lecturers or the dean by link, or always handed over as a downloaded PDF? (Recommendation for v1: PDF only, no public links.)
 6. **Data retention.** How long should finished games and player nicknames be kept? (Recommendation: 12 months, then delete, with a one-click "Delete all old games" action.)
+
+## 16. As built (differences from the plan above)
+
+All ten features are built. Where the build differs from the text above:
+
+- **Sound (1).** Music is generated in the browser too (two small synthesised loops, chill and hype), not audio files, so there is nothing to license or download (this settles open question 1). Effects-only remains possible by leaving music off, which is the default.
+- **Host controls (8).** Kick, block, rename, lock, pause, +10 s (up to +60 s), skip (with a confirm click), keyboard shortcuts (Space, P, L, +). Every op is logged in `quiz_host_log`.
+- **Images (2).** Question pictures with required alt text, client-side shrinking and metadata stripping, next-question prefetch on the leaderboard, and inline maths with KaTeX (`$x^2$`).
+- **Question types (5).** Multiple choice, true/false, typed number (with margin), typed text (list of accepted answers), poll. The host-side "mark this typed answer correct" re-grade action was not built.
+- **Streaks and power-ups (3).** Streak ladder, double-points rounds, Double down, 50/50 (only on four-answer questions) and the comeback boost, each switchable per quiz. The comeback standing is measured from totals before the current question.
+- **Teams (4).** Presets (levels, colours) or your own 2 to 8 teams, pick or "put me anywhere", average or total scoring, team standings on the projector, phones and reports. Auto-balance is decided at join time (two simultaneous joins can differ by one).
+- **Library (6).** Duplicate (pictures included), CSV import and export, tags, archive, and a question bank. CSV import shows a preview and skips bad rows with line numbers.
+- **Reports (7).** Headline numbers, hardest and easiest questions, per-question answers, player table with sorting, team results, CSV export, print layout, delete game.
+- **Branding (9).** Event logo and up to six sponsors in a public `quiz-branding` bucket, shown on the projector only.
+- **Practice (10).** One `practice` route with an `op` field (info, start, state, answer, next, top) so the single-function budget holds. Cleanup of old runs happens from time to time when someone starts a run, and can also be called from the database (`quiz_practice_cleanup`).
+
+Migrations, in order: `20261001100000` (host controls, images), `20261001110000` (question types, streaks), `20261001120000` (library, reports), `20261001130000` (teams, branding, practice). Each has a rollback file.

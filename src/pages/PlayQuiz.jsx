@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
 import { useCountUp } from '../lib/useCountUp'
+import { quizSound, buzz } from '../lib/quizSound'
+import { isChoiceType } from '../../api/_lib/quizGrading.js'
+import { teamStyle } from '../data/quizTeams'
+import MathText from '../components/quiz/MathText'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
@@ -44,6 +48,7 @@ function Phone({ me, children }) {
             <Avatar name={me.nickname} avatarId={me.avatarId} className="h-8 w-8" />
             <span className="max-w-[7rem] truncate">{me.nickname}</span>
             <span className="text-orange-500">{formatScore(me.score)}</span>
+            {me.streak >= 2 && <span aria-label={`${me.streak} in a row`} title={`${me.streak} in a row`}>🔥{me.streak}</span>}
           </span>
         )}
       </QuizTopBar>
@@ -103,7 +108,7 @@ function CodeInput({ value, onChange, autoFocus }) {
   )
 }
 
-function JoinForm({ onJoined }) {
+function JoinForm({ onJoined, notice }) {
   const [params] = useSearchParams()
   const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
   const [code, setCode] = useState(initialCode)
@@ -111,18 +116,24 @@ function JoinForm({ onJoined }) {
   const [avatarId, setAvatarId] = useState(randomAvatarId)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [teams, setTeams] = useState(null) // the teams to choose from, once the game says it is a team game
 
-  async function submit(event) {
-    event.preventDefault()
+  async function attempt(teamId) {
     setBusy(true)
     setError('')
     try {
-      const joined = await callQuiz('join', { code, nickname, avatarId })
+      const joined = await callQuiz('join', { code, nickname, avatarId, ...(teamId ? { teamId } : {}) })
       onJoined(joined)
     } catch (e) {
-      setError(e.message)
+      if (e.data?.needsTeam) setTeams(e.data.teams)
+      else setError(e.message)
       setBusy(false)
     }
+  }
+
+  function submit(event) {
+    event.preventDefault()
+    attempt(null)
   }
 
   return (
@@ -186,6 +197,34 @@ function JoinForm({ onJoined }) {
             ))}
           </div>
         </div>
+        {teams && (
+          <div className="flex flex-col gap-3" role="group" aria-label="Pick your team">
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Pick your team</span>
+            <div className="grid grid-cols-2 gap-2">
+              {teams.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => attempt(t.id)}
+                  className={`flex min-h-16 flex-col items-start justify-center rounded-2xl px-4 py-2 text-left text-white shadow-md active:scale-[0.97] disabled:opacity-60 ${teamStyle(t.color).bg}`}
+                >
+                  <span className="text-lg font-bold">{t.name}</span>
+                  <span className="text-xs opacity-90">{t.members} player{t.members === 1 ? '' : 's'}</span>
+                </button>
+              ))}
+            </div>
+            <button type="button" disabled={busy} onClick={() => attempt('auto')} className="min-h-12 rounded-2xl border-2 border-hairline font-semibold text-ink-900 disabled:opacity-60">
+              Put me anywhere
+            </button>
+          </div>
+        )}
+        {notice && !error && (
+          <p role="status" className="flex items-center gap-2 rounded-2xl bg-orange-500/12 px-4 py-3 text-sm font-semibold text-ink-900">
+            <span className="material-symbols-outlined text-orange-500" aria-hidden="true">info</span>
+            {notice}
+          </p>
+        )}
         {error && (
           <p role="alert" className="flex items-center gap-2 rounded-2xl bg-red-600/12 px-4 py-3 text-sm font-semibold text-red-600">
             <span className="material-symbols-outlined" aria-hidden="true">error</span>
@@ -197,7 +236,7 @@ function JoinForm({ onJoined }) {
           disabled={busy || code.length !== 6 || !nickname.trim()}
           className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? 'Joining…' : 'Join game'}
+          {busy ? 'Joining…' : teams ? 'Join with another team' : 'Join game'}
           {!busy && <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>}
         </button>
       </form>
@@ -218,6 +257,22 @@ function WaitingDots() {
         <span key={i} className="h-2 w-2 animate-pulse rounded-full bg-orange-500" style={{ animationDelay: `${i * 200}ms` }} />
       ))}
     </span>
+  )
+}
+
+// Team standings on a phone: one row per team, the player's own team highlighted.
+function TeamList({ teams, myTeamId }) {
+  return (
+    <ol className="flex flex-col gap-2" aria-label="Team standings">
+      {teams.map((t) => (
+        <li key={t.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${t.id === myTeamId ? 'border-orange-500 bg-orange-500/12' : 'border-hairline bg-surface'}`}>
+          <span className="w-8 text-center text-xl font-bold">{MEDALS[t.rank - 1] ?? t.rank}</span>
+          <span className={`h-8 w-2 rounded-full ${teamStyle(t.color).bg}`} aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate text-lg font-semibold">{t.name}{t.id === myTeamId ? ' (you)' : ''}</span>
+          <span className="text-lg font-bold tabular-nums">{formatScore(t.score)}</span>
+        </li>
+      ))}
+    </ol>
   )
 }
 
@@ -247,7 +302,13 @@ function PlayQuizGame({ onTheme }) {
   const [game, setGame] = useState(null)
   const [offset, setOffset] = useState(0) // server clock minus this phone's clock
   const [nowMs, setNowMs] = useState(() => Date.now())
-  const [picked, setPicked] = useState(null) // index tapped on this question, so the button reacts at once
+  const [picked, setPicked] = useState(null) // what this phone just sent for this question ({ index } or { text }), so the screen reacts at once
+  const [typed, setTyped] = useState('')
+  const [notice, setNotice] = useState('')
+  const [zoomed, setZoomed] = useState(false)
+  const inGame = useRef(false)
+  const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  const effectsOn = theme.sound.effects && soundPrefs.unlocked && !soundPrefs.muted
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
@@ -261,9 +322,13 @@ function PlayQuizGame({ onTheme }) {
       const data = await callQuiz('state', { token })
       setOffset(data.serverNow - Date.now())
       setGame(data)
+      inGame.current = true
       setMessage('')
     } catch (e) {
       if (e.status === 401 || e.status === 404) {
+        // A 401 for a phone that was in the game means the host removed it.
+        if (inGame.current && e.status === 401) setNotice('You were removed from this game. You can join again with the code if the host lets you.')
+        inGame.current = false
         saveSaved(null)
         setSaved(null)
         setGame(null)
@@ -316,7 +381,21 @@ function PlayQuizGame({ onTheme }) {
   const questionKey = game ? `${game.session.state}:${game.session.index}` : ''
   useEffect(() => {
     setPicked(null)
+    setTyped('')
+    setZoomed(false)
     setMessage('')
+  }, [questionKey])
+  // Right or wrong: a short sound and buzz when the result arrives (only if this player switched sound on).
+  useEffect(() => {
+    if (!effectsOn || !game || game.session.state !== 'reveal' || !game.reveal || game.question?.type === 'poll') return
+    if (game.reveal.correct === true) {
+      quizSound.play('correct')
+      buzz(80)
+    } else if (game.reveal.chosenIndex !== null || game.reveal.answerText !== null) {
+      quizSound.play('wrong')
+      buzz([120, 60, 120])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questionKey])
   useEffect(() => {
     if (!game || game.session.state !== 'question') return
@@ -327,6 +406,7 @@ function PlayQuizGame({ onTheme }) {
   function handleJoined(joined) {
     const next = { token: joined.token, sessionId: joined.sessionId, nickname: joined.nickname }
     saveSaved(next)
+    setNotice('')
     setSaved(next)
   }
 
@@ -336,12 +416,14 @@ function PlayQuizGame({ onTheme }) {
     setGame(null)
   }
 
-  async function answer(index) {
+  // Sends an answer: { chosenIndex } for tiles, { answerText } for typed questions.
+  async function answer(payload, local) {
     if (sending || picked !== null) return
-    setPicked(index)
+    setPicked(local)
+    if (effectsOn) quizSound.play('lock')
     setSending(true)
     try {
-      await callQuiz('answer', { token, chosenIndex: index })
+      await callQuiz('answer', { token, ...payload })
     } catch (e) {
       // "already answered" or "time is up": the next refresh shows the truth, so just clear the local tap
       setPicked(null)
@@ -352,7 +434,20 @@ function PlayQuizGame({ onTheme }) {
     }
   }
 
-  if (!token) return <JoinForm onJoined={handleJoined} />
+  async function spendPowerup(kind) {
+    if (sending) return
+    setSending(true)
+    try {
+      await callQuiz('powerup', { token, kind })
+    } catch (e) {
+      setMessage(e.message)
+    } finally {
+      setSending(false)
+      refresh()
+    }
+  }
+
+  if (!token) return <JoinForm onJoined={handleJoined} notice={notice} />
   if (!game) {
     return (
       <Phone>
@@ -378,6 +473,9 @@ function PlayQuizGame({ onTheme }) {
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">You&apos;re in</p>
             <h1 className="text-4xl font-bold">{me.nickname}</h1>
             {theme.headline && <p className="mt-2 text-lg font-semibold text-ink-muted">{theme.headline}</p>}
+            {me.team && (
+              <p className={`mt-2 inline-block rounded-full px-4 py-1 text-sm font-bold text-white ${teamStyle(me.team.color).bg}`}>Team {me.team.name}</p>
+            )}
           </div>
         </div>
         <div className="qz-rise rounded-3xl border border-hairline bg-surface p-5 text-center shadow-md" style={{ animationDelay: '220ms' }}>
@@ -405,6 +503,23 @@ function PlayQuizGame({ onTheme }) {
             </p>
           )}
         </div>
+        {quizSound.isSupported() && theme.sound.effects && (
+          <button
+            type="button"
+            onClick={() => {
+              if (!soundPrefs.unlocked) {
+                quizSound.unlock()
+                quizSound.setMuted(false)
+                quizSound.play('lock')
+              } else quizSound.setMuted(!soundPrefs.muted)
+            }}
+            aria-pressed={effectsOn}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-hairline bg-surface px-4 font-semibold"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">{effectsOn ? 'volume_up' : 'volume_off'}</span>
+            {effectsOn ? 'Sound effects on' : 'Turn on sound effects'}
+          </button>
+        )}
         <div className="qz-rise flex items-start gap-3 rounded-2xl bg-orange-500/12 p-4 text-sm" style={{ animationDelay: '320ms' }}>
           <span className="material-symbols-outlined text-orange-500" aria-hidden="true">bolt</span>
           <p><span className="font-bold">Speed counts.</span> The faster you answer correctly, the more points you earn.</p>
@@ -415,8 +530,22 @@ function PlayQuizGame({ onTheme }) {
 
   if (session.state === 'question' && question) {
     const startedAtMs = new Date(session.startedAt).getTime()
-    const remaining = secondsRemaining({ startedAtMs, timeLimitSeconds: question.timeLimitSeconds, nowMs: nowMs + offset })
-    const chosen = picked ?? question.chosenIndex
+    const remaining = secondsRemaining({
+      startedAtMs,
+      timeLimitSeconds: question.timeLimitSeconds,
+      nowMs: nowMs + offset,
+      bonusMs: session.timeBonusMs,
+      pausedMs: session.pausedTotalMs,
+      frozenElapsedMs: session.paused
+        ? elapsedAtPauseMs({ question_started_at: session.startedAt, paused_at: session.pausedAt, paused_total_ms: session.pausedTotalMs })
+        : null,
+    })
+    const ringTotal = question.timeLimitSeconds + session.timeBonusMs / 1000
+    const type = question.type
+    const choice = isChoiceType(type)
+    const chosen = picked?.index ?? question.chosenIndex
+    const typedAnswer = picked?.text ?? question.answerText
+
     if (question.answered || picked !== null) {
       return (
         <Phone me={me}>
@@ -425,66 +554,171 @@ function PlayQuizGame({ onTheme }) {
               <span className="material-symbols-outlined text-5xl" aria-hidden="true">lock</span>
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Answer locked in</h1>
+              <h1 className="text-3xl font-bold">{type === 'poll' ? 'Vote counted' : 'Answer locked in'}</h1>
               <p className="mt-1 flex items-center justify-center gap-3 text-ink-muted">Waiting for the others <WaitingDots /></p>
             </div>
-            <CountdownRing seconds={remaining} total={question.timeLimitSeconds} size={120} />
-            {chosen !== null && chosen !== undefined && question.options[chosen] !== undefined && (
+            {session.paused ? (
+              <p role="status" className="rounded-full bg-orange-500 px-4 py-1.5 font-bold text-white">Paused by the host</p>
+            ) : (
+              <CountdownRing seconds={remaining} total={ringTotal} size={120} />
+            )}
+            {choice && chosen !== null && chosen !== undefined && question.options[chosen] !== undefined && (
               <div className="flex w-full items-center gap-4 rounded-3xl border border-hairline bg-surface p-4 text-left shadow-md">
                 <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${OPTION_STYLES[chosen].bg}`}>
                   <AnswerShape index={chosen} className="h-8 w-8" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Your answer</span>
-                  <span className="block truncate text-xl font-bold">{question.options[chosen]}</span>
+                  <span className="block truncate text-xl font-bold"><MathText>{question.options[chosen]}</MathText></span>
                 </span>
+              </div>
+            )}
+            {!choice && typedAnswer && (
+              <div className="w-full rounded-3xl border border-hairline bg-surface p-4 text-left shadow-md">
+                <span className="block text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Your answer</span>
+                <span className="block break-words text-2xl font-bold">{typedAnswer}</span>
               </div>
             )}
           </div>
         </Phone>
       )
     }
+
     const twoOptions = question.options.length === 2
+    const used = question.powerup
+    const canDouble = question.powerupsLeft.includes('double') && type !== 'poll' && question.multiplier !== 2
+    const canFifty = question.powerupsLeft.includes('fifty') && type === 'multiple' && question.options.length === 4
+    const blocked = sending || remaining === 0 || session.paused
     return (
       <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
         <QuizTopBar compact>
           <span className="rounded-full bg-orange-500 px-4 py-2 text-sm font-bold text-white">Q{session.index + 1} of {session.questionCount}</span>
-          <CountdownRing seconds={remaining} total={question.timeLimitSeconds} size={52} stroke={6} />
+          <CountdownRing seconds={remaining} total={ringTotal} size={52} stroke={6} />
         </QuizTopBar>
-        <p className="mx-auto w-full max-w-md px-4 pt-3 text-center text-lg font-bold leading-snug">{question.text}</p>
-        <div className={`mx-auto grid w-full max-w-md flex-1 auto-rows-fr gap-3 p-4 ${twoOptions ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {question.options.map((option, i) => (
-            <button
-              key={i}
-              type="button"
-              disabled={sending || remaining === 0}
-              onClick={() => answer(i)}
-              className={`flex min-h-[140px] flex-col justify-between rounded-3xl p-4 text-left text-white shadow-lg transition-transform active:scale-[0.97] disabled:opacity-60 ${OPTION_STYLES[i].bg}`}
-            >
-              <AnswerShape index={i} className="h-11 w-11" />
-              <span className="break-words text-xl font-bold leading-tight">{option}</span>
+        {session.paused && (
+          <p role="status" className="bg-orange-500 px-4 py-2 text-center text-sm font-bold text-white">Paused by the host. The clock is stopped.</p>
+        )}
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-4 pt-3">
+          {(question.multiplier === 2 || question.comeback || me.streak >= 2) && (
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold">
+              {question.multiplier === 2 && <span className="rounded-full bg-orange-500 px-3 py-1 uppercase tracking-[0.1em] text-white">Double points</span>}
+              {question.comeback && <span className="rounded-full bg-green-600/20 px-3 py-1 text-green-700">Comeback +15%</span>}
+              {me.streak >= 2 && <span className="rounded-full bg-orange-500/15 px-3 py-1 text-orange-500">🔥 {me.streak} in a row</span>}
+            </div>
+          )}
+          {question.imageUrl && (
+            <button type="button" onClick={() => setZoomed(true)} className="block max-w-full cursor-zoom-in rounded-2xl border border-hairline bg-white p-1 shadow-sm" aria-label="Enlarge the picture">
+              <img src={question.imageUrl} alt={question.imageAlt} className="max-h-40 w-auto max-w-full rounded-xl object-contain" />
             </button>
-          ))}
+          )}
+          <p className="text-center text-lg font-bold leading-snug"><MathText>{question.text}</MathText></p>
         </div>
+
+        {(canDouble || canFifty || used) && (
+          <div className="mx-auto mt-3 flex w-full max-w-md flex-wrap items-center justify-center gap-2 px-4">
+            {used ? (
+              <span className="rounded-full bg-orange-500/15 px-4 py-2 text-sm font-bold text-orange-500">
+                {used === 'double' ? 'Double down is on: a right answer earns double' : '50/50 used: two wrong answers removed'}
+              </span>
+            ) : (
+              <>
+                {canDouble && (
+                  <button type="button" disabled={blocked} onClick={() => spendPowerup('double')} className="flex min-h-11 items-center gap-2 rounded-full border-2 border-orange-500 px-4 text-sm font-bold text-orange-500 disabled:opacity-50">
+                    <span aria-hidden="true">✕2</span> Double down
+                  </button>
+                )}
+                {canFifty && (
+                  <button type="button" disabled={blocked} onClick={() => spendPowerup('fifty')} className="flex min-h-11 items-center gap-2 rounded-full border-2 border-orange-500 px-4 text-sm font-bold text-orange-500 disabled:opacity-50">
+                    <span aria-hidden="true">½</span> 50/50
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {choice ? (
+          <div className={`mx-auto grid w-full max-w-md flex-1 auto-rows-fr gap-3 p-4 ${twoOptions ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {question.options.map((option, i) => {
+              const hidden = question.hidden.includes(i)
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  disabled={blocked || hidden}
+                  onClick={() => answer({ chosenIndex: i }, { index: i })}
+                  className={`flex min-h-[140px] flex-col justify-between rounded-3xl p-4 text-left text-white shadow-lg transition-transform active:scale-[0.97] disabled:opacity-60 ${OPTION_STYLES[i].bg} ${hidden ? '!opacity-15' : ''}`}
+                >
+                  <AnswerShape index={i} className="h-11 w-11" />
+                  <span className="break-words text-xl font-bold leading-tight">{hidden ? '—' : <MathText>{option}</MathText>}</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <form
+            className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 p-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const text = typed.trim()
+              if (text && !blocked) answer({ answerText: text }, { text })
+            }}
+          >
+            <input
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              maxLength={40}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-label="Your answer"
+              placeholder={type === 'numeric' ? 'A number, like 3.14 or 1/2' : 'Type your answer'}
+              className="min-h-16 rounded-2xl border-2 border-hairline bg-surface px-4 text-2xl font-bold text-ink-900 placeholder:text-base placeholder:font-normal placeholder:text-ink-muted focus:border-orange-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={blocked || !typed.trim()}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Lock in answer
+            </button>
+          </form>
+        )}
         {message && <p role="alert" className="pb-4 text-center text-sm text-ink-muted">{message}</p>}
+        {zoomed && question.imageUrl && (
+          <button type="button" onClick={() => setZoomed(false)} aria-label="Close the picture" className="fixed inset-0 z-40 flex cursor-zoom-out items-center justify-center bg-black/80 p-4">
+            <img src={question.imageUrl} alt={question.imageAlt} className="max-h-full max-w-full rounded-xl bg-white object-contain" />
+          </button>
+        )}
       </div>
     )
   }
 
   if (session.state === 'reveal' && reveal) {
-    const answered = reveal.chosenIndex !== null
-    const correct = answered && reveal.chosenIndex === reveal.correctIndex
+    const poll = question?.type === 'poll'
+    const answered = reveal.chosenIndex !== null || reveal.answerText !== null
+    const correct = reveal.correct === true
+    const tone = poll ? 'neutral' : correct ? 'good' : answered ? 'bad' : 'neutral'
+    const answerLabel = reveal.correctText ?? (question && reveal.correctIndex !== null ? question.options[reveal.correctIndex] : null)
     return (
-      <ResultScreen tone={correct ? 'good' : answered ? 'bad' : 'neutral'}>
+      <ResultScreen tone={tone}>
         <div className="qz-pop h-40 w-40 rounded-full bg-white/20 p-3">
-          <Character id={me.avatarId} mood={correct ? 'dance' : 'sad'} />
+          <Character id={me.avatarId} mood={poll ? 'wave' : correct ? 'dance' : 'sad'} />
         </div>
-        <h1 className="qz-rise text-5xl font-bold text-white">{correct ? 'Correct!' : answered ? 'Not quite' : "Time's up"}</h1>
+        <h1 className="qz-rise text-5xl font-bold text-white">
+          {poll ? (answered ? 'Vote counted' : "Time's up") : correct ? 'Correct!' : answered ? 'Not quite' : "Time's up"}
+        </h1>
         {correct && <p className="qz-pop rounded-full bg-white px-6 py-2 text-4xl font-bold text-green-700">+{formatScore(reveal.pointsAwarded)}</p>}
-        {!correct && question && (
+        {correct && reveal.bonusPoints > 0 && (
+          <p className="-mt-2 text-sm font-semibold text-white/90">
+            includes +{formatScore(reveal.bonusPoints)} from streak, power-up or bonus round{me.streak >= 2 ? ` · 🔥 ${me.streak} in a row` : ''}
+          </p>
+        )}
+        {!poll && !correct && answerLabel && (
           <div className="w-full rounded-2xl bg-white/15 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">The answer was</p>
-            <p className="mt-1 text-2xl font-bold">{question.options[reveal.correctIndex]}</p>
+            <p className="mt-1 break-words text-2xl font-bold"><MathText>{answerLabel}</MathText></p>
           </div>
         )}
         <div className="flex items-center gap-3 rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">
@@ -507,6 +741,7 @@ function PlayQuizGame({ onTheme }) {
             <RankMove delta={rankDelta} />
           </div>
         </section>
+        {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} scoring={game.session.teamScoring} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 5).map((p, i) => {
             const mine = p.nickname === me.nickname
@@ -544,6 +779,7 @@ function PlayQuizGame({ onTheme }) {
           {me.rank && me.rank > 3 && <p className="text-3xl font-bold">You finished #{me.rank}</p>}
           <p className="mt-2 text-2xl font-semibold">{formatScore(me.score)} points</p>
         </section>
+        {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 3).map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface p-3">

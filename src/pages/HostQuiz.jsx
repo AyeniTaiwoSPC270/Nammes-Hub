@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
-import { hostAction, OPTION_STYLES, secondsRemaining, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { hostAction, hostOp, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
+import { rankTeams, teamStyle } from '../data/quizTeams'
+import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
-import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
+import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
+import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
@@ -16,7 +21,10 @@ function Stage({ title, chip, footer, children }) {
   return (
     <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
       <QuizBackdrop />
-      <QuizTopBar title={title}>{chip}</QuizTopBar>
+      <QuizTopBar title={title}>
+        {chip}
+        <SoundControl />
+      </QuizTopBar>
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 sm:px-8">{children}</main>
       {footer && (
         <footer className="sticky bottom-0 z-20 border-t border-hairline bg-paper/90 px-4 py-4 backdrop-blur sm:px-8">
@@ -76,7 +84,56 @@ function withCountdown(label, auto) {
   return auto.on ? `${label} (${auto.secondsLeft}s)` : label
 }
 
-function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto }) {
+// The question as the audience reads it: optional picture, then the text (with maths if it has any).
+function QuestionHeading({ question, size = 'large' }) {
+  const big = size === 'large'
+  return (
+    <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-4">
+      {question.multiplier === 2 && (
+        <span className="qz-pop rounded-full bg-orange-500 px-5 py-1.5 text-lg font-bold uppercase tracking-[0.12em] text-white shadow-md">Double points</span>
+      )}
+      {question.imageUrl && (
+        <img
+          src={question.imageUrl}
+          alt={question.imageAlt}
+          className={`w-auto max-w-full rounded-2xl border border-hairline bg-white object-contain shadow-md ${big ? 'max-h-[34vh]' : 'max-h-[26vh]'}`}
+        />
+      )}
+      <h1 className={`qz-rise px-2 text-center font-bold leading-tight ${big ? 'text-3xl sm:text-5xl' : 'text-2xl sm:text-4xl'}`}>
+        <MathText>{question.text}</MathText>
+      </h1>
+    </div>
+  )
+}
+
+// Small round icon button used by the host controls.
+function ControlButton({ icon, label, onClick, disabled, active }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={label}
+      className={[
+        'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold',
+        active ? 'border-orange-500 bg-orange-500 text-white' : 'border-hairline bg-surface text-ink-900 hover:bg-surface-low',
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+      ].join(' ')}
+    >
+      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+      {label}
+    </button>
+  )
+}
+
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams }) {
+  const [menuFor, setMenuFor] = useState(null)
+  const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
+  // In a team game players are listed team by team, each with a coloured tag.
+  const orderedPlayers = useMemo(
+    () => (teams.length ? [...players].sort((a, b) => (teamById.get(a.team_id)?.position ?? 99) - (teamById.get(b.team_id)?.position ?? 99)) : players),
+    [players, teams, teamById],
+  )
   const [qr, setQr] = useState('')
   const joinUrl = `${window.location.origin}/play?code=${session.join_code}`
   const digits = session.join_code.split('')
@@ -100,13 +157,16 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
       chip={<Chip>{questionCount} question{questionCount === 1 ? '' : 's'}</Chip>}
       footer={
         <>
-          {isFull ? (
-            <AutoAdvance auto={auto} noun="auto-start" />
-          ) : (
-            <span className="text-ink-muted">
-              {players.length === 0 ? 'Players will appear here as they join.' : 'Everyone in? Start when you are ready.'}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <ControlButton icon={locked ? 'lock' : 'lock_open'} label={locked ? 'Unlock lobby' : 'Lock lobby'} onClick={onToggleLock} active={locked} />
+            {isFull ? (
+              <AutoAdvance auto={auto} noun="auto-start" />
+            ) : (
+              <span className="text-ink-muted">
+                {locked ? 'The lobby is locked: nobody new can join.' : players.length === 0 ? 'Players will appear here as they join.' : 'Everyone in? Start when you are ready.'}
+              </span>
+            )}
+          </div>
           <ActionButton onClick={onStart} disabled={busy || players.length === 0} icon="play_arrow">
             {players.length === 0
               ? 'Waiting for players…'
@@ -160,6 +220,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
           <p className="text-sm text-ink-muted">The code is filled in for you.</p>
         </section>
       </div>
+      <SponsorStrip placement="lobby" />
 
       <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-md sm:p-8">
         <div className="flex items-center gap-3">
@@ -182,6 +243,15 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             </div>
           </div>
         )}
+        {teams.length > 0 && (
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Teams">
+            {teams.map((t) => (
+              <li key={t.id} className={`rounded-full px-3 py-1 text-sm font-bold ${teamStyle(t.color).soft} ${teamStyle(t.color).text}`}>
+                {t.name} · {players.filter((p) => p.team_id === t.id).length}
+              </li>
+            ))}
+          </ul>
+        )}
         {players.length === 0 ? (
           <p className="mt-6 flex items-center gap-3 text-lg text-ink-muted">
             <span className="qz-float inline-block text-3xl" aria-hidden="true">π</span>
@@ -189,10 +259,35 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
           </p>
         ) : (
           <div className="mt-5 flex flex-wrap gap-3">
-            {players.map((p) => (
-              <span key={p.id} className="qz-pop inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-4 text-lg font-semibold">
+            {orderedPlayers.map((p) => (
+              <span key={p.id} className="qz-pop relative inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
                 <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-12 w-12" />
                 {p.nickname}
+                {teamById.get(p.team_id) && (
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
+                  aria-label={`Manage ${p.nickname}`}
+                  aria-expanded={menuFor === p.id}
+                  className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-ink-muted hover:bg-surface-low hover:text-ink-900"
+                >
+                  <span className="material-symbols-outlined text-xl" aria-hidden="true">edit</span>
+                </button>
+                {menuFor === p.id && (
+                  <span role="menu" className="absolute left-0 top-full z-20 mt-2 flex min-w-56 flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl">
+                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onRename(p) }}>
+                      Rename to &quot;Player ###&quot;
+                    </button>
+                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, false) }}>
+                      Remove from game
+                    </button>
+                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left text-red-600 hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, true) }}>
+                      Remove and block this name
+                    </button>
+                  </span>
+                )}
               </span>
             ))}
           </div>
@@ -200,6 +295,16 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
       </section>
     </Stage>
   )
+}
+
+// What the audience needs to know about a question row (the host reads the full row, including the answer).
+function toView(question) {
+  return {
+    text: question.text,
+    imageUrl: question.image_path ? supabase.storage.from('quiz-images').getPublicUrl(question.image_path).data.publicUrl : null,
+    imageAlt: question.image_alt ?? '',
+    multiplier: question.points_multiplier ?? 1,
+  }
 }
 
 function AnswerTiles({ question, children }) {
@@ -210,15 +315,45 @@ function AnswerTiles({ question, children }) {
   )
 }
 
-function QuestionScreen({ title, question, index, total, remaining, answered, playerCount, onEnd, busy }) {
+// Skipping throws the question away, so it asks twice.
+function SkipButton({ onSkip, disabled }) {
+  const [sure, setSure] = useState(false)
+  useEffect(() => {
+    if (!sure) return undefined
+    const timer = setTimeout(() => setSure(false), 3000)
+    return () => clearTimeout(timer)
+  }, [sure])
+  return (
+    <ControlButton
+      icon="skip_next"
+      label={sure ? 'Sure? Skip it' : 'Skip'}
+      active={sure}
+      disabled={disabled}
+      onClick={() => {
+        if (sure) {
+          setSure(false)
+          onSkip()
+        } else setSure(true)
+      }}
+    />
+  )
+}
+
+function QuestionScreen({ title, question, index, total, remaining, answered, playerCount, onEnd, busy, paused, onTogglePause, onExtend, canExtend, onSkip }) {
   const share = playerCount > 0 ? Math.round((answered / playerCount) * 100) : 0
+  const type = question.type ?? 'multiple'
   return (
     <Stage
       title={title}
       chip={<Chip tone="accent">Question {index + 1} of {total}</Chip>}
       footer={
         <>
-          <span className="text-ink-muted">Answers lock when the timer ends or everyone has answered.</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <ControlButton icon={paused ? 'play_arrow' : 'pause'} label={paused ? 'Resume' : 'Pause'} onClick={onTogglePause} active={paused} disabled={busy} />
+            <ControlButton icon="more_time" label="+10 s" onClick={onExtend} disabled={busy || !canExtend} />
+            <SkipButton onSkip={onSkip} disabled={busy} />
+            <span className="hidden text-ink-muted xl:inline">Space ends the question · P pauses · + adds time</span>
+          </div>
           <ActionButton onClick={onEnd} disabled={busy} tone="muted" icon="fast_forward">End question</ActionButton>
         </>
       }
@@ -239,42 +374,90 @@ function QuestionScreen({ title, question, index, total, remaining, answered, pl
         <CountdownRing seconds={remaining} total={question.time_limit_seconds} size={104} />
       </div>
 
-      <h1 className="qz-rise mx-auto max-w-5xl px-2 text-center text-3xl font-bold leading-tight sm:text-5xl">{question.text}</h1>
+      {paused && (
+        <div role="status" className="qz-pop mx-auto flex items-center gap-3 rounded-2xl bg-orange-500 px-6 py-3 text-xl font-bold text-white shadow-md">
+          <span className="material-symbols-outlined" aria-hidden="true">pause</span>
+          Paused. The clock is stopped.
+        </div>
+      )}
 
-      <AnswerTiles question={question}>
-        {(option, i) => (
-          <div
-            key={i}
-            className={`qz-rise flex min-h-[120px] items-center gap-5 rounded-3xl p-6 text-white shadow-lg ${OPTION_STYLES[i].bg}`}
-            style={{ animationDelay: `${120 + i * 80}ms` }}
-          >
-            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-black/20">
-              <AnswerShape index={i} className="h-9 w-9" />
-            </span>
-            <span className="text-2xl font-bold leading-snug sm:text-4xl">{option}</span>
+      <QuestionHeading question={toView(question)} />
+
+      {isChoiceType(type) ? (
+        <AnswerTiles question={question}>
+          {(option, i) => (
+            <div
+              key={i}
+              className={`qz-rise flex min-h-[120px] items-center gap-5 rounded-3xl p-6 text-white shadow-lg ${OPTION_STYLES[i].bg}`}
+              style={{ animationDelay: `${120 + i * 80}ms` }}
+            >
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-black/20">
+                <AnswerShape index={i} className="h-9 w-9" />
+              </span>
+              <span className="text-2xl font-bold leading-snug sm:text-4xl"><MathText>{option}</MathText></span>
+            </div>
+          )}
+        </AnswerTiles>
+      ) : (
+        <div className="qz-rise mx-auto flex w-full max-w-3xl items-center gap-5 rounded-3xl border-2 border-dashed border-orange-500 bg-surface p-8 shadow-md">
+          <span className="material-symbols-outlined text-6xl text-orange-500" aria-hidden="true">text_fields</span>
+          <div>
+            <p className="text-3xl font-bold">Type your answer on your phone</p>
+            <p className="mt-1 text-xl text-ink-muted">{type === 'numeric' ? 'Numbers only. No units.' : 'Spelling counts, capital letters do not.'}</p>
           </div>
-        )}
-      </AnswerTiles>
+        </div>
+      )}
     </Stage>
   )
 }
 
+// The typed answers people gave, grouped the way the server matches them, most common first.
+function typedGroups(answers) {
+  const groups = new Map()
+  for (const a of answers) {
+    if (!a.answer_text) continue
+    const key = normaliseText(a.answer_text) || a.answer_text.trim()
+    const entry = groups.get(key) ?? { text: a.answer_text.trim(), count: 0, correct: false }
+    entry.count += 1
+    if (a.correct === true) entry.correct = true
+    groups.set(key, entry)
+  }
+  return [...groups.values()].sort((x, y) => y.count - x.count).slice(0, 6)
+}
+
 function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto }) {
+  const type = question.type ?? 'multiple'
+  const choice = isChoiceType(type)
+  const scored = type !== 'poll'
   const max = Math.max(1, ...counts)
-  const correctCount = counts[question.correct_index] ?? 0
-  const percentCorrect = answers.length > 0 ? Math.round((correctCount / answers.length) * 100) : 0
+  const rightCount = answers.filter((a) => a.correct === true).length
+  const percentCorrect = answers.length > 0 ? Math.round((rightCount / answers.length) * 100) : 0
   const startMs = new Date(questionStartedAt).getTime()
   const fastest = answers
-    .filter((a) => a.chosen_index === question.correct_index)
+    .filter((a) => a.correct === true)
     .map((a) => ({ ...a, ms: new Date(a.answered_at).getTime() - startMs }))
     .filter((a) => Number.isFinite(a.ms))
     .sort((a, b) => a.ms - b.ms)[0]
   const fastestName = fastest ? playersById.get(fastest.player_id)?.nickname : null
+  const topVote = Math.max(...counts, 0)
+  const groups = useMemo(() => (choice ? [] : typedGroups(answers)), [choice, answers])
+  const shownAnswer = type === 'numeric' ? String(Number(question.numeric_answer)) : (question.accepted_answers ?? [])[0]
+
+  const stats = scored
+    ? [
+        { icon: 'target', label: 'Got it right', value: `${percentCorrect}%` },
+        { icon: 'bolt', label: 'Fastest correct', value: fastestName ? `${fastestName} · ${(fastest.ms / 1000).toFixed(1)}s` : '—' },
+        { icon: 'groups', label: 'Answered', value: `${answers.length} of ${playerCount}` },
+      ]
+    : [
+        { icon: 'groups', label: 'Voted', value: `${answers.length} of ${playerCount}` },
+        { icon: 'how_to_vote', label: 'Most popular', value: topVote > 0 ? question.options[counts.indexOf(topVote)] : '—' },
+      ]
 
   return (
     <Stage
       title={title}
-      chip={<Chip>Question {index + 1} of {total} · Time&apos;s up</Chip>}
+      chip={<Chip>Question {index + 1} of {total} · {scored ? "Time's up" : 'Poll results'}</Chip>}
       footer={
         <>
           <AutoAdvance auto={auto} />
@@ -282,43 +465,72 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
         </>
       }
     >
-      <h1 className="mx-auto max-w-5xl px-2 pt-2 text-center text-2xl font-bold leading-tight sm:text-4xl">{question.text}</h1>
+      <QuestionHeading question={toView(question)} size="small" />
 
-      <AnswerTiles question={question}>
-        {(option, i) => {
-          const correct = i === question.correct_index
-          return (
-            <div
-              key={i}
-              className={[
-                'flex flex-col justify-between gap-4 rounded-3xl p-6 text-white shadow-lg transition-all',
-                OPTION_STYLES[i].bg,
-                correct ? 'qz-pop scale-[1.02] ring-8 ring-ink-900' : 'opacity-40',
-              ].join(' ')}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <span className="flex items-center gap-4 text-2xl font-bold sm:text-3xl">
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black/20">
-                    {correct ? <span className="material-symbols-outlined text-4xl" aria-hidden="true">check</span> : <AnswerShape index={i} className="h-8 w-8" />}
+      {choice ? (
+        <AnswerTiles question={question}>
+          {(option, i) => {
+            const correct = scored && i === question.correct_index
+            const popular = !scored && counts[i] === topVote && topVote > 0
+            return (
+              <div
+                key={i}
+                className={[
+                  'flex flex-col justify-between gap-4 rounded-3xl p-6 text-white shadow-lg transition-all',
+                  OPTION_STYLES[i].bg,
+                  correct || popular ? 'qz-pop scale-[1.02] ring-8 ring-ink-900' : scored ? 'opacity-40' : '',
+                ].join(' ')}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="flex items-center gap-4 text-2xl font-bold sm:text-3xl">
+                    <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black/20">
+                      {correct ? <span className="material-symbols-outlined text-4xl" aria-hidden="true">check</span> : <AnswerShape index={i} className="h-8 w-8" />}
+                    </span>
+                    <MathText>{option}</MathText>
                   </span>
-                  {option}
-                </span>
-                <span className="rounded-full bg-black/25 px-4 py-1 text-2xl font-bold">{counts[i] ?? 0}</span>
+                  <span className="rounded-full bg-black/25 px-4 py-1 text-2xl font-bold">{counts[i] ?? 0}</span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-black/25">
+                  <div className="h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${((counts[i] ?? 0) / max) * 100}%` }} />
+                </div>
               </div>
-              <div className="h-3 overflow-hidden rounded-full bg-black/25">
-                <div className="h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${((counts[i] ?? 0) / max) * 100}%` }} />
-              </div>
-            </div>
-          )
-        }}
-      </AnswerTiles>
+            )
+          }}
+        </AnswerTiles>
+      ) : (
+        <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-2">
+          <div className="qz-pop flex flex-col justify-center gap-2 rounded-3xl bg-green-700 p-8 text-white shadow-lg">
+            <p className="flex items-center gap-2 text-lg font-bold uppercase tracking-[0.12em] text-white/80">
+              <span className="material-symbols-outlined" aria-hidden="true">check</span>
+              Correct answer
+            </p>
+            <p className="break-words text-5xl font-bold sm:text-6xl">{shownAnswer}</p>
+            {type === 'numeric' && Number(question.numeric_tolerance) > 0 && <p className="text-lg text-white/80">Anything within ±{Number(question.numeric_tolerance)} counted.</p>}
+            {type === 'text' && (question.accepted_answers ?? []).length > 1 && (
+              <p className="text-lg text-white/80">Also accepted: {(question.accepted_answers ?? []).slice(1).join(', ')}</p>
+            )}
+          </div>
+          <div className="rounded-3xl border border-hairline bg-surface p-6 shadow-md">
+            <p className="mb-3 text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">What people typed</p>
+            {groups.length === 0 ? (
+              <p className="text-lg text-ink-muted">Nobody answered.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {groups.map((g) => (
+                  <li key={g.text} className={`flex items-center gap-3 rounded-xl px-4 py-2 text-xl font-semibold ${g.correct ? 'bg-green-600/15 text-green-600' : 'bg-surface-low'}`}>
+                    <span className="material-symbols-outlined" aria-hidden="true">{g.correct ? 'check_circle' : 'close'}</span>
+                    <span className="min-w-0 flex-1 truncate">{g.text}</span>
+                    <span className="tabular-nums">{g.count}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          { icon: 'target', label: 'Got it right', value: `${percentCorrect}%` },
-          { icon: 'bolt', label: 'Fastest correct', value: fastestName ? `${fastestName} · ${(fastest.ms / 1000).toFixed(1)}s` : '—' },
-          { icon: 'groups', label: 'Answered', value: `${answers.length} of ${playerCount}` },
-        ].map((stat) => (
+        {stats.map((stat) => (
           <div key={stat.label} className="flex items-center gap-4 rounded-2xl border border-hairline bg-surface p-4 shadow-sm">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-500">
               <span className="material-symbols-outlined" aria-hidden="true">{stat.icon}</span>
@@ -353,6 +565,7 @@ function ScoreCounter({ from, to, className }) {
 }
 
 function AnimatedBoard({ players, gains }) {
+  const streaks = useMemo(() => new Map(players.map((p) => [p.id, p.streak ?? 0])), [players])
   const [phase, setPhase] = useState('before')
   useEffect(() => {
     const timer = setTimeout(() => setPhase('after'), REORDER_AFTER_MS)
@@ -408,6 +621,12 @@ function AnimatedBoard({ players, gains }) {
               <span className="w-12 shrink-0 text-center text-3xl font-bold" aria-label={`Rank ${rank}`}>{MEDALS[rank - 1] ?? rank}</span>
               <Avatar name={p.nickname} avatarId={p.avatar_id} mood={mood} className="h-14 w-14 shrink-0" />
               <span className="min-w-0 flex-1 truncate text-2xl font-bold sm:text-3xl">{p.nickname}</span>
+              {(streaks.get(p.id) ?? 0) >= 3 && (
+                <span className="qz-pop hidden items-center gap-1 rounded-full bg-orange-500/15 px-3 py-1 text-lg font-bold text-orange-500 sm:flex" aria-label={`${streaks.get(p.id)} in a row`}>
+                  <span aria-hidden="true">🔥</span>
+                  {streaks.get(p.id)}
+                </span>
+              )}
               {after && moved !== 0 && (
                 <span
                   className={`qz-pop hidden items-center text-lg font-bold sm:flex ${moved > 0 ? 'text-green-600' : 'text-red-600'}`}
@@ -431,9 +650,50 @@ function AnimatedBoard({ players, gains }) {
   )
 }
 
-function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto }) {
+// Team scores: a bar per team, longest first. Teams with nobody on them are left out.
+function TeamStandings({ teams, players, scoring, big = false }) {
+  const ranked = useMemo(() => rankTeams({ teams, players, scoring }), [teams, players, scoring])
+  const top = Math.max(1, ...ranked.map((t) => t.score))
+  if (ranked.length === 0) return null
+  return (
+    <section className={`mx-auto w-full rounded-3xl border border-hairline bg-surface p-5 shadow-md ${big ? 'max-w-4xl' : 'max-w-4xl'}`} aria-label="Team standings">
+      <h2 className="mb-3 text-lg font-bold uppercase tracking-[0.12em] text-ink-muted">Teams · {scoring === 'total' ? 'total score' : 'average score'}</h2>
+      <ol className="flex flex-col gap-3">
+        {ranked.map((t) => {
+          const style = teamStyle(t.color)
+          return (
+            <li key={t.id} className="flex items-center gap-3">
+              <span className="w-8 shrink-0 text-center text-2xl font-bold">{MEDALS[t.rank - 1] ?? t.rank}</span>
+              <Avatar name={t.name} avatarId={t.avatarId} className={big ? 'h-14 w-14 shrink-0' : 'h-11 w-11 shrink-0'} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className={`truncate font-bold ${big ? 'text-3xl' : 'text-xl'}`}>{t.name}</span>
+                  <span className={`shrink-0 font-bold tabular-nums ${big ? 'text-3xl' : 'text-xl'}`}>{formatScore(t.score)}</span>
+                </div>
+                <div className="mt-1 h-3 overflow-hidden rounded-full bg-hairline/60">
+                  <div className={`h-full rounded-full transition-[width] duration-700 ${style.bg}`} style={{ width: `${(t.score / top) * 100}%` }} />
+                </div>
+                <div className="mt-0.5 text-xs text-ink-muted">{t.members} player{t.members === 1 ? '' : 's'}</div>
+              </div>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto, teams, scoring }) {
   // If the round's points arrive a moment after the screen opens (for example after a page reload), start the replay again.
   const replayKey = [...gains.values()].join(',')
+  const type = question?.type ?? 'multiple'
+  const answerLabel = !question || type === 'poll'
+    ? null
+    : isChoiceType(type)
+      ? question.options[question.correct_index]
+      : type === 'numeric'
+        ? String(Number(question.numeric_answer))
+        : (question.accepted_answers ?? [])[0]
 
   return (
     <Stage
@@ -447,10 +707,11 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
       }
     >
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Leaderboard</h1>
+      {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} />}
       <AnimatedBoard key={replayKey} players={players} gains={gains} />
-      {question && (
+      {answerLabel && (
         <p className="mx-auto max-w-4xl text-center text-ink-muted">
-          The answer to that one was <span className="font-bold text-ink-900">{question.options[question.correct_index]}</span>.
+          The answer to that one was <span className="font-bold text-ink-900"><MathText>{answerLabel}</MathText></span>.
         </p>
       )}
     </Stage>
@@ -475,7 +736,7 @@ const PODIUM = [
   { place: 3, height: 'h-32 sm:h-40', block: 'border border-hairline bg-surface text-ink-900', delay: 200 },
 ]
 
-function FinishedScreen({ title, players }) {
+function FinishedScreen({ title, players, teams, scoring }) {
   const ranked = useMemo(() => rankPlayers(players), [players])
   const byPlace = (place) => ranked[place - 1]
   return (
@@ -494,6 +755,7 @@ function FinishedScreen({ title, players }) {
       {ranked.length > 0 && <Confetti />}
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Final results</h1>
       <p className="text-center text-lg text-ink-muted">{ranked.length} player{ranked.length === 1 ? '' : 's'} took part</p>
+      {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} big />}
 
       <div className="mx-auto flex w-full max-w-3xl items-end justify-center gap-3 sm:gap-5">
         {PODIUM.map(({ place, height, block, delay }) => {
@@ -519,6 +781,8 @@ function FinishedScreen({ title, players }) {
         })}
       </div>
 
+      <SponsorStrip placement="finish" />
+
       {ranked.length > 3 && (
         <ol className="mx-auto grid w-full max-w-4xl gap-3 sm:grid-cols-2">
           {ranked.slice(3).map((p) => (
@@ -541,6 +805,7 @@ export default function HostQuiz() {
   const [quizTitle, setQuizTitle] = useState('')
   const [questions, setQuestions] = useState([])
   const [players, setPlayers] = useState([])
+  const [teams, setTeams] = useState([])
   const [answerSet, setAnswerSet] = useState({ questionId: null, rows: [] })
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState('')
@@ -577,7 +842,7 @@ export default function HostQuiz() {
   }, [])
 
   const loadPlayers = useCallback(async () => {
-    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id').eq('session_id', sessionId)
+    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, streak, team_id').eq('session_id', sessionId)
     if (data) setPlayers(data)
   }, [sessionId])
 
@@ -605,6 +870,10 @@ export default function HostQuiz() {
         ])
         if (cancelled) return
         if (qs) setQuestions(qs)
+        if (data.team_mode) {
+          const { data: teamRows } = await supabase.from('quiz_teams').select('*').eq('session_id', sessionId).order('position')
+          if (!cancelled && teamRows) setTeams(teamRows)
+        }
         if (quiz) setQuizTitle(quiz.title)
       }
     }
@@ -640,7 +909,7 @@ export default function HostQuiz() {
     async function loadAnswers() {
       const { data } = await supabase
         .from('quiz_answers')
-        .select('player_id, chosen_index, points_awarded, answered_at')
+        .select('player_id, chosen_index, points_awarded, answered_at, answer_text, correct')
         .eq('session_id', sessionId)
         .eq('question_id', questionId)
       if (!cancelled && data) setAnswerSet({ questionId, rows: data })
@@ -706,8 +975,62 @@ export default function HostQuiz() {
     }
   }
 
+  const paused = Boolean(session?.paused_at)
+  // Host controls (kick, lock, pause, extra time, skip, rename). They share the "one move at a time" guard with advance().
+  async function runOp(op, extra = {}, onStep = false) {
+    const current = sessionRef.current
+    if (busyRef.current || !current) return
+    busyRef.current = true
+    setBusy(true)
+    setError('')
+    try {
+      const body = onStep ? { expectedState: current.state, expectedIndex: current.current_question_index, ...extra } : extra
+      const result = await hostOp(op, sessionId, body)
+      if (result.session) applySession(result.session, true)
+      if (op === 'kick' || op === 'rename') loadPlayers()
+    } catch (e) {
+      if (e.status === 409 && e.data?.session) applySession(e.data.session, true)
+      else setError(e.message)
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
+  }
+
+  const playerCountRef = useRef(0)
+  playerCountRef.current = players.length
+
+  // Keyboard shortcuts for the person at the laptop: Space moves on, P pauses, L locks the lobby, + adds time.
+  useEffect(() => {
+    function onKey(e) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (target && (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(target.tagName) || target.isContentEditable)) return
+      const current = sessionRef.current
+      if (!current) return
+      const key = e.key.toLowerCase()
+      if (key === ' ') {
+        e.preventDefault()
+        if (current.state === 'lobby' && playerCountRef.current === 0) return
+        advance()
+      } else if (key === 'p' && current.state === 'question') runOp(current.paused_at ? 'resume' : 'pause', {}, true)
+      else if (key === 'l' && current.state === 'lobby') runOp(current.locked ? 'unlock' : 'lock')
+      else if ((key === '+' || key === '=') && current.state === 'question') runOp('extend', {}, true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const remaining = question
-    ? secondsRemaining({ startedAtMs: startedRef.current.ms, timeLimitSeconds: question.time_limit_seconds, nowMs })
+    ? secondsRemaining({
+        startedAtMs: startedRef.current.ms,
+        timeLimitSeconds: question.time_limit_seconds,
+        nowMs,
+        bonusMs: session.time_bonus_ms ?? 0,
+        pausedMs: session.paused_total_ms ?? 0,
+        frozenElapsedMs: elapsedAtPauseMs(session),
+      })
     : 0
   // Only count answers that belong to the question on screen (a leftover set from the previous question must not close this one).
   const answers = useMemo(() => (answerSet.questionId === questionId ? answerSet.rows : []), [answerSet, questionId])
@@ -725,6 +1048,51 @@ export default function HostQuiz() {
     advance()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, remaining, everyoneAnswered])
+
+  // ---- Sound: music in the lobby and during questions, a tick at the end, stings at each step ----
+  const soundCfg = sanitizeTheme(session?.theme).sound
+  const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  const rightShare = answers.length > 0 ? Math.round((answers.filter((a) => a.correct === true).length / answers.length) * 100) : 0
+  const rightShareRef = useRef(0)
+  rightShareRef.current = rightShare
+  const questionType = question?.type ?? 'multiple'
+  const prevStateRef = useRef(null)
+
+  useEffect(() => {
+    // Any click on the page counts as the "allow sound" click the browser needs.
+    const unlock = () => quizSound.unlock()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      quizSound.stopMusic()
+    }
+  }, [])
+
+  useEffect(() => {
+    const playing = soundCfg.music !== 'off' && (state === 'lobby' || state === 'question') && !paused
+    if (playing) quizSound.startMusic(soundCfg.music, { quiet: state === 'question' })
+    else quizSound.stopMusic()
+  }, [soundCfg.music, state, paused, soundPrefs.unlocked])
+
+  useEffect(() => {
+    const prev = prevStateRef.current
+    prevStateRef.current = state ?? null
+    if (!soundCfg.effects || !state) return undefined
+    const name = stateSound(prev, state)
+    if (name) quizSound.play(name)
+    if (state === 'reveal' && prev === 'question' && questionType !== 'poll') {
+      const timer = setTimeout(() => quizSound.play(revealSting(rightShareRef.current)), 650)
+      return () => clearTimeout(timer)
+    }
+    return undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
+
+  useEffect(() => {
+    if (state !== 'question' || paused || !soundCfg.effects) return
+    const name = tickSound(remaining)
+    if (name) quizSound.play(name)
+  }, [remaining, state, paused, soundCfg.effects])
 
   if (notFound) {
     return (
@@ -766,11 +1134,28 @@ export default function HostQuiz() {
         maxPlayers={session.max_players}
         fullLeft={fullLeft}
         auto={auto}
+        teams={teams}
+        locked={Boolean(session.locked)}
+        onToggleLock={() => runOp(session.locked ? 'unlock' : 'lock')}
+        onKick={(player, block) => runOp('kick', { playerId: player.id, block })}
+        onRename={(player) => runOp('rename', { playerId: player.id })}
       />
     )
   } else if (session.state === 'question' && question) {
     screen = (
-      <QuestionScreen {...shared} question={question} remaining={remaining} answered={answers.length} playerCount={players.length} onEnd={advance} />
+      <QuestionScreen
+        {...shared}
+        question={question}
+        remaining={remaining}
+        answered={answers.length}
+        playerCount={players.length}
+        onEnd={advance}
+        paused={paused}
+        onTogglePause={() => runOp(paused ? 'resume' : 'pause', {}, true)}
+        onExtend={() => runOp('extend', {}, true)}
+        canExtend={(session.time_bonus_ms ?? 0) < 60000}
+        onSkip={() => runOp('skip', {}, true)}
+      />
     )
   } else if (session.state === 'reveal' && question) {
     screen = (
@@ -788,9 +1173,9 @@ export default function HostQuiz() {
       />
     )
   } else if (session.state === 'leaderboard') {
-    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} />
+    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} />
   } else {
-    screen = <FinishedScreen title={quizTitle} players={players} />
+    screen = <FinishedScreen title={quizTitle} players={players} teams={teams} scoring={session.team_scoring} />
   }
 
   return (

@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { brandingUrl } from '../../data/quizBranding'
+import { quizSound } from '../../lib/quizSound'
 import { avatarStyle, initialOf } from '../../data/quiz'
 import QuizThemeToggle from './QuizThemeToggle'
 import Character from './Character'
@@ -41,8 +43,36 @@ export function Avatar({ name, avatarId, mood = 'idle', className = 'h-10 w-10 t
   )
 }
 
+// The NAMMES mark, or the event's own logo when one was uploaded in the studio.
 export function BrandMark({ className = 'h-9 w-9' }) {
-  return <img src="/logo-small.png" alt="" className={`rounded-lg object-contain ${className}`} />
+  const { logo } = useQuizTheme()
+  return <img src={logo ? brandingUrl(logo) : '/logo-small.png'} alt="" className={`rounded-lg object-contain ${className}`} />
+}
+
+// "Presented with" logos for the projector (never on phones). More than four rotate in groups of four.
+export function SponsorStrip({ placement, className = '' }) {
+  const { sponsors, showSponsors } = useQuizTheme()
+  const [page, setPage] = useState(0)
+  const pages = Math.max(1, Math.ceil(sponsors.length / 4))
+  useEffect(() => {
+    if (pages < 2) return undefined
+    const timer = setInterval(() => setPage((p) => (p + 1) % pages), 6000)
+    return () => clearInterval(timer)
+  }, [pages])
+  if (sponsors.length === 0 || !showSponsors[placement]) return null
+  const shown = sponsors.slice((page % pages) * 4, (page % pages) * 4 + 4)
+  return (
+    <div className={`flex flex-col items-center gap-2 ${className}`} aria-label="Sponsors">
+      <span className="text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">Presented with</span>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {shown.map((s) => (
+          <span key={s.path} className="flex h-16 items-center rounded-xl bg-white px-4 shadow-sm ring-1 ring-black/5">
+            <img src={brandingUrl(s.path)} alt={s.name} className="max-h-12 w-auto max-w-[9rem] object-contain" />
+          </span>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // A round countdown. Turns red and pulses when time is nearly up.
@@ -187,6 +217,47 @@ export function Confetti({ count = 36 }) {
           {p.glyph}
         </span>
       ))}
+    </div>
+  )
+}
+
+// Speaker button and volume for the host. Browsers keep sound off until someone clicks, so it starts as "Turn on sound".
+export function SoundControl() {
+  const prefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  if (!quizSound.isSupported()) return null
+  if (!prefs.unlocked) {
+    return (
+      <button
+        type="button"
+        onClick={() => quizSound.unlock()}
+        className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-bold text-ink-900 hover:bg-surface-low"
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">volume_up</span>
+        Turn on sound
+      </button>
+    )
+  }
+  return (
+    <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3">
+      <button
+        type="button"
+        onClick={() => quizSound.setMuted(!prefs.muted)}
+        aria-label={prefs.muted ? 'Unmute' : 'Mute'}
+        aria-pressed={prefs.muted}
+        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-ink-900 hover:bg-surface-low"
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">{prefs.muted ? 'volume_off' : 'volume_up'}</span>
+      </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        value={prefs.volume}
+        onChange={(e) => quizSound.setVolume(Number(e.target.value))}
+        aria-label="Volume"
+        className="hidden w-24 accent-orange-500 sm:block"
+      />
     </div>
   )
 }
