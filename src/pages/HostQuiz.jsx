@@ -558,6 +558,9 @@ const ROW_H = 88
 const ROW_GAP = 12
 const PITCH = ROW_H + ROW_GAP
 const SHOWN = 5
+// Rows sliding out of the top five would stretch the page and make the projector re-fit (zoom) mid-slide, so the board
+// clips its own overflow; the padding keeps the row shadows from being cut off.
+const BOARD_PAD = 10
 const COUNT_DELAY_MS = 450
 const COUNT_MS = 900
 const REORDER_AFTER_MS = 1500
@@ -600,7 +603,7 @@ const AnimatedBoard = memo(function AnimatedBoard({ players, gains }) {
   const after = phase === 'after'
 
   return (
-    <ol className="relative mx-auto w-full max-w-4xl" style={{ height }}>
+    <ol className="relative mx-auto w-full max-w-4xl" style={{ height: height + BOARD_PAD * 2, margin: `${-BOARD_PAD}px auto`, overflowY: 'clip' }}>
       {visible.map((p) => {
         const position = after ? p.index : p.beforeIndex
         const rank = after ? p.rank : p.beforeRank
@@ -611,8 +614,9 @@ const AnimatedBoard = memo(function AnimatedBoard({ players, gains }) {
         return (
           <li
             key={p.id}
-            className="absolute inset-x-0 top-0"
+            className="absolute inset-x-0"
             style={{
+              top: BOARD_PAD,
               height: ROW_H,
               transform: `translateY(${position * PITCH}px)`,
               opacity: position < SHOWN ? 1 : 0,
