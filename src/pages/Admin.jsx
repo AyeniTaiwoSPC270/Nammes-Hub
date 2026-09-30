@@ -27,6 +27,13 @@ export const ADMIN_SECTIONS = [
     description: 'Edit the title, subtitle, and image shown at the top of each page.',
   },
   {
+    path: '/admin/handbook',
+    label: 'Handbook',
+    icon: 'menu_book',
+    category: 'Content',
+    description: 'Edit the text of the downloadable handbook and rebuild its PDF.',
+  },
+  {
     path: '/admin/news',
     label: 'News',
     icon: 'article',

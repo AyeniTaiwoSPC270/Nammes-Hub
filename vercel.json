@@ -25,6 +25,10 @@
       "destination": "/api/system?action=email-worker"
     },
     {
+      "source": "/api/handbook-build",
+      "destination": "/api/system?action=handbook-build"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -73,5 +77,11 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/system.js": {
+      "maxDuration": 300,
+      "includeFiles": "{scripts/manual/**,public/logo.png,api/_lib/fonts/**}"
+    }
+  }
 }

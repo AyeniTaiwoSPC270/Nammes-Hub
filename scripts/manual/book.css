@@ -5,6 +5,11 @@
 @font-face { font-family: 'Public Sans'; font-weight: 400; src: url('../../api/_lib/fonts/PublicSans-Regular.ttf'); }
 @font-face { font-family: 'Public Sans'; font-weight: 700; src: url('../../api/_lib/fonts/PublicSans-Bold.ttf'); }
 @font-face { font-family: 'Playfair Display'; font-weight: 700; src: url('../../api/_lib/fonts/PlayfairDisplay-Bold.ttf'); }
+/* The two brand fonts lack a few symbols (→ ▾ ◐ ☰ ⋮). DejaVu Sans fills just those, so the PDF looks the same on a
+   server with no system fonts as it does on a computer. */
+@font-face { font-family: 'Public Sans'; font-weight: 400; src: url('../../api/_lib/fonts/DejaVuSans.ttf'); unicode-range: U+2192, U+25BE, U+25D0, U+2630, U+22EE; }
+@font-face { font-family: 'Public Sans'; font-weight: 700; src: url('../../api/_lib/fonts/DejaVuSans-Bold.ttf'); unicode-range: U+2192, U+25BE, U+25D0, U+2630, U+22EE; }
+@font-face { font-family: 'Playfair Display'; font-weight: 700; src: url('../../api/_lib/fonts/DejaVuSans-Bold.ttf'); unicode-range: U+2192, U+25BE, U+25D0, U+2630, U+22EE; }
 
 :root {
   --green-950: #04160c;
