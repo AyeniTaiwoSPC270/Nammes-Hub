@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
-import { nextState } from '../quiz.js'
+import { nextState, stepUpdate } from '../quiz.js'
 
 const STATES = ['lobby', 'question', 'reveal', 'leaderboard', 'finished']
 
@@ -52,9 +52,7 @@ export function createQuizAdvanceHandler(getClient, { now = () => new Date() } =
       return
     }
 
-    const update = { state: next.state, current_question_index: next.current_question_index }
-    if (next.startsQuestion) update.question_started_at = now().toISOString()
-    if (next.state === 'finished') update.finished_at = now().toISOString()
+    const update = stepUpdate(next, now().toISOString())
 
     const { data: updated, error } = await supabaseAdmin
       .from('quiz_sessions')

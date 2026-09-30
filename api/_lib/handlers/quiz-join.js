@@ -32,12 +32,22 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
     const supabaseAdmin = getClient()
     const { data: session } = await supabaseAdmin
       .from('quiz_sessions')
-      .select('id, state, max_players')
+      .select('id, state, max_players, locked, blocked_nicknames')
       .eq('join_code', code)
       .neq('state', 'finished')
       .maybeSingle()
     if (!session) {
       res.status(404).json({ error: 'No game found with that code' })
+      return
+    }
+
+    if (session.locked) {
+      res.status(403).json({ error: 'This game is locked. Ask the host.' })
+      return
+    }
+    // A nickname the host removed stays blocked for this game (compared without case).
+    if ((session.blocked_nicknames ?? []).includes(checked.value.toLowerCase())) {
+      res.status(403).json({ error: 'Please pick a different nickname' })
       return
     }
 
