@@ -45,7 +45,7 @@ describe('quiz-create', () => {
     const res = fakeRes()
     await createQuizCreateHandler(() => db, { makeCode: () => '333333' })(admin({ quizId: QUIZ }), res)
     expect(res.statusCode).toBe(200)
-    expect(db.tables.quiz_sessions.at(-1).theme).toEqual({ look: 'royal', accent: '#ff00aa', pattern: 'math', confetti: 'math', headline: 'Freshers Night', tagline: '', sound: { music: 'off', effects: true } })
+    expect(db.tables.quiz_sessions.at(-1).theme).toEqual({ look: 'royal', accent: '#ff00aa', pattern: 'math', confetti: 'math', headline: 'Freshers Night', tagline: '', sound: { music: 'off', effects: true }, logo: null, sponsors: [], showSponsors: { lobby: true, finish: true } })
   })
   it('gives a quiz with no look the default one', async () => {
     const db = fakeDb()
@@ -221,7 +221,7 @@ describe('answering and the answer-leak rule', () => {
     const { db, a, state } = await setup()
     db.tables.quiz_sessions[0].theme = { look: 'ocean', headline: 'Hello', accent: 'red; background:url(x)' }
     const res = await state(a.token)
-    expect(res.body.theme).toEqual({ look: 'ocean', accent: null, pattern: 'math', confetti: 'math', headline: 'Hello', tagline: '', sound: { music: 'off', effects: true } })
+    expect(res.body.theme).toEqual({ look: 'ocean', accent: null, pattern: 'math', confetti: 'math', headline: 'Hello', tagline: '', sound: { music: 'off', effects: true }, logo: null, sponsors: [], showSponsors: { lobby: true, finish: true } })
   })
   it('does not send the correct answer to phones while the question is open', async () => {
     const { a, state } = await setup()

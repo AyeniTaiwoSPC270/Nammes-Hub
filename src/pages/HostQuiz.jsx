@@ -7,7 +7,7 @@ import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
-import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl } from '../components/quiz/QuizParts'
+import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
 import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
@@ -220,6 +220,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
           <p className="text-sm text-ink-muted">The code is filled in for you.</p>
         </section>
       </div>
+      <SponsorStrip placement="lobby" />
 
       <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-md sm:p-8">
         <div className="flex items-center gap-3">
@@ -779,6 +780,8 @@ function FinishedScreen({ title, players, teams, scoring }) {
           )
         })}
       </div>
+
+      <SponsorStrip placement="finish" />
 
       {ranked.length > 3 && (
         <ol className="mx-auto grid w-full max-w-4xl gap-3 sm:grid-cols-2">

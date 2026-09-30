@@ -1,4 +1,5 @@
-import { useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { brandingUrl } from '../../data/quizBranding'
 import { quizSound } from '../../lib/quizSound'
 import { avatarStyle, initialOf } from '../../data/quiz'
 import QuizThemeToggle from './QuizThemeToggle'
@@ -42,8 +43,36 @@ export function Avatar({ name, avatarId, mood = 'idle', className = 'h-10 w-10 t
   )
 }
 
+// The NAMMES mark, or the event's own logo when one was uploaded in the studio.
 export function BrandMark({ className = 'h-9 w-9' }) {
-  return <img src="/logo-small.png" alt="" className={`rounded-lg object-contain ${className}`} />
+  const { logo } = useQuizTheme()
+  return <img src={logo ? brandingUrl(logo) : '/logo-small.png'} alt="" className={`rounded-lg object-contain ${className}`} />
+}
+
+// "Presented with" logos for the projector (never on phones). More than four rotate in groups of four.
+export function SponsorStrip({ placement, className = '' }) {
+  const { sponsors, showSponsors } = useQuizTheme()
+  const [page, setPage] = useState(0)
+  const pages = Math.max(1, Math.ceil(sponsors.length / 4))
+  useEffect(() => {
+    if (pages < 2) return undefined
+    const timer = setInterval(() => setPage((p) => (p + 1) % pages), 6000)
+    return () => clearInterval(timer)
+  }, [pages])
+  if (sponsors.length === 0 || !showSponsors[placement]) return null
+  const shown = sponsors.slice((page % pages) * 4, (page % pages) * 4 + 4)
+  return (
+    <div className={`flex flex-col items-center gap-2 ${className}`} aria-label="Sponsors">
+      <span className="text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">Presented with</span>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {shown.map((s) => (
+          <span key={s.path} className="flex h-16 items-center rounded-xl bg-white px-4 shadow-sm ring-1 ring-black/5">
+            <img src={brandingUrl(s.path)} alt={s.name} className="max-h-12 w-auto max-w-[9rem] object-contain" />
+          </span>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // A round countdown. Turns red and pulses when time is nearly up.

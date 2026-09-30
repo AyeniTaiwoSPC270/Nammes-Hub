@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { OPTION_STYLES } from '../../../data/quiz'
 import { QuizThemeScope } from '../../quiz/QuizTheme'
-import { AnswerShape, Avatar, BrandMark, Confetti, CountdownRing, QuizBackdrop } from '../../quiz/QuizParts'
+import { AnswerShape, Avatar, BrandMark, Confetti, CountdownRing, QuizBackdrop, SponsorStrip } from '../../quiz/QuizParts'
 
 // Mock-ups of the real quiz screens, drawn at their real size and scaled down to fit, so the studio shows what the
 // projector and the phones will look like with the look being designed. Sample names and scores only.
@@ -85,6 +85,10 @@ function ProjectorLobby({ theme, title }) {
       </section>
     </div>
   )
+}
+
+function ProjectorLobbySponsors() {
+  return <SponsorStrip placement="lobby" className="col-span-2 -mt-2" />
 }
 
 function ProjectorQuestion() {
@@ -207,10 +211,20 @@ export default function StudioPreview({ theme, surface, screen, title }) {
         <MiniBar title={title} />
         {projector ? (
           <>
-            {screen === 'lobby' && <ProjectorLobby theme={theme} title={title} />}
+            {screen === 'lobby' && (
+              <>
+                <ProjectorLobby theme={theme} title={title} />
+                <div className="px-6"><ProjectorLobbySponsors /></div>
+              </>
+            )}
             {screen === 'question' && <ProjectorQuestion />}
             {screen === 'leaderboard' && <ProjectorBoard />}
-            {screen === 'podium' && <ProjectorPodium />}
+            {screen === 'podium' && (
+              <>
+                <ProjectorPodium />
+                <SponsorStrip placement="finish" className="pb-2" />
+              </>
+            )}
           </>
         ) : (
           <>

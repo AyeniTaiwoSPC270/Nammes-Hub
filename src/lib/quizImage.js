@@ -24,7 +24,7 @@ function toBlob(canvas, type, quality) {
   return new Promise((resolve) => canvas.toBlob(resolve, type, quality))
 }
 
-export async function processQuizImage(file, { maxEdge = IMAGE_MAX_EDGE } = {}) {
+export async function processQuizImage(file, { maxEdge = IMAGE_MAX_EDGE, maxBytes = IMAGE_MAX_BYTES } = {}) {
   const problem = checkImageFile(file)
   if (problem) throw new Error(problem)
   let bitmap
@@ -44,8 +44,8 @@ export async function processQuizImage(file, { maxEdge = IMAGE_MAX_EDGE } = {}) 
   for (const [type, ext] of [['image/webp', 'webp'], ['image/jpeg', 'jpg']]) {
     for (const quality of [0.82, 0.7, 0.55]) {
       const blob = await toBlob(canvas, type, quality)
-      if (blob && blob.type === type && blob.size <= IMAGE_MAX_BYTES) return { blob, ext }
+      if (blob && blob.type === type && blob.size <= maxBytes) return { blob, ext }
     }
   }
-  throw new Error('That image is too detailed to shrink under 2 MB. Try a smaller one.')
+  throw new Error(`That image is too detailed to shrink under ${Math.round(maxBytes / 1024)} KB. Try a simpler one.`)
 }

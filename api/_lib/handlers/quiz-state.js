@@ -77,7 +77,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         pausedTotalMs: session.paused_total_ms ?? 0,
         timeBonusMs: session.time_bonus_ms ?? 0,
       },
-      theme: sanitizeTheme(session.theme),
+      theme: sanitizeTheme(session.theme, { quizId: session.quiz_id }),
       me: {
         nickname: player.nickname,
         score: me?.total_score ?? 0,

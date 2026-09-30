@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
 import { quizSound } from '../../lib/quizSound'
+import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl } from '../../data/quizBranding'
 import { useQuizQuery, saveQuizTheme } from '../../data/quiz'
 import {
   DEFAULT_THEME,
@@ -10,6 +11,7 @@ import {
   THEME_PATTERNS,
   THEME_CONFETTI,
   THEME_MUSIC,
+  MAX_SPONSORS,
   THEME_HEADLINE_MAX,
   THEME_TAGLINE_MAX,
   sanitizeTheme,
@@ -82,6 +84,8 @@ export default function AdminQuizStudio() {
   const [draft, setDraft] = useState(null)
   const [surface, setSurface] = useState('projector')
   const [screens, setScreens] = useState({ projector: 'lobby', phone: 'lobby' })
+  const [brandBusy, setBrandBusy] = useState(false)
+  const [brandError, setBrandError] = useState('')
 
   const quiz = quizQuery.data
   const saved = sanitizeTheme(quiz?.theme)
@@ -96,7 +100,13 @@ export default function AdminQuizStudio() {
   }
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuizTheme(id, theme),
+    mutationFn: async () => {
+      const clean = await saveQuizTheme(id, theme)
+      // Pictures the saved look no longer uses are deleted from storage.
+      const keep = new Set(brandingPaths(clean))
+      await removeBrandingFiles(brandingPaths(saved).filter((p) => !keep.has(p)))
+      return clean
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       setDraft(null)
@@ -114,6 +124,20 @@ export default function AdminQuizStudio() {
   }
 
   const screenList = surface === 'projector' ? PROJECTOR_SCREENS : PHONE_SCREENS
+
+  // Uploads a logo or sponsor picture right away (it is only part of the look once you press Save).
+  async function addPicture(file, apply) {
+    setBrandError('')
+    setBrandBusy(true)
+    try {
+      const path = await uploadBrandingImage(id, file)
+      apply(path, file.name.replace(/\.[^.]+$/, '').slice(0, 40))
+    } catch (e) {
+      setBrandError(e.message)
+    } finally {
+      setBrandBusy(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] px-5 py-12 sm:px-6">
@@ -239,6 +263,59 @@ export default function AdminQuizStudio() {
                     Hear the music (5 s)
                   </Button>
                 )}
+              </div>
+            </Section>
+
+            <Section title="Logo and sponsors" hint="An event logo replaces the NAMMES mark at the top. Sponsor logos show on the projector only, never on phones.">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-xl border border-hairline bg-white p-1">
+                    <img src={theme.logo ? brandingUrl(theme.logo) : '/logo-small.png'} alt="" className="max-h-full max-w-full object-contain" />
+                  </span>
+                  <label className="cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                    {theme.logo ? 'Replace logo' : 'Upload event logo'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={brandBusy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) addPicture(f, (path) => change({ logo: path })) }} />
+                  </label>
+                  {theme.logo && <Button variant="ghost" size="sm" onClick={() => change({ logo: null })}>Use the NAMMES mark</Button>}
+                </div>
+
+                <ul className="flex flex-col gap-2">
+                  {(theme.sponsors ?? []).map((s, i) => (
+                    <li key={s.path} className="flex items-center gap-2">
+                      <span className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg border border-hairline bg-white p-1">
+                        <img src={brandingUrl(s.path)} alt="" className="max-h-full max-w-full object-contain" />
+                      </span>
+                      <input
+                        value={s.name}
+                        maxLength={40}
+                        onChange={(e) => change({ sponsors: theme.sponsors.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })}
+                        aria-label={`Sponsor ${i + 1} name`}
+                        placeholder="Sponsor name"
+                        className="min-h-11 min-w-0 flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-base text-ink"
+                      />
+                      <Button variant="ghost" size="sm" onClick={() => change({ sponsors: theme.sponsors.filter((_, j) => j !== i) })} aria-label={`Remove sponsor ${i + 1}`}>Remove</Button>
+                    </li>
+                  ))}
+                </ul>
+                {(theme.sponsors ?? []).length < MAX_SPONSORS && (
+                  <label className="w-fit cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                    Add a sponsor logo
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={brandBusy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) addPicture(f, (path, name) => change({ sponsors: [...(theme.sponsors ?? []), { name: name || 'Sponsor', path }] })) }} />
+                  </label>
+                )}
+                {brandBusy && <p className="text-sm text-ink-muted">Uploading…</p>}
+                {brandError && <p role="alert" className="text-sm text-danger">{brandError}</p>}
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-ink-900">
+                    <input type="checkbox" className="h-5 w-5" checked={theme.showSponsors.lobby} onChange={(e) => change({ showSponsors: { ...theme.showSponsors, lobby: e.target.checked } })} />
+                    Show sponsors on the lobby screen
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-ink-900">
+                    <input type="checkbox" className="h-5 w-5" checked={theme.showSponsors.finish} onChange={(e) => change({ showSponsors: { ...theme.showSponsors, finish: e.target.checked } })} />
+                    Show sponsors on the final results
+                  </label>
+                </div>
               </div>
             </Section>
 

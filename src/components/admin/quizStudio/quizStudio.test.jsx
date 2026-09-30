@@ -23,6 +23,18 @@ describe('studio preview', () => {
     expect(html).toContain('Phones out')
     expect(html).toContain('--color-orange-500:#123456')
   })
+  it('shows sponsors on the lobby and the finish, and not when switched off', () => {
+    const q = '11111111-1111-4111-8111-111111111111'
+    const path = `${q}/33333333-3333-4333-8333-333333333333.webp`
+    const branded = { sponsors: [{ name: 'Acme Ltd', path }], logo: path }
+    const lobby = renderToStaticMarkup(<StudioPreview theme={branded} surface="projector" screen="lobby" title="" />)
+    expect(lobby).toContain('Presented with')
+    expect(lobby).toContain('alt="Acme Ltd"')
+    expect(renderToStaticMarkup(<StudioPreview theme={branded} surface="projector" screen="podium" title="" />)).toContain('Acme Ltd')
+    const off = renderToStaticMarkup(<StudioPreview theme={{ ...branded, showSponsors: { lobby: false, finish: false } }} surface="projector" screen="lobby" title="" />)
+    expect(off).not.toContain('Presented with')
+    expect(renderToStaticMarkup(<StudioPreview theme={branded} surface="phone" screen="lobby" title="" />)).not.toContain('Presented with')
+  })
   it('escapes a hostile headline and ignores a hostile colour', () => {
     const html = renderToStaticMarkup(
       <StudioPreview theme={{ headline: '<img src=x onerror=alert(1)>', accent: 'red;background:url(x)' }} surface="phone" screen="lobby" title="" />,

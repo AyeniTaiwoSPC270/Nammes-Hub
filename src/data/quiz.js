@@ -328,7 +328,7 @@ export async function fetchQuestionBank({ limit = 600 } = {}) {
 
 // Saves the look designed in the Quiz Design Studio. Games started after this use it; running games keep theirs.
 export async function saveQuizTheme(id, theme) {
-  const clean = sanitizeTheme(theme)
+  const clean = sanitizeTheme(theme, { quizId: id })
   const { data, error } = await supabase.from('quizzes').update({ theme: clean }).eq('id', id).select('id')
   if (error) throw error
   if (!data || data.length === 0) {
@@ -346,6 +346,8 @@ export async function deleteQuiz(id) {
   // Tidy up the quiz's pictures (best effort: a leftover file is harmless).
   const { data: files } = await supabase.storage.from(IMAGE_BUCKET).list(id)
   if (files && files.length) await supabase.storage.from(IMAGE_BUCKET).remove(files.map((f) => `${id}/${f.name}`))
+  const { data: branding } = await supabase.storage.from('quiz-branding').list(id)
+  if (branding && branding.length) await supabase.storage.from('quiz-branding').remove(branding.map((f) => `${id}/${f.name}`))
 }
 
 // Everything the results report needs for one game (admin only: the summary views inherit the answers' admin-only access).
