@@ -69,6 +69,10 @@ const AdminAwards = lazyRetry(() => import('./pages/admin/AdminAwards'))
 const AdminAwardSeason = lazyRetry(() => import('./pages/admin/AdminAwardSeason'))
 const AdminAwardCurate = lazyRetry(() => import('./pages/admin/AdminAwardCurate'))
 const AdminAwardResults = lazyRetry(() => import('./pages/admin/AdminAwardResults'))
+const AdminQuizzes = lazyRetry(() => import('./pages/admin/AdminQuizzes'))
+const AdminQuizEditor = lazyRetry(() => import('./pages/admin/AdminQuizEditor'))
+const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
+const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
 
 function MaintenanceGate({ children }) {
   const location = useLocation()
@@ -105,6 +109,25 @@ export default function App() {
               </Suspense>
             }
           />
+          {/* Full-screen quiz pages: no site header or footer, so they suit a projector and a phone. */}
+          <Route
+            path="play"
+            element={
+              <Suspense fallback={null}>
+                <PlayQuiz />
+              </Suspense>
+            }
+          />
+          <Route element={<AdminRoute />}>
+            <Route
+              path="host/:sessionId"
+              element={
+                <Suspense fallback={null}>
+                  <HostQuiz />
+                </Suspense>
+              }
+            />
+          </Route>
           <Route element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="about" element={<About />} />
@@ -161,6 +184,9 @@ export default function App() {
                 <Route path="admin/forms/new" element={<AdminFormEditor />} />
                 <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />
                 <Route path="admin/forms/:id/responses" element={<AdminFormResponses />} />
+                <Route path="admin/quizzes" element={<AdminQuizzes />} />
+                <Route path="admin/quizzes/new" element={<AdminQuizEditor />} />
+                <Route path="admin/quizzes/:id/edit" element={<AdminQuizEditor />} />
                 <Route path="admin/awards" element={<AdminAwards />} />
                 <Route path="admin/awards/new" element={<AdminAwardSeason />} />
                 <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />
