@@ -12,7 +12,7 @@ export const DEFAULT_EDITION = 'First Edition · September 2026'
 export const DEFAULT_AS_OF = '30 September 2026'
 export const DEFAULT_FOREWORD = `
   <p class="lead">Every session, hundreds of students ask the same questions: <em>Where is the outline? When is the exam? What happened to that link?</em></p>
-  <p>NAMMES Hub was built so the answer is always one address away. It gathers everything the association publishes (outlines, timetables, resources, events, news and opportunities) and adds tools that make student life easier, like the CGPA calculator, the awards and the forms.</p>
+  <p>NAMMES Hub was built so the answer is always one address away. It gathers everything the association publishes (outlines, timetables, resources, events, news and opportunities) and adds tools that make student life easier, like the CGPA calculator, the awards, the forms and live quiz games.</p>
   <p>But a tool is only useful if you know it is there. That is why this handbook exists. It walks you through every page, in plain language, from creating your account to nominating a classmate for an award. If you are an executive or admin, the final part shows you how to keep the Hub accurate, safe and alive.</p>
   <blockquote>Read it front to back once, then keep it on your phone. When you forget how to do something, open the contents page and jump straight to it.</blockquote>
   <p>We wrote this book together, ten executives with ten roles and one goal: that no member of the department ever feels lost on their own website.</p>
@@ -85,7 +85,7 @@ export const TEXT_FIELDS = [
     multiline: true,
     rows: 8,
     value: [
-      'NAMMES Hub is the home of the National Association of Metallurgical and Materials Engineering Students, University of Lagos Chapter: your outlines, timetable, CGPA calculator, resources, events, news, opportunities, awards and forms, all in one place.',
+      'NAMMES Hub is the home of the National Association of Metallurgical and Materials Engineering Students, University of Lagos Chapter: your outlines, timetable, CGPA calculator, resources, events, news, opportunities, awards, forms and live quizzes, all in one place.',
       'This handbook walks a complete beginner through every page and shows the executives how to run it.',
     ].join('\n\n'),
   },
@@ -95,7 +95,7 @@ export const TEXT_FIELDS = [
     label: 'What is inside (one item per line)',
     multiline: true,
     rows: 7,
-    value: ['Every page of the Hub, explained', 'Sign-up, sign-in and your account', 'Outlines, timetable and CGPA', 'Events, news and opportunities', 'Awards and forms, step by step', 'A complete guide for admins'].join('\n'),
+    value: ['Every page of the Hub, explained', 'Sign-up, sign-in and your account', 'Outlines, timetable and CGPA', 'Events, news and opportunities', 'Awards and forms, step by step', 'Live quizzes and battles', 'A complete guide for admins'].join('\n'),
   },
   { key: 'back_scan', panel: 'back', label: 'Text next to the QR code', value: 'Scan to open NAMMES Hub on your phone.' },
   { key: 'back_fine', panel: 'back', label: 'Small print at the bottom', value: 'National Association of Metallurgical and Materials Engineering Students · UNILAG Chapter' },
@@ -129,6 +129,8 @@ export const FIND_DEFAULTS = [
   ['I want to email every member', 'admin-comms'],
   ['I want to make someone an admin', 'admin-people'],
   ['Something has gone wrong', 'faq'],
+  ['I want to join a quiz or challenge a friend', 'quizzes'],
+  ['I want to run a live quiz at an event', 'admin-quizzes'],
 ]
 
 export const CHAPTERS = [...startChapters, ...academicChapters, ...communityChapters, ...adminChapters]

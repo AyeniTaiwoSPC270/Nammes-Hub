@@ -1,3 +1,4 @@
+import { adminQuizChapter } from './content-quiz.mjs'
 import { SITE, tip, note, warn, adminBox, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
 
 export const PART_5 = 'Part Five · Admin Guide'
@@ -6,6 +7,7 @@ const DASH = [
   ['Content', 'Home Page', 'Hero banner and the president\'s welcome message.'],
   ['Content', 'Site Links', 'Newsletter, social links, contact email, maintenance mode.'],
   ['Content', 'Page Banners', 'Title, subtitle and pictures at the top of each page.'],
+  ['Content', 'Handbook', 'Edit this handbook and rebuild its PDF.'],
   ['Content', 'News', 'Publish articles and updates.'],
   ['Logistics', 'Events', 'Schedule events and manage their galleries.'],
   ['Library', 'Resources', 'Organise shared academic resources.'],
@@ -20,24 +22,25 @@ const DASH = [
   ['Academics', 'Timetable', 'Class and exam timetables.'],
   ['Engagement', 'Forms', 'Build forms and read responses.'],
   ['Engagement', 'Awards', 'Nominate, curate, vote, reveal.'],
+  ['Engagement', 'Live Quiz', 'Build, host and review live quiz games.'],
   ['Engagement', 'Broadcasts', 'Email every opted-in member.'],
   ['Engagement', 'Email Templates', 'Edit broadcast email designs.'],
   ['Governance', 'Reviews', 'Approve pending edits (owner).'],
 ]
 
 export const chapters = [
-  /* ------------------------------------------------------------------ 16 */
+  /* ------------------------------------------------------------------ 17 */
   {
     id: 'admin-start',
     part: PART_5,
     admin: true,
-    num: 16,
+    num: 17,
     title: 'Before You Begin',
     intro: 'Who admins are, how to open the Admin area, and the one editing pattern you will use everywhere.',
     inThis: ['Owner and admin: who can do what', 'Signing in to the Admin area', 'The dashboard', 'Add, edit and delete: the common pattern', 'Golden rules for admins'],
     html: `
 <h2 class="first">Owner and admin: who can do what</h2>
-<p>The Hub has two levels of executive power. Every <strong>admin</strong> can run the site's content. The <strong>owner</strong> is a single trusted admin who can additionally approve changes and manage people. When the leadership changes, ownership can be handed over (Chapter 22).</p>
+<p>The Hub has two levels of executive power. Every <strong>admin</strong> can run the site's content. The <strong>owner</strong> is a single trusted admin who can additionally approve changes and manage people. When the leadership changes, ownership can be handed over (Chapter 24).</p>
 ${table(['Power', 'Admin', 'Owner'], [
   ['Open the Admin dashboard and all content sections', 'Yes', 'Yes'],
   ['Publish Resources, Opportunities, Excos, Outlines, Timetables, Banners, Links, Home page', 'Immediately', 'Immediately'],
@@ -63,7 +66,7 @@ ${note('Anyone can sign up for an account, but only people who have been made ad
 <p>The dashboard is a grid of tiles, one per job, labelled by category. Choose a tile to open that section. The <strong>Submissions</strong> tile shows a badge with the number of student contributions waiting for you. The owner also sees the <strong>Reviews</strong> tile.</p>
 <figure class="mock"><div class="panel"><div class="dash">
 ${DASH.map(([c, n, d]) => `<div class="tile${n === 'Reviews' || n === 'System' ? ' owner' : ''}"><div class="cat">${c}</div><div class="nm">Manage ${n}</div><div class="ds">${d}</div></div>`).join('')}
-</div></div><figcaption>The twenty dashboard tiles, redrawn for clarity. Gold-edged tiles are for the owner.</figcaption></figure>
+</div></div><figcaption>The twenty-two dashboard tiles, redrawn for clarity. Gold-edged tiles are for the owner.</figcaption></figure>
 
 <h2>Add, edit and delete: the common pattern</h2>
 <p>Most sections (News, Events, Resources, Opportunities, Excos, Outlines, Timetable) share the same screen, so you learn it once:</p>
@@ -83,7 +86,7 @@ ${warn('The red <strong>Delete All</strong> button at the top of a section remov
 <h2>Golden rules for admins</h2>
 <ul class="checks">
   <li><strong>Proofread before you publish.</strong> Members treat the Hub as official.</li>
-  <li><strong>Turn on two-factor login</strong> for your admin account (Chapter 22).</li>
+  <li><strong>Turn on two-factor login</strong> for your admin account (Chapter 24).</li>
   <li><strong>Never share your login.</strong> Ask the owner to add your colleague.</li>
   <li><strong>Use maintenance mode</strong> before big changes.</li>
   <li><strong>Edit rather than delete,</strong> and keep members' data private.</li>
@@ -91,12 +94,12 @@ ${warn('The red <strong>Delete All</strong> button at the top of a section remov
 `,
   },
 
-  /* ------------------------------------------------------------------ 17 */
+  /* ------------------------------------------------------------------ 18 */
   {
     id: 'admin-content',
     part: PART_5,
     admin: true,
-    num: 17,
+    num: 18,
     title: 'Managing the Site\'s Content',
     intro: 'The home page, links, banners, news, events, resources, opportunities and the excos: everything members see first.',
     inThis: ['Home page', 'Site links and maintenance mode', 'Page banners', 'News', 'Events and event galleries', 'Resources, Opportunities and Excos', 'The Handbook: edit this book'],
@@ -160,12 +163,12 @@ ${tip('<strong>New executive council?</strong> Open <em>Meet the authors</em>, c
 `,
   },
 
-  /* ------------------------------------------------------------------ 18 */
+  /* ------------------------------------------------------------------ 19 */
   {
     id: 'admin-academics',
     part: PART_5,
     admin: true,
-    num: 18,
+    num: 19,
     title: 'Managing Academics',
     intro: 'Outlines, timetables and the approval queue for student contributions.',
     inThis: ['Outlines', 'Submissions: the approval queue', 'Timetables'],
@@ -175,6 +178,7 @@ ${tip('<strong>New executive council?</strong> Open <em>Meet the authors</em>, c
 ${table(['Field', 'Notes'], [
   ['Level, Semester', 'Level 100-500 and semester 1 or 2. These place the course in the right list.'],
   ['Course code, Title, Units', 'For example <em>CHM-CM 101</em>, <em>General Chemistry I</em>, 2 units.'],
+  ['Status', 'Optional. <strong>C</strong> (compulsory) or <strong>E</strong> (elective). It shows in the course list, on the outline page and in both PDFs, so students can tell which courses are required.'],
   ['Lecturer', 'Optional. Members see "TBA" style placeholders if it is empty.'],
   ['Updated date', 'When the outline was last revised.'],
   ['Description', 'A short summary of the course.'],
@@ -209,12 +213,12 @@ ${table(['Field', 'Class entries', 'Exam entries'], [
 `,
   },
 
-  /* ------------------------------------------------------------------ 19 */
+  /* ------------------------------------------------------------------ 20 */
   {
     id: 'admin-forms',
     part: PART_5,
     admin: true,
-    num: 19,
+    num: 20,
     title: 'Building Forms',
     intro: 'Create registrations, surveys and applications, style them to match your event, share them by link or QR code, and read the answers.',
     inThis: ['The Forms list', 'Creating a form', 'Question types', 'Designing how it looks', 'Sharing a form', 'Reading responses and exporting'],
@@ -275,12 +279,12 @@ ${adminBox('<p>Responses may contain names, matric numbers and contact details. 
 `,
   },
 
-  /* ------------------------------------------------------------------ 20 */
+  /* ------------------------------------------------------------------ 21 */
   {
     id: 'admin-awards',
     part: PART_5,
     admin: true,
-    num: 20,
+    num: 21,
     title: 'Running the Awards',
     intro: 'Create a season, move it through five stages, curate the shortlist and reveal the winners.',
     inThis: ['Creating a season', 'Moving through the stages', 'Curating the shortlist', 'Results and the reveal'],
@@ -317,12 +321,14 @@ ${adminBox('<p>Deleting a season removes <strong>all its categories, nominations
 `,
   },
 
-  /* ------------------------------------------------------------------ 21 */
+  adminQuizChapter,
+
+  /* ------------------------------------------------------------------ 23 */
   {
     id: 'admin-comms',
     part: PART_5,
     admin: true,
-    num: 21,
+    num: 23,
     title: 'Talking to Members',
     intro: 'Read what members send you, and send announcements to everyone who wants them.',
     inThis: ['Messages', 'Broadcasts: email everyone', 'Email templates'],
@@ -381,12 +387,12 @@ ${warn('If you edit the raw HTML, leave the <code>{{body}}</code> token in place
 `,
   },
 
-  /* ------------------------------------------------------------------ 22 */
+  /* ------------------------------------------------------------------ 24 */
   {
     id: 'admin-people',
     part: PART_5,
     admin: true,
-    num: 22,
+    num: 24,
     title: 'People, Security and the System',
     intro: 'Managing accounts and admins, protecting your own login, approving changes, and keeping the site healthy.',
     inThis: ['Users and admin access', 'Security: two-factor login', 'Reviews: approving changes', 'The System page', 'Fixing a member\'s details', 'When something goes wrong'],
@@ -470,6 +476,9 @@ ${table(['Page', 'Address', 'Sign in?', 'One-line purpose'], [
   ['Opportunities', '/opportunities', 'No', 'Scholarships and internships.'],
   ['Awards', '/awards', 'Yes', 'Nominate and vote.'],
   ['Forms', '/forms', 'Varies', 'Registrations, surveys, applications.'],
+  ['Live quiz', '/play', 'No', 'Join a hosted quiz game with a code.'],
+  ['Quiz battles', '/battle', 'No', 'Challenge a friend, duel, see the champions.'],
+  ['Quiz practice', '/practice/…', 'No', 'Solo revision run of one quiz (link from the executives).'],
   ['Sign In', '/login', '-', 'Enter your account.'],
   ['Sign Up', '/signup', '-', 'Create an account.'],
   ['Forgot password', '/forgot-password', '-', 'Get a reset link by email.'],
@@ -488,6 +497,7 @@ ${table(['Section', 'Address', 'Purpose'], [
   ['Outlines · Submissions · Timetable', '/admin/outlines …', 'Academics management.'],
   ['Forms', '/admin/forms', 'List, new, edit, responses.'],
   ['Awards', '/admin/awards', 'Seasons, curate, results.'],
+  ['Live Quiz', '/admin/quizzes', 'Quizzes, games, reports, battles and rankings.'],
   ['Messages · Broadcasts · Email Templates', '/admin/messages …', 'Communications.'],
   ['Users · Security · Reviews · System', '/admin/users …', 'People and safety.'],
 ])}
@@ -508,12 +518,16 @@ ${table(['Term', 'Meaning'], [
   ['Broadcast', 'One announcement email sent to every member who has notifications on.'],
   ['CCMAS', 'Core Curriculum and Minimum Academic Standards, the NUC\'s official degree blueprint.'],
   ['CGPA / GPA', 'Cumulative Grade Point Average across all your semesters, and the Grade Point Average of a single semester.'],
+  ['Bracket', 'A knockout format for a live quiz: players are paired, winners move on, one champion remains.'],
   ['Curating', 'The awards stage where admins turn raw nominations into a shortlist.'],
+  ['Duel', 'A live quiz battle between two players at the same moment.'],
   ['Excos', 'The Executive Council: the students elected to run NAMMES.'],
   ['Matric number', 'Your department student number, in the form YY0406XXX.'],
   ['Maintenance mode', 'A switch that shows visitors a "be right back" page while admins work.'],
   ['NAMMES', 'National Association of Metallurgical and Materials Engineering Students, UNILAG Chapter.'],
+  ['Lobby', 'The waiting screen of a quiz game, where players gather before it starts.'],
   ['Outline', 'A one-page summary of a course: topics, units, texts and links.'],
+  ['Practice mode', 'Solo replay of a quiz, one question at a time, with instant feedback.'],
   ['Review queue', 'The list of admin edits waiting for the owner to approve.'],
   ['SIWES', 'Students Industrial Work Experience Scheme: industrial training built into the degree.'],
   ['Two-factor login', 'Signing in with your password plus a 6-digit code from an app on your phone.'],
