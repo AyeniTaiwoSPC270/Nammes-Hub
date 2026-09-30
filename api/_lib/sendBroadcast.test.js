@@ -11,7 +11,7 @@ function fakeRes() {
   return res
 }
 
-function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true, queueFails = false } = {}) {
+function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true, queueFails = false, email = 'owner@x.com' } = {}) {
   const sent = []
   const cleanups = []
   const inserts = []
@@ -27,7 +27,7 @@ function setup({ adminRow = { is_owner: true }, recent = [], flagEnabled = true,
     return q
   }
   const client = {
-    auth: { getUser: async () => ({ data: { user: { id: CALLER } }, error: null }) },
+    auth: { getUser: async () => ({ data: { user: { id: CALLER, email } }, error: null }) },
     rpc: async () => ({ data: [{ email: 'a@x.com' }, { email: 'b@x.com' }], error: null }),
     from: (table) => {
       if (table === 'admins') return chain(adminRow)
@@ -100,6 +100,43 @@ describe('send-broadcast handler', () => {
     await handler(req(good), res)
     expect(res.statusCode).toBe(503)
     expect(sent).toHaveLength(0)
+  })
+  it('sends a designed block email and records blocks and design', async () => {
+    const { handler, sent, inserts } = setup()
+    const res = fakeRes()
+    const blocks = [{ id: 'a', type: 'text', text: 'Hi **there**' }, { id: 'b', type: 'button', text: 'Go', url: 'https://a.com' }]
+    await handler(req({ subject: 'Designed', blocks, design: { colors: { headerBg: '#123456' } }, templateId: 'default' }), res)
+    expect(res.statusCode).toBe(200)
+    expect(sent).toHaveLength(2)
+    expect(sent[0].html).toContain('<strong>there</strong>')
+    expect(sent[0].html).toContain('#123456')
+    expect(inserts[0].blocks).toHaveLength(2)
+    expect(inserts[0].design.colors.headerBg).toBe('#123456')
+    expect(inserts[0].body).toContain('Hi **there**')
+  })
+  it('drops blocks with images from other hosts', async () => {
+    const { handler, sent } = setup()
+    const res = fakeRes()
+    const blocks = [{ id: 'a', type: 'text', text: 'Hi' }, { id: 'b', type: 'image', url: 'https://evil.example/a.png' }]
+    await handler(req({ subject: 'S', blocks }), res)
+    expect(res.statusCode).toBe(200)
+    expect(sent[0].html).not.toContain('evil.example')
+  })
+  it('refuses a block email with no usable content', async () => {
+    const { handler, sent } = setup()
+    const res = fakeRes()
+    await handler(req({ subject: 'S', blocks: [{ type: 'script' }] }), res)
+    expect(res.statusCode).toBe(400)
+    expect(sent).toHaveLength(0)
+  })
+  it('test send goes only to the sender and is not recorded', async () => {
+    const { handler, sent, inserts } = setup({ recent: [{ id: 'x' }] })
+    const res = fakeRes()
+    await handler(req({ subject: 'Hello', blocks: [{ id: 'a', type: 'text', text: 'Hi' }], testOnly: true }), res)
+    expect(res.statusCode).toBe(200)
+    expect(sent.map((s) => s.to)).toEqual(['owner@x.com'])
+    expect(sent[0].subject).toBe('[Test] Hello')
+    expect(inserts).toHaveLength(0)
   })
   it('rejects an oversized subject or body', async () => {
     const { handler, sent } = setup()

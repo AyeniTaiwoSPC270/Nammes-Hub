@@ -466,9 +466,10 @@ ${SHARED_STYLE}
 </html>`,
 }
 
-export function renderBroadcastTemplate(html, { subject, body, imageUrl }) {
+export function renderBroadcastTemplate(html, { subject, body, imageUrl, bodyHtml }) {
   const safeSubject = escapeHtml(subject)
-  const contentHtml = textToParagraphs(body)
+  // bodyHtml is already-rendered, already-escaped block HTML; body is plain text from the old composer.
+  const contentHtml = bodyHtml ?? textToParagraphs(body)
   const imageHtml = broadcastImageHtml(imageUrl)
   const dateShort = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'Africa/Lagos' }).format(new Date())
   const dateFull = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'Africa/Lagos' }).format(new Date())
