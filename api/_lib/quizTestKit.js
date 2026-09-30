@@ -113,6 +113,14 @@ export function fakeDb(seed = {}) {
     auth: { getUser: async (t) => (t === 'good' ? { data: { user: { id: ADMIN } }, error: null } : { data: null, error: { message: 'bad' } }) },
     from: (t) => query(t),
     rpc: async (name, a) => {
+      if (name === 'quiz_assign_auto_team') {
+        const teams = tables.quiz_teams.filter((t) => t.session_id === a.p_session).sort((x, y) => x.position - y.position)
+        const count = (t) => tables.quiz_players.filter((p) => p.team_id === t.id && p.id !== a.p_player).length
+        const pick = [...teams].sort((x, y) => count(x) - count(y) || x.position - y.position)[0]
+        if (!pick) return { data: null, error: null }
+        tables.quiz_players.find((p) => p.id === a.p_player).team_id = pick.id
+        return { data: pick.id, error: null }
+      }
       if (name === 'quiz_practice_cleanup') return { data: 0, error: null }
       if (name === 'quiz_practice_record') {
         if (tables.quiz_practice_answers.some((x) => x.run_id === a.p_run && x.question_id === a.p_question)) return { data: false, error: null }

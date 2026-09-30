@@ -142,6 +142,17 @@ describe('joining a team game', () => {
     const sizes = ['team-red', 'team-blue'].map((id) => db.tables.quiz_players.filter((p) => p.team_id === id).length)
     expect(sizes).toEqual([3, 2])
   })
+  it('keeps teams level even when everyone joins in the same instant', async () => {
+    const { db, join } = teamGame()
+    db.tables.quiz_teams.push({ id: 'team-gold', session_id: SESSION, name: 'Gold', color: 'amber', avatar_id: 2, position: 2 })
+    // every phone reads the same empty teams before anyone has been added
+    const results = await Promise.all(['A', 'B', 'C', 'D', 'E', 'F'].map((n) => join(n, 'auto')))
+    expect(results.every((r) => r.statusCode === 200)).toBe(true)
+    const sizes = ['team-red', 'team-blue', 'team-gold'].map((id) => db.tables.quiz_players.filter((p) => p.team_id === id).length)
+    expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThanOrEqual(1)
+    // the team each phone is told matches where it really is
+    for (const r of results) expect(db.tables.quiz_players.find((p) => p.id === r.body.playerId).team_id).toBe(r.body.team.id)
+  })
   it('refuses a team from another game or a made-up one', async () => {
     const { db, join } = teamGame()
     db.tables.quiz_teams.push({ id: 'team-other', session_id: 'other-game', name: 'Elsewhere', color: 'red', avatar_id: 0, position: 0 })
