@@ -7,6 +7,7 @@ import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
+import { useProjectorFit, useAutoScroll } from '../lib/projectorFit'
 import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
 import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
@@ -18,6 +19,10 @@ import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 const POLL_MS = 2500
 
 function Stage({ title, chip, footer, children }) {
+  // Projector screens should not need scrolling: shrink to fit, and if that is not enough, scroll by themselves.
+  const mainRef = useRef(null)
+  const stillOverflowing = useProjectorFit(mainRef, { baseMaxWidth: 1400 })
+  useAutoScroll(stillOverflowing)
   return (
     <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
       <QuizBackdrop />
@@ -25,7 +30,7 @@ function Stage({ title, chip, footer, children }) {
         {chip}
         <SoundControl />
       </QuizTopBar>
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 sm:px-8">{children}</main>
+      <main ref={mainRef} className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 sm:px-8">{children}</main>
       {footer && (
         <footer className="sticky bottom-0 z-20 border-t border-hairline bg-paper/90 px-4 py-4 backdrop-blur sm:px-8">
           <div className="mx-auto flex w-full max-w-[1400px] flex-wrap items-center justify-between gap-3">{footer}</div>
