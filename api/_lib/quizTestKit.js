@@ -34,6 +34,7 @@ export function fakeDb(seed = {}) {
     quiz_battles: [],
     quiz_battle_sides: [],
     quiz_battle_answers: [],
+    quiz_battle_ratings: [],
     ...seed,
   }
   let n = 0
@@ -42,6 +43,7 @@ export function fakeDb(seed = {}) {
     if (table === 'quiz_players') return tables.quiz_players.some((p) => p.session_id === row.session_id && p.nickname.toLowerCase() === row.nickname.toLowerCase())
     if (table === 'quiz_sessions') return tables.quiz_sessions.some((s) => s.join_code === row.join_code && s.state !== 'finished')
     if (table === 'quiz_battles') return tables.quiz_battles.some((b) => b.code === row.code)
+    if (table === 'quiz_battle_ratings') return tables.quiz_battle_ratings.some((r) => r.tag_hash === row.tag_hash)
     if (table === 'quiz_battle_sides') return tables.quiz_battle_sides.some((s) => (s.battle_id === row.battle_id && s.slot === row.slot) || (row.token_hash && s.token_hash === row.token_hash))
     if (table === 'quiz_powerup_uses') return tables.quiz_powerup_uses.some((u) => u.player_id === row.player_id && u.question_id === row.question_id)
     return false
@@ -56,7 +58,7 @@ export function fakeDb(seed = {}) {
     let limitN = Infinity
     const run = () => {
       const match = (r) =>
-        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : kind === 'notnull' ? r[col] != null : kind === 'in' ? val.includes(r[col]) : r[col] !== val))
+        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : kind === 'notnull' ? r[col] != null : kind === 'in' ? val.includes(r[col]) : kind === 'gte' ? r[col] >= val : kind === 'gt' ? r[col] > val : r[col] !== val))
       const rows = tables[table].filter(match)
       if (op === 'insert' && Array.isArray(payload)) {
         const made = payload.map((p) => ({ id: uid(), ...(table === 'quiz_players' ? { total_score: 0, streak: 0 } : {}), ...p }))
@@ -70,7 +72,7 @@ export function fakeDb(seed = {}) {
         if (table === 'quiz_players') row.total_score = 0
         if (table === 'quiz_practice_runs') Object.assign(row, { total_score: 0, finished_at: null })
         if (table === 'quiz_battle_sides') Object.assign(row, { finished_at: null, bot_skill: null, ...payload })
-        if (table === 'quiz_battles') Object.assign(row, { winner_slot: null, question_started_at: null, reveal_started_at: null, bot_skill: null, ...payload })
+        if (table === 'quiz_battles') Object.assign(row, { winner_slot: null, question_started_at: null, reveal_started_at: null, bot_skill: null, rated: false, ...payload })
         tables[table].push(row)
         return { rows: [row] }
       }
@@ -106,6 +108,8 @@ export function fakeDb(seed = {}) {
       eq: (c, v) => { filters.push(['eq', c, v]); return api },
       neq: (c, v) => { filters.push(['neq', c, v]); return api },
       in: (c, v) => { filters.push(['in', c, v]); return api },
+      gte: (c, v) => { filters.push(['gte', c, v]); return api },
+      gt: (c, v) => { filters.push(['gt', c, v]); return api },
       is: (c) => { filters.push(['is', c]); return api },
       not: (c) => { filters.push(['notnull', c]); return api },
       order: () => api,

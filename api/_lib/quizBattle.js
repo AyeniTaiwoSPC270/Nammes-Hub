@@ -88,3 +88,15 @@ export function presence(lastSeenIso, nowMs) {
   if (silent > DUEL_AWAY_MS) return 'away'
   return 'here'
 }
+
+// ---- Rankings ----
+export const RATING_START = 1000
+export const RATING_K = 32
+
+// Standard Elo: both ratings move by the same amount, more when the result was a surprise. `winner` is 'a', 'b' or null (a draw).
+export function eloUpdate(ratingA, ratingB, winner) {
+  const expectedA = 1 / (1 + 10 ** ((ratingB - ratingA) / 400))
+  const scoreA = winner === 'a' ? 1 : winner === 'b' ? 0 : 0.5
+  const change = Math.round(RATING_K * (scoreA - expectedA))
+  return { a: ratingA + change, b: ratingB - change, change }
+}
