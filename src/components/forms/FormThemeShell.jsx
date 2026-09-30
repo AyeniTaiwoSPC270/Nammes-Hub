@@ -7,6 +7,7 @@ import {
   normalizeTheme,
   loadFormFont,
   cardStyle,
+  cardPadding,
   textStyle,
   safeImageUrl,
 } from '../../lib/formTheme'
@@ -86,7 +87,7 @@ export function FormHeaderCard({ form, theme }) {
   return (
     <div className="overflow-hidden" style={cardStyle(t)}>
       {t.header && <AdjustableImage image={{ ...t.header, aspect: t.header.aspect === 'free' ? '3:1' : t.header.aspect }} fill />}
-      <div className="px-6 py-6">
+      <div style={{ padding: cardPadding(t) }}>
         <h1 style={{ ...textStyle(t.title, 'var(--color-ink-900)'), fontFamily: 'var(--font-display)', lineHeight: 1.2 }}>
           {form.title || 'Untitled form'}
         </h1>
@@ -102,5 +103,5 @@ export function FormHeaderCard({ form, theme }) {
 
 /** Style for a question card. Falls back to the standard look when the form has no theme. */
 export function questionCardStyle(theme) {
-  return hasTheme(theme) ? cardStyle(theme) : undefined
+  return hasTheme(theme) ? { ...cardStyle(theme), padding: cardPadding(theme) } : undefined
 }

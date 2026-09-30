@@ -87,7 +87,7 @@ const BASE = {
     imageOpacity: 100,
     imageDim: 0,
   },
-  card: { color: '#ffffff', opacity: 100, blur: 0, radius: 12, shadow: 'sm', border: true },
+  card: { color: '#ffffff', opacity: 100, blur: 0, radius: 12, shadow: 'sm', border: true, padding: 20, gap: 16, widthPct: 100 },
   text: { color: '#1c1b1b', muted: '#5f665f' },
   fonts: { heading: DEFAULT_FONT, body: DEFAULT_FONT },
   title: { size: 32, bold: true, italic: false, underline: false, align: 'left', color: '' },
@@ -105,6 +105,24 @@ function preset(id, label, patch) {
 
 // Presets only set the look; every field stays editable afterwards.
 export const FORM_PRESETS = [
+  // The site's own look: paper page, white cards, forest-green accent, Public Sans.
+  preset('nammes', 'NAMMES', {
+    accent: '#0b2417',
+    page: { type: 'color', color: '#fcf9f8' },
+    card: { color: '#ffffff', opacity: 100, radius: 8, border: true, shadow: 'sm' },
+    text: { color: '#1c1b1b', muted: '#424843' },
+    title: { color: '#0b2417', bold: true },
+    question: { color: '#0b2417' },
+  }),
+  // Same identity as the site's dark mode: deep green ground, mint accent.
+  preset('nammes-dark', 'NAMMES Dark', {
+    accent: '#5cb88a',
+    page: { type: 'color', color: '#0d1310' },
+    card: { color: '#16211b', opacity: 100, radius: 8, border: true, shadow: 'none' },
+    text: { color: '#e6e8e5', muted: '#9aa79e' },
+    title: { color: '#f7f9f7', bold: true },
+    question: { color: '#f7f9f7' },
+  }),
   preset('classic', 'Classic', {}),
   preset('midnight', 'Midnight', {
     accent: '#8ab4ff',
@@ -321,6 +339,9 @@ export function normalizeTheme(raw) {
       radius: clamp(card.radius, 0, 32, b.card.radius),
       shadow: pick(card.shadow, CARD_SHADOWS.map((s) => s.value), b.card.shadow),
       border: card.border === undefined ? b.card.border : Boolean(card.border),
+      padding: clamp(card.padding, 8, 64, b.card.padding),
+      gap: clamp(card.gap, 0, 64, b.card.gap),
+      widthPct: clamp(card.widthPct, 50, 100, b.card.widthPct),
     },
     text: { color: hex(text.color, b.text.color), muted: hex(text.muted, b.text.muted) },
     fonts: { heading: font(fonts.heading, DEFAULT_FONT), body: font(fonts.body, DEFAULT_FONT) },
@@ -416,6 +437,8 @@ export function cardStyle(theme) {
   return {
     background: `color-mix(in srgb, ${t.card.color} ${t.card.opacity}%, transparent)`,
     borderRadius: `${t.card.radius}px`,
+    width: `${t.card.widthPct}%`,
+    marginInline: 'auto',
     border: t.card.border ? '1px solid color-mix(in srgb, var(--color-ink) 18%, transparent)' : '1px solid transparent',
     boxShadow: shadow,
     backdropFilter: t.card.blur > 0 ? `blur(${t.card.blur}px)` : undefined,
@@ -484,4 +507,13 @@ export function pageBackground(theme) {
     imageOpacity: page.imageOpacity,
     imageDim: page.imageDim,
   }
+}
+
+/** Card inner spacing, and the space between cards. */
+export function cardPadding(theme) {
+  return `${normalizeTheme(theme).card.padding}px`
+}
+
+export function cardGap(theme) {
+  return `${normalizeTheme(theme).card.gap}px`
 }
