@@ -18,6 +18,46 @@ export function avatarStyle(nickname) {
   return OPTION_STYLES[hash % OPTION_STYLES.length]
 }
 
+// The 50 characters: 5 body shapes x 10 colours, so every id is a different look. Accessories are extra flavour.
+export const AVATAR_COUNT = 50
+export const AVATAR_SPECIES = ['Blob', 'Robot', 'Cat', 'Bunny', 'Ghost']
+export const AVATAR_ACCESSORIES = ['cap', 'glasses', 'headphones', 'bowtie', 'partyhat']
+export const AVATAR_COLORS = [
+  { name: 'Coral', main: '#f87171', dark: '#b91c1c', light: '#fecaca' },
+  { name: 'Tangerine', main: '#fb923c', dark: '#c2410c', light: '#fed7aa' },
+  { name: 'Sunny', main: '#fbbf24', dark: '#b45309', light: '#fde68a' },
+  { name: 'Lime', main: '#a3e635', dark: '#4d7c0f', light: '#d9f99d' },
+  { name: 'Mint', main: '#4ade80', dark: '#15803d', light: '#bbf7d0' },
+  { name: 'Teal', main: '#2dd4bf', dark: '#0f766e', light: '#99f6e4' },
+  { name: 'Sky', main: '#38bdf8', dark: '#0369a1', light: '#bae6fd' },
+  { name: 'Indigo', main: '#818cf8', dark: '#4338ca', light: '#c7d2fe' },
+  { name: 'Grape', main: '#c084fc', dark: '#7e22ce', light: '#e9d5ff' },
+  { name: 'Bubblegum', main: '#f472b6', dark: '#be185d', light: '#fbcfe8' },
+]
+
+export function normalizeAvatarId(id) {
+  return Number.isInteger(id) && id >= 0 && id < AVATAR_COUNT ? id : 0
+}
+
+export function avatarInfo(id) {
+  const n = normalizeAvatarId(id)
+  const speciesIndex = n % AVATAR_SPECIES.length
+  const color = AVATAR_COLORS[Math.floor(n / AVATAR_SPECIES.length) % AVATAR_COLORS.length]
+  return {
+    id: n,
+    speciesIndex,
+    species: AVATAR_SPECIES[speciesIndex],
+    color,
+    // Shifts with the colour row, so the same body shape does not always wear the same accessory.
+    accessory: AVATAR_ACCESSORIES[(n + Math.floor(n / AVATAR_SPECIES.length)) % AVATAR_ACCESSORIES.length],
+    name: `${color.name} ${AVATAR_SPECIES[speciesIndex]}`,
+  }
+}
+
+export function randomAvatarId() {
+  return Math.floor(Math.random() * AVATAR_COUNT)
+}
+
 export function initialOf(nickname) {
   const first = [...String(nickname).trim()][0]
   return first ? first.toUpperCase() : '?'
