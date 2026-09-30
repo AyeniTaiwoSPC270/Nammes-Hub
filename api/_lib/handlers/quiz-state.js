@@ -84,6 +84,8 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), allo
           options: question.options,
           timeLimitSeconds: question.time_limit_seconds,
           answered: Boolean(answer),
+          // Only this player's own pick, so a phone that reloads mid-question still shows what it chose.
+          chosenIndex: answer ? answer.chosen_index : null,
         }
         if (session.state !== 'question') {
           out.reveal = {

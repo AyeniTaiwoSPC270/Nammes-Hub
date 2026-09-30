@@ -1,6 +1,6 @@
 import { useTheme } from '../../lib/ThemeContext'
 
-// The quiz screens have no site header, so they carry their own light/dark switch.
+// Light/dark switch for the quiz screens, which have no site header.
 export default function QuizThemeToggle() {
   const { theme, toggleTheme } = useTheme()
   const dark = theme === 'dark'
@@ -9,7 +9,7 @@ export default function QuizThemeToggle() {
       type="button"
       onClick={toggleTheme}
       aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="fixed right-3 top-3 z-20 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-hairline bg-surface text-ink-900 shadow-md"
+      className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full border border-hairline bg-surface text-ink-900 shadow-sm"
     >
       <span className="material-symbols-outlined" aria-hidden="true">{dark ? 'light_mode' : 'dark_mode'}</span>
     </button>

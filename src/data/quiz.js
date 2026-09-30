@@ -11,6 +11,35 @@ export const OPTION_STYLES = [
   { shape: '■', bg: 'bg-green-600', text: 'text-green-700' },
 ]
 
+// Every player gets one of the four answer colours, chosen from their nickname so it never changes.
+export function avatarStyle(nickname) {
+  let hash = 0
+  for (const ch of String(nickname)) hash = (hash * 31 + ch.codePointAt(0)) >>> 0
+  return OPTION_STYLES[hash % OPTION_STYLES.length]
+}
+
+export function initialOf(nickname) {
+  const first = [...String(nickname).trim()][0]
+  return first ? first.toUpperCase() : '?'
+}
+
+// Best score first, ties share a rank (the same rule the server uses for phones).
+export function rankPlayers(players) {
+  const sorted = [...players].sort((a, b) => b.total_score - a.total_score || a.nickname.localeCompare(b.nickname))
+  let lastScore = null
+  let lastRank = 0
+  return sorted.map((p, i) => {
+    const rank = p.total_score === lastScore ? lastRank : i + 1
+    lastScore = p.total_score
+    lastRank = rank
+    return { ...p, rank }
+  })
+}
+
+export function formatScore(n) {
+  return Number(n).toLocaleString('en-US')
+}
+
 export const TIME_LIMIT_CHOICES = [10, 20, 30, 60]
 export const POINT_CHOICES = [500, 1000, 2000]
 

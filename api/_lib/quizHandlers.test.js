@@ -242,6 +242,12 @@ describe('answering and the answer-leak rule', () => {
     expect(res.body.reveal).toBeUndefined()
     expect(JSON.stringify(res.body)).not.toContain('correct')
   })
+  it("tells a phone which option it picked (only its own) so a reload still shows it", async () => {
+    const { a, b, ask, state } = await setup()
+    await ask(a.token, 2, START + 1000)
+    expect((await state(a.token)).body.question).toMatchObject({ answered: true, chosenIndex: 2 })
+    expect((await state(b.token)).body.question).toMatchObject({ answered: false, chosenIndex: null })
+  })
   it('sends the correct answer and the player result once the game reaches reveal', async () => {
     const { db, a, ask, state } = await setup()
     await ask(a.token, 1, START + 2000)
