@@ -7,7 +7,6 @@ import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { usePageBanner } from '../data/pageBanners'
-import eventsBanner from '../assets/banners/events-banner.jpg'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -61,7 +60,7 @@ export default function Events() {
   return (
     <div>
       <PageBanner
-        images={banner?.image_urls?.length ? banner.image_urls : [eventsBanner]}
+        images={banner?.image_urls}
         transition={banner?.transition}
         intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Events'}

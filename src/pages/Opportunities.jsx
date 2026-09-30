@@ -6,7 +6,6 @@ import Reveal from '../components/ui/Reveal'
 import { SkeletonTable } from '../components/ui/Skeleton'
 import { useOpportunitiesQuery, getOpportunities } from '../data/opportunities'
 import { usePageBanner } from '../data/pageBanners'
-import opportunitiesBanner from '../assets/banners/opportunities-banner.jpg'
 
 export default function Opportunities() {
   const { data, isLoading, isError, refetch } = useOpportunitiesQuery()
@@ -35,7 +34,7 @@ export default function Opportunities() {
   return (
     <div>
       <PageBanner
-        images={banner?.image_urls?.length ? banner.image_urls : [opportunitiesBanner]}
+        images={banner?.image_urls}
         transition={banner?.transition}
         intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Opportunities'}

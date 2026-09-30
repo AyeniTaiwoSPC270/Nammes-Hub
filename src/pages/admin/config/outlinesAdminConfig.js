@@ -19,6 +19,7 @@ export const outlinesAdminConfig = {
     { field: 'code', label: 'Course code', type: 'text' },
     { field: 'title', label: 'Title', type: 'text' },
     { field: 'units', label: 'Units', type: 'number' },
+    { field: 'status', label: 'Status (C = compulsory, E = elective)', type: 'select', options: ['C', 'E'], optional: true },
     { field: 'lecturer', label: 'Lecturer', type: 'text', optional: true },
     { field: 'updated', label: 'Updated date', type: 'date' },
     { field: 'description', label: 'Description', type: 'textarea', optional: true },

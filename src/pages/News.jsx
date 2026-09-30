@@ -8,7 +8,6 @@ import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 import { usePageBanner } from '../data/pageBanners'
-import newsBanner from '../assets/banners/news-banner.jpg'
 
 const categories = ['All', ...NEWS_CATEGORIES]
 const CARD_STAGGER = 0.06
@@ -35,7 +34,7 @@ export default function News() {
   return (
     <div>
       <PageBanner
-        images={banner?.image_urls?.length ? banner.image_urls : [newsBanner]}
+        images={banner?.image_urls}
         transition={banner?.transition}
         intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Department News'}

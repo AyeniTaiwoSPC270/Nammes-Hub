@@ -72,6 +72,7 @@ export default function OutlineDetail() {
           <div>
             <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
               {course.code} &middot; {course.units} unit{course.units === 1 ? '' : 's'}
+              {course.status && <> &middot; {course.status === 'C' ? 'Compulsory' : 'Elective'}</>}
             </div>
             <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{course.title}</h1>
             <div className="mt-2 text-sm text-ink-muted">
