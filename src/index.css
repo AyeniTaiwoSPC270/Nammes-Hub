@@ -182,6 +182,18 @@
 .qz-fall { animation: qz-fall linear infinite; }
 .qz-float { animation: qz-float 3s ease-in-out infinite; }
 .qz-urgent { animation: qz-urgent 0.6s ease-in-out infinite; }
+/* The results report prints on A4 without the site header, footer or buttons. */
+@media print {
+  body.qz-report header,
+  body.qz-report footer,
+  body.qz-report nav,
+  body.qz-report .qz-no-print {
+    display: none !important;
+  }
+  body.qz-report {
+    background: #fff !important;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .qz-pop, .qz-rise, .qz-grow, .qz-fall, .qz-float, .qz-urgent { animation: none; }
 }

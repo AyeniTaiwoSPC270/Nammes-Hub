@@ -331,6 +331,35 @@ export async function deleteQuiz(id) {
   if (files && files.length) await supabase.storage.from(IMAGE_BUCKET).remove(files.map((f) => `${id}/${f.name}`))
 }
 
+// Everything the results report needs for one game (admin only: the summary views inherit the answers' admin-only access).
+export async function fetchGameReport(sessionId) {
+  const { data: session, error } = await supabase.from('quiz_sessions').select('*, quizzes(title)').eq('id', sessionId).maybeSingle()
+  if (error) throw error
+  if (!session) throw new Error('Game not found')
+  const [questions, players, questionStats, distribution, playerStats] = await Promise.all([
+    supabase.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).order('position'),
+    supabase.from('quiz_players').select('id, nickname, total_score, avatar_id').eq('session_id', sessionId),
+    supabase.from('quiz_question_stats').select('*').eq('session_id', sessionId),
+    supabase.from('quiz_answer_distribution').select('*').eq('session_id', sessionId),
+    supabase.from('quiz_player_stats').select('*').eq('session_id', sessionId),
+  ])
+  for (const result of [questions, players, questionStats, distribution, playerStats]) if (result.error) throw result.error
+  return {
+    session,
+    questions: questions.data,
+    players: players.data,
+    questionStats: questionStats.data,
+    distribution: distribution.data,
+    playerStats: playerStats.data,
+  }
+}
+
+export async function deleteQuizSession(sessionId) {
+  const { data, error } = await supabase.from('quiz_sessions').delete().eq('id', sessionId).select('id')
+  if (error) throw error
+  if (!data || data.length === 0) throw new Error('No changes were saved — your account may not have admin access to make this change.')
+}
+
 export async function fetchQuizSessions(quizId) {
   const { data, error } = await supabase
     .from('quiz_sessions')
