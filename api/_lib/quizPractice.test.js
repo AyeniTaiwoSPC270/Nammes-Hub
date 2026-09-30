@@ -226,3 +226,18 @@ describe('practice: racing rivals', () => {
     expect(byName(second)['Ghost Two']).toMatchObject({ score: 500, gain: 0 })
   })
 })
+
+describe('practice: the public list', () => {
+  it('lists the quizzes open for practice that have something to play, without any private data', async () => {
+    const { call, db } = world()
+    db.tables.quizzes.push(
+      { id: 'quiz-closed', title: 'Closed', practice_enabled: false },
+      { id: 'quiz-archived', title: 'Old', practice_enabled: true, archived_at: '2026-01-01' },
+      { id: 'quiz-empty', title: 'Empty', practice_enabled: true },
+    )
+    const res = await call({ op: 'list' })
+    expect(res.statusCode).toBe(200)
+    expect(res.body.quizzes).toEqual([{ id: QUIZ, title: 'Maths', questionCount: 3, battleEnabled: false }])
+    expect(JSON.stringify(res.body)).not.toMatch(/correct|token|theme/)
+  })
+})
