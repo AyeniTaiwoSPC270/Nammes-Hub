@@ -15,7 +15,7 @@ import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } fro
 // The practice leaderboard is for fun: because answers are shown straight away, a replay can learn them.
 //
 // One route with an `op`: info, start, state, answer, next, top.
-const OPS = ['info', 'start', 'state', 'answer', 'next', 'top']
+const OPS = ['info', 'start', 'state', 'answer', 'next', 'top', 'list']
 
 // A run can be raced against computer rivals or against recorded past runs ("ghosts"). Rivals only ever show their
 // score up to the question the player has just answered, so nothing about a later question is given away.
@@ -193,6 +193,18 @@ export function createQuizPracticeHandler(
         return null
       }
       return run
+    }
+
+    // ---- list: every quiz open for practice (for the public practice page) ----
+    if (op === 'list') {
+      const { data: quizzes } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, archived_at').eq('practice_enabled', true)
+      const out = []
+      for (const q of (quizzes ?? []).filter((x) => !x.archived_at)) {
+        const count = (await playableQuestions(q.id)).length
+        if (count > 0) out.push({ id: q.id, title: q.title, questionCount: count, battleEnabled: q.battle_enabled === true })
+      }
+      res.status(200).json({ quizzes: out.sort((a, b) => a.title.localeCompare(b.title)) })
+      return
     }
 
     // ---- info: is this quiz open for practice, and how big is it ----

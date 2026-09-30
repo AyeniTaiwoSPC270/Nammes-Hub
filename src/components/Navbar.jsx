@@ -30,6 +30,7 @@ const navItems = [
       { to: '/opportunities', label: 'Opportunities' },
       { to: '/awards', label: 'Awards' },
       { to: '/play', label: 'Live quiz' },
+      { to: '/practice', label: 'Practice quizzes' },
       { to: '/battle', label: 'Quiz battles' },
     ],
   },
