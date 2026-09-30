@@ -4,7 +4,7 @@ import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
-import ImageReveal from '../components/ui/ImageReveal'
+import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 import { usePageBanner } from '../data/pageBanners'
@@ -85,9 +85,7 @@ export default function News() {
               className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow md:flex-row"
             >
               {featured.image_url && (
-                <div className="flex h-64 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low md:h-auto md:w-1/2">
-                  <ImageReveal src={featured.image_url} alt="" className="h-full w-full object-contain" />
-                </div>
+                <BlurredBackdropImage src={featured.image_url} className="h-64 w-full shrink-0 md:h-auto md:w-1/2" />
               )}
               <div className="flex w-full flex-col justify-center gap-2 p-6 md:w-1/2">
                 <div className="flex items-center gap-2">
@@ -112,9 +110,7 @@ export default function News() {
                   className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow"
                 >
                   {item.image_url && (
-                    <div className="flex h-48 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
-                      <ImageReveal src={item.image_url} alt="" className="h-full w-full object-contain" />
-                    </div>
+                    <BlurredBackdropImage src={item.image_url} className="h-48 w-full shrink-0" />
                   )}
                   <div className="flex flex-grow flex-col gap-2 p-6">
                     <div className="flex items-center gap-2">

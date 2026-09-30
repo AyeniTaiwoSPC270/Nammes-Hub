@@ -4,6 +4,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import Reveal from '../components/ui/Reveal'
 import WelcomeMessage from '../components/WelcomeMessage'
 import EmptyState from '../components/ui/EmptyState'
@@ -199,9 +200,7 @@ export default function Home() {
                     className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
                   >
                     {event.image_url && (
-                      <div className="flex aspect-[3/4] w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
-                        <img src={event.image_url} loading="lazy" decoding="async" alt="" className="h-full w-full object-contain" />
-                      </div>
+                      <BlurredBackdropImage src={event.image_url} reveal={false} className="aspect-[3/4] w-full shrink-0" />
                     )}
                     <div className="flex flex-col gap-2 p-6">
                       <div className="flex items-center gap-1 text-sm text-ink-muted">
