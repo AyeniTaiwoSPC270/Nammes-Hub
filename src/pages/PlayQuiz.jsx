@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
@@ -7,6 +7,7 @@ import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
 import { useCountUp } from '../lib/useCountUp'
+import { quizSound, buzz } from '../lib/quizSound'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
 import MathText from '../components/quiz/MathText'
 
@@ -261,6 +262,8 @@ function PlayQuizGame({ onTheme }) {
   const [notice, setNotice] = useState('')
   const [zoomed, setZoomed] = useState(false)
   const inGame = useRef(false)
+  const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  const effectsOn = theme.sound.effects && soundPrefs.unlocked && !soundPrefs.muted
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
@@ -337,6 +340,18 @@ function PlayQuizGame({ onTheme }) {
     setZoomed(false)
     setMessage('')
   }, [questionKey])
+  // Right or wrong: a short sound and buzz when the result arrives (only if this player switched sound on).
+  useEffect(() => {
+    if (!effectsOn || !game || game.session.state !== 'reveal' || !game.reveal || game.question?.type === 'poll') return
+    if (game.reveal.correct === true) {
+      quizSound.play('correct')
+      buzz(80)
+    } else if (game.reveal.chosenIndex !== null || game.reveal.answerText !== null) {
+      quizSound.play('wrong')
+      buzz([120, 60, 120])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionKey])
   useEffect(() => {
     if (!game || game.session.state !== 'question') return
     const key = String(game.session.index)
@@ -360,6 +375,7 @@ function PlayQuizGame({ onTheme }) {
   async function answer(payload, local) {
     if (sending || picked !== null) return
     setPicked(local)
+    if (effectsOn) quizSound.play('lock')
     setSending(true)
     try {
       await callQuiz('answer', { token, ...payload })
@@ -439,6 +455,23 @@ function PlayQuizGame({ onTheme }) {
             </p>
           )}
         </div>
+        {quizSound.isSupported() && theme.sound.effects && (
+          <button
+            type="button"
+            onClick={() => {
+              if (!soundPrefs.unlocked) {
+                quizSound.unlock()
+                quizSound.setMuted(false)
+                quizSound.play('lock')
+              } else quizSound.setMuted(!soundPrefs.muted)
+            }}
+            aria-pressed={effectsOn}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-hairline bg-surface px-4 font-semibold"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">{effectsOn ? 'volume_up' : 'volume_off'}</span>
+            {effectsOn ? 'Sound effects on' : 'Turn on sound effects'}
+          </button>
+        )}
         <div className="qz-rise flex items-start gap-3 rounded-2xl bg-orange-500/12 p-4 text-sm" style={{ animationDelay: '320ms' }}>
           <span className="material-symbols-outlined text-orange-500" aria-hidden="true">bolt</span>
           <p><span className="font-bold">Speed counts.</span> The faster you answer correctly, the more points you earn.</p>

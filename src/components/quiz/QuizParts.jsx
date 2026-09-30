@@ -1,4 +1,5 @@
-import { useMemo } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
+import { quizSound } from '../../lib/quizSound'
 import { avatarStyle, initialOf } from '../../data/quiz'
 import QuizThemeToggle from './QuizThemeToggle'
 import Character from './Character'
@@ -187,6 +188,47 @@ export function Confetti({ count = 36 }) {
           {p.glyph}
         </span>
       ))}
+    </div>
+  )
+}
+
+// Speaker button and volume for the host. Browsers keep sound off until someone clicks, so it starts as "Turn on sound".
+export function SoundControl() {
+  const prefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  if (!quizSound.isSupported()) return null
+  if (!prefs.unlocked) {
+    return (
+      <button
+        type="button"
+        onClick={() => quizSound.unlock()}
+        className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-hairline bg-surface px-4 py-2 text-sm font-bold text-ink-900 hover:bg-surface-low"
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">volume_up</span>
+        Turn on sound
+      </button>
+    )
+  }
+  return (
+    <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3">
+      <button
+        type="button"
+        onClick={() => quizSound.setMuted(!prefs.muted)}
+        aria-label={prefs.muted ? 'Unmute' : 'Mute'}
+        aria-pressed={prefs.muted}
+        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-ink-900 hover:bg-surface-low"
+      >
+        <span className="material-symbols-outlined" aria-hidden="true">{prefs.muted ? 'volume_off' : 'volume_up'}</span>
+      </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        value={prefs.volume}
+        onChange={(e) => quizSound.setVolume(Number(e.target.value))}
+        aria-label="Volume"
+        className="hidden w-24 accent-orange-500 sm:block"
+      />
     </div>
   )
 }

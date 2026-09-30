@@ -9,7 +9,7 @@ describe('sanitizeTheme', () => {
     for (const bad of [undefined, null, 5, 'x', [], {}]) expect(sanitizeTheme(bad)).toEqual(DEFAULT_THEME)
   })
   it('keeps valid choices', () => {
-    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out' }
+    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: { music: 'hype', effects: false } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -34,6 +34,18 @@ describe('sanitizeTheme', () => {
     const once = sanitizeTheme({ look: 'candy', extra: { a: 1 } })
     expect(once).not.toHaveProperty('extra')
     expect(sanitizeTheme(once)).toEqual(once)
+  })
+})
+
+describe('sound settings', () => {
+  it('default to quiet music and effects on', () => {
+    expect(sanitizeTheme({}).sound).toEqual({ music: 'off', effects: true })
+  })
+  it('only accept known music styles, and effects are on unless switched off', () => {
+    expect(sanitizeTheme({ sound: { music: 'chill' } }).sound).toEqual({ music: 'chill', effects: true })
+    expect(sanitizeTheme({ sound: { music: '__proto__', effects: 'no' } }).sound).toEqual({ music: 'off', effects: true })
+    expect(sanitizeTheme({ sound: { effects: false } }).sound.effects).toBe(false)
+    expect(sanitizeTheme({ sound: 'loud' }).sound).toEqual({ music: 'off', effects: true })
   })
 })
 

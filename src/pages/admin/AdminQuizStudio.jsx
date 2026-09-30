@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
+import { quizSound } from '../../lib/quizSound'
 import { useQuizQuery, saveQuizTheme } from '../../data/quiz'
 import {
   DEFAULT_THEME,
   THEME_LOOKS,
   THEME_PATTERNS,
   THEME_CONFETTI,
+  THEME_MUSIC,
   THEME_HEADLINE_MAX,
   THEME_TAGLINE_MAX,
   sanitizeTheme,
@@ -206,6 +208,37 @@ export default function AdminQuizStudio() {
                     {label}
                   </Choice>
                 ))}
+              </div>
+            </Section>
+
+            <Section title="Sound" hint="Music and effects on the projector. The host can mute any time. Browsers need one click before sound starts.">
+              <div className="grid grid-cols-3 gap-2">
+                {Object.entries(THEME_MUSIC).map(([key, label]) => (
+                  <Choice key={key} selected={theme.sound.music === key} onClick={() => change({ sound: { ...theme.sound, music: key } })} className="px-3 py-2.5">
+                    {label}
+                  </Choice>
+                ))}
+              </div>
+              <label className="mt-3 flex cursor-pointer items-center gap-3 text-sm font-semibold text-ink-900">
+                <input type="checkbox" className="h-5 w-5" checked={theme.sound.effects} onChange={(e) => change({ sound: { ...theme.sound, effects: e.target.checked } })} />
+                Sound effects (countdown ticks, right and wrong stings, fanfare)
+              </label>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" onClick={() => { quizSound.unlock(); quizSound.play('correct') }}>Hear a right answer</Button>
+                <Button variant="secondary" size="sm" onClick={() => { quizSound.unlock(); quizSound.play('tickFast') }}>Hear the ticking</Button>
+                {theme.sound.music !== 'off' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      quizSound.unlock()
+                      quizSound.startMusic(theme.sound.music)
+                      setTimeout(() => quizSound.stopMusic(), 5000)
+                    }}
+                  >
+                    Hear the music (5 s)
+                  </Button>
+                )}
               </div>
             </Section>
 

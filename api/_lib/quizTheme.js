@@ -29,6 +29,12 @@ export const THEME_CONFETTI = {
   off: 'None',
 }
 
+export const THEME_MUSIC = {
+  off: 'No music',
+  chill: 'Chill',
+  hype: 'Hype',
+}
+
 export const THEME_HEADLINE_MAX = 60
 export const THEME_TAGLINE_MAX = 80
 
@@ -39,6 +45,7 @@ export const DEFAULT_THEME = Object.freeze({
   confetti: 'math',
   headline: '',
   tagline: '',
+  sound: Object.freeze({ music: 'off', effects: true }),
 })
 
 const HEX = /^#[0-9a-fA-F]{6}$/
@@ -53,6 +60,11 @@ function cleanText(value, max) {
   return value.replace(/\s+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max)
 }
 
+function cleanSound(input) {
+  const o = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  return { music: Object.hasOwn(THEME_MUSIC, o.music) ? o.music : 'off', effects: o.effects !== false }
+}
+
 // Anything goes in, a complete valid theme comes out (bad or missing values fall back to the defaults).
 export function sanitizeTheme(input) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
@@ -63,6 +75,7 @@ export function sanitizeTheme(input) {
     confetti: Object.hasOwn(THEME_CONFETTI, t.confetti) ? t.confetti : DEFAULT_THEME.confetti,
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),
+    sound: cleanSound(t.sound),
   }
 }
 

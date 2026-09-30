@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
@@ -6,7 +6,9 @@ import { hostAction, hostOp, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, 
 import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
-import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl } from '../components/quiz/QuizParts'
+import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
+import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
@@ -18,7 +20,10 @@ function Stage({ title, chip, footer, children }) {
   return (
     <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
       <QuizBackdrop />
-      <QuizTopBar title={title}>{chip}</QuizTopBar>
+      <QuizTopBar title={title}>
+        {chip}
+        <SoundControl />
+      </QuizTopBar>
       <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 sm:px-8">{children}</main>
       {footer && (
         <footer className="sticky bottom-0 z-20 border-t border-hairline bg-paper/90 px-4 py-4 backdrop-blur sm:px-8">
@@ -981,6 +986,51 @@ export default function HostQuiz() {
     advance()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, remaining, everyoneAnswered])
+
+  // ---- Sound: music in the lobby and during questions, a tick at the end, stings at each step ----
+  const soundCfg = sanitizeTheme(session?.theme).sound
+  const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  const rightShare = answers.length > 0 ? Math.round((answers.filter((a) => a.correct === true).length / answers.length) * 100) : 0
+  const rightShareRef = useRef(0)
+  rightShareRef.current = rightShare
+  const questionType = question?.type ?? 'multiple'
+  const prevStateRef = useRef(null)
+
+  useEffect(() => {
+    // Any click on the page counts as the "allow sound" click the browser needs.
+    const unlock = () => quizSound.unlock()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      quizSound.stopMusic()
+    }
+  }, [])
+
+  useEffect(() => {
+    const playing = soundCfg.music !== 'off' && (state === 'lobby' || state === 'question') && !paused
+    if (playing) quizSound.startMusic(soundCfg.music, { quiet: state === 'question' })
+    else quizSound.stopMusic()
+  }, [soundCfg.music, state, paused, soundPrefs.unlocked])
+
+  useEffect(() => {
+    const prev = prevStateRef.current
+    prevStateRef.current = state ?? null
+    if (!soundCfg.effects || !state) return undefined
+    const name = stateSound(prev, state)
+    if (name) quizSound.play(name)
+    if (state === 'reveal' && prev === 'question' && questionType !== 'poll') {
+      const timer = setTimeout(() => quizSound.play(revealSting(rightShareRef.current)), 650)
+      return () => clearTimeout(timer)
+    }
+    return undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
+
+  useEffect(() => {
+    if (state !== 'question' || paused || !soundCfg.effects) return
+    const name = tickSound(remaining)
+    if (name) quizSound.play(name)
+  }, [remaining, state, paused, soundCfg.effects])
 
   if (notFound) {
     return (
