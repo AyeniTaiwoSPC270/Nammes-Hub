@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { callQuiz, OPTION_STYLES, secondsRemaining } from '../data/quiz'
+import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
@@ -32,9 +33,10 @@ function Screen({ children, tone = 'plain' }) {
     <main
       className={[
         'flex min-h-screen flex-col items-center justify-center gap-5 p-6 text-center',
-        tone === 'good' ? 'bg-green-700 text-white' : tone === 'bad' ? 'bg-red-700 text-white' : 'bg-[#0b2417] text-white',
+        tone === 'good' ? 'bg-green-700 text-white' : tone === 'bad' ? 'bg-red-700 text-white' : 'bg-paper text-ink-900',
       ].join(' ')}
     >
+      <QuizThemeToggle />
       {children}
     </main>
   )
@@ -71,7 +73,7 @@ function JoinForm({ onJoined }) {
           aria-label="Game code"
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          className="rounded-lg px-4 py-4 text-center font-mono text-3xl tracking-[0.2em] text-ink-900"
+          className="rounded-lg border border-hairline bg-surface px-4 py-4 text-center font-mono text-3xl tracking-[0.2em] text-ink-900 placeholder:text-ink-muted"
         />
         <input
           placeholder="Nickname"
@@ -80,10 +82,10 @@ function JoinForm({ onJoined }) {
           autoComplete="off"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          className="rounded-lg px-4 py-4 text-center text-2xl text-ink-900"
+          className="rounded-lg border border-hairline bg-surface px-4 py-4 text-center text-2xl text-ink-900 placeholder:text-ink-muted"
         />
         {error && (
-          <p role="alert" className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold">
+          <p role="alert" className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white">
             {error}
           </p>
         )}
@@ -102,12 +104,12 @@ function JoinForm({ onJoined }) {
 function Podium({ me, top }) {
   return (
     <>
-      <p className="text-xl text-white/80">Final result</p>
+      <p className="text-xl text-ink-muted">Final result</p>
       <p className="text-6xl font-bold">{me.rank ? `#${me.rank}` : '—'}</p>
       <p className="text-2xl font-bold">{me.score} points</p>
       <ol className="mt-2 w-full max-w-sm space-y-2 text-left">
         {(top ?? []).slice(0, 3).map((p) => (
-          <li key={p.id} className="flex justify-between rounded-lg bg-white/15 px-4 py-2 text-lg font-semibold">
+          <li key={p.id} className="flex justify-between rounded-lg bg-surface border border-hairline text-ink-900 px-4 py-2 text-lg font-semibold">
             <span>{p.rank}. {p.nickname}</span>
             <span>{p.total_score}</span>
           </li>
@@ -218,7 +220,7 @@ export default function PlayQuiz() {
 
   const { session, me, question, reveal, top } = game
   const footer = (
-    <p className="text-sm text-white/70">
+    <p className="text-sm text-ink-muted">
       {me.nickname} · {me.score} pts
     </p>
   )
@@ -228,7 +230,7 @@ export default function PlayQuiz() {
       <Screen>
         <h1 className="text-4xl font-bold">You're in!</h1>
         <p className="text-2xl">See your name on the big screen.</p>
-        <p className="text-white/70">{game.playerCount} player{game.playerCount === 1 ? '' : 's'} so far</p>
+        <p className="text-ink-muted">{game.playerCount} player{game.playerCount === 1 ? '' : 's'} so far</p>
         {footer}
       </Screen>
     )
@@ -242,17 +244,18 @@ export default function PlayQuiz() {
       return (
         <Screen>
           <h1 className="text-3xl font-bold">Answer locked in</h1>
-          <p className="text-xl text-white/80">Waiting for the others…</p>
+          <p className="text-xl text-ink-muted">Waiting for the others…</p>
           <p className="text-5xl font-bold">{remaining}</p>
           {footer}
         </Screen>
       )
     }
     return (
-      <main className="flex min-h-screen flex-col bg-[#0b2417] p-3 text-white">
+      <main className="flex min-h-screen flex-col bg-paper p-3 pt-16 text-ink-900">
+        <QuizThemeToggle />
         <div className="flex items-center justify-between px-2 py-3">
           <span className="text-lg">Q{session.index + 1} of {session.questionCount}</span>
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-2xl font-bold">{remaining}</span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-2xl font-bold text-white">{remaining}</span>
         </div>
         <p className="px-2 pb-3 text-center text-xl font-bold">Look at the big screen</p>
         <div className="grid flex-1 grid-cols-2 gap-3">
@@ -269,7 +272,7 @@ export default function PlayQuiz() {
             </button>
           ))}
         </div>
-        {message && <p role="alert" className="mt-2 text-center text-sm text-white/80">{message}</p>}
+        {message && <p role="alert" className="mt-2 text-center text-sm text-ink-muted">{message}</p>}
       </main>
     )
   }
@@ -298,13 +301,13 @@ export default function PlayQuiz() {
         <p className="text-2xl font-bold">{me.score} points</p>
         <ol className="w-full max-w-sm space-y-2 text-left">
           {(top ?? []).slice(0, 5).map((p) => (
-            <li key={p.id} className="flex justify-between rounded-lg bg-white/15 px-4 py-2 text-lg font-semibold">
+            <li key={p.id} className="flex justify-between rounded-lg bg-surface border border-hairline text-ink-900 px-4 py-2 text-lg font-semibold">
               <span>{p.rank}. {p.nickname}</span>
               <span>{p.total_score}</span>
             </li>
           ))}
         </ol>
-        <p className="text-white/70">Next question coming up…</p>
+        <p className="text-ink-muted">Next question coming up…</p>
       </Screen>
     )
   }
@@ -313,7 +316,7 @@ export default function PlayQuiz() {
     return (
       <Screen>
         <Podium me={me} top={top} />
-        <button type="button" onClick={leave} className="mt-4 rounded-lg bg-white/15 px-6 py-3 text-lg font-bold">
+        <button type="button" onClick={leave} className="mt-4 rounded-lg border border-hairline bg-surface px-6 py-3 text-lg font-bold text-ink-900">
           Play again
         </button>
       </Screen>
