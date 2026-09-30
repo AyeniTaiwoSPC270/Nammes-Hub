@@ -60,6 +60,8 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), allo
         index: session.current_question_index,
         questionCount: questionCount ?? 0,
         startedAt: session.question_started_at,
+        maxPlayers: session.max_players,
+        fullAt: session.full_at ?? null,
       },
       me: { nickname: player.nickname, score: me?.total_score ?? 0, rank: me?.rank ?? null, avatarId: me?.avatar_id ?? 0 },
       playerCount: ranked.length,

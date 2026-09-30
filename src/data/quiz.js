@@ -90,6 +90,21 @@ export function formatScore(n) {
   return Number(n).toLocaleString('en-US')
 }
 
+// How many players a game allows. The server enforces it; these are for the admin forms.
+export const DEFAULT_MAX_PLAYERS = 50
+export const MIN_PLAYERS_LIMIT = 2
+export const MAX_PLAYERS_LIMIT = 150
+// When the lobby fills up, the game starts by itself after this long (the host can start it sooner).
+export const FULL_LOBBY_COUNTDOWN_MS = 10000
+
+// Checks a max-players value typed into a form (a string or a number). Returns an error message, or null when fine.
+export function validateMaxPlayers(value) {
+  const n = typeof value === 'number' ? value : Number(String(value).trim())
+  if (String(value).trim() === '' || !Number.isInteger(n)) return 'Max players must be a whole number.'
+  if (n < MIN_PLAYERS_LIMIT || n > MAX_PLAYERS_LIMIT) return `Max players must be between ${MIN_PLAYERS_LIMIT} and ${MAX_PLAYERS_LIMIT}.`
+  return null
+}
+
 export const TIME_LIMIT_CHOICES = [10, 20, 30, 60]
 export const POINT_CHOICES = [500, 1000, 2000]
 
@@ -112,9 +127,11 @@ export function cleanQuestion(q) {
   return { ...q, text: q.text.trim(), options, correct_index }
 }
 
-export function validateQuizDraft({ title, questions }) {
+export function validateQuizDraft({ title, questions, maxPlayers = DEFAULT_MAX_PLAYERS }) {
   if (!title || !title.trim()) return 'A title is required.'
   if (title.trim().length > 120) return 'The title must be 120 characters or fewer.'
+  const limitProblem = validateMaxPlayers(maxPlayers)
+  if (limitProblem) return limitProblem
   if (questions.length === 0) return 'Add at least one question.'
   for (const [i, raw] of questions.entries()) {
     const n = i + 1
@@ -192,11 +209,11 @@ export function useQuizQuery(id) {
 
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
 // edited and reordered questions; questions the admin removed are deleted first.
-export async function saveQuiz({ id, title, questions }) {
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS }) {
   const cleaned = questions.map(cleanQuestion)
   let quizId = id
   if (quizId) {
-    const { error } = await supabase.from('quizzes').update({ title: title.trim() }).eq('id', quizId)
+    const { error } = await supabase.from('quizzes').update({ title: title.trim(), max_players: maxPlayers }).eq('id', quizId)
     if (error) throw error
     const { data: existing, error: listError } = await supabase.from('quiz_questions').select('id').eq('quiz_id', quizId)
     if (listError) throw listError
@@ -207,7 +224,7 @@ export async function saveQuiz({ id, title, questions }) {
       if (deleteError) throw deleteError
     }
   } else {
-    const { data, error } = await supabase.from('quizzes').insert({ title: title.trim() }).select('id').single()
+    const { data, error } = await supabase.from('quizzes').insert({ title: title.trim(), max_players: maxPlayers }).select('id').single()
     if (error) throw error
     quizId = data.id
   }

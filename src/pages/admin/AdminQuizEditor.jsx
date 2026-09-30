@@ -10,6 +10,9 @@ import {
   OPTION_STYLES,
   TIME_LIMIT_CHOICES,
   POINT_CHOICES,
+  DEFAULT_MAX_PLAYERS,
+  MIN_PLAYERS_LIMIT,
+  MAX_PLAYERS_LIMIT,
 } from '../../data/quiz'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
@@ -107,12 +110,14 @@ export default function AdminQuizEditor() {
   const toast = useToast()
   const quizQuery = useQuizQuery(id)
   const [title, setTitle] = useState('')
+  const [maxPlayers, setMaxPlayers] = useState(String(DEFAULT_MAX_PLAYERS))
   const [questions, setQuestions] = useState(() => (id ? [] : [blankQuestion()]))
   const [loaded, setLoaded] = useState(!id)
 
   useEffect(() => {
     if (!id || !quizQuery.data || loaded) return
     setTitle(quizQuery.data.title)
+    setMaxPlayers(String(quizQuery.data.max_players ?? DEFAULT_MAX_PLAYERS))
     setQuestions(
       quizQuery.data.questions.map((q) => ({
         id: q.id,
@@ -127,7 +132,7 @@ export default function AdminQuizEditor() {
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -137,7 +142,7 @@ export default function AdminQuizEditor() {
   })
 
   function handleSave() {
-    const problem = validateQuizDraft({ title, questions })
+    const problem = validateQuizDraft({ title, questions, maxPlayers })
     if (problem) {
       toast.error(problem)
       return
@@ -184,6 +189,13 @@ export default function AdminQuizEditor() {
             maxLength={120}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Freshers' week quiz"
+          />
+          <FormField
+            label="Max players"
+            type="number"
+            value={maxPlayers}
+            onChange={(e) => setMaxPlayers(e.target.value)}
+            helper={`From ${MIN_PLAYERS_LIMIT} to ${MAX_PLAYERS_LIMIT}. You can change it again each time you host. When the lobby fills up, the game starts by itself after 10 seconds (or sooner if you press Start).`}
           />
 
           {questions.map((q, i) => (

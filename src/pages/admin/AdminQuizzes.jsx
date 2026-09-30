@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { useAllQuizzesQuery, deleteQuiz, hostAction } from '../../data/quiz'
 import Breadcrumbs from '../../components/Breadcrumbs'
+import HostQuizModal from '../../components/admin/HostQuizModal'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
@@ -34,6 +35,7 @@ export default function AdminQuizzes() {
   const toast = useToast()
   const quizzesQuery = useAllQuizzesQuery()
   const sessionsQuery = useRecentSessionsQuery()
+  const [hostingQuiz, setHostingQuiz] = useState(null) // the quiz whose "Host game" dialog is open
   const [hostingId, setHostingId] = useState(null)
   const quizzes = quizzesQuery.data ?? []
   const sessions = sessionsQuery.data ?? []
@@ -48,10 +50,10 @@ export default function AdminQuizzes() {
     onError: (error) => toast.error(error.message),
   })
 
-  async function handleHost(quiz) {
+  async function handleHost(quiz, maxPlayers) {
     setHostingId(quiz.id)
     try {
-      const { sessionId } = await hostAction('create', { quizId: quiz.id })
+      const { sessionId } = await hostAction('create', { quizId: quiz.id, maxPlayers })
       navigate(`/host/${sessionId}`)
     } catch (error) {
       toast.error(error.message)
@@ -111,8 +113,7 @@ export default function AdminQuizzes() {
                 <Button
                   variant="accent"
                   size="sm"
-                  onClick={() => handleHost(quiz)}
-                  loading={hostingId === quiz.id}
+                  onClick={() => setHostingQuiz(quiz)}
                   disabled={quiz.questionCount === 0}
                 >
                   Host
@@ -149,6 +150,15 @@ export default function AdminQuizzes() {
             ))}
           </div>
         </section>
+      )}
+
+      {hostingQuiz && (
+        <HostQuizModal
+          quiz={hostingQuiz}
+          busy={hostingId === hostingQuiz.id}
+          onHost={(maxPlayers) => handleHost(hostingQuiz, maxPlayers)}
+          onClose={() => setHostingQuiz(null)}
+        />
       )}
     </div>
   )

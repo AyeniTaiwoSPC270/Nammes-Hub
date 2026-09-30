@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 import Character from '../components/quiz/Character'
+import { useCountUp } from '../lib/useCountUp'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
@@ -203,6 +204,12 @@ function JoinForm({ onJoined }) {
   )
 }
 
+// The player's total ticking up by the points they just earned.
+function CountingScore({ from, to }) {
+  const value = useCountUp(from, to, { durationMs: 900, delayMs: 500 })
+  return <span className="tabular-nums">{formatScore(value)}</span>
+}
+
 function WaitingDots() {
   return (
     <span className="inline-flex items-center gap-1" aria-hidden="true">
@@ -279,11 +286,12 @@ export default function PlayQuiz() {
   }, [sessionId, refresh])
 
   const state = game?.session.state
+  const lobbyFull = state === 'lobby' && Boolean(game?.session.fullAt)
   useEffect(() => {
-    if (state !== 'question') return undefined
+    if (state !== 'question' && !lobbyFull) return undefined
     const timer = setInterval(() => setNowMs(Date.now()), 250)
     return () => clearInterval(timer)
-  }, [state])
+  }, [state, lobbyFull])
 
   // A new question clears the local tap and remembers the rank we started it with.
   const questionKey = game ? `${game.session.state}:${game.session.index}` : ''
@@ -343,7 +351,9 @@ export default function PlayQuiz() {
         <div className="mt-6 flex flex-col items-center gap-4 text-center">
           <div className="qz-pop relative">
             <Avatar name={me.nickname} avatarId={me.avatarId} mood="wave" className="h-36 w-36" />
-            <span className="qz-float absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full bg-orange-500 text-2xl font-bold text-white shadow-md" aria-hidden="true">π</span>
+            <span className="qz-pop absolute -right-1 bottom-2 flex h-11 w-11 items-center justify-center rounded-full border-4 border-paper bg-green-600 text-white shadow-md" aria-hidden="true">
+              <span className="material-symbols-outlined text-2xl">check</span>
+            </span>
           </div>
           <div className="qz-rise" style={{ animationDelay: '120ms' }}>
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">You&apos;re in</p>
@@ -352,10 +362,28 @@ export default function PlayQuiz() {
         </div>
         <div className="qz-rise rounded-3xl border border-hairline bg-surface p-5 text-center shadow-md" style={{ animationDelay: '220ms' }}>
           <p className="text-xl font-bold">Look for your name on the big screen</p>
-          <p className="mt-1 text-ink-muted">{game.playerCount} player{game.playerCount === 1 ? '' : 's'} in the lobby</p>
-          <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
-            Waiting for the host to start <WaitingDots />
+          <p className="mt-1 text-ink-muted">
+            {game.playerCount}
+            {session.maxPlayers ? ` of ${session.maxPlayers}` : ''} player{game.playerCount === 1 ? '' : 's'} in the lobby
           </p>
+          {session.fullAt ? (
+            <div role="status" className="qz-pop mt-4 flex items-center justify-center gap-3 rounded-2xl border-2 border-orange-500 bg-orange-500/12 p-3 text-ink-900">
+              <CountdownRing
+                seconds={autoSecondsLeft({ enteredMs: new Date(session.fullAt).getTime(), nowMs: nowMs + offset, totalMs: FULL_LOBBY_COUNTDOWN_MS })}
+                total={FULL_LOBBY_COUNTDOWN_MS / 1000}
+                size={56}
+                stroke={6}
+              />
+              <span className="text-left">
+                <span className="block text-lg font-bold">Lobby full!</span>
+                <span className="block text-sm text-ink-muted">The game is about to start</span>
+              </span>
+            </div>
+          ) : (
+            <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
+              Waiting for the host to start <WaitingDots />
+            </p>
+          )}
         </div>
         <div className="qz-rise flex items-start gap-3 rounded-2xl bg-orange-500/12 p-4 text-sm" style={{ animationDelay: '320ms' }}>
           <span className="material-symbols-outlined text-orange-500" aria-hidden="true">bolt</span>
@@ -441,7 +469,7 @@ export default function PlayQuiz() {
         )}
         <div className="flex items-center gap-3 rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">
           {me.rank && <span>#{me.rank}</span>}
-          <span>{formatScore(me.score)} pts</span>
+          <span><CountingScore from={me.score - reveal.pointsAwarded} to={me.score} /> pts</span>
           <RankMove delta={rankDelta} />
         </div>
       </ResultScreen>

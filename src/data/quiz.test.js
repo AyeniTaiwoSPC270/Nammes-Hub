@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, avatarInfo, normalizeAvatarId, AVATAR_COUNT, OPTION_STYLES } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, avatarInfo, normalizeAvatarId, AVATAR_COUNT, OPTION_STYLES } from './quiz'
 
 function question(over = {}) {
   return { ...blankQuestion(), text: 'Capital of Nigeria?', options: ['Lagos', 'Abuja', '', ''], correct_index: 1, ...over }
@@ -90,5 +90,20 @@ describe('autoSecondsLeft', () => {
     expect(autoSecondsLeft({ enteredMs: 0, nowMs: 4999 })).toBe(1)
     expect(autoSecondsLeft({ enteredMs: 0, nowMs: 9000 })).toBe(0)
     expect(autoSecondsLeft({ enteredMs: 1000, nowMs: 0 })).toBe(5) // a clock reading slightly behind the start
+  })
+})
+
+describe('validateMaxPlayers', () => {
+  it('accepts whole numbers from 2 to 150, typed or as numbers', () => {
+    for (const ok of [2, 50, 150, '2', ' 75 ']) expect(validateMaxPlayers(ok)).toBeNull()
+  })
+  it('explains what is wrong otherwise', () => {
+    for (const bad of ['', '  ', 'abc', 12.5, '7.5']) expect(validateMaxPlayers(bad)).toMatch(/whole number/)
+    for (const bad of [1, 0, 151, '999', -4]) expect(validateMaxPlayers(bad)).toMatch(/between 2 and 150/)
+  })
+  it('is checked as part of saving a quiz', () => {
+    const q = { ...blankQuestion(), text: 'Q?', options: ['a', 'b', '', ''], correct_index: 0 }
+    expect(validateQuizDraft({ title: 'x', questions: [q], maxPlayers: '500' })).toMatch(/between 2 and 150/)
+    expect(validateQuizDraft({ title: 'x', questions: [q], maxPlayers: '40' })).toBeNull()
   })
 })
