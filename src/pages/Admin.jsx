@@ -132,6 +132,13 @@ export const ADMIN_SECTIONS = [
     description: 'Run nominate, curate, vote, and reveal for department awards.',
   },
   {
+    path: '/admin/quizzes',
+    label: 'Live Quiz',
+    icon: 'quiz',
+    category: 'Engagement',
+    description: 'Build a Kahoot-style quiz and host it live at an event.',
+  },
+  {
     path: '/admin/broadcasts',
     label: 'Broadcasts',
     icon: 'campaign',
