@@ -4,10 +4,10 @@
    sad move. Wave, happy and dance also play the hello gesture with the arms. */
 
 .qz-char { overflow: visible; }
-.qz-char .qz-body { transform-box: fill-box; transform-origin: 50% 100%; }
-.qz-char .qz-arm { transform-box: fill-box; }
-.qz-char .qz-arm-r { transform-origin: 0% 0%; }
-.qz-char .qz-arm-l { transform-origin: 100% 0%; }
+/* Fixed pivot points (in the 100 x 100 drawing) rather than each shape's measured box, which is much cheaper to
+   animate when dozens of characters move at once. Each arm sets its own pivot (its shoulder) in Character.jsx. */
+.qz-char .qz-body { transform-box: view-box; transform-origin: 50px 88px; }
+.qz-char .qz-arm { transform-box: view-box; }
 
 /* ---- idle moves (while waiting) ---- */
 @keyframes qz-i-bob { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.03); } }
@@ -55,7 +55,7 @@
 .qz-w-zoom { --win: qz-w-zoom calc(0.8s * var(--t, 1)) ease-in-out infinite; }
 .qz-w-moonwalk { --win: qz-w-moonwalk calc(1.3s * var(--t, 1)) ease-in-out infinite; }
 .qz-w-tada { --win: qz-w-tada calc(1.1s * var(--t, 1)) ease-in-out infinite; }
-.qz-w-spin .qz-body, .qz-w-flip .qz-body { transform-origin: 50% 55%; }
+.qz-w-spin .qz-body, .qz-w-flip .qz-body { transform-origin: 50px 55px; }
 
 /* ---- sad moves ---- */
 @keyframes qz-s-droop { 0%, 100% { transform: translateY(1px) scaleY(0.97); } 50% { transform: translateY(3px) scaleY(0.94); } }
@@ -106,3 +106,6 @@
 @media (prefers-reduced-motion: reduce) {
   .qz-char .qz-body, .qz-char .qz-arm, .qz-char .qz-prop, .qz-char .qz-halo { animation: none !important; }
 }
+
+/* "static" characters (long lists) do not move at all, including their floating props and halos. */
+.qz-mood-static .qz-prop, .qz-mood-static .qz-halo { animation: none; }

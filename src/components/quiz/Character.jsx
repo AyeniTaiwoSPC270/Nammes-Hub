@@ -597,7 +597,7 @@ function Prop({ kind }) {
 function Arms({ body, color }) {
   const [dx, y] = BODY[body].arm
   const stroke = (x1, x2, which) => (
-    <g className={`qz-arm qz-arm-${which}`}>
+    <g className={`qz-arm qz-arm-${which}`} style={{ transformOrigin: `${x1}px ${y}px` }}>
       <line x1={x1} y1={y} x2={x2} y2={y + 12} stroke={color.dark} strokeWidth="9" strokeLinecap="round" />
       <line x1={x1} y1={y} x2={x2} y2={y + 12} stroke={color.main} strokeWidth="5.5" strokeLinecap="round" />
     </g>
