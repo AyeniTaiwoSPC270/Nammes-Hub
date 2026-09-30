@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { logError } from './_lib/logError.js'
 import { enqueueEmails } from './_lib/emailQueue.js'
-import { renderWelcomeEmail } from './_lib/emailTemplates.js'
+import { renderWelcomeEmail, loadEmailDesign } from './_lib/emailTemplates.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
 
 export function createWebhookWelcomeHandler({ getClient = getSupabaseAdmin, enqueue = enqueueEmails } = {}) {
@@ -36,12 +36,13 @@ export function createWebhookWelcomeHandler({ getClient = getSupabaseAdmin, enqu
       return
     }
 
+    const design = await loadEmailDesign(supabaseAdmin, 'welcome')
     const { queued, error: queueError } = await enqueue(supabaseAdmin, [
       {
         kind: 'welcome',
         to: data.user.email,
         subject: 'Welcome to NAMMES Hub',
-        html: renderWelcomeEmail({ fullName: record.full_name }),
+        html: renderWelcomeEmail({ fullName: record.full_name }, design),
         dedupeKey: `welcome:${record.user_id}`,
       },
     ])
