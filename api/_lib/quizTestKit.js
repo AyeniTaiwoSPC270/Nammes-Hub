@@ -51,10 +51,10 @@ export function fakeDb(seed = {}) {
     let limitN = Infinity
     const run = () => {
       const match = (r) =>
-        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : kind === 'notnull' ? r[col] != null : r[col] !== val))
+        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : kind === 'notnull' ? r[col] != null : kind === 'in' ? val.includes(r[col]) : r[col] !== val))
       const rows = tables[table].filter(match)
       if (op === 'insert' && Array.isArray(payload)) {
-        const made = payload.map((p) => ({ id: uid(), ...p }))
+        const made = payload.map((p) => ({ id: uid(), ...(table === 'quiz_players' ? { total_score: 0, streak: 0 } : {}), ...p }))
         tables[table].push(...made)
         return { rows: made }
       }
@@ -93,6 +93,7 @@ export function fakeDb(seed = {}) {
       delete: () => { op = 'delete'; return api },
       eq: (c, v) => { filters.push(['eq', c, v]); return api },
       neq: (c, v) => { filters.push(['neq', c, v]); return api },
+      in: (c, v) => { filters.push(['in', c, v]); return api },
       is: (c) => { filters.push(['is', c]); return api },
       not: (c) => { filters.push(['notnull', c]); return api },
       order: () => api,

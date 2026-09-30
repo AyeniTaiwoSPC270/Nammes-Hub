@@ -190,6 +190,7 @@ export default function QuestionCard({ question, number, total, onChange, onMove
       time_limit_seconds: question.time_limit_seconds,
       points: question.points,
       points_multiplier: question.points_multiplier,
+      difficulty: question.difficulty,
       image_path: question.image_path,
       image_alt: question.image_alt,
       imageBlob: question.imageBlob,
@@ -249,6 +250,15 @@ export default function QuestionCard({ question, number, total, onChange, onMove
               Points
               <select className={selectClass} value={question.points} onChange={(e) => onChange({ ...question, points: Number(e.target.value) })}>
                 {POINT_CHOICES.map((p) => <option key={p} value={p}>{p}{p === 1000 ? ' (standard)' : p === 2000 ? ' (double)' : ''}</option>)}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Difficulty
+              <select className={selectClass} value={question.difficulty ?? ''} onChange={(e) => onChange({ ...question, difficulty: e.target.value || null })}>
+                <option value="">Not set (from points)</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
               </select>
             </label>
             <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-ink-900">

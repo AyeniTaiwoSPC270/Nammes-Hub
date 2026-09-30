@@ -76,3 +76,14 @@ describe('cleanTags', () => {
     expect(cleanTags(['A', 'a', 'b'])).toEqual(['a', 'b'])
   })
 })
+
+describe('question difficulty (used by test bots)', () => {
+  it('starts unset, survives a save and reload, and ignores nonsense', () => {
+    expect(blankQuestion().difficulty).toBeNull()
+    expect(questionFromRow({ id: 'a', text: 'Q', options: ['a', 'b'], time_limit_seconds: 20, points: 1000, difficulty: 'hard' }).difficulty).toBe('hard')
+    expect(questionFromRow({ id: 'a', text: 'Q', options: ['a', 'b'], time_limit_seconds: 20, points: 1000 }).difficulty).toBeNull()
+    const q = { ...blankQuestion(), text: 'Q', options: ['a', 'b', '', ''] }
+    expect(cleanQuestion({ ...q, difficulty: 'medium' }).difficulty).toBe('medium')
+    expect(cleanQuestion({ ...q, difficulty: 'impossible' }).difficulty).toBeNull()
+  })
+})
