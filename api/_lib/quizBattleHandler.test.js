@@ -383,3 +383,58 @@ describe('battle: rankings', () => {
     expect((await w.call({ op: 'ranking', period: 'all' })).body.you).toBeNull()
   })
 })
+
+describe('battle: leaving', () => {
+  it('cancels a duel nobody has joined, so the link stops working', async () => {
+    const w = world()
+    const a = await w.create({ mode: 'duel' })
+    expect((await w.call({ op: 'leave', token: a.token })).body).toEqual({ left: true })
+    expect((await w.call({ op: 'info', code: a.code })).body).toMatchObject({ expired: true, seatFree: false })
+    expect((await w.join(a.code)).statusCode).toBe(410)
+    expect((await w.call({ op: 'state', token: a.token })).body.state).toBe('cancelled')
+  })
+
+  it('leaving a duel under way loses it by default, and a duel against a bot is just dropped', async () => {
+    const w = world()
+    const a = await w.create({ mode: 'duel' })
+    w.at(START + 1000)
+    const b = (await w.join(a.code)).body
+    await w.call({ op: 'leave', token: b.token })
+    const after = (await w.call({ op: 'state', token: a.token })).body
+    expect(after).toMatchObject({ state: 'finished', final: { winner: 'me', forfeit: true } })
+
+    const bot = world()
+    const c = await bot.create({ mode: 'duel', vsBot: true })
+    await bot.call({ op: 'leave', token: c.token })
+    expect((await bot.call({ op: 'state', token: c.token })).body.state).toBe('cancelled')
+  })
+
+  it('a challenger can cancel the challenge, and a friend who changes their mind frees the seat', async () => {
+    const w = world()
+    const a = await w.create()
+    w.at(START + 1000)
+    await playChallenge(w.call, a.token, RIGHT)
+    const friend = (await w.join(a.code)).body
+    expect(w.db.tables.quiz_battle_sides).toHaveLength(2)
+    await w.call({ op: 'leave', token: friend.token })
+    expect(w.db.tables.quiz_battle_sides).toHaveLength(1)
+    expect((await w.join(a.code, { nickname: 'Cleo' })).statusCode).toBe(200)
+
+    const solo = world()
+    const b = await solo.create()
+    await solo.call({ op: 'leave', token: b.token })
+    expect((await solo.join(b.code)).statusCode).toBe(410)
+  })
+
+  it('leaving a finished battle is harmless, and needs a real token', async () => {
+    const w = world()
+    const a = await w.create()
+    w.at(START + 1000)
+    await playChallenge(w.call, a.token, RIGHT)
+    const friend = (await w.join(a.code)).body
+    await playChallenge(w.call, friend.token, WRONG)
+    expect((await w.call({ op: 'leave', token: a.token })).body).toEqual({ left: true })
+    expect((await w.call({ op: 'state', token: a.token })).body.state).toBe('finished')
+    expect((await w.call({ op: 'leave', token: 'made-up' })).statusCode).toBe(401)
+  })
+})

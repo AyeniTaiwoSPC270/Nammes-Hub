@@ -72,6 +72,27 @@ function Heading({ kicker, title, children }) {
   )
 }
 
+// "Leave" with an optional are-you-sure step, for when leaving costs something (a duel under way).
+function LeaveButton({ label, confirm, onLeave, busy, tone }) {
+  const [asking, setAsking] = useState(false)
+  const light = tone === 'light'
+  const base = light ? 'text-white/90 underline' : 'text-ink-muted underline'
+  if (!asking) {
+    return (
+      <button type="button" disabled={busy} onClick={() => (confirm ? setAsking(true) : onLeave())} className={`mx-auto min-h-11 px-4 text-sm font-semibold ${base}`}>
+        {label}
+      </button>
+    )
+  }
+  return (
+    <div role="alert" className={`mx-auto flex flex-wrap items-center justify-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${light ? 'bg-black/25 text-white' : 'bg-surface text-ink-900'}`}>
+      <span>{confirm}</span>
+      <button type="button" disabled={busy} onClick={onLeave} className="min-h-11 rounded-full bg-red-600 px-4 font-bold text-white">Yes, leave</button>
+      <button type="button" onClick={() => setAsking(false)} className={`min-h-11 rounded-full px-4 font-bold ${light ? 'bg-white/20' : 'bg-paper'}`}>Stay</button>
+    </div>
+  )
+}
+
 function ErrorLine({ error }) {
   return error ? <p role="alert" className="rounded-2xl bg-red-600/12 px-4 py-3 text-sm font-semibold text-red-600">{error}</p> : null
 }
@@ -174,6 +195,7 @@ function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, 
   const make = (mode, vsBot = false) => onCreate({ quizId: chosen.id, mode, vsBot, botSkill, nickname, avatarId })
   return (
     <Shell>
+      <Link to="/" className="text-sm font-semibold text-orange-500">← Back to NAMMES Hub</Link>
       <Heading kicker="Battle" title="Challenge someone">
         <p className="text-ink-muted">Pick a quiz and take on a friend, or a bot. No account needed.</p>
       </Heading>
@@ -261,6 +283,7 @@ function Landing({ info, onTake, busy, error }) {
         </form>
       )}
       <Link to="/battle" className="text-center text-sm font-semibold text-orange-500">Start your own battle</Link>
+      <Link to="/" className="text-center text-sm font-semibold text-ink-muted">Back to NAMMES Hub</Link>
     </Shell>
   )
 }
@@ -357,7 +380,7 @@ function VersusBar({ me, opponent }) {
   )
 }
 
-function FinalBoard({ view, onRematch, busy }) {
+function FinalBoard({ view, onRematch, onBack, busy }) {
   const { final, me, opponent } = view
   const banner = final.winner === 'me' ? 'You won!' : final.winner === 'them' ? `${opponent.nickname} won` : 'A draw'
   return (
@@ -397,7 +420,8 @@ function FinalBoard({ view, onRematch, busy }) {
         </ol>
       </section>
       <button type="button" disabled={busy} onClick={onRematch} className={`${bigButton} bg-orange-500 text-white`}>{view.mode === 'duel' && opponent.isBot ? 'Rematch' : 'New battle'}</button>
-      <Link to="/battle" className="text-center text-sm font-semibold text-orange-500">Back to battles</Link>
+      <button type="button" disabled={busy} onClick={onBack} className="mx-auto min-h-11 px-4 text-sm font-semibold text-orange-500 underline">Back to battles</button>
+      <Link to="/" className="text-center text-sm font-semibold text-ink-muted">Back to NAMMES Hub</Link>
     </Shell>
   )
 }
@@ -522,6 +546,22 @@ export default function PlayBattle() {
       else setView((v) => ({ ...v, result: data.result, me: { ...v.me, score: data.score } }))
     })
   }
+  // Walk away: tell the server (best effort), forget the battle and go back to the start.
+  async function leave() {
+    setBusy(true)
+    try {
+      if (token) await callQuiz('battle', { op: 'leave', token })
+    } catch {
+      // already over, or offline: leaving locally is still right
+    } finally {
+      saveSaved(null)
+      setSaved(null)
+      setView(null)
+      setInfo(null)
+      setBusy(false)
+      navigate('/battle', { replace: true })
+    }
+  }
   function rematch() {
     const last = lastAction.current ?? { quizId: view.quizId, mode: view.mode, vsBot: view.opponent?.isBot, botSkill: 'average', nickname: view.me.nickname, avatarId: view.me.avatarId }
     saveSaved(null)
@@ -540,7 +580,7 @@ export default function PlayBattle() {
           <span className="material-symbols-outlined text-5xl text-ink-muted" aria-hidden="true">error</span>
           <h1 className="text-2xl font-bold">Battles are not available</h1>
           <p className="text-ink-muted">{pageError}</p>
-          <Link to="/battle" className="font-semibold text-orange-500">Try again</Link>
+          <button type="button" onClick={leave} className="min-h-11 font-semibold text-orange-500 underline">Try again</button>
         </div>
       </Shell>
     )
@@ -568,12 +608,12 @@ export default function PlayBattle() {
         <div className="mt-20 flex flex-col items-center gap-3 text-center">
           <h1 className="text-3xl font-bold">This battle ended</h1>
           <p className="text-ink-muted">Nobody joined, or both players left.</p>
-          <Link to="/battle" className="font-semibold text-orange-500">Start another</Link>
+          <button type="button" onClick={leave} className="min-h-11 font-semibold text-orange-500 underline">Start another</button>
         </div>
       </Shell>
     )
   } else if (state === 'finished') {
-    body = <FinalBoard view={view} onRematch={rematch} busy={busy} />
+    body = <FinalBoard view={view} onRematch={rematch} onBack={leave} busy={busy} />
   } else if (state === 'open') {
     body = (
       <Shell>
@@ -582,6 +622,7 @@ export default function PlayBattle() {
         </Heading>
         <ShareBox code={view.code} />
         <p className="text-center text-ink-muted"><span className="animate-pulse">Waiting…</span></p>
+        <LeaveButton label="Cancel this duel" onLeave={leave} busy={busy} />
       </Shell>
     )
   } else if (state === 'waiting') {
@@ -595,6 +636,7 @@ export default function PlayBattle() {
         </section>
         <ShareBox code={view.code} />
         <p className="text-center text-sm text-ink-muted">Come back to this page later to see who won. The link works for 7 days.</p>
+        <LeaveButton label={view.opponent ? 'Back to battles' : 'Cancel this challenge'} confirm={view.opponent ? null : 'The link will stop working.'} onLeave={leave} busy={busy} />
       </Shell>
     )
   } else if (isDuel && state === 'reveal') {
@@ -612,6 +654,7 @@ export default function PlayBattle() {
           </p>
           <div className="w-full rounded-2xl bg-black/20 p-3 text-left"><VersusBar me={view.me} opponent={view.opponent} /></div>
           <p className="text-sm text-white/80">Next question coming up…</p>
+          <LeaveButton tone="light" label="Leave duel" confirm={view.opponent.isBot ? 'Leave this duel?' : 'Leave? Your opponent wins.'} onLeave={leave} busy={busy} />
         </div>
       </Shell>
     )
@@ -622,6 +665,7 @@ export default function PlayBattle() {
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">{view.index === 0 ? 'Duel starting' : `Question ${view.index + 1}`}</p>
           <p className="qz-pop text-9xl font-bold" key={Math.ceil(untilStart / 1000)}>{Math.max(1, Math.ceil(untilStart / 1000))}</p>
           <div className="w-full"><VersusBar me={view.me} opponent={view.opponent} /></div>
+          <LeaveButton label="Leave duel" confirm={view.opponent.isBot ? 'Leave this duel?' : 'Leave? Your opponent wins.'} onLeave={leave} busy={busy} />
         </div>
       </Shell>
     )
@@ -643,6 +687,7 @@ export default function PlayBattle() {
           )}
           <p className="rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">{formatScore(view.me.score)} pts · question {view.index + 1} of {view.total}</p>
           {error && <p role="alert" className="text-sm">{error}</p>}
+          <LeaveButton tone="light" label="Quit this challenge" confirm="Quit? Your progress is lost." onLeave={leave} busy={busy} />
           <button
             type="button"
             disabled={busy}
@@ -679,6 +724,7 @@ export default function PlayBattle() {
           <QuestionPanel question={question} disabled={busy || remaining === 0} onAnswer={answer} typed={typed} setTyped={setTyped} />
         )}
         {error && <p role="alert" className="text-center text-sm text-ink-muted">{error}</p>}
+        <LeaveButton label={isDuel ? 'Leave duel' : 'Quit this challenge'} confirm={isDuel ? (view.opponent.isBot ? 'Leave this duel?' : 'Leave? Your opponent wins.') : 'Quit? Your progress is lost.'} onLeave={leave} busy={busy} />
       </Shell>
     )
   }
