@@ -10,6 +10,8 @@ import {
   fetchQuizWithQuestions,
   saveQuiz,
   hostAction,
+  hostOp,
+  deleteQuizSession,
   questionFromRow,
   DEFAULT_MAX_PLAYERS,
 } from '../../data/quiz'
@@ -33,9 +35,9 @@ function useRecentSessionsQuery() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('quiz_sessions')
-        .select('id, join_code, state, created_at, quizzes(title)')
+        .select('id, join_code, state, current_question_index, created_at, quizzes(title)')
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(40)
       if (error) throw error
       return data
     },
@@ -55,6 +57,8 @@ export default function AdminQuizzes() {
   const [tag, setTag] = useState('')
   const [showArchived, setShowArchived] = useState(false)
   const [busyId, setBusyId] = useState(null)
+  const [askingGame, setAskingGame] = useState(null) // the recent game whose delete or end is waiting for a yes
+  const [showAllGames, setShowAllGames] = useState(false)
   const quizzes = quizzesQuery.data
   const sessions = sessionsQuery.data ?? []
 
@@ -78,6 +82,21 @@ export default function AdminQuizzes() {
     },
     onError: (error) => toast.error(error.message),
   })
+
+  async function gameAction(game, kind) {
+    setBusyId(game.id)
+    try {
+      if (kind === 'delete') await deleteQuizSession(game.id)
+      else await hostOp('end', game.id, { expectedState: game.state, expectedIndex: game.current_question_index })
+      await queryClient.invalidateQueries({ queryKey: ['quiz_sessions'] })
+      toast.success(kind === 'delete' ? 'Game deleted.' : 'Game ended.')
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setBusyId(null)
+      setAskingGame(null)
+    }
+  }
 
   async function run(quiz, work, done) {
     setBusyId(quiz.id)
@@ -258,7 +277,7 @@ export default function AdminQuizzes() {
           <h2 className="text-xl font-bold text-ink-900">Recent games</h2>
           <p className="text-sm text-ink-muted">Open a game to resume hosting it, or open its report to see how it went.</p>
           <div className="mt-3 flex flex-col gap-2">
-            {sessions.map((s) => (
+            {sessions.slice(0, showAllGames ? sessions.length : 10).map((s) => (
               <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-hairline bg-surface px-4 py-3">
                 <Link to={`/host/${s.id}`} className="font-semibold text-ink-900 no-underline hover:underline">
                   {s.quizzes?.title ?? 'Deleted quiz'}
@@ -268,9 +287,32 @@ export default function AdminQuizzes() {
                   <span>{new Date(s.created_at).toLocaleString()}</span>
                   <Link to={`/admin/quizzes/games/${s.id}`} className="font-semibold text-brand-orange">Report</Link>
                 </span>
+                {askingGame?.id === s.id ? (
+                  <span className="flex w-full flex-wrap items-center justify-end gap-2 text-sm">
+                    <span className="text-ink-muted">
+                      {askingGame.kind === 'delete' ? 'Delete this game and its results? This cannot be undone.' : 'End this game now? Players see the final results.'}
+                    </span>
+                    <Button variant={askingGame.kind === 'delete' ? 'destructive' : 'primary'} size="sm" disabled={busyId === s.id} onClick={() => gameAction(s, askingGame.kind)}>
+                      {askingGame.kind === 'delete' ? 'Yes, delete' : 'Yes, end it'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setAskingGame(null)}>Cancel</Button>
+                  </span>
+                ) : (
+                  <span className="flex w-full flex-wrap justify-end gap-2">
+                    {s.state !== 'lobby' && s.state !== 'finished' && (
+                      <Button variant="secondary" size="sm" onClick={() => setAskingGame({ id: s.id, kind: 'end' })}>End game</Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setAskingGame({ id: s.id, kind: 'delete' })}>Delete</Button>
+                  </span>
+                )}
               </div>
             ))}
           </div>
+          {sessions.length > 10 && (
+            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAllGames((v) => !v)}>
+              {showAllGames ? 'Show fewer' : `Show all ${sessions.length}`}
+            </Button>
+          )}
         </section>
       )}
 

@@ -145,3 +145,42 @@ describe('quiz-host: botsPlay', () => {
     expect(res.statusCode).toBe(401)
   })
 })
+
+describe('quiz-host: end the game now', () => {
+  const running = (extra = {}) => lobby({ state: 'leaderboard', current_question_index: 1, question_started_at: iso(START), ...extra }, [human(1)])
+  const end = (db, over = {}, opts) => host(db, { op: 'end', expectedState: 'leaderboard', expectedIndex: 1, ...over }, opts)
+
+  it('finishes a game that is under way, from any step', async () => {
+    for (const [state, index] of [['question', 0], ['reveal', 0], ['leaderboard', 1]]) {
+      const db = running({ state, current_question_index: index })
+      const res = await host(db, { op: 'end', expectedState: state, expectedIndex: index })
+      expect(res.statusCode).toBe(200)
+      expect(db.tables.quiz_sessions[0]).toMatchObject({ state: 'finished', paused_at: null })
+      expect(db.tables.quiz_sessions[0].finished_at).toBe(iso(START))
+      expect(db.tables.quiz_host_log.at(-1)).toMatchObject({ op: 'end' })
+    }
+  })
+
+  it('ends a paused game and a bracket game cleanly', async () => {
+    const db = running({ state: 'question', current_question_index: 0, paused_at: iso(START), bracket_mode: true, bracket_done: false })
+    expect((await host(db, { op: 'end', expectedState: 'question', expectedIndex: 0 })).statusCode).toBe(200)
+    expect(db.tables.quiz_sessions[0]).toMatchObject({ state: 'finished', paused_at: null, bracket_done: true })
+  })
+
+  it('refuses a game still in the lobby, one that already moved on, and one that is finished', async () => {
+    const lobbyDb = lobby()
+    expect((await host(lobbyDb, { op: 'end', expectedState: 'lobby', expectedIndex: -1 })).statusCode).toBe(409)
+    const db = running()
+    expect((await end(db, { expectedIndex: 0 })).statusCode).toBe(409)
+    expect(db.tables.quiz_sessions[0].state).toBe('leaderboard')
+    db.tables.quiz_sessions[0].state = 'finished'
+    expect((await end(db)).statusCode).toBe(409)
+    expect((await host(running(), { op: 'end' })).statusCode).toBe(400) // must say which step
+  })
+
+  it('needs an admin', async () => {
+    const db = running()
+    expect((await end(db, {}, { anonymous: true })).statusCode).toBe(401)
+    expect(db.tables.quiz_sessions[0].state).toBe('leaderboard')
+  })
+})

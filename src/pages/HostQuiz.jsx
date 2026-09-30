@@ -1,8 +1,8 @@
 import { useCallback, useEffect, memo, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
-import { hostAction, hostOp, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
@@ -15,6 +15,7 @@ import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import { BracketBoard, BracketPodium, BracketPanel } from '../components/quiz/BracketParts'
 import { isRoundEnd, roundOfQuestion } from '../../api/_lib/quizBracketMath.js'
 import BotPanel from '../components/quiz/BotPanel'
+import { HostMenu, HostMenuProvider } from '../components/quiz/HostMenu'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
 // (/api/quiz?action=advance); everything else here is reading. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -31,6 +32,7 @@ function Stage({ title, chip, footer, children }) {
       <QuizTopBar title={title}>
         {chip}
         <SoundControl />
+        <HostMenu />
       </QuizTopBar>
       <main ref={mainRef} className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 px-4 py-6 sm:px-8">{children}</main>
       {footer && (
@@ -1066,6 +1068,23 @@ export default function HostQuiz() {
     }
   }, [state, hasBots, questionIndex, sessionId])
 
+  // The game menu in the top corner: end the game early, or delete it (from any screen).
+  const navigate = useNavigate()
+  const menu = {
+    state: session?.state,
+    canEnd: Boolean(session) && session.state !== 'lobby' && session.state !== 'finished',
+    busy,
+    onEnd: () => runOp('end', {}, true),
+    onDelete: async () => {
+      try {
+        await deleteQuizSession(sessionId)
+        navigate('/admin/quizzes')
+      } catch (e) {
+        setError(e.message)
+      }
+    },
+  }
+
   const playerCountRef = useRef(0)
   playerCountRef.current = players.length
 
@@ -1252,7 +1271,7 @@ export default function HostQuiz() {
 
   return (
     <QuizThemeScope theme={session.theme}>
-      {screen}
+      <HostMenuProvider value={menu}>{screen}</HostMenuProvider>
       {error && (
         <div role="alert" className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-2xl bg-danger px-5 py-3 text-white shadow-lg">
           {error}
