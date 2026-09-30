@@ -33,6 +33,9 @@ export const QUESTION_TYPE_INFO = {
   poll: { label: 'Poll (no score)', hint: 'Asks for an opinion. Nobody scores.' },
 }
 
+// How hard a question is. Only test bots use it (to decide how often they get it right); players never see it.
+export const DIFFICULTIES = ['easy', 'medium', 'hard']
+
 // A new question as the editor holds it. Number fields are text while typing, and are turned into numbers on save.
 export function blankQuestion(type = 'multiple') {
   return {
@@ -44,6 +47,7 @@ export function blankQuestion(type = 'multiple') {
     time_limit_seconds: 20,
     points: 1000,
     points_multiplier: 1,
+    difficulty: null,
     numeric_answer: '',
     numeric_tolerance: '0',
     accepted_text: '',
@@ -63,6 +67,7 @@ export function questionFromRow(q) {
     time_limit_seconds: q.time_limit_seconds,
     points: q.points,
     points_multiplier: q.points_multiplier ?? 1,
+    difficulty: q.difficulty ?? null,
     numeric_answer: q.numeric_answer == null ? '' : String(q.numeric_answer),
     numeric_tolerance: String(q.numeric_tolerance ?? 0),
     accepted_text: (q.accepted_answers ?? []).join('\n'),
@@ -74,7 +79,7 @@ export function questionFromRow(q) {
 // Turns the editor's form into what gets saved. Empty option boxes are dropped, so a choice question can have 2 to 4 answers.
 export function cleanQuestion(q) {
   const type = q.type ?? 'multiple'
-  const base = { ...q, type, text: q.text.trim(), points_multiplier: q.points_multiplier === 2 ? 2 : 1 }
+  const base = { ...q, type, text: q.text.trim(), points_multiplier: q.points_multiplier === 2 ? 2 : 1, difficulty: DIFFICULTIES.includes(q.difficulty) ? q.difficulty : null }
   if (type === 'truefalse') {
     return { ...base, options: ['True', 'False'], correct_index: q.correct_index === 1 ? 1 : 0, numeric_answer: null, numeric_tolerance: 0, accepted_answers: [] }
   }

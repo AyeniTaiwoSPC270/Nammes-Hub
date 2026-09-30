@@ -243,6 +243,7 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
       time_limit_seconds: q.time_limit_seconds,
       points: q.points,
       points_multiplier: q.points_multiplier,
+      difficulty: q.difficulty ?? null,
       image_path: imagePath,
       image_alt: imagePath ? String(q.image_alt ?? '').trim().slice(0, IMAGE_ALT_MAX) : null,
     })
@@ -293,6 +294,7 @@ export async function duplicateQuiz(id) {
         time_limit_seconds: q.time_limit_seconds,
         points: q.points,
         points_multiplier: q.points_multiplier ?? 1,
+        difficulty: q.difficulty ?? null,
         image_path: imagePath,
         image_alt: imagePath ? q.image_alt : null,
       })

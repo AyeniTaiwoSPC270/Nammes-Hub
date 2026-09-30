@@ -12,6 +12,7 @@ import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar,
 import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
+import BotPanel from '../components/quiz/BotPanel'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
 // (/api/quiz?action=advance); everything else here is reading. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -130,8 +131,10 @@ function ControlButton({ icon, label, onClick, disabled, active }) {
   )
 }
 
-function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams }) {
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots }) {
   const [menuFor, setMenuFor] = useState(null)
+  const [botsOpen, setBotsOpen] = useState(false)
+  const botCount = players.filter((p) => p.bot_skill).length
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
   // In a team game players are listed team by team, each with a coloured tag.
   const orderedPlayers = useMemo(
@@ -163,6 +166,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
         <>
           <div className="flex flex-wrap items-center gap-3">
             <ControlButton icon={locked ? 'lock' : 'lock_open'} label={locked ? 'Unlock lobby' : 'Lock lobby'} onClick={onToggleLock} active={locked} />
+            <ControlButton icon="smart_toy" label={botCount > 0 ? `Test bots (${botCount})` : 'Test bots'} onClick={() => setBotsOpen((v) => !v)} active={botsOpen} />
             {isFull ? (
               <AutoAdvance auto={auto} noun="auto-start" />
             ) : (
@@ -225,6 +229,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
         </section>
       </div>
       <SponsorStrip placement="lobby" />
+      {botsOpen && <BotPanel botCount={botCount} spotsLeft={Math.max(0, maxPlayers - players.length)} busy={busy} onAdd={onAddBots} onRemove={onRemoveBots} />}
 
       <section className="rounded-3xl border border-hairline bg-surface p-6 shadow-md sm:p-8">
         <div className="flex items-center gap-3">
@@ -858,7 +863,7 @@ export default function HostQuiz() {
   }, [])
 
   const loadPlayers = useCallback(async () => {
-    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, streak, team_id').eq('session_id', sessionId)
+    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, streak, team_id, bot_skill').eq('session_id', sessionId)
     if (data) setPlayers(data)
   }, [sessionId])
 
@@ -1003,7 +1008,7 @@ export default function HostQuiz() {
       const body = onStep ? { expectedState: current.state, expectedIndex: current.current_question_index, ...extra } : extra
       const result = await hostOp(op, sessionId, body)
       if (result.session) applySession(result.session, true)
-      if (op === 'kick' || op === 'rename') loadPlayers()
+      if (op === 'kick' || op === 'rename' || op === 'addBots' || op === 'removeBots') loadPlayers()
     } catch (e) {
       if (e.status === 409 && e.data?.session) applySession(e.data.session, true)
       else setError(e.message)
@@ -1012,6 +1017,24 @@ export default function HostQuiz() {
       setBusy(false)
     }
   }
+
+  // Test bots answer by themselves: while a question is open, ask the server about once a second to play for any bot
+  // that has finished thinking. Answers are worked out on the server, so a slow or repeated call changes nothing.
+  const hasBots = players.some((p) => p.bot_skill)
+  const questionIndex = session?.current_question_index
+  useEffect(() => {
+    if (state !== 'question' || !hasBots) return undefined
+    let cancelled = false
+    const play = () => {
+      if (!cancelled) hostOp('botsPlay', sessionId, { expectedState: 'question', expectedIndex: questionIndex }).catch(() => {})
+    }
+    play()
+    const timer = setInterval(play, 1000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [state, hasBots, questionIndex, sessionId])
 
   const playerCountRef = useRef(0)
   playerCountRef.current = players.length
@@ -1155,6 +1178,8 @@ export default function HostQuiz() {
         onToggleLock={() => runOp(session.locked ? 'unlock' : 'lock')}
         onKick={(player, block) => runOp('kick', { playerId: player.id, block })}
         onRename={(player) => runOp('rename', { playerId: player.id })}
+        onAddBots={(count, skill) => runOp('addBots', { count, skill })}
+        onRemoveBots={() => runOp('removeBots')}
       />
     )
   } else if (session.state === 'question' && question) {

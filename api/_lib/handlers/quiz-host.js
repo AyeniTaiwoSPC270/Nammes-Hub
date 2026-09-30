@@ -2,10 +2,14 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
-import { stepUpdate, EXTEND_STEP_MS, MAX_EXTEND_MS } from '../quiz.js'
+import {
+  stepUpdate, EXTEND_STEP_MS, MAX_EXTEND_MS, effectiveElapsedMs, questionLimitMs, scoreAnswer, gradeAnswer, computeAward,
+  isComeback, sanitizeGameOptions, ANSWER_GRACE_MS, DEFAULT_MAX_PLAYERS, AVATAR_COUNT,
+} from '../quiz.js'
+import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_ONCE } from '../quizBots.js'
 
-const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename']
-const STEP_OPS = ['pause', 'resume', 'extend', 'skip']
+const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay']
+const STEP_OPS = ['pause', 'resume', 'extend', 'skip', 'botsPlay']
 
 // Admin controls for a running game: kick or rename a player, lock the lobby, pause, add time, skip a question.
 // Ops that act on the current question say which question they mean (expectedState / expectedIndex), exactly like
@@ -17,7 +21,7 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { sessionId, op, playerId, block, expectedState, expectedIndex } = req.body ?? {}
+    const { sessionId, op, playerId, block, expectedState, expectedIndex, count, skill } = req.body ?? {}
     if (!isUuid(sessionId) || !OPS.includes(op)) {
       res.status(400).json({ error: 'sessionId and a valid op are required' })
       return
@@ -142,6 +146,140 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
       }
       await log({ skipped: expectedIndex })
       res.status(200).json({ session: updated })
+      return
+    }
+
+    // ---- Test bots ----
+    if (op === 'addBots') {
+      const wanted = Number(count)
+      if (!Number.isInteger(wanted) || wanted < 1 || wanted > MAX_BOTS_AT_ONCE || !BOT_SKILL_CHOICES.includes(skill)) {
+        res.status(400).json({ error: `Pick 1 to ${MAX_BOTS_AT_ONCE} bots and a skill level` })
+        return
+      }
+      if (session.state !== 'lobby') {
+        res.status(409).json({ error: 'Bots can only be added while the lobby is open', session })
+        return
+      }
+      const { data: existing } = await supabaseAdmin.from('quiz_players').select('id, nickname').eq('session_id', sessionId)
+      const free = (session.max_players ?? DEFAULT_MAX_PLAYERS) - (existing ?? []).length
+      if (free <= 0) {
+        res.status(409).json({ error: 'The lobby is full', session })
+        return
+      }
+      const added = Math.min(wanted, free)
+      const names = botNicknames(added, [...(existing ?? []).map((p) => p.nickname), ...(session.blocked_nicknames ?? [])])
+      const offset = (existing ?? []).length
+      const rows = names.map((nickname, i) => ({
+        session_id: sessionId, nickname, avatar_id: (offset + i * 7 + 2) % AVATAR_COUNT, bot_skill: skillForBot(skill, offset + i),
+      }))
+      const { data: made, error } = await supabaseAdmin.from('quiz_players').insert(rows).select('id')
+      if (error) return fail(error, 'Could not add the bots')
+      if (session.team_mode) {
+        // In team mode the bots are spread over the teams one at a time, like "put me anywhere" joins.
+        for (const row of made ?? []) {
+          const { data: team, error: teamError } = await supabaseAdmin.rpc('quiz_assign_auto_team', { p_session: sessionId, p_player: row.id })
+          if (teamError || !team) {
+            await supabaseAdmin.from('quiz_players').delete().in('id', (made ?? []).map((m) => m.id))
+            return fail(teamError ?? new Error('no team'), 'Could not add the bots')
+          }
+        }
+      }
+      await log({ added, skill })
+      res.status(200).json({ added, session })
+      return
+    }
+
+    if (op === 'removeBots') {
+      if (session.state !== 'lobby') {
+        res.status(409).json({ error: 'Bots can only be removed while the lobby is open', session })
+        return
+      }
+      const { data: gone, error } = await supabaseAdmin.from('quiz_players').delete().eq('session_id', sessionId).not('bot_skill', 'is', null).select('id')
+      if (error) return fail(error, 'Could not remove the bots')
+      const removed = (gone ?? []).length
+      const patch = session.full_at ? { full_at: null } : null
+      await log({ removed })
+      if (patch) {
+        const updated = await save(patch)
+        if (!updated) return
+        res.status(200).json({ removed, session: updated })
+        return
+      }
+      res.status(200).json({ removed, session })
+      return
+    }
+
+    // The host page asks about once a second; every bot whose thinking time has passed answers the open question.
+    // What a bot answers and when is fixed by its id (see quizBots.js), so asking again never changes anything.
+    if (op === 'botsPlay') {
+      if (session.paused_at) {
+        res.status(200).json({ answered: 0 })
+        return
+      }
+      const { data: bots } = await supabaseAdmin.from('quiz_players').select('id, streak, bot_skill').eq('session_id', sessionId).not('bot_skill', 'is', null)
+      if ((bots ?? []).length === 0) {
+        res.status(200).json({ answered: 0 })
+        return
+      }
+      const { data: question } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).eq('position', session.current_question_index).maybeSingle()
+      if (!question) {
+        res.status(200).json({ answered: 0 })
+        return
+      }
+      const elapsedMs = effectiveElapsedMs(session, now().getTime())
+      const limitMs = questionLimitMs(session, question)
+      if (elapsedMs > limitMs + ANSWER_GRACE_MS) {
+        res.status(200).json({ answered: 0 })
+        return
+      }
+      const { data: answeredRows } = await supabaseAdmin.from('quiz_answers').select('player_id, points_awarded').eq('question_id', question.id)
+      const answeredIds = new Set((answeredRows ?? []).map((a) => a.player_id))
+      const due = bots
+        .filter((b) => !answeredIds.has(b.id))
+        .map((bot) => ({ bot, decision: botDecision({ botId: bot.id, skill: bot.bot_skill, question, limitMs }) }))
+        .filter(({ decision }) => decision.thinkMs <= elapsedMs)
+      if (due.length === 0) {
+        res.status(200).json({ answered: 0 })
+        return
+      }
+
+      const options = sanitizeGameOptions(session.game_options)
+      let before = null
+      if (options.comeback) {
+        const { data: players } = await supabaseAdmin.from('quiz_players').select('id, total_score').eq('session_id', sessionId)
+        const gained = new Map((answeredRows ?? []).map((a) => [a.player_id, a.points_awarded]))
+        before = new Map((players ?? []).map((p) => [p.id, p.total_score - (gained.get(p.id) ?? 0)]))
+      }
+      const results = await Promise.all(due.map(async ({ bot, decision }) => {
+        const graded = gradeAnswer(question, decision.submission)
+        if (!graded.ok) return false
+        const base = scoreAnswer({ correct: graded.correct === true, points: question.points, timeLimitSeconds: limitMs / 1000, elapsedMs: decision.thinkMs })
+        const award = computeAward({
+          correct: graded.correct,
+          base,
+          streakBefore: bot.streak ?? 0,
+          multiplier: question.points_multiplier ?? 1,
+          comeback: Boolean(before && graded.correct && isComeback(before, bot.id)),
+          options,
+        })
+        const { data: recorded, error } = await supabaseAdmin.rpc('quiz_record_answer', {
+          p_session: sessionId,
+          p_player: bot.id,
+          p_question: question.id,
+          p_index: session.current_question_index,
+          p_chosen: graded.chosenIndex,
+          p_points: award.points,
+          p_bonus: award.bonus,
+          p_correct: graded.correct,
+          p_text: graded.answerText,
+          p_powerup: null,
+          p_streak: award.streakAfter,
+          p_elapsed: decision.thinkMs,
+        })
+        if (error) console.error('quiz-host: bot answer failed', error)
+        return !error && recorded === true
+      }))
+      res.status(200).json({ answered: results.filter(Boolean).length })
       return
     }
 
