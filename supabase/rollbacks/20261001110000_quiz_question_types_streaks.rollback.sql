@@ -58,6 +58,7 @@ alter table public.quiz_answers
 alter table public.quiz_answers alter column chosen_index set not null;
 
 alter table public.quiz_questions drop constraint if exists quiz_questions_shape;
+alter table public.quiz_questions alter column options drop default;
 alter table public.quiz_questions alter column correct_index set not null;
 alter table public.quiz_questions
   add check (array_length(options, 1) between 2 and 4),

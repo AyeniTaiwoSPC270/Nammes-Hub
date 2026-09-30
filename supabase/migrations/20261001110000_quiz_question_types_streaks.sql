@@ -11,6 +11,8 @@ alter table public.quiz_questions
   add column points_multiplier smallint not null default 1 check (points_multiplier in (1, 2));
 
 alter table public.quiz_questions alter column correct_index drop not null;
+-- Typed-answer questions have no options, so an empty list is the default.
+alter table public.quiz_questions alter column options set default '{}';
 
 -- The old shape rules assumed every question has 2 to 4 options and a correct one; replace them with rules per type.
 do $$
