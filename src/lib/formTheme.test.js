@@ -113,6 +113,20 @@ describe('question style', () => {
   })
 })
 
+describe('card size', () => {
+  it('clamps padding, gap and width', () => {
+    const c = normalizeTheme({ card: { padding: 500, gap: -4, widthPct: 10 } }).card
+    expect(c.padding).toBe(64)
+    expect(c.gap).toBe(0)
+    expect(c.widthPct).toBe(50)
+  })
+  it('includes the NAMMES presets', () => {
+    expect(FORM_PRESETS.slice(0, 2).map((p) => p.id)).toEqual(['nammes', 'nammes-dark'])
+    expect(applyPreset('nammes').accent).toBe('#0b2417')
+    expect(applyPreset('nammes-dark').page.color).toBe('#0d1310')
+  })
+})
+
 describe('presets', () => {
   it('every preset normalises cleanly and keeps the header and width', () => {
     for (const p of FORM_PRESETS) {

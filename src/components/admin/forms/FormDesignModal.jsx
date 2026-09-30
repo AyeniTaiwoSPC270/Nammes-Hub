@@ -7,6 +7,8 @@ import {
   FORM_WIDTHS,
   PAGE_TYPES,
   applyPreset,
+  cardGap,
+  cardPadding,
   cardStyle,
   normalizeTheme,
   pageBackground,
@@ -65,11 +67,11 @@ function PresetButton({ preset, active, onPick }) {
 
 function PreviewQuestions({ questions, theme }) {
   const [answers, setAnswers] = useState({})
-  const card = cardStyle(theme)
+  const card = { ...cardStyle(theme), padding: cardPadding(theme) }
   return (
-    <div className="mt-4 flex flex-col gap-4">
+    <div className="mt-4 flex flex-col" style={{ gap: cardGap(theme) }}>
       {questions.map((q) => (
-        <div key={q.id} className="p-5" style={card}>
+        <div key={q.id} style={card}>
           <QuestionField
             question={{ ...q, label: q.label || 'Untitled question' }}
             value={answers[q.id]}
@@ -216,6 +218,12 @@ export default function FormDesignModal({ theme, onChange, form, questions, onCl
 
             {tab === 'cards' && (
               <>
+                <ControlSection title="Card size">
+                  <Slider label="Card width" value={t.card.widthPct} min={50} max={100} unit="%" onChange={(widthPct) => updateIn('card', { widthPct })} />
+                  <Slider label="Inner spacing (padding)" value={t.card.padding} min={8} max={64} unit="px" onChange={(padding) => updateIn('card', { padding })} />
+                  <Slider label="Space between cards" value={t.card.gap} min={0} max={64} unit="px" onChange={(gap) => updateIn('card', { gap })} />
+                  <p className="text-xs text-ink-muted">To change the overall form width, use the Layout tab.</p>
+                </ControlSection>
                 <ControlSection title="Card style">
                   <ColorField label="Card color" value={t.card.color} onChange={(color) => updateIn('card', { color })} />
                   <Slider label="Opacity" value={t.card.opacity} min={0} max={100} unit="%" onChange={(opacity) => updateIn('card', { opacity })} />

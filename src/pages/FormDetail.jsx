@@ -8,7 +8,7 @@ import { useFormQuery, isFormOpen, validateAnswers } from '../data/forms'
 import { useMyResponseQuery, formatAnswerForDisplay } from '../data/formResponses'
 import QuestionField from '../components/forms/QuestionField'
 import FormThemeShell, { FormHeaderCard, questionCardStyle } from '../components/forms/FormThemeShell'
-import { hasTheme, normalizeTheme } from '../lib/formTheme'
+import { cardGap, hasTheme, normalizeTheme } from '../lib/formTheme'
 import Button from '../components/ui/Button'
 import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
@@ -165,12 +165,12 @@ export default function FormDetail() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col gap-4">
+      <div className="mt-6 flex flex-col gap-4" style={themed ? { gap: cardGap(form.theme) } : undefined}>
         {form.questions.map((q, i) => (
           <Reveal
             key={q.id}
             delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}
-            className={themed ? 'p-5' : 'rounded-lg border border-hairline bg-surface p-5 shadow-sm'}
+            className={themed ? '' : 'rounded-lg border border-hairline bg-surface p-5 shadow-sm'}
             style={cardStyle}
           >
             <QuestionField
