@@ -23,9 +23,9 @@ ${shot('home', 'The NAMMES Hub home page: a welcome banner, the latest news, upc
 <h2>What you can do here</h2>
 <div class="two">
   <div class="card"><div class="tag">Academics</div><h4>Study smarter</h4>${bullets(['Read a detailed <strong>outline</strong> for every course', 'Check your class and exam <strong>timetable</strong>', 'Track your grades with the <strong>CGPA calculator</strong>', 'Find shared <strong>resources</strong> and past questions'])}</div>
-  <div class="card"><div class="tag">Community</div><h4>Stay in the loop</h4>${bullets(['See upcoming <strong>events</strong> and past photo galleries', 'Read department <strong>news</strong>', 'Spot <strong>scholarships</strong> and internships', 'Nominate and vote in the <strong>awards</strong>'])}</div>
+  <div class="card"><div class="tag">Community</div><h4>Stay in the loop</h4>${bullets(['See upcoming <strong>events</strong> and past photo galleries', 'Read department <strong>news</strong>', 'Spot <strong>scholarships</strong> and internships', 'Nominate and vote in the <strong>awards</strong>', 'Play <strong>live quizzes</strong> and battle friends'])}</div>
   <div class="card"><div class="tag">Take part</div><h4>Have your say</h4>${bullets(['Fill in surveys, registrations and applications', 'Contribute your own past questions and notes', 'Message the executives through the contact form'])}</div>
-  <div class="card green"><div class="tag">Admins</div><h4>Run the association</h4>${bullets(['Publish news, events and opportunities', 'Build forms and read the responses', 'Run an awards season end to end', 'Email every member at once'])}</div>
+  <div class="card green"><div class="tag">Admins</div><h4>Run the association</h4>${bullets(['Publish news, events and opportunities', 'Build forms and read the responses', 'Run an awards season end to end', 'Host live quizzes at events', 'Email every member at once'])}</div>
 </div>
 
 <h2>How to read this handbook</h2>
@@ -42,7 +42,7 @@ ${note('The Hub is updated all the time by the executives. Pages that look empty
 <div class="flow"><span class="node">Home</span><span class="arrow">›</span><span class="node">About</span><span class="node">Forms</span><span class="node">Contact</span></div>
 <div class="two">
   <div class="card"><div class="tag">Academics menu</div>${bullets(['<strong>Outlines</strong>: course by course', '<strong>Curriculum</strong>: the official CCMAS', '<strong>Timetable</strong>: classes and exams', '<strong>CGPA</strong>: grade tracker', '<strong>Resources</strong>: shared materials'])}</div>
-  <div class="card"><div class="tag">Community menu</div>${bullets(['<strong>Events</strong>: workshops and galleries', '<strong>News</strong>: announcements', '<strong>Opportunities</strong>: deadlines', '<strong>Awards</strong>: nominate and vote'])}</div>
+  <div class="card"><div class="tag">Community menu</div>${bullets(['<strong>Events</strong>: workshops and galleries', '<strong>News</strong>: announcements', '<strong>Opportunities</strong>: deadlines', '<strong>Live quiz</strong> and <strong>Quiz battles</strong>: play from your phone', '<strong>Awards</strong>: nominate and vote'])}</div>
 </div>
 <p class="small">Also: <strong>Meet the Excos</strong> (the executive team), <strong>Sign In / Sign Up</strong>, your <strong>Account</strong> page, and the <strong>Admin</strong> area for executives.</p>
 `,
@@ -70,6 +70,7 @@ ${table(['You can…', 'Without an account', 'With an account'], [
   ['Use the CGPA calculator', 'No, sign-in required', 'Yes'],
   ['Contribute a past question or notes to a course', 'No', 'Yes'],
   ['Nominate or vote in the awards', 'No', 'Yes (department matric number needed)'],
+  ['Join a live quiz, practise or battle a friend', 'Yes', 'Yes'],
   ['Get email alerts for new News and Events', 'No', 'Yes, if you keep the setting on'],
 ])}
 
@@ -112,7 +113,7 @@ ${shot('signup', 'The Create account page. Every field is required.', { url: 'na
     <span class="signin">Sign In <span class="callout-tag" style="background:#fff;color:#ae3200">3</span></span><span class="it">◐ <span class="callout-tag">4</span></span></div>
   <div class="legend">
     <div><span class="callout-tag">1</span><span><strong>Academics</strong> opens Outlines, Curriculum, Timetable, CGPA and Resources.</span></div>
-    <div><span class="callout-tag">2</span><span><strong>Community</strong> opens Events, News, Opportunities and Awards.</span></div>
+    <div><span class="callout-tag">2</span><span><strong>Community</strong> opens Events, News, Opportunities, Awards, the Live quiz and Quiz battles.</span></div>
     <div><span class="callout-tag">3</span><span><strong>Sign In</strong> becomes your account menu once you are signed in.</span></div>
     <div><span class="callout-tag">4</span><span><strong>Sun / moon</strong> switches between light and dark mode.</span></div>
   </div>
@@ -179,7 +180,7 @@ ${steps([
   'Open the email, click the link, and choose a <strong>new password</strong> of at least 8 characters.',
   'You are sent back to Sign In with a confirmation. Sign in with the new password.',
 ])}
-${note('Admins who have switched on two-factor login are also asked for a 6-digit code from their authenticator app after their password. See Chapter 22.')}
+${note('Admins who have switched on two-factor login are also asked for a 6-digit code from their authenticator app after their password. See Chapter 24.')}
 
 <h2>The Account page settings</h2>
 <p>Once signed in, open your account menu and choose <strong>Account</strong> (or go to <span class="path">/account</span>). It shows the email you signed up with and three settings:</p>

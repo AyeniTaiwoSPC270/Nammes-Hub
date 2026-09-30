@@ -22,7 +22,7 @@ ${glance([['Address', 'nammeshub.com.ng/outlines'], ['Sign-in needed?', 'No (onl
 ${steps([
   'Open <strong>Academics → Outlines</strong> and choose your level under <em>Select Level</em>.',
   'Choose <strong>First Semester</strong> or <strong>Second Semester</strong>.',
-  'A table lists every course with its <strong>code</strong>, <strong>title</strong> and <strong>units</strong>. Type in the <em>search box</em> to filter by code or title.',
+  'A table lists every course with its <strong>code</strong>, <strong>title</strong>, <strong>units</strong> and a <strong>status</strong>: <strong>C</strong> means compulsory and <strong>E</strong> means elective, so you can tell which courses you must take. Type in the <em>search box</em> to filter by code or title.',
   'Choose <strong>View outline</strong> next to the course you want.',
 ])}
 ${shot('outlines-level', 'After choosing a level, pick a semester to see its course list.', { url: '/outlines/100', narrow: true })}
@@ -32,7 +32,7 @@ ${shot('outlines-courses', 'The course list for 100 Level, First Semester, with 
 ${shot('outline-detail', 'A course outline page: units, lecturer, description and the topics covered.', { url: '/outlines/100/1/chm-cm101' })}
 <p>Every outline page has the same layout:</p>
 ${table(['Section', 'What you get'], [
-  ['Header', 'The course <strong>code</strong> and <strong>units</strong>, the full <strong>title</strong>, the <strong>lecturer</strong> (or TBA) and the date the outline was last <strong>updated</strong>.'],
+  ['Header', 'The course <strong>code</strong>, <strong>units</strong> and whether it is <strong>compulsory</strong> or an <strong>elective</strong>, the full <strong>title</strong>, the <strong>lecturer</strong> (or TBA) and the date the outline was last <strong>updated</strong>.'],
   ['Description', 'A short plain-language summary of the course.'],
   ['Topics covered', 'A bullet list of everything the course is expected to teach.'],
   ['Recommended texts', 'Textbooks to look for. When a title includes a web address, it becomes a clickable link.'],

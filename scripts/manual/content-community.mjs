@@ -1,3 +1,4 @@
+import { quizChapter } from './content-quiz.mjs'
 import { tip, note, warn, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
 import { AUTHORS } from './data/authors.mjs'
 
@@ -173,11 +174,13 @@ ${tip('Scanning a QR code on a poster with your phone camera is the quickest way
 `,
   },
 
-  /* ------------------------------------------------------------------ 15 */
+  quizChapter,
+
+  /* ------------------------------------------------------------------ 16 */
   {
     id: 'association',
     part: PART_4,
-    num: 15,
+    num: 16,
     title: 'About, the Excos and Contact',
     intro: 'Who NAMMES is, who is running it this session, and how to reach them.',
     inThis: ['The About page', 'Meet the Excos', 'The Contact page', 'Social media and the newsletter'],

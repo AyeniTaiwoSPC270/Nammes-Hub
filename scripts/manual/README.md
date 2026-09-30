@@ -29,6 +29,7 @@ The covers, front pages, team name, session and the authors' names, roles and ph
 | `content-start.mjs` | Part One: welcome, quick start, navigation, account |
 | `content-academics.mjs` | Part Two: outlines, curriculum, timetable, CGPA, resources |
 | `content-community.mjs` | Parts Three and Four: events, news, opportunities, awards, forms, about/excos/contact |
+| `content-quiz.mjs` | Two chapters on the live quiz: Chapter 15 (members: live games, practice, battles) and Chapter 22 (admins: building, hosting, reports); spliced in by the community and admin files |
 | `content-admin.mjs` | Part Five (admin guide) and the appendices |
 | `helpers.mjs` | Callouts, steps, tables, screenshot frames |
 | `book.css` | The whole design (page size, NAMMES colours, covers, chapter openers) |
