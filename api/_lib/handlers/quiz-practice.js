@@ -7,6 +7,7 @@ import {
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
+import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
 
 // Practice mode: one person replays a quiz on their own phone, no host. Questions are sent one at a time, so a player
 // never receives a later question (or any answer) in advance. After each answer they see the result at once.
@@ -15,6 +16,24 @@ import { publicImageUrl } from '../quizImage.js'
 //
 // One route with an `op`: info, start, state, answer, next, top.
 const OPS = ['info', 'start', 'state', 'answer', 'next', 'top']
+
+// A run can be raced against computer rivals or against recorded past runs ("ghosts"). Rivals only ever show their
+// score up to the question the player has just answered, so nothing about a later question is given away.
+const RACE_MODES = ['none', 'bots', 'ghosts']
+const RIVALS = 4
+
+// What one question is worth to someone who answered it right after `elapsedMs` (same rule as the player's own score).
+function questionPoints(question, elapsedMs) {
+  const base = scoreAnswer({ correct: true, points: question.points, timeLimitSeconds: question.time_limit_seconds, elapsedMs })
+  return base * (question.points_multiplier === 2 ? 2 : 1)
+}
+
+// `count` past runs spread from the best to the weakest, so the field is a mix and not just the top scorers.
+export function pickGhosts(runs, count = RIVALS) {
+  const ranked = [...runs].sort((a, b) => b.total_score - a.total_score || String(a.id).localeCompare(String(b.id)))
+  if (ranked.length <= count) return ranked
+  return Array.from({ length: count }, (_, i) => ranked[Math.round((i * (ranked.length - 1)) / (count - 1))])
+}
 
 export function createQuizPracticeHandler(
   getClient,
@@ -33,7 +52,7 @@ export function createQuizPracticeHandler(
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { op, quizId, token, nickname, avatarId = 0, chosenIndex, answerText } = req.body ?? {}
+    const { op, quizId, token, nickname, avatarId = 0, chosenIndex, answerText, race = 'none', raceSkill = 'mixed' } = req.body ?? {}
     if (!OPS.includes(op)) {
       res.status(400).json({ error: 'Unknown request' })
       return
@@ -56,6 +75,48 @@ export function createQuizPracticeHandler(
       res.status(500).json({ error: message })
     }
 
+    // The rivals' scores through question number `upto` (0-based), each with what they won on that last question.
+    async function raceFor(run, questions, upto) {
+      const mode = run.race_mode ?? 'none'
+      if (mode === 'none' || upto < 0) return null
+      const last = Math.min(upto, questions.length - 1)
+      if (mode === 'bots') {
+        const pool = botNicknames(50)
+        const start = Math.floor(seeded(run.id, 9) * pool.length)
+        const rivals = Array.from({ length: RIVALS }, (_, i) => {
+          const id = `${run.id}:${i}`
+          const skill = skillForBot(run.race_skill ?? 'mixed', i)
+          let score = 0
+          let gain = 0
+          questions.slice(0, last + 1).forEach((q, n) => {
+            const d = botDecision({ botId: id, skill, question: q, limitMs: q.time_limit_seconds * 1000 })
+            const points = d.correct ? questionPoints(q, d.thinkMs) : 0
+            score += points
+            if (n === last) gain = points
+          })
+          return { id, kind: 'bot', nickname: pool[(start + i * 7) % pool.length], avatarId: Math.floor(seeded(id, 5) * 50), score, gain }
+        })
+        return { mode, rivals }
+      }
+      const ids = run.race_ghosts ?? []
+      if (ids.length === 0) return { mode, rivals: [] }
+      const [{ data: runs }, { data: answers }] = await Promise.all([
+        supabaseAdmin.from('quiz_practice_runs').select('id, nickname, avatar_id').in('id', ids),
+        supabaseAdmin.from('quiz_practice_answers').select('run_id, question_id, points_awarded').in('run_id', ids),
+      ])
+      const rivals = (runs ?? []).map((g) => {
+        let score = 0
+        let gain = 0
+        questions.slice(0, last + 1).forEach((q, n) => {
+          const points = (answers ?? []).find((a) => a.run_id === g.id && a.question_id === q.id)?.points_awarded ?? 0
+          score += points
+          if (n === last) gain = points
+        })
+        return { id: g.id, kind: 'ghost', nickname: g.nickname, avatarId: g.avatar_id, score, gain }
+      })
+      return { mode, rivals }
+    }
+
     // What the player sees for their run right now.
     async function view(run, questions, quiz) {
       const total = questions.length
@@ -63,7 +124,7 @@ export function createQuizPracticeHandler(
       if (run.finished_at || run.current_index >= total) {
         const { data: answers } = await supabaseAdmin.from('quiz_practice_answers').select('correct').eq('run_id', run.id)
         const correct = (answers ?? []).filter((a) => a.correct === true).length
-        return { ...base, finished: true, correctCount: correct }
+        return { ...base, finished: true, correctCount: correct, race: await raceFor(run, questions, total - 1) }
       }
       const question = questions[run.current_index]
       let { data: answer } = await supabaseAdmin
@@ -96,7 +157,10 @@ export function createQuizPracticeHandler(
           imageAlt: question.image_alt ?? '',
         },
       }
-      if (answer) out.result = resultFor(question, answer)
+      if (answer) {
+        out.result = resultFor(question, answer)
+        out.race = await raceFor(run, questions, run.current_index)
+      }
       return out
     }
 
@@ -139,7 +203,8 @@ export function createQuizPracticeHandler(
         return
       }
       const questions = await playableQuestions(quiz.id)
-      res.status(200).json({ title: quiz.title, questionCount: questions.length, theme: sanitizeTheme(quiz.theme, { quizId: quiz.id }) })
+      const { data: finished } = await supabaseAdmin.from('quiz_practice_runs').select('id').eq('quiz_id', quiz.id).not('finished_at', 'is', null)
+      res.status(200).json({ title: quiz.title, questionCount: questions.length, ghostCount: (finished ?? []).length, theme: sanitizeTheme(quiz.theme, { quizId: quiz.id }) })
       return
     }
 
@@ -187,6 +252,19 @@ export function createQuizPracticeHandler(
         res.status(404).json({ error: 'This quiz has no questions to practise yet' })
         return
       }
+      if (!RACE_MODES.includes(race) || !BOT_SKILL_CHOICES.includes(raceSkill)) {
+        res.status(400).json({ error: 'Pick who to race' })
+        return
+      }
+      let ghosts = []
+      if (race === 'ghosts') {
+        const { data: past } = await supabaseAdmin.from('quiz_practice_runs').select('id, total_score').eq('quiz_id', quiz.id).not('finished_at', 'is', null)
+        ghosts = pickGhosts(past ?? []).map((g) => g.id)
+        if (ghosts.length === 0) {
+          res.status(409).json({ error: 'Nobody has finished this practice yet, so there is nobody to race. Try racing the bots.' })
+          return
+        }
+      }
       const newToken = newPlayerToken()
       const { data: run, error } = await supabaseAdmin
         .from('quiz_practice_runs')
@@ -197,6 +275,9 @@ export function createQuizPracticeHandler(
           token_hash: hashToken(newToken),
           current_index: 0,
           question_started_at: new Date(now()).toISOString(),
+          race_mode: race,
+          race_skill: race === 'bots' ? raceSkill : null,
+          race_ghosts: ghosts,
         })
         .select('*')
         .single()
@@ -258,7 +339,7 @@ export function createQuizPracticeHandler(
       }
       const answer = { chosen_index: late ? null : graded.chosenIndex, answer_text: late ? null : graded.answerText, correct, points_awarded: points }
       const { data: fresh } = await supabaseAdmin.from('quiz_practice_runs').select('total_score').eq('id', run.id).maybeSingle()
-      res.status(200).json({ result: resultFor(question, answer), score: fresh?.total_score ?? run.total_score + points })
+      res.status(200).json({ result: resultFor(question, answer), score: fresh?.total_score ?? run.total_score + points, race: await raceFor(run, questions, run.current_index) })
       return
     }
 

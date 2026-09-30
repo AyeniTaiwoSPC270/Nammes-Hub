@@ -41,8 +41,51 @@ function Shell({ children, tone }) {
   )
 }
 
+const RACE_CHOICES = [
+  { value: 'none', label: 'Just me', hint: 'Go at your own pace.' },
+  { value: 'bots', label: 'Race bots', hint: 'Four computer players answer too. See who is ahead after each question.' },
+  { value: 'ghosts', label: 'Race past players', hint: 'Race the saved results of people who practised before.' },
+]
+const BOT_LEVELS = [
+  { value: 'mixed', label: 'Mixed crowd' },
+  { value: 'beginner', label: 'Beginners' },
+  { value: 'average', label: 'Average' },
+  { value: 'expert', label: 'Experts' },
+]
+
+// Who you are up against, with the score each has after the question you just answered.
+function RaceBoard({ name, avatarId, score, race, onDark = false }) {
+  if (!race || race.rivals.length === 0) return null
+  const entries = [{ id: 'you', you: true, nickname: name, avatarId, score, gain: 0 }, ...race.rivals].sort((a, b) => b.score - a.score || (b.you ? 1 : 0) - (a.you ? 1 : 0))
+  const place = entries.findIndex((e) => e.you) + 1
+  const row = onDark ? 'bg-black/20' : 'border border-hairline bg-surface'
+  return (
+    <section className="w-full text-left" aria-label="Race standings">
+      <h2 className={`mb-2 text-center text-sm font-bold uppercase tracking-[0.1em] ${onDark ? 'text-white/80' : 'text-ink-muted'}`}>
+        You are {MEDALS[place - 1] ?? ''} {place}{['st', 'nd', 'rd'][place - 1] ?? 'th'} of {entries.length}
+      </h2>
+      <ol className="flex flex-col gap-2">
+        {entries.map((e, i) => (
+          <li key={e.id} className={`flex items-center gap-3 rounded-2xl p-2 ${row} ${e.you ? 'ring-2 ring-orange-500' : ''}`}>
+            <span className="w-6 text-center font-bold">{i + 1}</span>
+            <Avatar name={e.nickname} avatarId={e.avatarId} mood="static" className="h-9 w-9" />
+            <span className="min-w-0 flex-1 truncate font-semibold">
+              {e.you ? 'You' : e.nickname}
+              {!e.you && <span className="ml-2 text-xs font-bold uppercase opacity-70">{e.kind === 'bot' ? 'bot' : 'past run'}</span>}
+            </span>
+            {!e.you && e.gain > 0 && <span className="text-sm font-bold text-green-500">+{formatScore(e.gain)}</span>}
+            <span className="font-bold tabular-nums">{formatScore(e.score)}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 function Intro({ info, onStart, busy, error }) {
   const [nickname, setNickname] = useState('')
+  const [race, setRace] = useState('none')
+  const [raceSkill, setRaceSkill] = useState('mixed')
   const [avatarId, setAvatarId] = useState(randomAvatarId)
   return (
     <Shell>
@@ -55,7 +98,7 @@ function Intro({ info, onStart, busy, error }) {
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          onStart(nickname, avatarId)
+          onStart(nickname, avatarId, { race, raceSkill })
         }}
         className="flex flex-col gap-4 rounded-3xl border border-hairline bg-surface p-5 shadow-md"
       >
@@ -94,6 +137,32 @@ function Intro({ info, onStart, busy, error }) {
             </button>
           ))}
         </div>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Play against</legend>
+          {RACE_CHOICES.map((c) => {
+            const unavailable = c.value === 'ghosts' && (info.ghostCount ?? 0) === 0
+            return (
+              <label
+                key={c.value}
+                className={`flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 ${race === c.value ? 'border-orange-500 bg-orange-500/10' : 'border-hairline'} ${unavailable ? 'cursor-not-allowed opacity-50' : ''}`}
+              >
+                <input type="radio" name="race" value={c.value} checked={race === c.value} disabled={unavailable} onChange={() => setRace(c.value)} className="mt-1" />
+                <span>
+                  <span className="block font-bold">{c.label}</span>
+                  <span className="block text-sm text-ink-muted">{unavailable ? 'Nobody has finished this practice yet.' : c.hint}</span>
+                </span>
+              </label>
+            )
+          })}
+          {race === 'bots' && (
+            <label className="flex items-center gap-3 text-sm font-semibold">
+              Bot skill
+              <select value={raceSkill} onChange={(e) => setRaceSkill(e.target.value)} className="min-h-11 flex-1 rounded-xl border-2 border-hairline bg-paper px-3 text-base font-semibold text-ink-900">
+                {BOT_LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+              </select>
+            </label>
+          )}
+        </fieldset>
         {error && <p role="alert" className="rounded-2xl bg-red-600/12 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>}
         <button
           type="submit"
@@ -185,11 +254,11 @@ export default function PlayPractice() {
     }
   }
 
-  async function start(nickname, avatarId) {
+  async function start(nickname, avatarId, raceOptions = {}) {
     setBusy(true)
     setError('')
     try {
-      const data = await callQuiz('practice', { op: 'start', quizId, nickname, avatarId })
+      const data = await callQuiz('practice', { op: 'start', quizId, nickname, avatarId, ...raceOptions })
       const next = { token: data.token, quizId }
       saveSaved(next)
       setSaved(next)
@@ -203,7 +272,7 @@ export default function PlayPractice() {
 
   function answer(payload) {
     act({ op: 'answer', ...payload }, (data) => {
-      setRun((r) => ({ ...r, result: data.result, score: data.score }))
+      setRun((r) => ({ ...r, result: data.result, score: data.score, race: data.race }))
       setTyped('')
     })
   }
@@ -251,6 +320,7 @@ export default function PlayPractice() {
           <p className="text-xl font-semibold">points</p>
           <p className="mt-2 text-lg">{run.correctCount} of {run.total} right</p>
         </section>
+        <RaceBoard name={run.nickname} avatarId={run.avatarId} score={run.score} race={run.race} />
         {top.length > 0 && (
           <div>
             <h2 className="mb-2 text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">Practice top 10 (just for fun)</h2>
@@ -287,6 +357,7 @@ export default function PlayPractice() {
             </div>
           )}
           <p className="rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">{formatScore(run.score)} pts · question {run.index + 1} of {run.total}</p>
+          <RaceBoard name={run.nickname} avatarId={run.avatarId} score={run.score} race={run.race} onDark />
           {error && <p role="alert" className="text-sm">{error}</p>}
           <button
             type="button"
