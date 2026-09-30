@@ -244,6 +244,7 @@ function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, 
         <button type="submit" disabled={code.length !== 6} className={`${bigButton} bg-orange-500 text-white`}>Go</button>
       </form>
       <Champions ranking={ranking} period={period} onPeriod={onPeriod} />
+      <Link to="/make" className="text-center text-sm font-semibold text-orange-500">Want to use your own questions? Make a quiz</Link>
     </Shell>
   )
 }
@@ -444,6 +445,7 @@ export default function PlayBattle() {
   const [period, setPeriod] = useState('week')
   const timedOutFor = useRef(-1)
   const token = saved?.token
+  const presetQuizId = search.get('quiz') ?? undefined
   const lastAction = useRef(null)
 
   const accept = useCallback((data) => {
@@ -467,14 +469,14 @@ export default function PlayBattle() {
     } else if (linkCode) {
       callQuiz('battle', { op: 'info', code: linkCode.toUpperCase() }).then((d) => !cancelled && setInfo(d)).catch((e) => !cancelled && setPageError(e.message))
     } else {
-      callQuiz('battle', { op: 'list' }).then((d) => !cancelled && setQuizzes(d.quizzes)).catch((e) => !cancelled && setPageError(e.message))
+      callQuiz('battle', { op: 'list', quizId: presetQuizId }).then((d) => !cancelled && setQuizzes(d.quizzes)).catch((e) => !cancelled && setPageError(e.message))
       callQuiz('battle', { op: 'ranking', period, tag: deviceTag() }).then((d) => !cancelled && setRanking(d)).catch(() => {})
     }
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, linkCode, accept, period])
+  }, [token, linkCode, accept, period, presetQuizId])
 
   const state = view?.state
   const ticking = state === 'question' || state === 'open' || state === 'reveal'

@@ -27,6 +27,17 @@ async function fetchRecentBattles() {
   return data
 }
 
+async function fetchCommunitySets() {
+  const { data, error } = await supabase
+    .from('quizzes')
+    .select('id, title, custom_code, created_at, expires_at, quiz_questions(count)')
+    .eq('is_custom', true)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) throw error
+  return data
+}
+
 function sideOf(battle, slot) {
   return (battle.quiz_battle_sides ?? []).find((s) => s.slot === slot)
 }
@@ -36,7 +47,20 @@ export default function AdminBattles() {
   const queryClient = useQueryClient()
   const ratings = useQuery({ queryKey: ['battle_ratings'], queryFn: fetchRatings })
   const battles = useQuery({ queryKey: ['battle_recent'], queryFn: fetchRecentBattles })
+  const sets = useQuery({ queryKey: ['community_sets'], queryFn: fetchCommunitySets })
   const [confirmReset, setConfirmReset] = useState(false)
+  const removeSet = useMutation({
+    mutationFn: async (id) => {
+      const { data, error } = await supabase.from('quizzes').delete().eq('id', id).select('id')
+      if (error) throw error
+      if (!data || data.length === 0) throw new Error('Nothing was removed. Your account may not have admin access.')
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['community_sets'] })
+      toast.success('Community quiz removed.')
+    },
+    onError: (e) => toast.error(e.message),
+  })
 
   const remove = useMutation({
     mutationFn: async (tagHash) => {
@@ -112,6 +136,31 @@ export default function AdminBattles() {
               </tbody>
             </table>
           </div>
+        )}
+      </section>
+
+      <section className="mt-10" aria-label="Community quizzes">
+        <h2 className="text-xl font-bold text-ink-900">Community quizzes</h2>
+        <p className="text-sm text-ink-muted">Quizzes people made from their own questions at <code>/make</code>. They are deleted after 30 days. Remove any that should not be there.</p>
+        {sets.isError ? (
+          <ErrorState message="Couldn't load the community quizzes." onRetry={sets.refetch} />
+        ) : sets.isLoading ? (
+          <p className="mt-2 text-ink-muted">Loading…</p>
+        ) : sets.data.length === 0 ? (
+          <p className="mt-2 text-ink-muted">None yet.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-hairline rounded-xl border border-hairline">
+            {sets.data.map((s) => (
+              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                <span className="min-w-0">
+                  <span className="font-semibold text-ink-900">{s.title}</span>
+                  <span className="ml-2 font-mono text-xs text-ink-muted">{s.custom_code}</span>
+                  <span className="ml-2 text-xs text-ink-muted">{s.quiz_questions?.[0]?.count ?? 0} questions · made {new Date(s.created_at).toLocaleDateString()} · expires {new Date(s.expires_at).toLocaleDateString()}</span>
+                </span>
+                <Button variant="ghost" size="sm" disabled={removeSet.isPending} onClick={() => removeSet.mutate(s.id)}>Remove</Button>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
