@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { memo, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { brandingUrl } from '../../data/quizBranding'
 import { quizSound } from '../../lib/quizSound'
 import { avatarStyle, initialOf } from '../../data/quiz'
@@ -25,7 +25,8 @@ export function AnswerShape({ index, className = 'h-8 w-8' }) {
 }
 
 // A player's character (avatarId 0-49). Older games without a character fall back to a coloured initial.
-export function Avatar({ name, avatarId, mood = 'idle', className = 'h-10 w-10 text-lg' }) {
+// Memoised: the projector screens re-render several times a second, and redrawing the SVG each time made animations stutter.
+export const Avatar = memo(function Avatar({ name, avatarId, mood = 'idle', className = 'h-10 w-10 text-lg' }) {
   if (avatarId !== undefined && avatarId !== null) {
     return (
       <span className={`inline-block shrink-0 ${className}`}>
@@ -41,7 +42,7 @@ export function Avatar({ name, avatarId, mood = 'idle', className = 'h-10 w-10 t
       {initialOf(name)}
     </span>
   )
-}
+})
 
 // The NAMMES mark, or the event's own logo when one was uploaded in the studio.
 export function BrandMark({ className = 'h-9 w-9' }) {

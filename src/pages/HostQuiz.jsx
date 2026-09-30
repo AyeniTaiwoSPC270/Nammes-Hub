@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, memo, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
@@ -561,14 +561,19 @@ const SHOWN = 5
 const COUNT_DELAY_MS = 450
 const COUNT_MS = 900
 const REORDER_AFTER_MS = 1500
-const REORDER_MS = 850
+const REORDER_MS = 1100
 
 function ScoreCounter({ from, to, className }) {
   const value = useCountUp(from, to, { durationMs: COUNT_MS, delayMs: COUNT_DELAY_MS })
   return <span className={className}>{formatScore(value)}</span>
 }
 
-function AnimatedBoard({ players, gains }) {
+// The host screen re-renders four times a second (countdown) and every few seconds when scores are polled. The board
+// only needs to redraw when a score, streak or point gain really changed, so it is skipped otherwise (`sig`).
+const boardSignature = (players, gains) =>
+  `${players.map((p) => `${p.id}:${p.total_score}:${p.streak ?? 0}:${p.nickname}`).join('|')}#${[...gains].join('|')}`
+
+const AnimatedBoard = memo(function AnimatedBoard({ players, gains }) {
   const streaks = useMemo(() => new Map(players.map((p) => [p.id, p.streak ?? 0])), [players])
   const [phase, setPhase] = useState('before')
   useEffect(() => {
@@ -612,7 +617,8 @@ function AnimatedBoard({ players, gains }) {
               transform: `translateY(${position * PITCH}px)`,
               opacity: position < SHOWN ? 1 : 0,
               zIndex: rising ? 2 : 1,
-              transition: `transform ${REORDER_MS}ms ${rising ? 'cubic-bezier(0.2, 1.25, 0.35, 1)' : 'cubic-bezier(0.4, 0, 0.2, 1)'}, opacity 400ms ease`,
+              willChange: 'transform',
+              transition: `transform ${REORDER_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms ease`,
             }}
           >
             <div
@@ -652,7 +658,7 @@ function AnimatedBoard({ players, gains }) {
       })}
     </ol>
   )
-}
+}, (a, b) => a.sig === b.sig)
 
 // Team scores: a bar per team, longest first. Teams with nobody on them are left out.
 function TeamStandings({ teams, players, scoring, big = false }) {
@@ -712,7 +718,7 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
     >
       <h1 className="text-center text-4xl font-bold sm:text-5xl">Leaderboard</h1>
       {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} />}
-      <AnimatedBoard key={replayKey} players={players} gains={gains} />
+      <AnimatedBoard key={replayKey} sig={boardSignature(players, gains)} players={players} gains={gains} />
       {answerLabel && (
         <p className="mx-auto max-w-4xl text-center text-ink-muted">
           The answer to that one was <span className="font-bold text-ink-900"><MathText>{answerLabel}</MathText></span>.
