@@ -380,7 +380,7 @@ function VersusBar({ me, opponent }) {
   )
 }
 
-function FinalBoard({ view, onRematch, busy }) {
+function FinalBoard({ view, onRematch, onBack, busy }) {
   const { final, me, opponent } = view
   const banner = final.winner === 'me' ? 'You won!' : final.winner === 'them' ? `${opponent.nickname} won` : 'A draw'
   return (
@@ -420,7 +420,7 @@ function FinalBoard({ view, onRematch, busy }) {
         </ol>
       </section>
       <button type="button" disabled={busy} onClick={onRematch} className={`${bigButton} bg-orange-500 text-white`}>{view.mode === 'duel' && opponent.isBot ? 'Rematch' : 'New battle'}</button>
-      <Link to="/battle" className="text-center text-sm font-semibold text-orange-500">Back to battles</Link>
+      <button type="button" disabled={busy} onClick={onBack} className="mx-auto min-h-11 px-4 text-sm font-semibold text-orange-500 underline">Back to battles</button>
       <Link to="/" className="text-center text-sm font-semibold text-ink-muted">Back to NAMMES Hub</Link>
     </Shell>
   )
@@ -580,7 +580,7 @@ export default function PlayBattle() {
           <span className="material-symbols-outlined text-5xl text-ink-muted" aria-hidden="true">error</span>
           <h1 className="text-2xl font-bold">Battles are not available</h1>
           <p className="text-ink-muted">{pageError}</p>
-          <Link to="/battle" className="font-semibold text-orange-500">Try again</Link>
+          <button type="button" onClick={leave} className="min-h-11 font-semibold text-orange-500 underline">Try again</button>
         </div>
       </Shell>
     )
@@ -608,12 +608,12 @@ export default function PlayBattle() {
         <div className="mt-20 flex flex-col items-center gap-3 text-center">
           <h1 className="text-3xl font-bold">This battle ended</h1>
           <p className="text-ink-muted">Nobody joined, or both players left.</p>
-          <Link to="/battle" className="font-semibold text-orange-500">Start another</Link>
+          <button type="button" onClick={leave} className="min-h-11 font-semibold text-orange-500 underline">Start another</button>
         </div>
       </Shell>
     )
   } else if (state === 'finished') {
-    body = <FinalBoard view={view} onRematch={rematch} busy={busy} />
+    body = <FinalBoard view={view} onRematch={rematch} onBack={leave} busy={busy} />
   } else if (state === 'open') {
     body = (
       <Shell>
