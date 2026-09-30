@@ -1,4 +1,5 @@
 import SlideshowLayer from '../SlideshowLayer'
+import BlurredBackdropImage from './BlurredBackdropImage'
 
 const tones = {
   neutral: { bg: 'bg-surface', eyebrow: 'text-brand-orange', title: 'text-ink-900', meta: 'text-ink-muted', body: 'text-ink' },
@@ -51,18 +52,15 @@ export default function Card({
         </>
       )}
       {image && imageVariant === 'cover' && (
-        <div
+        <BlurredBackdropImage
+          src={image.src}
+          reveal={false}
           className={
             isRow
-              ? 'flex h-64 w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low md:h-auto md:w-1/2'
-              : [
-                  'flex w-full items-center justify-center overflow-hidden rounded-t-lg bg-surface-low',
-                  imageAspects[imageAspect] || imageAspects.standard,
-                ].join(' ')
+              ? 'h-64 w-full shrink-0 md:h-auto md:w-1/2'
+              : ['w-full rounded-t-lg', imageAspects[imageAspect] || imageAspects.standard].join(' ')
           }
-        >
-          <img src={image.src} loading="lazy" decoding="async" alt="" aria-hidden="true" className="h-full w-full object-contain" />
-        </div>
+        />
       )}
       <div
         className={[

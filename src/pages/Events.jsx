@@ -3,7 +3,7 @@ import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
-import ImageReveal from '../components/ui/ImageReveal'
+import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import { SkeletonCard } from '../components/ui/Skeleton'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { usePageBanner } from '../data/pageBanners'
@@ -19,9 +19,7 @@ function EventCard({ event }) {
       className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
     >
       {event.image_url && (
-        <div className="flex aspect-[3/4] w-full shrink-0 items-center justify-center overflow-hidden bg-surface-low">
-          <ImageReveal src={event.image_url} alt="" className="h-full w-full object-contain" />
-        </div>
+        <BlurredBackdropImage src={event.image_url} className="aspect-[3/4] w-full shrink-0" />
       )}
       <div className="flex flex-grow flex-col gap-2 p-6">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
