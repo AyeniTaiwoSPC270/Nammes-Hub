@@ -175,30 +175,13 @@
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
 }
+.qz-deep { background: linear-gradient(135deg, var(--qz-deep-a, #0b2417), var(--qz-deep-b, #17492f)); }
 .qz-pop { animation: qz-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 .qz-rise { animation: qz-rise 0.5s ease-out both; }
 .qz-grow { animation: qz-grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; transform-origin: bottom; }
 .qz-fall { animation: qz-fall linear infinite; }
 .qz-float { animation: qz-float 3s ease-in-out infinite; }
 .qz-urgent { animation: qz-urgent 0.6s ease-in-out infinite; }
-/* Character moods: each draws the same character but moves differently. */
-@keyframes qz-bob { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.03); } }
-@keyframes qz-jump { 0%, 100% { transform: translateY(0) scale(1, 1); } 40% { transform: translateY(-9px) scale(0.96, 1.05); } 60% { transform: translateY(-9px) scale(0.96, 1.05); } 85% { transform: translateY(0) scale(1.06, 0.94); } }
-@keyframes qz-wiggle { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
-@keyframes qz-droop { 0%, 100% { transform: translateY(1px) scaleY(0.97); } 50% { transform: translateY(3px) scaleY(0.94); } }
-@keyframes qz-wave { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(28deg); } }
-.qz-char { overflow: visible; }
-.qz-char .qz-body, .qz-char .qz-arm { transform-box: fill-box; transform-origin: 50% 100%; }
-.qz-char .qz-arm { transform-origin: 0% 50%; }
-.qz-mood-idle .qz-body { animation: qz-bob 3s ease-in-out infinite; }
-.qz-mood-happy .qz-body { animation: qz-jump 0.9s ease-in-out infinite; }
-.qz-mood-dance .qz-body { animation: qz-wiggle 0.5s ease-in-out infinite, qz-bob 0.5s ease-in-out infinite; }
-.qz-mood-sad .qz-body { animation: qz-droop 2.4s ease-in-out infinite; }
-.qz-mood-wave .qz-body { animation: qz-bob 3s ease-in-out infinite; }
-.qz-mood-wave .qz-arm-r { animation: qz-wave 0.7s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .qz-char .qz-body, .qz-char .qz-arm { animation: none !important; }
-}
 @media (prefers-reduced-motion: reduce) {
   .qz-pop, .qz-rise, .qz-grow, .qz-fall, .qz-float, .qz-urgent { animation: none; }
 }

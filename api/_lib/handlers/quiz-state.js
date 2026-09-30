@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { hashToken, rankPlayers, createRateLimiter } from '../quiz.js'
+import { sanitizeTheme } from '../quizTheme.js'
 
 const TOP_N = 10
 
@@ -63,6 +64,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), allo
         maxPlayers: session.max_players,
         fullAt: session.full_at ?? null,
       },
+      theme: sanitizeTheme(session.theme),
       me: { nickname: player.nickname, score: me?.total_score ?? 0, rank: me?.rank ?? null, avatarId: me?.avatar_id ?? 0 },
       playerCount: ranked.length,
     }

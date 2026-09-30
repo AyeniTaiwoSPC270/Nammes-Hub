@@ -3,6 +3,7 @@ import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
 import { generateJoinCode, isMaxPlayers, DEFAULT_MAX_PLAYERS } from '../quiz.js'
+import { sanitizeTheme } from '../quizTheme.js'
 
 const CODE_ATTEMPTS = 8
 
@@ -50,18 +51,17 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
       return
     }
 
-    // No limit given: use the quiz's own default. The game keeps its own copy, so later edits never change a running game.
-    let limit = maxPlayers
-    if (limit === undefined) {
-      const { data: quiz } = await supabaseAdmin.from('quizzes').select('max_players').eq('id', quizId).maybeSingle()
-      limit = quiz?.max_players ?? DEFAULT_MAX_PLAYERS
-    }
+    // No limit given: use the quiz's own default. The game keeps its own copy of the limit and of the look (theme),
+    // so later edits never change a running game.
+    const { data: quiz } = await supabaseAdmin.from('quizzes').select('max_players, theme').eq('id', quizId).maybeSingle()
+    const limit = maxPlayers ?? quiz?.max_players ?? DEFAULT_MAX_PLAYERS
+    const theme = sanitizeTheme(quiz?.theme)
 
     // The code only has to be unique among running games, so a clash is rare; retry a few times if it happens.
     for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
       const { data, error } = await supabaseAdmin
         .from('quiz_sessions')
-        .insert({ quiz_id: quizId, join_code: makeCode(), max_players: limit })
+        .insert({ quiz_id: quizId, join_code: makeCode(), max_players: limit, theme })
         .select('id, join_code')
         .single()
       if (!error) {
