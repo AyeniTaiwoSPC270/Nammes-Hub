@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { blankQuestion, questionFromRow, cleanQuestion, validateQuestion, validateQuizDraft, secondsRemaining, elapsedAtPauseMs, MAX_QUESTIONS } from './quiz'
+import { blankQuestion, questionFromRow, cleanQuestion, cleanTags, validateQuestion, validateQuizDraft, secondsRemaining, elapsedAtPauseMs, MAX_QUESTIONS } from './quiz'
 
 const q = (over = {}) => ({ ...blankQuestion(), text: 'What is pi?', ...over })
 
@@ -64,5 +64,15 @@ describe('secondsRemaining with pause and extra time', () => {
     const session = { question_started_at: '2026-10-01T10:00:00.000Z', paused_at: '2026-10-01T10:00:07.000Z', paused_total_ms: 2000 }
     expect(elapsedAtPauseMs(session)).toBe(5000)
     expect(elapsedAtPauseMs({ ...session, paused_at: null })).toBeNull()
+  })
+})
+
+describe('cleanTags', () => {
+  it('lowercases, trims, drops blanks and repeats, and limits the count and length', () => {
+    expect(cleanTags(' Maths, freshers  week ,, MATHS , Fun')).toEqual(['maths', 'freshers week', 'fun'])
+    expect(cleanTags(Array.from({ length: 12 }, (_, i) => `t${i}`))).toHaveLength(8)
+    expect(cleanTags('x'.repeat(40))[0]).toHaveLength(24)
+    expect(cleanTags(undefined)).toEqual([])
+    expect(cleanTags(['A', 'a', 'b'])).toEqual(['a', 'b'])
   })
 })

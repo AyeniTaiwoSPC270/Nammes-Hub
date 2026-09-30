@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { quizImagePath, IMAGE_BUCKET, IMAGE_ALT_MAX } from '../../api/_lib/quizImage.js'
 import { sanitizeGameOptions } from '../../api/_lib/quizGrading.js'
-import { cleanQuestion, validateQuestion, MAX_QUESTIONS } from './quizQuestions'
+import { cleanQuestion, validateQuestion, cleanTags, MAX_QUESTIONS } from './quizQuestions'
 
 // Live quiz: the four answer colours (the same on the projector and on phones), input rules for the
 // editor, timing helpers and the small client for /api/quiz. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -73,7 +73,7 @@ export function validateMaxPlayers(value) {
 }
 
 export {
-  TIME_LIMIT_CHOICES, POINT_CHOICES, MAX_QUESTIONS, QUESTION_TYPE_INFO, blankQuestion, questionFromRow, cleanQuestion, validateQuestion,
+  TIME_LIMIT_CHOICES, POINT_CHOICES, MAX_QUESTIONS, MAX_TAGS, TAG_MAX_LENGTH, cleanTags, QUESTION_TYPE_INFO, blankQuestion, questionFromRow, cleanQuestion, validateQuestion,
 } from './quizQuestions'
 
 export function validateQuizDraft({ title, questions, maxPlayers = DEFAULT_MAX_PLAYERS }) {
@@ -170,9 +170,9 @@ export function useQuizQuery(id) {
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
 // edited and reordered questions; questions the admin removed are deleted first. Pictures are uploaded first
 // (under a fresh name, so phones never show a stale cached copy) and the old files are removed afterwards.
-export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {} }) {
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [] }) {
   const cleaned = questions.map(cleanQuestion)
-  const quizFields = { title: title.trim(), max_players: maxPlayers, game_options: sanitizeGameOptions(gameOptions) }
+  const quizFields = { title: title.trim(), max_players: maxPlayers, game_options: sanitizeGameOptions(gameOptions), tags: cleanTags(tags) }
   const staleFiles = []
   let quizId = id
   if (quizId) {
@@ -205,6 +205,12 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
     } else if (q.removeImage && imagePath) {
       staleFiles.push(imagePath)
       imagePath = null
+    } else if (q.copyImageFrom && !imagePath) {
+      // A question copied from another quiz: copy its picture into this quiz's folder.
+      const ext = q.copyImageFrom.split('.').pop()
+      const path = quizImagePath({ quizId, questionId: q.id, ext, stamp: Date.now() + position })
+      const { error } = await supabase.storage.from(IMAGE_BUCKET).copy(q.copyImageFrom, path)
+      imagePath = error ? null : path
     }
     rows.push({
       id: q.id,
@@ -228,6 +234,79 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
   if (error) throw error
   if (staleFiles.length > 0) await supabase.storage.from(IMAGE_BUCKET).remove(staleFiles) // best effort
   return quizId
+}
+
+// Makes a copy of a quiz (questions, pictures, settings, look) called "Copy of ...". Returns the new quiz id.
+export async function duplicateQuiz(id) {
+  const source = await fetchQuizWithQuestions(id)
+  const { data: created, error } = await supabase
+    .from('quizzes')
+    .insert({
+      title: `Copy of ${source.title}`.slice(0, 120),
+      max_players: source.max_players,
+      game_options: sanitizeGameOptions(source.game_options),
+      theme: sanitizeTheme(source.theme),
+      tags: cleanTags(source.tags),
+    })
+    .select('id')
+    .single()
+  if (error) throw error
+  const newId = created.id
+  try {
+    const rows = []
+    for (const [position, q] of source.questions.entries()) {
+      const questionId = crypto.randomUUID()
+      let imagePath = null
+      if (q.image_path) {
+        const path = quizImagePath({ quizId: newId, questionId, ext: q.image_path.split('.').pop(), stamp: Date.now() + position })
+        const { error: copyError } = await supabase.storage.from(IMAGE_BUCKET).copy(q.image_path, path)
+        imagePath = copyError ? null : path
+      }
+      rows.push({
+        id: questionId,
+        quiz_id: newId,
+        position,
+        type: q.type ?? 'multiple',
+        text: q.text,
+        options: q.options,
+        correct_index: q.correct_index,
+        numeric_answer: q.numeric_answer,
+        numeric_tolerance: q.numeric_tolerance ?? 0,
+        accepted_answers: q.accepted_answers ?? [],
+        time_limit_seconds: q.time_limit_seconds,
+        points: q.points,
+        points_multiplier: q.points_multiplier ?? 1,
+        image_path: imagePath,
+        image_alt: imagePath ? q.image_alt : null,
+      })
+    }
+    if (rows.length > 0) {
+      const { error: insertError } = await supabase.from('quiz_questions').insert(rows)
+      if (insertError) throw insertError
+    }
+  } catch (e) {
+    await supabase.from('quizzes').delete().eq('id', newId) // leave nothing half-made
+    throw e
+  }
+  return newId
+}
+
+// Archived quizzes are hidden from the main list but keep their games and results.
+export async function setQuizArchived(id, archived) {
+  const { data, error } = await supabase.from('quizzes').update({ archived_at: archived ? new Date().toISOString() : null }).eq('id', id).select('id')
+  if (error) throw error
+  if (!data || data.length === 0) throw new Error('No changes were saved — your account may not have admin access to make this change.')
+}
+
+// Every question from every quiz (newest first), so questions can be reused. Capped so the list stays quick.
+export async function fetchQuestionBank({ limit = 600 } = {}) {
+  const { data, error } = await supabase
+    .from('quiz_questions')
+    .select('*, quizzes(title)')
+    .order('id', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data
 }
 
 // Saves the look designed in the Quiz Design Studio. Games started after this use it; running games keep theirs.

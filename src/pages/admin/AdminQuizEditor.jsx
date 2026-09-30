@@ -8,6 +8,9 @@ import {
   validateQuizDraft,
   blankQuestion,
   questionFromRow,
+  cleanTags,
+  MAX_TAGS,
+  MAX_QUESTIONS,
   QUESTION_TYPE_INFO,
   DEFAULT_MAX_PLAYERS,
   MIN_PLAYERS_LIMIT,
@@ -19,6 +22,8 @@ import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
 import QuestionCard from '../../components/admin/quizEditor/QuestionCard'
+import QuizImportModal from '../../components/admin/quizLibrary/QuizImportModal'
+import QuestionBankModal from '../../components/admin/quizLibrary/QuestionBankModal'
 
 // New quizzes start with the fun extras on; an existing quiz keeps whatever it had (older quizzes have them off).
 const NEW_QUIZ_OPTIONS = { streaks: true, powerups: true, comeback: true }
@@ -41,18 +46,21 @@ export default function AdminQuizEditor() {
   const [questions, setQuestions] = useState(() => (id ? [] : [blankQuestion()]))
   const [loaded, setLoaded] = useState(!id)
   const [addType, setAddType] = useState('multiple')
+  const [tags, setTags] = useState('')
+  const [dialog, setDialog] = useState(null) // 'import' or 'bank'
 
   useEffect(() => {
     if (!id || !quizQuery.data || loaded) return
     setTitle(quizQuery.data.title)
     setMaxPlayers(String(quizQuery.data.max_players ?? DEFAULT_MAX_PLAYERS))
     setGameOptions(sanitizeGameOptions(quizQuery.data.game_options))
+    setTags((quizQuery.data.tags ?? []).join(', '))
     setQuestions(quizQuery.data.questions.map(questionFromRow))
     setLoaded(true)
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -105,6 +113,13 @@ export default function AdminQuizEditor() {
         <div className="mt-6 flex flex-col gap-5">
           <FormField label="Quiz title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Freshers' week quiz" />
           <FormField
+            label="Tags (optional, separated by commas)"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="freshers, 200L, fun"
+            helper={`Used to find quizzes later. Up to ${MAX_TAGS} tags.`}
+          />
+          <FormField
             label="Max players"
             type="number"
             value={maxPlayers}
@@ -156,11 +171,40 @@ export default function AdminQuizEditor() {
             <Button variant="secondary" onClick={() => setQuestions((qs) => [...qs, blankQuestion(addType)])}>
               Add question
             </Button>
+            <Button variant="secondary" onClick={() => setDialog('import')} disabled={questions.length >= MAX_QUESTIONS}>
+              Import from spreadsheet
+            </Button>
+            <Button variant="secondary" onClick={() => setDialog('bank')} disabled={questions.length >= MAX_QUESTIONS}>
+              Add from other quizzes
+            </Button>
             <Button variant="primary" onClick={handleSave} loading={saveMutation.isPending}>
               Save quiz
             </Button>
           </div>
         </div>
+      )}
+      {dialog === 'import' && (
+        <QuizImportModal
+          mode="append"
+          onImport={({ questions: added }) => {
+            // A draft that is still one empty question is replaced rather than left in front of the imported ones.
+            setQuestions((qs) => [...(qs.length === 1 && !qs[0].text.trim() ? [] : qs), ...added].slice(0, MAX_QUESTIONS))
+            setDialog(null)
+            toast.success(`Added ${added.length} question${added.length === 1 ? '' : 's'}. Save the quiz to keep them.`)
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === 'bank' && (
+        <QuestionBankModal
+          excludeQuizId={id}
+          onAdd={(added) => {
+            setQuestions((qs) => [...(qs.length === 1 && !qs[0].text.trim() ? [] : qs), ...added].slice(0, MAX_QUESTIONS))
+            setDialog(null)
+            toast.success(`Added ${added.length} question${added.length === 1 ? '' : 's'}. Save the quiz to keep them.`)
+          }}
+          onClose={() => setDialog(null)}
+        />
       )}
     </div>
   )

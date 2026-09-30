@@ -4,6 +4,24 @@ import { parseNumber, isChoiceType, ANSWER_TEXT_MAX, ACCEPTED_ANSWERS_MAX } from
 // How the quiz editor holds a question, and how it is checked and cleaned before saving.
 
 export const MAX_QUESTIONS = 200
+export const MAX_TAGS = 8
+export const TAG_MAX_LENGTH = 24
+
+// Tags typed as "maths, freshers week, fun" become ['maths', 'freshers week', 'fun'] (lower case, no repeats, limited).
+export function cleanTags(input) {
+  const list = Array.isArray(input) ? input : String(input ?? '').split(',')
+  const seen = new Set()
+  const tags = []
+  for (const item of list) {
+    const tag = String(item).replace(/\s+/g, ' ').trim().toLowerCase().slice(0, TAG_MAX_LENGTH)
+    if (tag && !seen.has(tag)) {
+      seen.add(tag)
+      tags.push(tag)
+    }
+    if (tags.length === MAX_TAGS) break
+  }
+  return tags
+}
 export const TIME_LIMIT_CHOICES = [10, 20, 30, 60]
 export const POINT_CHOICES = [500, 1000, 2000]
 

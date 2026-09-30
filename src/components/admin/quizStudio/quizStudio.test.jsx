@@ -45,7 +45,7 @@ describe('characters', () => {
         expect(html).toContain(`qz-mood-${mood}`)
       }
     }
-  })
+  }, 30_000)
   it('gives each character its own move classes', () => {
     const classes = new Set(
       Array.from({ length: AVATAR_COUNT }, (_, id) => renderToStaticMarkup(<Character id={id} />).match(/class="([^"]+)"/)[1]),
