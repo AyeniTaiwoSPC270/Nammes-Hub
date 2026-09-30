@@ -154,3 +154,75 @@ describe('practice: the leaderboard', () => {
     expect(JSON.stringify((await call({ op: 'top', quizId: QUIZ })).body)).not.toContain('secret-hash')
   })
 })
+
+describe('practice: racing rivals', () => {
+  it('runs are solo unless a race is asked for, and a bad race is refused', async () => {
+    const { call, start } = world()
+    const s = await start()
+    const a = await call({ op: 'answer', token: s.token, chosenIndex: 1 })
+    expect(a.body.race).toBeNull()
+    expect((await call({ op: 'start', quizId: QUIZ, nickname: 'Ada', race: 'dragons' })).statusCode).toBe(400)
+    expect((await call({ op: 'start', quizId: QUIZ, nickname: 'Ada', race: 'bots', raceSkill: 'genius' })).statusCode).toBe(400)
+  })
+
+  it('bots: rivals appear only after an answer, never change, and add up over the run', async () => {
+    const { call, start, at } = world()
+    const s = await start({ race: 'bots', raceSkill: 'expert' })
+    expect(s.race).toBeUndefined() // nothing before the first answer
+    at(START + 1000)
+    const first = (await call({ op: 'answer', token: s.token, chosenIndex: 1 })).body.race
+    expect(first.mode).toBe('bots')
+    expect(first.rivals).toHaveLength(4)
+    expect(first.rivals.every((r) => r.kind === 'bot' && r.nickname && r.score >= 0 && r.score === r.gain)).toBe(true)
+    const again = (await call({ op: 'state', token: s.token })).body.race
+    expect(again).toEqual(first)
+    await call({ op: 'next', token: s.token })
+    at(START + 2000)
+    const second = (await call({ op: 'answer', token: s.token, answerText: '3.14' })).body.race
+    second.rivals.forEach((r, i) => expect(r.score).toBe(first.rivals[i].score + r.gain))
+  })
+
+  it('bots: the finished screen carries the final standings', async () => {
+    const { call, start } = world()
+    const s = await start({ race: 'bots', raceSkill: 'mixed' })
+    for (let i = 0; i < 3; i++) {
+      await call({ op: 'answer', token: s.token, ...(i === 0 ? { chosenIndex: 1 } : i === 1 ? { answerText: '3.14' } : { answerText: 'Ada Lovelace' }) })
+      await call({ op: 'next', token: s.token })
+    }
+    const done = (await call({ op: 'state', token: s.token })).body
+    expect(done.finished).toBe(true)
+    expect(done.race.rivals).toHaveLength(4)
+  })
+
+  it('ghosts: needs someone to have finished first', async () => {
+    const { call, start } = world()
+    expect((await call({ op: 'start', quizId: QUIZ, nickname: 'Ada', race: 'ghosts' })).statusCode).toBe(409)
+    expect((await call({ op: 'info', quizId: QUIZ })).body.ghostCount).toBe(0)
+    expect((await start()).token).toBeTruthy()
+  })
+
+  it('ghosts: race the recorded answers of real past runs, question by question', async () => {
+    const { call, db } = world()
+    db.tables.quiz_practice_runs.push(
+      { id: 'g1', quiz_id: QUIZ, nickname: 'Ghost One', avatar_id: 4, total_score: 3000, finished_at: 'x' },
+      { id: 'g2', quiz_id: QUIZ, nickname: 'Ghost Two', avatar_id: 5, total_score: 500, finished_at: 'x' },
+      { id: 'g3', quiz_id: QUIZ, nickname: 'Still going', avatar_id: 6, total_score: 9999, finished_at: null },
+    )
+    db.tables.quiz_practice_answers.push(
+      { run_id: 'g1', question_id: 'q1', points_awarded: 900 },
+      { run_id: 'g1', question_id: 'q3', points_awarded: 2100 },
+      { run_id: 'g2', question_id: 'q1', points_awarded: 500 },
+    )
+    expect((await call({ op: 'info', quizId: QUIZ })).body.ghostCount).toBe(2)
+    const s = (await call({ op: 'start', quizId: QUIZ, nickname: 'Ada', race: 'ghosts' })).body
+    const first = (await call({ op: 'answer', token: s.token, chosenIndex: 1 })).body.race
+    expect(first.mode).toBe('ghosts')
+    const byName = (race) => Object.fromEntries(race.rivals.map((r) => [r.nickname, r]))
+    expect(Object.keys(byName(first)).sort()).toEqual(['Ghost One', 'Ghost Two']) // the unfinished run never races
+    expect(byName(first)['Ghost One']).toMatchObject({ kind: 'ghost', score: 900, gain: 900 })
+    await call({ op: 'next', token: s.token })
+    const second = (await call({ op: 'answer', token: s.token, answerText: '3.14' })).body.race
+    expect(byName(second)['Ghost One']).toMatchObject({ score: 3000, gain: 2100 })
+    expect(byName(second)['Ghost Two']).toMatchObject({ score: 500, gain: 0 })
+  })
+})
