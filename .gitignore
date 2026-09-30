@@ -37,3 +37,6 @@ perf_advisors_full.json
 # local backups (contain personal data)
 backups/
 storage-backup/
+
+# generated HTML for the handbook (the PDF in public/documents is the deliverable)
+scripts/manual/out/

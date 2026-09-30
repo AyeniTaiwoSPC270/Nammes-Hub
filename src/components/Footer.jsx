@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import SocialIcons from './SocialIcons'
 import { useSiteContentQuery } from '../data/siteContent'
 
+const HANDBOOK_PDF = '/documents/NAMMES-Hub-Handbook.pdf'
+
 const linkGroups = [
   {
     heading: 'Explore',
@@ -18,6 +20,7 @@ const linkGroups = [
       { label: 'Resources', to: '/resources' },
       { label: 'News', to: '/news' },
       { label: 'Opportunities', to: '/opportunities' },
+      { label: 'User handbook (PDF)', href: HANDBOOK_PDF, download: 'NAMMES-Hub-Handbook.pdf' },
     ],
   },
   {
@@ -89,11 +92,17 @@ export default function Footer() {
                 {group.heading}
               </div>
               <div className="flex flex-col gap-2">
-                {group.items.map((item) => (
-                  <Link key={item.label} to={item.to} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
-                    {item.label}
-                  </Link>
-                ))}
+                {group.items.map((item) =>
+                  item.href ? (
+                    <a key={item.label} href={item.href} download={item.download} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link key={item.label} to={item.to} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
+                      {item.label}
+                    </Link>
+                  ),
+                )}
               </div>
             </div>
           ))}
