@@ -7,7 +7,7 @@ import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
-import { useProjectorFit, useAutoScroll } from '../lib/projectorFit'
+import { useProjectorFit } from '../lib/projectorFit'
 import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
 import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
@@ -19,10 +19,9 @@ import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 const POLL_MS = 2500
 
 function Stage({ title, chip, footer, children }) {
-  // Projector screens should not need scrolling: shrink to fit, and if that is not enough, scroll by themselves.
+  // Projector screens should not need scrolling, so they shrink to fit the window.
   const mainRef = useRef(null)
-  const stillOverflowing = useProjectorFit(mainRef, { baseMaxWidth: 1400 })
-  useAutoScroll(stillOverflowing)
+  useProjectorFit(mainRef, { baseMaxWidth: 1400 })
   return (
     <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
       <QuizBackdrop />
