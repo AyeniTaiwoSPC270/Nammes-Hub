@@ -1,7 +1,6 @@
 import PageBanner from '../components/PageBanner'
 import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
-import outlinesBanner from '../assets/banners/outlines-banner.jpg'
 
 const CCMAS_PDF = '/documents/mme-ccmas.pdf'
 
@@ -27,7 +26,7 @@ export default function Curriculum() {
   return (
     <div>
       <PageBanner
-        images={banner?.image_urls?.length ? banner.image_urls : [outlinesBanner]}
+        images={banner?.image_urls}
         transition={banner?.transition}
         intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Programme Curriculum (CCMAS)'}

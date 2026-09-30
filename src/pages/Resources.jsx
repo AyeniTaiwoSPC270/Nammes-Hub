@@ -3,7 +3,6 @@ import { LEVELS } from '../data/resources'
 import PageBanner from '../components/PageBanner'
 import Reveal from '../components/ui/Reveal'
 import { usePageBanner } from '../data/pageBanners'
-import resourcesBanner from '../assets/banners/resources-banner.jpg'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -23,7 +22,7 @@ export default function Resources() {
   return (
     <div>
       <PageBanner
-        images={banner?.image_urls?.length ? banner.image_urls : [resourcesBanner]}
+        images={banner?.image_urls}
         transition={banner?.transition}
         intervalSeconds={banner?.interval_seconds}
         title={banner?.title ?? 'Resources'}

@@ -137,6 +137,7 @@ function renderCourseHeader(doc, ctx, course, level, semester) {
   y = renderStatBoxes(doc, ctx, y, [
     { label: 'LEVEL', value: `${level}L · S${semester}` },
     { label: 'UNITS', value: `${course.units}` },
+    ...(course.status ? [{ label: 'STATUS', value: course.status === 'C' ? 'Compulsory' : 'Elective' }] : []),
     { label: 'TOPICS', value: `${course.topics?.length ?? 0}` },
     { label: 'TEXTS', value: `${course.texts?.length ?? 0}` },
   ])
@@ -224,8 +225,8 @@ function renderCoverPage(doc, ctx, { level, semester, courses }) {
   autoTable(doc, {
     startY: y,
     margin: { left: ctx.margin, right: ctx.margin, bottom: 16 },
-    head: [['Code', 'Course Title', 'Units']],
-    body: courses.map((c) => [c.code, c.title, String(c.units)]),
+    head: [['Code', 'Course Title', 'Units', 'Status']],
+    body: courses.map((c) => [c.code, c.title, String(c.units), c.status ?? '—']),
     styles: { font: 'PublicSans', fontSize: 8.5, textColor: COLOR.ink, lineColor: COLOR.hairline, lineWidth: 0.2, cellPadding: 3 },
     headStyles: { fillColor: COLOR.forestLight, textColor: COLOR.forest, font: 'courier', fontStyle: 'bold', fontSize: 7.5 },
     alternateRowStyles: { fillColor: COLOR.stone },

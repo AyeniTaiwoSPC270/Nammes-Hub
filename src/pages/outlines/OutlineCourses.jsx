@@ -68,7 +68,7 @@ export default function OutlineCourses() {
         {isError && !data ? (
           <ErrorState message="Couldn't load courses right now." onRetry={refetch} />
         ) : isLoading ? (
-          <SkeletonTable columns={4} rows={5} />
+          <SkeletonTable columns={5} rows={5} />
         ) : courses.length > 0 ? (
           <Reveal className="overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
             <div className="flex items-center justify-between border-b border-hairline bg-surface-low p-4">
@@ -89,6 +89,9 @@ export default function OutlineCourses() {
                     <th className="border-r border-hairline p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">
                       Units
                     </th>
+                    <th className="border-r border-hairline p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">
+                      Status
+                    </th>
                     <th className="p-4 text-xs font-bold uppercase tracking-[.05em] text-ink">Action</th>
                   </tr>
                 </thead>
@@ -104,6 +107,21 @@ export default function OutlineCourses() {
                       <td className="border-r border-hairline p-4 font-semibold text-ink-900">{c.code}</td>
                       <td className="border-r border-hairline p-4 text-ink-muted">{c.title}</td>
                       <td className="border-r border-hairline p-4 text-ink">{c.units}</td>
+                      <td className="border-r border-hairline p-4">
+                        {c.status ? (
+                          <span
+                            title={c.status === 'C' ? 'Compulsory' : 'Elective'}
+                            className={[
+                              'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
+                              c.status === 'C' ? 'bg-green-900 text-white' : 'bg-orange-100 text-orange-600',
+                            ].join(' ')}
+                          >
+                            {c.status}
+                          </span>
+                        ) : (
+                          <span className="text-ink-muted">—</span>
+                        )}
+                      </td>
                       <td className="p-4">
                         <button
                           type="button"
@@ -117,6 +135,9 @@ export default function OutlineCourses() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="border-t border-hairline bg-surface-low px-4 py-3 text-xs text-ink-muted">
+              <strong className="text-ink">C</strong> = Compulsory &middot; <strong className="text-ink">E</strong> = Elective
             </div>
           </Reveal>
         ) : allCourses.length > 0 ? (

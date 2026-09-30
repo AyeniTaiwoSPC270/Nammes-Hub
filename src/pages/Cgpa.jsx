@@ -21,7 +21,6 @@ import Table from '../components/ui/Table'
 import FormField from '../components/ui/FormField'
 import Reveal from '../components/ui/Reveal'
 import { SkeletonCard, SkeletonTable } from '../components/ui/Skeleton'
-import cgpaBanner from '../assets/banners/cgpa-banner.jpg'
 
 const LEVELS = ['100', '200', '300', '400', '500']
 const SEMESTERS = [1, 2]
@@ -347,7 +346,7 @@ export default function Cgpa() {
       <Reveal className="mt-6">
         <Card
           tone="green"
-          backgroundImages={banner?.image_urls?.length ? banner.image_urls : [cgpaBanner]}
+          backgroundImages={banner?.image_urls}
           backgroundTransition={banner?.transition}
           backgroundIntervalSeconds={banner?.interval_seconds}
           eyebrow="Cumulative GPA"
