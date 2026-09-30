@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, OPTION_STYLES, secondsRemaining } from '../data/quiz'
+import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
 // (/api/quiz?action=advance); everything else here is reading. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -15,7 +16,8 @@ function rankedPlayers(players) {
 
 function Shell({ children, footer }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#0b2417] p-6 text-white sm:p-10">
+    <div className="flex min-h-screen flex-col bg-paper p-6 pt-16 text-ink-900 sm:p-10 sm:pt-16">
+      <QuizThemeToggle />
       <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col">{children}</div>
       {footer && <div className="mx-auto mt-6 w-full max-w-[1200px]">{footer}</div>}
     </div>
@@ -29,8 +31,8 @@ function HostButton({ children, onClick, disabled, tone = 'accent' }) {
       onClick={onClick}
       disabled={disabled}
       className={[
-        'rounded-lg px-8 py-4 text-xl font-bold text-white transition-opacity',
-        tone === 'accent' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-white/15 hover:bg-white/25',
+        'rounded-lg px-8 py-4 text-xl font-bold transition-opacity',
+        tone === 'accent' ? 'bg-orange-500 text-white hover:bg-orange-600' : 'border border-hairline bg-surface text-ink-900 hover:bg-surface-low',
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
       ].join(' ')}
     >
@@ -65,7 +67,7 @@ function Lobby({ session, players, onStart, busy }) {
     >
       <div className="flex flex-col items-center gap-8 text-center lg:flex-row lg:items-start lg:text-left">
         <div className="flex-1">
-          <p className="text-xl text-white/80">
+          <p className="text-xl text-ink-muted">
             Join at <span className="font-bold">{window.location.host}/play</span> with the code
           </p>
           <p className="mt-2 font-mono text-7xl font-bold tracking-[0.15em] sm:text-9xl" aria-label={`Game code ${session.join_code.split('').join(' ')}`}>
@@ -76,11 +78,11 @@ function Lobby({ session, players, onStart, busy }) {
       </div>
 
       <h2 className="mt-10 text-2xl font-bold">
-        Players <span className="text-white/60">({players.length})</span>
+        Players <span className="text-ink-muted">({players.length})</span>
       </h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {players.map((p) => (
-          <span key={p.id} className="rounded-full bg-white/15 px-4 py-2 text-lg font-semibold">
+          <span key={p.id} className="rounded-full bg-surface border border-hairline text-ink-900 px-4 py-2 text-lg font-semibold">
             {p.nickname}
           </span>
         ))}
@@ -94,7 +96,7 @@ function QuestionScreen({ question, index, total, remaining, answered, playerCou
     <Shell
       footer={
         <div className="flex items-center justify-between gap-4">
-          <span className="text-xl text-white/80">
+          <span className="text-xl text-ink-muted">
             {answered} of {playerCount} answered
           </span>
           <HostButton onClick={onEnd} disabled={busy} tone="muted">
@@ -103,7 +105,7 @@ function QuestionScreen({ question, index, total, remaining, answered, playerCou
         </div>
       }
     >
-      <div className="flex items-center justify-between text-xl text-white/70">
+      <div className="flex items-center justify-between text-xl text-ink-muted">
         <span>
           Question {index + 1} of {total}
         </span>
@@ -112,7 +114,7 @@ function QuestionScreen({ question, index, total, remaining, answered, playerCou
       <h1 className="my-8 text-center text-3xl font-bold sm:text-5xl">{question.text}</h1>
       <div className="mt-auto grid gap-4 sm:grid-cols-2">
         {question.options.map((option, i) => (
-          <div key={i} className={`flex items-center gap-4 rounded-lg p-6 text-2xl font-bold sm:text-3xl ${OPTION_STYLES[i].bg}`}>
+          <div key={i} className={`flex items-center gap-4 rounded-lg p-6 text-2xl font-bold text-white sm:text-3xl ${OPTION_STYLES[i].bg}`}>
             <span aria-hidden="true">{OPTION_STYLES[i].shape}</span>
             {option}
           </div>
@@ -139,7 +141,7 @@ function RevealScreen({ question, counts, onNext, busy, isLast }) {
         {question.options.map((option, i) => {
           const correct = i === question.correct_index
           return (
-            <div key={i} className={`rounded-lg p-6 ${OPTION_STYLES[i].bg} ${correct ? 'ring-8 ring-white' : 'opacity-40'}`}>
+            <div key={i} className={`rounded-lg p-6 text-white ${OPTION_STYLES[i].bg} ${correct ? 'ring-8 ring-ink-900' : 'opacity-40'}`}>
               <div className="flex items-center justify-between gap-4 text-2xl font-bold sm:text-3xl">
                 <span>
                   <span aria-hidden="true">{OPTION_STYLES[i].shape}</span> {option}
@@ -172,7 +174,7 @@ function LeaderboardScreen({ players, onNext, busy, isLast }) {
       <h1 className="my-8 text-center text-4xl font-bold">Leaderboard</h1>
       <ol className="mx-auto flex w-full max-w-[700px] flex-col gap-3">
         {top.map((p, i) => (
-          <li key={p.id} className="flex items-center justify-between rounded-lg bg-white/15 px-6 py-4 text-2xl font-bold">
+          <li key={p.id} className="flex items-center justify-between rounded-lg bg-surface border border-hairline text-ink-900 px-6 py-4 text-2xl font-bold">
             <span>
               {i + 1}. {p.nickname}
             </span>
@@ -193,7 +195,7 @@ function FinishedScreen({ players }) {
     <Shell
       footer={
         <div className="flex justify-end">
-          <Link to="/admin/quizzes" className="rounded-lg bg-white/15 px-8 py-4 text-xl font-bold text-white no-underline hover:bg-white/25">
+          <Link to="/admin/quizzes" className="rounded-lg border border-hairline bg-surface px-8 py-4 text-xl font-bold text-ink-900 no-underline hover:bg-surface-low">
             Back to admin
           </Link>
         </div>
@@ -205,7 +207,7 @@ function FinishedScreen({ players }) {
           p ? (
             <div key={p.id} className="flex flex-1 flex-col items-center">
               <span className="mb-2 text-center text-xl font-bold sm:text-2xl">{p.nickname}</span>
-              <div className={`flex w-full flex-col items-center justify-start rounded-t-lg bg-orange-500 pt-3 ${heights[i]}`}>
+              <div className={`flex w-full flex-col items-center justify-start rounded-t-lg bg-orange-500 pt-3 text-white ${heights[i]}`}>
                 <span className="text-4xl font-bold">{places[i]}</span>
                 <span className="text-lg">{p.total_score}</span>
               </div>
@@ -218,7 +220,7 @@ function FinishedScreen({ players }) {
       {ranked.length > 3 && (
         <ol start={4} className="mx-auto mt-8 flex w-full max-w-[700px] flex-col gap-2">
           {ranked.slice(3).map((p, i) => (
-            <li key={p.id} className="flex justify-between rounded-lg bg-white/10 px-5 py-3 text-lg">
+            <li key={p.id} className="flex justify-between rounded-lg bg-surface border border-hairline text-ink-900 px-5 py-3 text-lg">
               <span>
                 {i + 4}. {p.nickname}
               </span>
@@ -372,7 +374,7 @@ export default function HostQuiz() {
     return (
       <Shell>
         <h1 className="mt-20 text-center text-3xl font-bold">Game not found</h1>
-        <Link to="/admin/quizzes" className="mt-6 text-center text-white underline">Back to admin</Link>
+        <Link to="/admin/quizzes" className="mt-6 text-center text-ink-900 underline">Back to admin</Link>
       </Shell>
     )
   }

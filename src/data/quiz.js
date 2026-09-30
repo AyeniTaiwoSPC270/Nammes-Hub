@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabaseClient'
 export const OPTION_STYLES = [
   { shape: '▲', bg: 'bg-red-600', text: 'text-red-700' },
   { shape: '◆', bg: 'bg-blue-600', text: 'text-blue-700' },
-  { shape: '●', bg: 'bg-amber-500', text: 'text-amber-700' },
+  { shape: '●', bg: 'bg-amber-600', text: 'text-amber-700' },
   { shape: '■', bg: 'bg-green-600', text: 'text-green-700' },
 ]
 
