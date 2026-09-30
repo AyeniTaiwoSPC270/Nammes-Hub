@@ -6,7 +6,7 @@ import { createQuizAnswerHandler } from './handlers/quiz-answer.js'
 import { createQuizStateHandler } from './handlers/quiz-state.js'
 import quizRouter from '../quiz.js'
 
-import { QUIZ, ADMIN, SESSION, fakeRes, fakeDb, admin, anon } from './quizTestKit.js'
+import { QUIZ, SESSION, fakeRes, fakeDb, admin, anon } from './quizTestKit.js'
 
 describe('quiz-create', () => {
   it('needs an admin and a quiz with questions', async () => {

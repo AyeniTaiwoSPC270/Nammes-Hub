@@ -7,101 +7,27 @@ import {
   saveQuiz,
   validateQuizDraft,
   blankQuestion,
-  OPTION_STYLES,
-  TIME_LIMIT_CHOICES,
-  POINT_CHOICES,
+  questionFromRow,
+  QUESTION_TYPE_INFO,
   DEFAULT_MAX_PLAYERS,
   MIN_PLAYERS_LIMIT,
   MAX_PLAYERS_LIMIT,
 } from '../../data/quiz'
+import { sanitizeGameOptions } from '../../../api/_lib/quizGrading.js'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
+import QuestionCard from '../../components/admin/quizEditor/QuestionCard'
 
-const selectClass = 'min-h-11 rounded-md border border-hairline bg-surface px-3 py-2 text-base text-ink'
+// New quizzes start with the fun extras on; an existing quiz keeps whatever it had (older quizzes have them off).
+const NEW_QUIZ_OPTIONS = { streaks: true, powerups: true, comeback: true }
 
-function QuestionCard({ question, number, total, onChange, onMove, onRemove }) {
-  function setOption(index, value) {
-    const options = [...question.options]
-    options[index] = value
-    onChange({ ...question, options })
-  }
-
-  return (
-    <div className="rounded-lg border border-hairline bg-surface p-4 shadow-md">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="font-semibold text-ink-900">Question {number}</span>
-        <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={() => onMove(-1)} disabled={number === 1} aria-label="Move question up">↑</Button>
-          <Button variant="ghost" size="sm" onClick={() => onMove(1)} disabled={number === total} aria-label="Move question down">↓</Button>
-          <Button variant="destructive" size="sm" onClick={onRemove}>Remove</Button>
-        </div>
-      </div>
-
-      <FormField
-        label="Question"
-        type="textarea"
-        rows={2}
-        maxLength={300}
-        value={question.text}
-        onChange={(e) => onChange({ ...question, text: e.target.value })}
-        placeholder="Which course covers eigenvalues?"
-      />
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {OPTION_STYLES.map((style, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <label className="flex shrink-0 cursor-pointer items-center gap-1" title="Mark as the correct answer">
-              <input
-                type="radio"
-                name={`correct-${question.id}`}
-                checked={question.correct_index === i}
-                onChange={() => onChange({ ...question, correct_index: i })}
-              />
-              <span className={`flex h-9 w-9 items-center justify-center rounded-md text-white ${style.bg}`} aria-hidden="true">
-                {style.shape}
-              </span>
-            </label>
-            <input
-              type="text"
-              value={question.options[i]}
-              maxLength={100}
-              onChange={(e) => setOption(i, e.target.value)}
-              placeholder={i < 2 ? `Answer ${i + 1}` : `Answer ${i + 1} (optional)`}
-              aria-label={`Answer ${i + 1}`}
-              className="min-h-11 min-w-0 flex-1 rounded-md border border-hairline bg-surface px-3 py-2 text-base text-ink"
-            />
-          </div>
-        ))}
-      </div>
-      <p className="mt-1 text-xs text-ink-muted">Tick the circle next to the correct answer. Leave a box empty for fewer than four answers.</p>
-
-      <div className="mt-4 flex flex-wrap gap-4">
-        <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
-          Time limit
-          <select
-            className={selectClass}
-            value={question.time_limit_seconds}
-            onChange={(e) => onChange({ ...question, time_limit_seconds: Number(e.target.value) })}
-          >
-            {TIME_LIMIT_CHOICES.map((s) => <option key={s} value={s}>{s} seconds</option>)}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
-          Points
-          <select
-            className={selectClass}
-            value={question.points}
-            onChange={(e) => onChange({ ...question, points: Number(e.target.value) })}
-          >
-            {POINT_CHOICES.map((p) => <option key={p} value={p}>{p}{p === 1000 ? ' (standard)' : p === 2000 ? ' (double)' : ''}</option>)}
-          </select>
-        </label>
-      </div>
-    </div>
-  )
-}
+const OPTION_ROWS = [
+  { key: 'streaks', label: 'Streak bonus', hint: 'Answer right several times in a row for up to +200 extra points each time.' },
+  { key: 'powerups', label: 'Power-ups', hint: 'Each player gets one "Double down" and one "50/50" to use during the game.' },
+  { key: 'comeback', label: 'Comeback boost', hint: 'Players in the bottom quarter earn 15% extra on right answers, so nobody gives up.' },
+]
 
 export default function AdminQuizEditor() {
   const { id } = useParams()
@@ -111,28 +37,22 @@ export default function AdminQuizEditor() {
   const quizQuery = useQuizQuery(id)
   const [title, setTitle] = useState('')
   const [maxPlayers, setMaxPlayers] = useState(String(DEFAULT_MAX_PLAYERS))
+  const [gameOptions, setGameOptions] = useState(id ? sanitizeGameOptions({}) : NEW_QUIZ_OPTIONS)
   const [questions, setQuestions] = useState(() => (id ? [] : [blankQuestion()]))
   const [loaded, setLoaded] = useState(!id)
+  const [addType, setAddType] = useState('multiple')
 
   useEffect(() => {
     if (!id || !quizQuery.data || loaded) return
     setTitle(quizQuery.data.title)
     setMaxPlayers(String(quizQuery.data.max_players ?? DEFAULT_MAX_PLAYERS))
-    setQuestions(
-      quizQuery.data.questions.map((q) => ({
-        id: q.id,
-        text: q.text,
-        options: [...q.options, '', '', '', ''].slice(0, 4),
-        correct_index: q.correct_index,
-        time_limit_seconds: q.time_limit_seconds,
-        points: q.points,
-      })),
-    )
+    setGameOptions(sanitizeGameOptions(quizQuery.data.game_options))
+    setQuestions(quizQuery.data.questions.map(questionFromRow))
     setLoaded(true)
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers) }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -183,13 +103,7 @@ export default function AdminQuizEditor() {
         <p className="mt-6 text-ink-muted">Loading…</p>
       ) : (
         <div className="mt-6 flex flex-col gap-5">
-          <FormField
-            label="Quiz title"
-            value={title}
-            maxLength={120}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Freshers' week quiz"
-          />
+          <FormField label="Quiz title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Freshers' week quiz" />
           <FormField
             label="Max players"
             type="number"
@@ -197,6 +111,26 @@ export default function AdminQuizEditor() {
             onChange={(e) => setMaxPlayers(e.target.value)}
             helper={`From ${MIN_PLAYERS_LIMIT} to ${MAX_PLAYERS_LIMIT}. You can change it again each time you host. When the lobby fills up, the game starts by itself after 10 seconds (or sooner if you press Start).`}
           />
+
+          <fieldset className="rounded-lg border border-hairline bg-surface p-4">
+            <legend className="px-1 text-sm font-bold text-ink-900">Game extras</legend>
+            <div className="flex flex-col gap-3">
+              {OPTION_ROWS.map((row) => (
+                <label key={row.key} className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-5 w-5"
+                    checked={gameOptions[row.key]}
+                    onChange={(e) => setGameOptions((o) => ({ ...o, [row.key]: e.target.checked }))}
+                  />
+                  <span>
+                    <span className="block font-semibold text-ink-900">{row.label}</span>
+                    <span className="block text-sm text-ink-muted">{row.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           {questions.map((q, i) => (
             <QuestionCard
@@ -210,8 +144,16 @@ export default function AdminQuizEditor() {
             />
           ))}
 
-          <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={() => setQuestions((qs) => [...qs, blankQuestion()])}>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={addType}
+              onChange={(e) => setAddType(e.target.value)}
+              aria-label="Type of the next question"
+              className="min-h-11 rounded-md border border-hairline bg-surface px-3 py-2 text-base text-ink"
+            >
+              {Object.entries(QUESTION_TYPE_INFO).map(([key, info]) => <option key={key} value={key}>{info.label}</option>)}
+            </select>
+            <Button variant="secondary" onClick={() => setQuestions((qs) => [...qs, blankQuestion(addType)])}>
               Add question
             </Button>
             <Button variant="primary" onClick={handleSave} loading={saveMutation.isPending}>

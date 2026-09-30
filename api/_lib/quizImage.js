@@ -28,5 +28,6 @@ export function publicImageUrl(baseUrl, path, quizId) {
 }
 
 export function cleanAlt(value) {
+  // eslint-disable-next-line no-control-regex
   return typeof value === 'string' ? value.replace(/\s+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, IMAGE_ALT_MAX) : ''
 }

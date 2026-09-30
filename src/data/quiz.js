@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
+import { quizImagePath, IMAGE_BUCKET, IMAGE_ALT_MAX } from '../../api/_lib/quizImage.js'
+import { sanitizeGameOptions } from '../../api/_lib/quizGrading.js'
+import { cleanQuestion, validateQuestion, MAX_QUESTIONS } from './quizQuestions'
 
 // Live quiz: the four answer colours (the same on the projector and on phones), input rules for the
 // editor, timing helpers and the small client for /api/quiz. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -69,27 +72,9 @@ export function validateMaxPlayers(value) {
   return null
 }
 
-export const TIME_LIMIT_CHOICES = [10, 20, 30, 60]
-export const POINT_CHOICES = [500, 1000, 2000]
-
-export function blankQuestion() {
-  return {
-    id: crypto.randomUUID(),
-    text: '',
-    options: ['', '', '', ''],
-    correct_index: 0,
-    time_limit_seconds: 20,
-    points: 1000,
-  }
-}
-
-// Empty option boxes are dropped, so a question can have 2 to 4 answers.
-export function cleanQuestion(q) {
-  const kept = q.options.map((text, index) => ({ text: text.trim(), index })).filter((o) => o.text)
-  const options = kept.map((o) => o.text)
-  const correct_index = kept.findIndex((o) => o.index === q.correct_index)
-  return { ...q, text: q.text.trim(), options, correct_index }
-}
+export {
+  TIME_LIMIT_CHOICES, POINT_CHOICES, MAX_QUESTIONS, QUESTION_TYPE_INFO, blankQuestion, questionFromRow, cleanQuestion, validateQuestion,
+} from './quizQuestions'
 
 export function validateQuizDraft({ title, questions, maxPlayers = DEFAULT_MAX_PLAYERS }) {
   if (!title || !title.trim()) return 'A title is required.'
@@ -97,21 +82,27 @@ export function validateQuizDraft({ title, questions, maxPlayers = DEFAULT_MAX_P
   const limitProblem = validateMaxPlayers(maxPlayers)
   if (limitProblem) return limitProblem
   if (questions.length === 0) return 'Add at least one question.'
+  if (questions.length > MAX_QUESTIONS) return `A quiz can have at most ${MAX_QUESTIONS} questions.`
   for (const [i, raw] of questions.entries()) {
-    const n = i + 1
-    const q = cleanQuestion(raw)
-    if (!q.text) return `Question ${n} needs some text.`
-    if (q.text.length > 300) return `Question ${n} is too long (300 characters at most).`
-    if (q.options.length < 2) return `Question ${n} needs at least two answers.`
-    if (q.correct_index < 0) return `Question ${n}: pick a correct answer that is not empty.`
+    const problem = validateQuestion(raw, i + 1)
+    if (problem) return problem
   }
   return null
 }
 
 // Seconds left on the clock, never below zero. `nowMs` should already be corrected to the server's clock.
-export function secondsRemaining({ startedAtMs, timeLimitSeconds, nowMs }) {
-  const left = timeLimitSeconds - (nowMs - startedAtMs) / 1000
+// `bonusMs` is time the host added, `pausedMs` time spent paused so far, and `frozenElapsedMs` (while paused) is how
+// long the question had run when it was paused; it replaces the clock so the countdown stands still.
+export function secondsRemaining({ startedAtMs, timeLimitSeconds, nowMs, bonusMs = 0, pausedMs = 0, frozenElapsedMs = null }) {
+  const elapsedMs = frozenElapsedMs ?? nowMs - startedAtMs - pausedMs
+  const left = timeLimitSeconds + bonusMs / 1000 - elapsedMs / 1000
   return Math.max(0, Math.ceil(left))
+}
+
+// How long a paused question had been running when it was paused, from the two server timestamps (no clock drift).
+export function elapsedAtPauseMs(session) {
+  if (!session || !session.paused_at) return null
+  return Math.max(0, new Date(session.paused_at).getTime() - new Date(session.question_started_at).getTime() - (session.paused_total_ms ?? 0))
 }
 
 export async function callQuiz(action, body, accessToken) {
@@ -143,6 +134,11 @@ export async function hostAction(action, body) {
   return callQuiz(action, body, data.session?.access_token)
 }
 
+// A host control (kick, lock, pause, extend, skip, rename). See api/_lib/handlers/quiz-host.js.
+export function hostOp(op, sessionId, extra = {}) {
+  return hostAction('host', { sessionId, op, ...extra })
+}
+
 export async function fetchAllQuizzes() {
   const { data, error } = await supabase
     .from('quizzes')
@@ -172,38 +168,65 @@ export function useQuizQuery(id) {
 }
 
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
-// edited and reordered questions; questions the admin removed are deleted first.
-export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS }) {
+// edited and reordered questions; questions the admin removed are deleted first. Pictures are uploaded first
+// (under a fresh name, so phones never show a stale cached copy) and the old files are removed afterwards.
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {} }) {
   const cleaned = questions.map(cleanQuestion)
+  const quizFields = { title: title.trim(), max_players: maxPlayers, game_options: sanitizeGameOptions(gameOptions) }
+  const staleFiles = []
   let quizId = id
   if (quizId) {
-    const { error } = await supabase.from('quizzes').update({ title: title.trim(), max_players: maxPlayers }).eq('id', quizId)
+    const { error } = await supabase.from('quizzes').update(quizFields).eq('id', quizId)
     if (error) throw error
-    const { data: existing, error: listError } = await supabase.from('quiz_questions').select('id').eq('quiz_id', quizId)
+    const { data: existing, error: listError } = await supabase.from('quiz_questions').select('id, image_path').eq('quiz_id', quizId)
     if (listError) throw listError
     const keep = new Set(cleaned.map((q) => q.id))
-    const removed = existing.map((q) => q.id).filter((qid) => !keep.has(qid))
+    const removed = existing.filter((q) => !keep.has(q.id))
     if (removed.length > 0) {
-      const { error: deleteError } = await supabase.from('quiz_questions').delete().in('id', removed)
+      const { error: deleteError } = await supabase.from('quiz_questions').delete().in('id', removed.map((q) => q.id))
       if (deleteError) throw deleteError
+      staleFiles.push(...removed.map((q) => q.image_path).filter(Boolean))
     }
   } else {
-    const { data, error } = await supabase.from('quizzes').insert({ title: title.trim(), max_players: maxPlayers }).select('id').single()
+    const { data, error } = await supabase.from('quizzes').insert(quizFields).select('id').single()
     if (error) throw error
     quizId = data.id
   }
-  const rows = cleaned.map((q, position) => ({
-    id: q.id,
-    quiz_id: quizId,
-    position,
-    text: q.text,
-    options: q.options,
-    correct_index: q.correct_index,
-    time_limit_seconds: q.time_limit_seconds,
-    points: q.points,
-  }))
+
+  const rows = []
+  for (const [position, q] of cleaned.entries()) {
+    let imagePath = q.image_path ?? null
+    if (q.imageBlob) {
+      const path = quizImagePath({ quizId, questionId: q.id, ext: q.imageExt, stamp: Date.now() + position })
+      const { error } = await supabase.storage.from(IMAGE_BUCKET).upload(path, q.imageBlob, { contentType: q.imageBlob.type, upsert: true })
+      if (error) throw new Error(`Could not upload the picture for question ${position + 1}: ${error.message}`)
+      if (imagePath) staleFiles.push(imagePath)
+      imagePath = path
+    } else if (q.removeImage && imagePath) {
+      staleFiles.push(imagePath)
+      imagePath = null
+    }
+    rows.push({
+      id: q.id,
+      quiz_id: quizId,
+      position,
+      type: q.type,
+      text: q.text,
+      options: q.options,
+      correct_index: q.correct_index,
+      numeric_answer: q.numeric_answer,
+      numeric_tolerance: q.numeric_tolerance,
+      accepted_answers: q.accepted_answers,
+      time_limit_seconds: q.time_limit_seconds,
+      points: q.points,
+      points_multiplier: q.points_multiplier,
+      image_path: imagePath,
+      image_alt: imagePath ? String(q.image_alt ?? '').trim().slice(0, IMAGE_ALT_MAX) : null,
+    })
+  }
   const { error } = await supabase.from('quiz_questions').upsert(rows, { onConflict: 'id' })
   if (error) throw error
+  if (staleFiles.length > 0) await supabase.storage.from(IMAGE_BUCKET).remove(staleFiles) // best effort
   return quizId
 }
 
@@ -224,6 +247,9 @@ export async function deleteQuiz(id) {
   if (!data || data.length === 0) {
     throw new Error('No changes were saved — your account may not have admin access to make this change.')
   }
+  // Tidy up the quiz's pictures (best effort: a leftover file is harmless).
+  const { data: files } = await supabase.storage.from(IMAGE_BUCKET).list(id)
+  if (files && files.length) await supabase.storage.from(IMAGE_BUCKET).remove(files.map((f) => `${id}/${f.name}`))
 }
 
 export async function fetchQuizSessions(quizId) {
