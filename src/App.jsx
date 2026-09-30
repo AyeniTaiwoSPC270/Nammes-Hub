@@ -75,6 +75,7 @@ const AdminQuizStudio = lazyRetry(() => import('./pages/admin/AdminQuizStudio'))
 const AdminQuizReport = lazyRetry(() => import('./pages/admin/AdminQuizReport'))
 const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
 const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
+const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
 
 function MaintenanceGate({ children }) {
   const location = useLocation()
@@ -117,6 +118,14 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <PlayQuiz />
+              </Suspense>
+            }
+          />
+          <Route
+            path="practice/:quizId"
+            element={
+              <Suspense fallback={null}>
+                <PlayPractice />
               </Suspense>
             }
           />

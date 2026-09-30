@@ -206,6 +206,7 @@ export default function AdminQuizzes() {
                 <div className="font-semibold text-ink-900">{quiz.title}</div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                   <span>{quiz.questionCount} question{quiz.questionCount === 1 ? '' : 's'}</span>
+                  {quiz.practice_enabled && <Badge tone="updated">Practice on</Badge>}
                   {(quiz.tags ?? []).map((t) => <Badge key={t} tone="neutral">{t}</Badge>)}
                 </div>
               </div>
@@ -227,6 +228,15 @@ export default function AdminQuizzes() {
                 <Button variant="secondary" size="sm" disabled={busyId === quiz.id || quiz.questionCount === 0} onClick={() => handleExport(quiz)}>
                   Export
                 </Button>
+                {quiz.practice_enabled && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/practice/${quiz.id}`).then(() => toast.success('Practice link copied.'), () => toast.error('Could not copy. Open the quiz editor to see the link.'))}
+                  >
+                    Copy practice link
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm" disabled={busyId === quiz.id} onClick={() => run(quiz, () => setQuizArchived(quiz.id, !quiz.archived_at), quiz.archived_at ? 'Restored.' : 'Archived.')}>
                   {quiz.archived_at ? 'Restore' : 'Archive'}
                 </Button>

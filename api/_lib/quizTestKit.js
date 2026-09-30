@@ -29,6 +29,8 @@ export function fakeDb(seed = {}) {
     quiz_host_log: [],
     quiz_powerup_uses: [],
     quiz_teams: [],
+    quiz_practice_runs: [],
+    quiz_practice_answers: [],
     ...seed,
   }
   let n = 0
@@ -49,7 +51,7 @@ export function fakeDb(seed = {}) {
     let limitN = Infinity
     const run = () => {
       const match = (r) =>
-        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : r[col] !== val))
+        filters.every(([kind, col, val]) => (kind === 'eq' ? r[col] === val : kind === 'is' ? r[col] == null : kind === 'notnull' ? r[col] != null : r[col] !== val))
       const rows = tables[table].filter(match)
       if (op === 'insert' && Array.isArray(payload)) {
         const made = payload.map((p) => ({ id: uid(), ...p }))
@@ -61,6 +63,7 @@ export function fakeDb(seed = {}) {
         const row = { id: uid(), ...payload }
         if (table === 'quiz_sessions') Object.assign(row, { state: 'lobby', current_question_index: -1, question_started_at: null, finished_at: null })
         if (table === 'quiz_players') row.total_score = 0
+        if (table === 'quiz_practice_runs') Object.assign(row, { total_score: 0, finished_at: null })
         tables[table].push(row)
         return { rows: [row] }
       }
@@ -91,6 +94,7 @@ export function fakeDb(seed = {}) {
       eq: (c, v) => { filters.push(['eq', c, v]); return api },
       neq: (c, v) => { filters.push(['neq', c, v]); return api },
       is: (c) => { filters.push(['is', c]); return api },
+      not: (c) => { filters.push(['notnull', c]); return api },
       order: () => api,
       limit: (n) => { limitN = n; return api },
       maybeSingle: async () => { const r = run(); return { data: r.rows[0] ?? null, error: r.error ?? null } },
@@ -109,6 +113,13 @@ export function fakeDb(seed = {}) {
     auth: { getUser: async (t) => (t === 'good' ? { data: { user: { id: ADMIN } }, error: null } : { data: null, error: { message: 'bad' } }) },
     from: (t) => query(t),
     rpc: async (name, a) => {
+      if (name === 'quiz_practice_cleanup') return { data: 0, error: null }
+      if (name === 'quiz_practice_record') {
+        if (tables.quiz_practice_answers.some((x) => x.run_id === a.p_run && x.question_id === a.p_question)) return { data: false, error: null }
+        tables.quiz_practice_answers.push({ run_id: a.p_run, question_id: a.p_question, chosen_index: a.p_chosen, answer_text: a.p_text, correct: a.p_correct, points_awarded: a.p_points })
+        tables.quiz_practice_runs.find((r) => r.id === a.p_run).total_score += a.p_points
+        return { data: true, error: null }
+      }
       if (name === 'quiz_skip_question') {
         const dropped = tables.quiz_answers.filter((x) => x.session_id === a.p_session && x.question_id === a.p_question)
         for (const d of dropped) tables.quiz_players.find((p) => p.id === d.player_id).total_score -= d.points_awarded

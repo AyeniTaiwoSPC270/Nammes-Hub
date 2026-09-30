@@ -5,10 +5,11 @@ import answer from './_lib/handlers/quiz-answer.js'
 import state from './_lib/handlers/quiz-state.js'
 import host from './_lib/handlers/quiz-host.js'
 import powerup from './_lib/handlers/quiz-powerup.js'
+import practice from './_lib/handlers/quiz-practice.js'
 
 // One function for the live quiz routes (see api/account.js for why routes share functions).
 // Called as /api/quiz?action=join and so on.
-const ACTIONS = { create, advance, join, answer, state, host, powerup }
+const ACTIONS = { create, advance, join, answer, state, host, powerup, practice }
 
 export default function handler(req, res) {
   const name = req.query?.action
