@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { BracketCard } from '../components/quiz/BracketParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
@@ -551,6 +552,7 @@ function PlayQuizGame({ onTheme }) {
       return (
         <Phone me={me}>
           <div className="mt-4 flex flex-col items-center gap-5 text-center">
+            {game.session.bracket && <div className="w-full"><BracketCard bracket={game.session.bracket} compact /></div>}
             <div className="qz-pop flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
               <span className="material-symbols-outlined text-5xl" aria-hidden="true">lock</span>
             </div>
@@ -599,6 +601,7 @@ function PlayQuizGame({ onTheme }) {
         {session.paused && (
           <p role="status" className="bg-orange-500 px-4 py-2 text-center text-sm font-bold text-white">Paused by the host. The clock is stopped.</p>
         )}
+        {session.bracket && <div className="mx-auto w-full max-w-md px-4 pt-2"><BracketCard bracket={session.bracket} compact /></div>}
         <div className="mx-auto flex w-full max-w-md flex-col items-center gap-2 px-4 pt-3">
           {(question.multiplier === 2 || question.comeback || me.streak >= 2) && (
             <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-bold">
@@ -722,6 +725,7 @@ function PlayQuizGame({ onTheme }) {
             <p className="mt-1 break-words text-2xl font-bold"><MathText>{answerLabel}</MathText></p>
           </div>
         )}
+        {game.session.bracket && <div className="w-full"><BracketCard bracket={game.session.bracket} /></div>}
         <div className="flex items-center gap-3 rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">
           {me.rank && <span>#{me.rank}</span>}
           <span><CountingScore from={me.score - reveal.pointsAwarded} to={me.score} /> pts</span>
@@ -742,6 +746,7 @@ function PlayQuizGame({ onTheme }) {
             <RankMove delta={rankDelta} />
           </div>
         </section>
+        {game.session.bracket && <BracketCard bracket={game.session.bracket} />}
         {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} scoring={game.session.teamScoring} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 5).map((p, i) => {
@@ -780,6 +785,7 @@ function PlayQuizGame({ onTheme }) {
           {me.rank && me.rank > 3 && <p className="text-3xl font-bold">You finished #{me.rank}</p>}
           <p className="mt-2 text-2xl font-semibold">{formatScore(me.score)} points</p>
         </section>
+        {game.session.bracket && <BracketCard bracket={game.session.bracket} />}
         {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 3).map((p) => (

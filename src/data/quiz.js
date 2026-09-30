@@ -358,15 +358,16 @@ export async function fetchGameReport(sessionId) {
   const { data: session, error } = await supabase.from('quiz_sessions').select('*, quizzes(title)').eq('id', sessionId).maybeSingle()
   if (error) throw error
   if (!session) throw new Error('Game not found')
-  const [questions, players, questionStats, distribution, playerStats, teams] = await Promise.all([
+  const [questions, players, questionStats, distribution, playerStats, teams, bracket] = await Promise.all([
     supabase.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).order('position'),
     supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id').eq('session_id', sessionId),
     supabase.from('quiz_question_stats').select('*').eq('session_id', sessionId),
     supabase.from('quiz_answer_distribution').select('*').eq('session_id', sessionId),
     supabase.from('quiz_player_stats').select('*').eq('session_id', sessionId),
     supabase.from('quiz_teams').select('*').eq('session_id', sessionId).order('position'),
+    supabase.from('quiz_bracket_matches').select('*').eq('session_id', sessionId).order('round').order('slot'),
   ])
-  for (const result of [questions, players, questionStats, distribution, playerStats, teams]) if (result.error) throw result.error
+  for (const result of [questions, players, questionStats, distribution, playerStats, teams, bracket]) if (result.error) throw result.error
   return {
     session,
     questions: questions.data,
@@ -375,6 +376,7 @@ export async function fetchGameReport(sessionId) {
     distribution: distribution.data,
     playerStats: playerStats.data,
     teams: teams.data,
+    bracketMatches: bracket.data ?? [],
     teamScoring: session.team_scoring,
   }
 }

@@ -199,6 +199,27 @@ export default function AdminQuizReport() {
         </section>
       )}
 
+      {query.data.bracketMatches?.length > 0 && (
+        <section className="mt-8" aria-label="Knockout bracket">
+          <h2 className="text-xl font-bold text-ink-900">Knockout bracket</h2>
+          {[...new Set(query.data.bracketMatches.map((m) => m.round))].map((round) => (
+            <div key={round} className="mt-3">
+              <h3 className="text-sm font-bold uppercase tracking-[.05em] text-ink-muted">Round {round + 1} · best of {session.bracket_length}</h3>
+              <ul className="mt-1 divide-y divide-hairline rounded-xl border border-hairline">
+                {query.data.bracketMatches.filter((m) => m.round === round).map((m) => (
+                  <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                    <span className={m.winner === 'a' ? 'font-bold' : ''}>{m.name_a ?? 'Left the game'} <span className="tabular-nums text-ink-muted">{m.score_a ?? ''}</span></span>
+                    <span className="text-ink-muted">vs</span>
+                    <span className={m.winner === 'b' ? 'font-bold' : ''}>{m.name_b ?? 'Left the game'}{m.bot_b ? ' (bot)' : ''} <span className="tabular-nums text-ink-muted">{m.score_b ?? ''}</span></span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {session.bracket_champion && <p className="mt-3 font-semibold">Champion: {players.find((p) => p.id === session.bracket_champion)?.nickname ?? 'a player who left'}</p>}
+        </section>
+      )}
+
       <section className="mt-8">
         <h2 className="text-xl font-bold text-ink-900">Question by question</h2>
         <ol className="mt-3 flex flex-col gap-3">

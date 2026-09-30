@@ -7,8 +7,10 @@ import {
   isComeback, sanitizeGameOptions, ANSWER_GRACE_MS, DEFAULT_MAX_PLAYERS, AVATAR_COUNT,
 } from '../quiz.js'
 import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_ONCE } from '../quizBots.js'
+import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion } from '../quizBracket.js'
+import { settleRound } from '../quizBracketEngine.js'
 
-const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay']
+const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay', 'setBracket']
 const STEP_OPS = ['pause', 'resume', 'extend', 'skip', 'botsPlay']
 
 // Admin controls for a running game: kick or rename a player, lock the lobby, pause, add time, skip a question.
@@ -21,7 +23,7 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { sessionId, op, playerId, block, expectedState, expectedIndex, count, skill } = req.body ?? {}
+    const { sessionId, op, playerId, block, expectedState, expectedIndex, count, skill, enabled, length, botSkill } = req.body ?? {}
     if (!isUuid(sessionId) || !OPS.includes(op)) {
       res.status(400).json({ error: 'sessionId and a valid op are required' })
       return
@@ -145,8 +147,44 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
         return
       }
       await log({ skipped: expectedIndex })
+      // Skipping the last question of a bracket round still has to settle the round.
+      if (session.bracket_mode && isRoundEnd(expectedIndex, session.bracket_length)) {
+        try {
+          await settleRound(supabaseAdmin, updated, roundOfQuestion(expectedIndex, session.bracket_length), nowIso)
+        } catch (bracketError) {
+          console.error('quiz-host: bracket step failed', bracketError)
+          await logError(supabaseAdmin, 'quiz-host', bracketError, 500)
+        }
+      }
       res.status(200).json({ session: updated })
       return
+    }
+
+    // Turn the knockout bracket on or off (lobby only).
+    if (op === 'setBracket') {
+      if (session.state !== 'lobby') {
+        res.status(409).json({ error: 'The bracket can only be set up in the lobby', session })
+        return
+      }
+      const on = enabled === true
+      const size = Number(length ?? session.bracket_length)
+      const botLevel = botSkill ?? session.bracket_bot_skill
+      if (!BRACKET_LENGTHS.includes(size) || !BOT_SKILL_CHOICES.includes(botLevel)) {
+        res.status(400).json({ error: 'Pick a match length of 1, 3 or 5 questions and a bot level' })
+        return
+      }
+      if (on) {
+        if (session.team_mode) {
+          res.status(409).json({ error: 'A team game cannot also be a bracket', session })
+          return
+        }
+        const { count: questionCount } = await supabaseAdmin.from('quiz_questions').select('id', { count: 'exact', head: true }).eq('quiz_id', session.quiz_id)
+        if ((questionCount ?? 0) < size) {
+          res.status(409).json({ error: `A match of ${size} needs a quiz with at least ${size} questions`, session })
+          return
+        }
+      }
+      return done({ bracket_mode: on, bracket_length: size, bracket_bot_skill: botLevel }, { bracket: on, length: size, botSkill: botLevel })
     }
 
     // ---- Test bots ----

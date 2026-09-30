@@ -3,6 +3,8 @@ import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
 import { nextState, stepUpdate } from '../quiz.js'
+import { isRoundEnd, roundOfQuestion } from '../quizBracket.js'
+import { startBracket, settleRound } from '../quizBracketEngine.js'
 
 const STATES = ['lobby', 'question', 'reveal', 'leaderboard', 'finished']
 
@@ -70,6 +72,21 @@ export function createQuizAdvanceHandler(getClient, { now = () => new Date() } =
     }
     if (!updated) {
       res.status(409).json({ error: 'The game has already moved on' })
+      return
+    }
+    // In a bracket game, the start pairs everyone up and the end of a round decides who goes through.
+    if (session.bracket_mode) {
+      try {
+        if (expectedState === 'lobby') await startBracket(supabaseAdmin, updated)
+        else if (expectedState === 'reveal' && isRoundEnd(expectedIndex, session.bracket_length)) {
+          await settleRound(supabaseAdmin, updated, roundOfQuestion(expectedIndex, session.bracket_length), now().toISOString())
+        }
+      } catch (bracketError) {
+        console.error('quiz-advance: bracket step failed', bracketError)
+        await logError(supabaseAdmin, 'quiz-advance', bracketError, 500)
+      }
+      const { data: fresh } = await supabaseAdmin.from('quiz_sessions').select('*').eq('id', sessionId).maybeSingle()
+      res.status(200).json({ session: fresh ?? updated })
       return
     }
     res.status(200).json({ session: updated })
