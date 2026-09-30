@@ -7,7 +7,7 @@ import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
-import { useProjectorFit, useAutoScroll } from '../lib/projectorFit'
+import { useProjectorFit } from '../lib/projectorFit'
 import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
 import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
@@ -19,10 +19,9 @@ import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 const POLL_MS = 2500
 
 function Stage({ title, chip, footer, children }) {
-  // Projector screens should not need scrolling: shrink to fit, and if that is not enough, scroll by themselves.
+  // Projector screens should not need scrolling, so they shrink to fit the window.
   const mainRef = useRef(null)
-  const stillOverflowing = useProjectorFit(mainRef, { baseMaxWidth: 1400 })
-  useAutoScroll(stillOverflowing)
+  useProjectorFit(mainRef, { baseMaxWidth: 1400 })
   return (
     <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
       <QuizBackdrop />
@@ -266,7 +265,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
           <div className="mt-5 flex flex-wrap gap-3">
             {orderedPlayers.map((p) => (
               <span key={p.id} className="qz-pop relative inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
-                <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-12 w-12" />
+                <Avatar name={p.nickname} avatarId={p.avatar_id} mood={players.length > 16 ? 'static' : 'idle'} className="h-12 w-12" />
                 {p.nickname}
                 {teamById.get(p.team_id) && (
                   <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
@@ -793,7 +792,7 @@ function FinishedScreen({ title, players, teams, scoring }) {
           {ranked.slice(3).map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3">
               <span className="w-8 text-center text-lg font-bold text-ink-muted">{p.rank}</span>
-              <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-11 w-11" />
+              <Avatar name={p.nickname} avatarId={p.avatar_id} mood="static" className="h-11 w-11" />
               <span className="min-w-0 flex-1 truncate text-lg font-semibold">{p.nickname}</span>
               <span className="text-lg font-bold tabular-nums">{formatScore(p.total_score)}</span>
             </li>
