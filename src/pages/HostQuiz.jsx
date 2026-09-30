@@ -622,7 +622,9 @@ const AnimatedBoard = memo(function AnimatedBoard({ players, gains }) {
               opacity: position < SHOWN ? 1 : 0,
               zIndex: rising ? 2 : 1,
               willChange: 'transform',
-              transition: `transform ${REORDER_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms ease`,
+              // Only the real reorder glides. While the board is still settling on last round's order (scores can land a
+              // moment after the screen opens) rows snap into place, otherwise they visibly shuffle twice.
+              transition: after ? `transform ${REORDER_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity 400ms ease` : 'none',
             }}
           >
             <div
