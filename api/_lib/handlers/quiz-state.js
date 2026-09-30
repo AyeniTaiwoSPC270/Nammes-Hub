@@ -47,7 +47,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), allo
     }
 
     const [{ data: players }, { count: questionCount }] = await Promise.all([
-      supabaseAdmin.from('quiz_players').select('id, nickname, total_score').eq('session_id', session.id),
+      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id').eq('session_id', session.id),
       supabaseAdmin.from('quiz_questions').select('id', { count: 'exact', head: true }).eq('quiz_id', session.quiz_id),
     ])
     const ranked = rankPlayers(players ?? [])
@@ -61,7 +61,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), allo
         questionCount: questionCount ?? 0,
         startedAt: session.question_started_at,
       },
-      me: { nickname: player.nickname, score: me?.total_score ?? 0, rank: me?.rank ?? null },
+      me: { nickname: player.nickname, score: me?.total_score ?? 0, rank: me?.rank ?? null, avatarId: me?.avatar_id ?? 0 },
       playerCount: ranked.length,
     }
 

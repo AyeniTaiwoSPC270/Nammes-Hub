@@ -137,9 +137,9 @@ describe('quiz-create', () => {
   })
 })
 
-async function joinPlayer(db, nickname, code = '123456') {
+async function joinPlayer(db, nickname, code = '123456', avatarId) {
   const res = fakeRes()
-  await createQuizJoinHandler(() => db, { allow: () => true })(anon({ code, nickname }), res)
+  await createQuizJoinHandler(() => db, { allow: () => true })(anon({ code, nickname, avatarId }), res)
   return res
 }
 
@@ -162,6 +162,16 @@ describe('quiz-join', () => {
     expect((await joinPlayer(db, 'Bob', '999999')).statusCode).toBe(404)
     db.tables.quiz_sessions[0].state = 'finished'
     expect((await joinPlayer(db, 'Bob')).statusCode).toBe(404)
+  })
+  it('stores the chosen character, defaults to the first, and rejects out-of-range ones', async () => {
+    const db = lobby()
+    const picked = await joinPlayer(db, 'Ada', '123456', 17)
+    expect(picked.body.avatarId).toBe(17)
+    expect(db.tables.quiz_players[0].avatar_id).toBe(17)
+    expect((await joinPlayer(db, 'Bob')).body.avatarId).toBe(0)
+    expect((await joinPlayer(db, 'Cy', '123456', 50)).statusCode).toBe(400)
+    expect((await joinPlayer(db, 'Di', '123456', -1)).statusCode).toBe(400)
+    expect((await joinPlayer(db, 'Ed', '123456', 'x')).statusCode).toBe(400)
   })
   it('rate limits by IP', async () => {
     const db = lobby()
@@ -254,7 +264,7 @@ describe('answering and the answer-leak rule', () => {
     db.tables.quiz_sessions[0].state = 'reveal'
     const res = await state(a.token)
     expect(res.body.reveal).toEqual({ correctIndex: 1, chosenIndex: 1, pointsAwarded: 950 })
-    expect(res.body.me).toMatchObject({ nickname: 'Ada', score: 950, rank: 1 })
+    expect(res.body.me).toMatchObject({ nickname: 'Ada', score: 950, rank: 1, avatarId: 0 })
   })
   it('accepts only one answer per player', async () => {
     const { a, ask } = await setup()

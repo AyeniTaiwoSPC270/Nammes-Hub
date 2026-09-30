@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, OPTION_STYLES } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, avatarInfo, normalizeAvatarId, AVATAR_COUNT, OPTION_STYLES } from './quiz'
 
 function question(over = {}) {
   return { ...blankQuestion(), text: 'Capital of Nigeria?', options: ['Lagos', 'Abuja', '', ''], correct_index: 1, ...over }
@@ -64,5 +64,20 @@ describe('rankPlayers', () => {
       { id: 'd', nickname: 'D', total_score: 100 },
     ])
     expect(ranked.map((p) => [p.id, p.rank])).toEqual([['b', 1], ['a', 2], ['c', 2], ['d', 4]])
+  })
+})
+
+describe('avatar catalogue', () => {
+  it('has 50 characters that all look different (shape and colour never repeat)', () => {
+    const looks = new Set(Array.from({ length: AVATAR_COUNT }, (_, id) => {
+      const a = avatarInfo(id)
+      return `${a.species}-${a.color.name}`
+    }))
+    expect(looks.size).toBe(50)
+  })
+  it('gives each a readable name and falls back to the first for bad ids', () => {
+    expect(avatarInfo(0).name).toBe('Coral Blob')
+    expect(avatarInfo(49).name).toBe('Bubblegum Ghost')
+    for (const bad of [-1, 50, 2.5, null, undefined, '7']) expect(normalizeAvatarId(bad)).toBe(0)
   })
 })

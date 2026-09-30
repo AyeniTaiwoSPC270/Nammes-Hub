@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
-import { isJoinCode, validateNickname, newPlayerToken, hashToken, createRateLimiter, clientIp, MAX_PLAYERS } from '../quiz.js'
+import { isJoinCode, isAvatarId, validateNickname, newPlayerToken, hashToken, createRateLimiter, clientIp, MAX_PLAYERS } from '../quiz.js'
 
 // Anyone with a join code can join with a nickname. No account. The player gets a secret token that
 // proves who they are on later calls, and only its hash is stored.
@@ -14,9 +14,13 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       res.status(429).json({ error: 'Too many tries. Wait a moment and try again.' })
       return
     }
-    const { code, nickname } = req.body ?? {}
+    const { code, nickname, avatarId = 0 } = req.body ?? {}
     if (!isJoinCode(code)) {
       res.status(400).json({ error: 'Enter the 6-digit game code' })
+      return
+    }
+    if (!isAvatarId(avatarId)) {
+      res.status(400).json({ error: 'Pick one of the characters' })
       return
     }
     const checked = validateNickname(nickname)
@@ -48,7 +52,7 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
 
     const { data: player, error } = await supabaseAdmin
       .from('quiz_players')
-      .insert({ session_id: session.id, nickname: checked.value })
+      .insert({ session_id: session.id, nickname: checked.value, avatar_id: avatarId })
       .select('id')
       .single()
     if (error) {
@@ -72,7 +76,7 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       return
     }
 
-    res.status(200).json({ token, playerId: player.id, sessionId: session.id, nickname: checked.value })
+    res.status(200).json({ token, playerId: player.id, sessionId: session.id, nickname: checked.value, avatarId })
   }
 }
 

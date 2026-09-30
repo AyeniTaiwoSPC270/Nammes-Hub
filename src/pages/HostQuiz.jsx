@@ -141,8 +141,8 @@ function Lobby({ session, title, players, questionCount, onStart, busy }) {
         ) : (
           <div className="mt-5 flex flex-wrap gap-3">
             {players.map((p) => (
-              <span key={p.id} className="qz-pop inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1.5 pl-1.5 pr-4 text-lg font-semibold">
-                <Avatar name={p.nickname} className="h-9 w-9 text-base" />
+              <span key={p.id} className="qz-pop inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-4 text-lg font-semibold">
+                <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-12 w-12" />
                 {p.nickname}
               </span>
             ))}
@@ -321,7 +321,7 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
               style={{ animationDelay: `${i * 90}ms` }}
             >
               <span className="w-12 text-center text-3xl font-bold" aria-label={`Rank ${p.rank}`}>{MEDALS[p.rank - 1] ?? p.rank}</span>
-              <Avatar name={p.nickname} className="h-12 w-12 text-xl" />
+              <Avatar name={p.nickname} avatarId={p.avatar_id} mood={p.rank === 1 ? 'dance' : gain > 0 ? 'happy' : 'idle'} className="h-16 w-16" />
               <span className="min-w-0 flex-1 truncate text-2xl font-bold sm:text-3xl">{p.nickname}</span>
               {moved !== 0 && (
                 <span className={`hidden items-center text-lg font-bold sm:flex ${moved > 0 ? 'text-green-600' : 'text-red-600'}`} aria-label={moved > 0 ? `Up ${moved}` : `Down ${-moved}`}>
@@ -390,7 +390,7 @@ function FinishedScreen({ title, players }) {
               {p && (
                 <div className="qz-rise mb-3 flex flex-col items-center gap-2 text-center" style={{ animationDelay: `${delay + 500}ms` }}>
                   {place === 1 && <span className="qz-float text-5xl" aria-hidden="true">👑</span>}
-                  <Avatar name={p.nickname} className={place === 1 ? 'h-20 w-20 text-4xl' : 'h-14 w-14 text-2xl'} />
+                  <Avatar name={p.nickname} avatarId={p.avatar_id} mood={place === 1 ? 'dance' : 'happy'} className={place === 1 ? 'h-28 w-28' : 'h-20 w-20'} />
                   <span className={`max-w-full truncate font-bold ${place === 1 ? 'text-3xl' : 'text-xl'}`}>{p.nickname}</span>
                 </div>
               )}
@@ -411,7 +411,7 @@ function FinishedScreen({ title, players }) {
           {ranked.slice(3).map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface px-4 py-3">
               <span className="w-8 text-center text-lg font-bold text-ink-muted">{p.rank}</span>
-              <Avatar name={p.nickname} className="h-9 w-9 text-base" />
+              <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-11 w-11" />
               <span className="min-w-0 flex-1 truncate text-lg font-semibold">{p.nickname}</span>
               <span className="text-lg font-bold tabular-nums">{formatScore(p.total_score)}</span>
             </li>
@@ -449,7 +449,7 @@ export default function HostQuiz() {
   }, [])
 
   const loadPlayers = useCallback(async () => {
-    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score').eq('session_id', sessionId)
+    const { data } = await supabase.from('quiz_players').select('id, nickname, total_score, avatar_id').eq('session_id', sessionId)
     if (data) setPlayers(data)
   }, [sessionId])
 

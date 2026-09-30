@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { avatarStyle, initialOf } from '../../data/quiz'
 import QuizThemeToggle from './QuizThemeToggle'
+import Character from './Character'
 
 // Small building blocks shared by the host (projector) and player (phone) quiz screens.
 
@@ -20,7 +21,15 @@ export function AnswerShape({ index, className = 'h-8 w-8' }) {
   )
 }
 
-export function Avatar({ name, className = 'h-10 w-10 text-lg' }) {
+// A player's character (avatarId 0-49). Older games without a character fall back to a coloured initial.
+export function Avatar({ name, avatarId, mood = 'idle', className = 'h-10 w-10 text-lg' }) {
+  if (avatarId !== undefined && avatarId !== null) {
+    return (
+      <span className={`inline-block shrink-0 ${className}`}>
+        <Character id={avatarId} mood={mood} />
+      </span>
+    )
+  }
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white ${avatarStyle(name).bg} ${className}`}

@@ -4,6 +4,11 @@ import { createHash, randomBytes, randomInt } from 'node:crypto'
 // Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
 
 export const MAX_PLAYERS = 150
+export const AVATAR_COUNT = 50
+
+export function isAvatarId(value) {
+  return Number.isInteger(value) && value >= 0 && value < AVATAR_COUNT
+}
 // Phones have network delay, so an answer is still accepted this long after the timer hits zero.
 export const ANSWER_GRACE_MS = 1500
 
@@ -75,7 +80,7 @@ export function rankPlayers(players) {
     const rank = p.total_score === lastScore ? lastRank : i + 1
     lastScore = p.total_score
     lastRank = rank
-    return { id: p.id, nickname: p.nickname, total_score: p.total_score, rank }
+    return { id: p.id, nickname: p.nickname, total_score: p.total_score, avatar_id: p.avatar_id ?? 0, rank }
   })
 }
 

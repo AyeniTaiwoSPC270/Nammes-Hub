@@ -10,6 +10,7 @@ import {
   rankPlayers,
   createRateLimiter,
   ANSWER_GRACE_MS,
+  isAvatarId,
 } from './quiz.js'
 
 describe('generateJoinCode', () => {
@@ -117,5 +118,12 @@ describe('createRateLimiter', () => {
     expect(allow('other')).toBe(true)
     t = 1001
     expect(allow('k')).toBe(true)
+  })
+})
+
+describe('isAvatarId', () => {
+  it('accepts whole numbers 0 to 49 only', () => {
+    for (const ok of [0, 1, 49]) expect(isAvatarId(ok)).toBe(true)
+    for (const bad of [-1, 50, 1.5, '3', null, undefined, NaN]) expect(isAvatarId(bad)).toBe(false)
   })
 })

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
+import Character from '../components/quiz/Character'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
@@ -38,7 +39,7 @@ function Phone({ me, children }) {
       <QuizTopBar compact>
         {me && (
           <span className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3 text-sm font-bold">
-            <Avatar name={me.nickname} className="h-7 w-7 text-sm" />
+            <Avatar name={me.nickname} avatarId={me.avatarId} className="h-8 w-8" />
             <span className="max-w-[7rem] truncate">{me.nickname}</span>
             <span className="text-orange-500">{formatScore(me.score)}</span>
           </span>
@@ -105,6 +106,7 @@ function JoinForm({ onJoined }) {
   const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
   const [code, setCode] = useState(initialCode)
   const [nickname, setNickname] = useState('')
+  const [avatarId, setAvatarId] = useState(randomAvatarId)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -113,7 +115,7 @@ function JoinForm({ onJoined }) {
     setBusy(true)
     setError('')
     try {
-      const joined = await callQuiz('join', { code, nickname })
+      const joined = await callQuiz('join', { code, nickname, avatarId })
       onJoined(joined)
     } catch (e) {
       setError(e.message)
@@ -149,6 +151,39 @@ function JoinForm({ onJoined }) {
             className="min-h-14 rounded-2xl border-2 border-hairline bg-paper px-4 text-lg font-semibold text-ink-900 placeholder:font-normal placeholder:text-ink-muted focus:border-orange-500 focus:outline-none"
           />
         </label>
+        <div className="flex flex-col gap-3">
+          <span className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">
+            Pick your character
+            <button type="button" onClick={() => setAvatarId(randomAvatarId())} className="flex items-center gap-1 rounded-full bg-orange-500/12 px-3 py-1 text-xs font-bold normal-case tracking-normal text-orange-500">
+              <span className="material-symbols-outlined text-base" aria-hidden="true">casino</span>
+              Surprise me
+            </button>
+          </span>
+          <div className="flex items-center gap-4 rounded-2xl bg-paper p-3">
+            <span className="h-24 w-24 shrink-0"><Character id={avatarId} mood="wave" /></span>
+            <span className="min-w-0">
+              <span className="block text-xs text-ink-muted">You will be</span>
+              <span className="block truncate text-xl font-bold">{avatarInfo(avatarId).name}</span>
+            </span>
+          </div>
+          <div className="grid max-h-56 grid-cols-5 gap-2 overflow-y-auto rounded-2xl border border-hairline p-2" role="group" aria-label="Characters">
+            {Array.from({ length: AVATAR_COUNT }, (_, id) => (
+              <button
+                key={id}
+                type="button"
+                aria-label={avatarInfo(id).name}
+                aria-pressed={avatarId === id}
+                onClick={() => setAvatarId(id)}
+                className={[
+                  'aspect-square rounded-xl border-2 p-1 transition-transform active:scale-95',
+                  avatarId === id ? 'border-orange-500 bg-orange-500/12' : 'border-transparent bg-paper',
+                ].join(' ')}
+              >
+                <Character id={id} mood={avatarId === id ? 'happy' : 'static'} />
+              </button>
+            ))}
+          </div>
+        </div>
         {error && (
           <p role="alert" className="flex items-center gap-2 rounded-2xl bg-red-600/12 px-4 py-3 text-sm font-semibold text-red-600">
             <span className="material-symbols-outlined" aria-hidden="true">error</span>
@@ -307,7 +342,7 @@ export default function PlayQuiz() {
       <Phone me={me}>
         <div className="mt-6 flex flex-col items-center gap-4 text-center">
           <div className="qz-pop relative">
-            <Avatar name={me.nickname} className="h-28 w-28 text-6xl shadow-lg" />
+            <Avatar name={me.nickname} avatarId={me.avatarId} mood="wave" className="h-36 w-36" />
             <span className="qz-float absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full bg-orange-500 text-2xl font-bold text-white shadow-md" aria-hidden="true">π</span>
           </div>
           <div className="qz-rise" style={{ animationDelay: '120ms' }}>
@@ -393,8 +428,8 @@ export default function PlayQuiz() {
     const correct = answered && reveal.chosenIndex === reveal.correctIndex
     return (
       <ResultScreen tone={correct ? 'good' : answered ? 'bad' : 'neutral'}>
-        <div className="qz-pop flex h-28 w-28 items-center justify-center rounded-full bg-white/20">
-          <span className="material-symbols-outlined text-7xl" aria-hidden="true">{correct ? 'check' : answered ? 'close' : 'timer_off'}</span>
+        <div className="qz-pop h-40 w-40 rounded-full bg-white/20 p-3">
+          <Character id={me.avatarId} mood={correct ? 'dance' : 'sad'} />
         </div>
         <h1 className="qz-rise text-5xl font-bold text-white">{correct ? 'Correct!' : answered ? 'Not quite' : "Time's up"}</h1>
         {correct && <p className="qz-pop rounded-full bg-white px-6 py-2 text-4xl font-bold text-green-700">+{formatScore(reveal.pointsAwarded)}</p>}
@@ -437,7 +472,7 @@ export default function PlayQuiz() {
                 style={{ animationDelay: `${i * 70}ms` }}
               >
                 <span className="w-8 text-center text-xl font-bold">{MEDALS[p.rank - 1] ?? p.rank}</span>
-                <Avatar name={p.nickname} className="h-9 w-9 text-base" />
+                <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-11 w-11" />
                 <span className="min-w-0 flex-1 truncate text-lg font-semibold">{p.nickname}{mine ? ' (you)' : ''}</span>
                 <span className="text-lg font-bold tabular-nums">{formatScore(p.total_score)}</span>
               </li>
@@ -456,7 +491,8 @@ export default function PlayQuiz() {
         {podium && <Confetti count={30} />}
         <section className="qz-pop mt-2 rounded-3xl bg-gradient-to-br from-green-900 to-[#17492f] p-8 text-center text-white shadow-xl">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">{podium ? 'You made the podium!' : 'Final result'}</p>
-          <p className="mt-2 text-7xl font-bold">{me.rank ? (MEDALS[me.rank - 1] ?? `#${me.rank}`) : '—'}</p>
+          <Avatar name={me.nickname} avatarId={me.avatarId} mood={podium ? 'dance' : 'happy'} className="mx-auto mt-2 h-32 w-32" />
+          <p className="mt-2 text-6xl font-bold">{me.rank ? (MEDALS[me.rank - 1] ?? `#${me.rank}`) : '—'}</p>
           {me.rank && me.rank > 3 && <p className="text-3xl font-bold">You finished #{me.rank}</p>}
           <p className="mt-2 text-2xl font-semibold">{formatScore(me.score)} points</p>
         </section>
@@ -464,7 +500,7 @@ export default function PlayQuiz() {
           {(top ?? []).slice(0, 3).map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface p-3">
               <span className="w-8 text-center text-xl font-bold">{MEDALS[p.rank - 1] ?? p.rank}</span>
-              <Avatar name={p.nickname} className="h-9 w-9 text-base" />
+              <Avatar name={p.nickname} avatarId={p.avatar_id} className="h-11 w-11" />
               <span className="min-w-0 flex-1 truncate text-lg font-semibold">{p.nickname}</span>
               <span className="text-lg font-bold tabular-nums">{formatScore(p.total_score)}</span>
             </li>
