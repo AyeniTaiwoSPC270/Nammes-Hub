@@ -103,7 +103,7 @@ export function FontSelect({ label, value, onChange }) {
   )
 }
 
-function ToggleIcon({ active, icon, label, onClick }) {
+export function ToggleIcon({ active, icon, label, onClick }) {
   return (
     <button
       type="button"

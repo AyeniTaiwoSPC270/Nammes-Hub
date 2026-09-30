@@ -8,11 +8,13 @@ import {
   loadFormFont,
   cardStyle,
   cardPadding,
+  cardLayoutStyle,
   textStyle,
   safeImageUrl,
 } from '../../lib/formTheme'
 import { linkifyText } from '../../lib/linkify'
 import AdjustableImage from './AdjustableImage'
+import ResizableFrame from './ResizableFrame'
 
 // Paints the page background and re-skins everything inside via CSS variables. With no theme it
 // renders the form exactly as it always looked. `contained` is for the design preview, where the
@@ -72,10 +74,14 @@ export default function FormThemeShell({ theme, contained = false, children }) {
   )
 }
 
-/** Title card: optional banner image, then the title and description in the theme's text styles. */
-export function FormHeaderCard({ form, theme }) {
+/**
+ * Title card: optional banner image, then the title and description in the theme's text styles.
+ * `interactive` ({ selected, onSelect, onResize }) is used by the design preview to make the card
+ * selectable and resizable; it always draws as a card there so the handles have edges to sit on.
+ */
+export function FormHeaderCard({ form, theme, interactive }) {
   const custom = hasTheme(theme)
-  if (!custom) {
+  if (!custom && !interactive) {
     return (
       <>
         <h1 className="text-3xl font-bold text-ink-900">{form.title || 'Untitled form'}</h1>
@@ -84,8 +90,11 @@ export function FormHeaderCard({ form, theme }) {
     )
   }
   const t = normalizeTheme(theme)
-  return (
-    <div className="overflow-hidden" style={cardStyle(t)}>
+  const layout = t.headerCard
+  const layoutStyle = cardLayoutStyle(layout)
+  const frameStyle = { ...cardStyle(t), ...layoutStyle }
+  const inner = (
+    <div className="overflow-hidden" style={{ borderRadius: 'inherit', flex: layoutStyle.minHeight ? 1 : undefined }}>
       {t.header && <AdjustableImage image={{ ...t.header, aspect: t.header.aspect === 'free' ? '3:1' : t.header.aspect }} fill />}
       <div style={{ padding: cardPadding(t) }}>
         <h1 style={{ ...textStyle(t.title, 'var(--color-ink-900)'), fontFamily: 'var(--font-display)', lineHeight: 1.2 }}>
@@ -99,9 +108,25 @@ export function FormHeaderCard({ form, theme }) {
       </div>
     </div>
   )
+
+  if (!interactive) return <div style={frameStyle}>{inner}</div>
+  return (
+    <ResizableFrame
+      selected={interactive.selected}
+      onSelect={interactive.onSelect}
+      onResize={interactive.onResize}
+      widthPct={layout.widthPct ?? t.card.widthPct}
+      align={layout.align ?? 'center'}
+      style={frameStyle}
+    >
+      {inner}
+    </ResizableFrame>
+  )
 }
 
 /** Style for a question card. Falls back to the standard look when the form has no theme. */
-export function questionCardStyle(theme) {
-  return hasTheme(theme) ? { ...cardStyle(theme), padding: cardPadding(theme) } : undefined
+export function questionCardStyle(theme, layout) {
+  const own = cardLayoutStyle(layout)
+  if (!hasTheme(theme)) return Object.keys(own).length ? own : undefined
+  return { ...cardStyle(theme), padding: cardPadding(theme), ...own }
 }

@@ -5,7 +5,7 @@ import AdjustableImage from './AdjustableImage'
 
 const ACCEPTED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png']
 
-export default function QuestionField({ question, value, onChange, error, theme }) {
+export default function QuestionField({ question, value, onChange, error, theme, renderImage }) {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
 
@@ -38,7 +38,9 @@ export default function QuestionField({ question, value, onChange, error, theme 
     onChange(current.includes(option) ? current.filter((o) => o !== option) : [...current, option])
   }
 
-  const styled = hasTheme(theme) || Boolean(question.style)
+  // A question that only has its card resized keeps the standard label look.
+  const { card: _cardLayout, ...textStyleKeys } = question.style ?? {}
+  const styled = hasTheme(theme) || Object.keys(textStyleKeys).length > 0
 
   const controlClass = [
     'min-h-11 rounded-md border px-3 py-2.5 text-base bg-surface text-ink transition-colors duration-150',
@@ -54,7 +56,8 @@ export default function QuestionField({ question, value, onChange, error, theme 
 
   return (
     <div className="flex flex-col gap-1.5">
-      {question.image?.url && <AdjustableImage image={question.image} className="mb-1" />}
+      {question.image?.url &&
+        (renderImage ? renderImage(question.image) : <AdjustableImage image={question.image} className="mb-1" />)}
       <label
         className={styled ? 'text-ink-900' : 'text-sm font-semibold text-ink-900'}
         style={styled ? { ...questionLabelStyle(theme, question.style), lineHeight: 1.35 } : undefined}

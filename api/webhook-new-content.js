@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { logError } from './_lib/logError.js'
 import { enqueueEmails } from './_lib/emailQueue.js'
-import { renderNewContentEmail, SITE_URL } from './_lib/emailTemplates.js'
+import { renderNewContentEmail, loadEmailDesign, SITE_URL } from './_lib/emailTemplates.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
 import { boundedString } from './_lib/validate.js'
 
@@ -44,7 +44,8 @@ export function createWebhookNewContentHandler({ getClient = getSupabaseAdmin, e
     }
 
     const url = `${SITE_URL}/${table}/${record.id}`
-    const html = renderNewContentEmail({ eyebrow: meta.eyebrow, title: record.title, url, imageUrl: record.image_url })
+    const design = await loadEmailDesign(supabaseAdmin, 'new_content')
+    const html = renderNewContentEmail({ eyebrow: meta.eyebrow, title: record.title, url, imageUrl: record.image_url }, design)
     const subject = `${meta.subjectPrefix}: ${record.title}`
     // Queued, not sent here: the worker delivers them and retries failures. The key stops a repeated webhook
     // from queueing the same email twice.

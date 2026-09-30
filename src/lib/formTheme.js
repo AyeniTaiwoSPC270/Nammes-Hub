@@ -96,6 +96,7 @@ const BASE = {
   answerSize: 16,
   width: 'medium',
   header: null,
+  headerCard: {},
   showProgress: true,
 }
 
@@ -236,6 +237,8 @@ export const IMAGE_ASPECTS = [
   { value: '21:9', label: '21:9', ratio: 21 / 9 },
   { value: '3:1', label: '3:1', ratio: 3 },
   { value: '3:4', label: '3:4', ratio: 3 / 4 },
+  // Set by dragging an image's top/bottom handle; the actual shape lives in image.ratio.
+  { value: 'custom', label: 'Custom', ratio: null, hidden: true },
 ]
 
 export const DEFAULT_IMAGE = {
@@ -255,6 +258,7 @@ export const DEFAULT_IMAGE = {
   radius: 8,
   widthPct: 100,
   align: 'center',
+  ratio: 1.5,
   alt: '',
 }
 
@@ -279,6 +283,7 @@ export function normalizeImage(raw) {
     grayscale: clamp(raw.grayscale, 0, 100, d.grayscale),
     blur: clamp(raw.blur, 0, 20, d.blur),
     radius: clamp(raw.radius, 0, 48, d.radius),
+    ratio: clamp(raw.ratio, 0.25, 5, d.ratio),
     widthPct: clamp(raw.widthPct, 10, 100, d.widthPct),
     align: pick(raw.align, ['left', 'center', 'right'], d.align),
     alt: typeof raw.alt === 'string' ? raw.alt.slice(0, 200) : '',
@@ -296,6 +301,7 @@ export function imageFilter(image) {
 }
 
 export function aspectRatioOf(image) {
+  if (image.aspect === 'custom') return image.ratio
   return IMAGE_ASPECTS.find((a) => a.value === image.aspect)?.ratio ?? null
 }
 
@@ -351,6 +357,7 @@ export function normalizeTheme(raw) {
     answerSize: clamp(r.answerSize, 12, 26, b.answerSize),
     width: pick(r.width, FORM_WIDTHS.map((w) => w.value), b.width),
     header: normalizeImage(r.header),
+    headerCard: normalizeCardLayout(r.headerCard) ?? {},
     showProgress: r.showProgress === undefined ? b.showProgress : Boolean(r.showProgress),
   }
 }
@@ -483,6 +490,8 @@ export function normalizeQuestionStyle(raw) {
   if (raw.align !== undefined) out.align = pick(raw.align, ['left', 'center', 'right'], 'left')
   if (raw.color) out.color = hex(raw.color, '')
   if (out.color === '') delete out.color
+  const card = normalizeCardLayout(raw.card)
+  if (card) out.card = card
   return Object.keys(out).length ? out : null
 }
 
@@ -516,4 +525,66 @@ export function cardPadding(theme) {
 
 export function cardGap(theme) {
   return `${normalizeTheme(theme).card.gap}px`
+}
+
+// ---------- per-card size ----------
+
+export const CARD_MIN_WIDTH_PCT = 30
+export const CARD_MAX_HEIGHT = 1200
+
+/**
+ * One card's own size: width as a % of the form, alignment, and a minimum height. Only the keys that
+ * were set are kept, so an untouched card keeps following the form-wide card style. Null when empty.
+ */
+export function normalizeCardLayout(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const out = {}
+  if (raw.widthPct !== undefined) out.widthPct = Math.round(clamp(raw.widthPct, CARD_MIN_WIDTH_PCT, 100, 100))
+  if (raw.align !== undefined) out.align = pick(raw.align, ['left', 'center', 'right'], 'center')
+  if (raw.minHeight !== undefined) out.minHeight = Math.round(clamp(raw.minHeight, 0, CARD_MAX_HEIGHT, 0))
+  if (raw.vAlign !== undefined) out.vAlign = pick(raw.vAlign, ['top', 'center'], 'top')
+  return Object.keys(out).length ? out : null
+}
+
+const ALIGN_MARGINS = {
+  left: { marginLeft: 0, marginRight: 'auto' },
+  center: { marginLeft: 'auto', marginRight: 'auto' },
+  right: { marginLeft: 'auto', marginRight: 0 },
+}
+
+/** CSS for a card's own size. Spread it after the theme's card style so it wins. */
+export function cardLayoutStyle(layout) {
+  const l = normalizeCardLayout(layout)
+  if (!l) return {}
+  const style = {}
+  if (l.widthPct !== undefined) style.width = `${l.widthPct}%`
+  if (l.align !== undefined) Object.assign(style, ALIGN_MARGINS[l.align])
+  if (l.minHeight) {
+    style.minHeight = `${l.minHeight}px`
+    style.display = 'flex'
+    style.flexDirection = 'column'
+    style.justifyContent = l.vAlign === 'center' ? 'center' : 'flex-start'
+  }
+  return style
+}
+
+/**
+ * Pure drag math for the resize handles. `handle` is e, w, s, se or sw. Dragging a side edge outward
+ * widens the card (twice as fast when centered, since both edges move); dragging the bottom edge down
+ * makes it taller. Returns only what changed: { widthPct?, height? }.
+ */
+export function computeResize({ handle, dx, dy, startWidthPct, startHeight, containerWidth, align = 'center', minWidthPct = CARD_MIN_WIDTH_PCT }) {
+  const out = {}
+  const sign = handle.includes('e') ? 1 : handle.includes('w') ? -1 : 0
+  if (sign !== 0 && containerWidth > 0) {
+    const factor = align === 'center' ? 2 : 1
+    const raw = startWidthPct + ((sign * dx * factor) / containerWidth) * 100
+    let next = Math.min(100, Math.max(minWidthPct, raw))
+    if (next >= 97) next = 100
+    out.widthPct = Math.round(next)
+  }
+  if (handle.includes('s')) {
+    out.height = Math.round(Math.min(CARD_MAX_HEIGHT, Math.max(0, startHeight + dy)))
+  }
+  return out
 }

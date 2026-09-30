@@ -31,7 +31,7 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
     for (const key of ['size', 'bold', 'italic', 'underline', 'align', 'color']) {
       if (next[key] !== baseStyle[key]) diff[key] = next[key]
     }
-    update({ style: normalizeQuestionStyle(diff) })
+    update({ style: normalizeQuestionStyle({ ...diff, card: question.style?.card }) })
   }
 
   function updateOption(i, value) {
@@ -201,7 +201,7 @@ export default function QuestionEditorCard({ question, index, onChange, onRemove
               <span className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">Question text</span>
               <TextStyleControls value={effectiveStyle} onChange={updateStyle} sizeMin={12} sizeMax={32} colorFallback="#000000" />
               {question.style && (
-                <button type="button" onClick={() => update({ style: null })} className="self-start text-xs font-semibold text-brand hover:underline">
+                <button type="button" onClick={() => update({ style: normalizeQuestionStyle({ card: question.style?.card }) })} className="self-start text-xs font-semibold text-brand hover:underline">
                   Use the form&rsquo;s question style
                 </button>
               )}
