@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, OPTION_STYLES, secondsRemaining } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore } from '../data/quiz'
+import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, MathBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
@@ -10,6 +11,7 @@ import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 
 const STORAGE_KEY = 'nammes-quiz-player'
 const POLL_MS = 4000
+const MEDALS = ['🥇', '🥈', '🥉']
 
 function loadSaved() {
   try {
@@ -28,23 +30,80 @@ function saveSaved(value) {
   }
 }
 
-function Screen({ children, tone = 'plain' }) {
+// Standard phone screen: slim bar (with the player's name and score once they are in) and a centred column.
+function Phone({ me, children }) {
   return (
-    <main
-      className={[
-        'flex min-h-screen flex-col items-center justify-center gap-5 p-6 text-center',
-        tone === 'good' ? 'bg-green-700 text-white' : tone === 'bad' ? 'bg-red-700 text-white' : 'bg-paper text-ink-900',
-      ].join(' ')}
-    >
-      <QuizThemeToggle />
-      {children}
-    </main>
+    <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+      <MathBackdrop />
+      <QuizTopBar compact>
+        {me && (
+          <span className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3 text-sm font-bold">
+            <Avatar name={me.nickname} className="h-7 w-7 text-sm" />
+            <span className="max-w-[7rem] truncate">{me.nickname}</span>
+            <span className="text-orange-500">{formatScore(me.score)}</span>
+          </span>
+        )}
+      </QuizTopBar>
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">{children}</main>
+    </div>
+  )
+}
+
+// Full-colour result screens (green for right, red for wrong, deep green otherwise).
+function ResultScreen({ tone, children }) {
+  const bg = tone === 'good' ? 'bg-green-700' : tone === 'bad' ? 'bg-red-700' : 'bg-green-900'
+  return (
+    <div className={`relative flex min-h-[100dvh] flex-col text-white ${bg}`}>
+      <div className="flex justify-end p-4">
+        <QuizThemeToggle />
+      </div>
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-5 px-6 pb-10 text-center">{children}</main>
+    </div>
+  )
+}
+
+function CodeInput({ value, onChange, autoFocus }) {
+  const inputRef = useRef(null)
+  const [focused, setFocused] = useState(false)
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus()
+  }, [autoFocus])
+  return (
+    <div className="relative" onClick={() => inputRef.current?.focus()}>
+      <div className="flex items-center justify-center gap-2" aria-hidden="true">
+        {Array.from({ length: 6 }, (_, i) => (
+          <span key={i} className="contents">
+            {i === 3 && <span className="text-2xl font-bold text-ink-muted">·</span>}
+            <span
+              className={[
+                'flex h-16 w-11 items-center justify-center rounded-2xl border-2 bg-surface text-3xl font-bold shadow-sm transition-colors',
+                focused && i === Math.min(value.length, 5) ? 'border-orange-500' : 'border-hairline',
+              ].join(' ')}
+            >
+              {value[i] ?? ''}
+            </span>
+          </span>
+        ))}
+      </div>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 6))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        aria-label="Game code"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+      />
+    </div>
   )
 }
 
 function JoinForm({ onJoined }) {
   const [params] = useSearchParams()
-  const [code, setCode] = useState(() => (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6))
+  const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
+  const [code, setCode] = useState(initialCode)
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -63,59 +122,69 @@ function JoinForm({ onJoined }) {
   }
 
   return (
-    <Screen>
-      <h1 className="text-4xl font-bold">Join a game</h1>
-      <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-4">
-        <input
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="Game code"
-          aria-label="Game code"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          className="rounded-lg border border-hairline bg-surface px-4 py-4 text-center font-mono text-3xl tracking-[0.2em] text-ink-900 placeholder:text-ink-muted"
-        />
-        <input
-          placeholder="Nickname"
-          aria-label="Nickname"
-          maxLength={20}
-          autoComplete="off"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          className="rounded-lg border border-hairline bg-surface px-4 py-4 text-center text-2xl text-ink-900 placeholder:text-ink-muted"
-        />
+    <Phone>
+      <div className="qz-rise flex flex-col items-center gap-2 pt-4 text-center">
+        <BrandMark className="h-16 w-16" />
+        <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Campus challenge</p>
+        <h1 className="text-4xl font-bold">Join a game</h1>
+        <p className="text-ink-muted">Enter the code on the big screen to get in.</p>
+      </div>
+
+      <form onSubmit={submit} className="qz-rise mt-2 flex flex-col gap-5 rounded-3xl border border-hairline bg-surface p-5 shadow-md" style={{ animationDelay: '100ms' }}>
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Game code</span>
+          <CodeInput value={code} onChange={setCode} autoFocus={!initialCode} />
+        </div>
+        <label className="flex flex-col gap-2">
+          <span className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">
+            Your nickname
+            <span className="font-normal normal-case tracking-normal">{nickname.length}/20</span>
+          </span>
+          <input
+            placeholder="e.g. Euler_Fan"
+            maxLength={20}
+            autoComplete="off"
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            className="min-h-14 rounded-2xl border-2 border-hairline bg-paper px-4 text-lg font-semibold text-ink-900 placeholder:font-normal placeholder:text-ink-muted focus:border-orange-500 focus:outline-none"
+          />
+        </label>
         {error && (
-          <p role="alert" className="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white">
+          <p role="alert" className="flex items-center gap-2 rounded-2xl bg-red-600/12 px-4 py-3 text-sm font-semibold text-red-600">
+            <span className="material-symbols-outlined" aria-hidden="true">error</span>
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={busy || code.length !== 6 || !nickname.trim()}
-          className="rounded-lg bg-orange-500 px-6 py-4 text-2xl font-bold text-white disabled:opacity-50"
+          className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {busy ? 'Joining…' : 'Join'}
+          {busy ? 'Joining…' : 'Join game'}
+          {!busy && <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>}
         </button>
       </form>
-    </Screen>
+    </Phone>
   )
 }
 
-function Podium({ me, top }) {
+function WaitingDots() {
   return (
-    <>
-      <p className="text-xl text-ink-muted">Final result</p>
-      <p className="text-6xl font-bold">{me.rank ? `#${me.rank}` : '—'}</p>
-      <p className="text-2xl font-bold">{me.score} points</p>
-      <ol className="mt-2 w-full max-w-sm space-y-2 text-left">
-        {(top ?? []).slice(0, 3).map((p) => (
-          <li key={p.id} className="flex justify-between rounded-lg bg-surface border border-hairline text-ink-900 px-4 py-2 text-lg font-semibold">
-            <span>{p.rank}. {p.nickname}</span>
-            <span>{p.total_score}</span>
-          </li>
-        ))}
-      </ol>
-    </>
+    <span className="inline-flex items-center gap-1" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="h-2 w-2 animate-pulse rounded-full bg-orange-500" style={{ animationDelay: `${i * 200}ms` }} />
+      ))}
+    </span>
+  )
+}
+
+function RankMove({ delta }) {
+  if (!delta) return null
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-sm font-bold ${delta > 0 ? 'bg-green-600/25 text-green-100' : 'bg-red-900/40 text-red-100'}`}>
+      <span className="material-symbols-outlined text-base" aria-hidden="true">{delta > 0 ? 'arrow_upward' : 'arrow_downward'}</span>
+      {Math.abs(delta)}
+    </span>
   )
 }
 
@@ -127,6 +196,7 @@ export default function PlayQuiz() {
   const [picked, setPicked] = useState(null) // index tapped on this question, so the button reacts at once
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
+  const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
 
   const token = saved?.token
   const sessionId = saved?.sessionId
@@ -180,6 +250,18 @@ export default function PlayQuiz() {
     return () => clearInterval(timer)
   }, [state])
 
+  // A new question clears the local tap and remembers the rank we started it with.
+  const questionKey = game ? `${game.session.state}:${game.session.index}` : ''
+  useEffect(() => {
+    setPicked(null)
+    setMessage('')
+  }, [questionKey])
+  useEffect(() => {
+    if (!game || game.session.state !== 'question') return
+    const key = String(game.session.index)
+    if (rankStart.current.key !== key) rankStart.current = { key, rank: game.me.rank }
+  }, [game])
+
   function handleJoined(joined) {
     const next = { token: joined.token, sessionId: joined.sessionId, nickname: joined.nickname }
     saveSaved(next)
@@ -208,72 +290,101 @@ export default function PlayQuiz() {
     }
   }
 
-  // A new question clears the local tap.
-  const questionKey = game ? `${game.session.state}:${game.session.index}` : ''
-  useEffect(() => {
-    setPicked(null)
-    setMessage('')
-  }, [questionKey])
-
   if (!token) return <JoinForm onJoined={handleJoined} />
-  if (!game) return <Screen><p className="text-xl">{message || 'Joining…'}</p></Screen>
+  if (!game) {
+    return (
+      <Phone>
+        <p className="mt-24 text-center text-xl text-ink-muted">{message || 'Joining…'}</p>
+      </Phone>
+    )
+  }
 
   const { session, me, question, reveal, top } = game
-  const footer = (
-    <p className="text-sm text-ink-muted">
-      {me.nickname} · {me.score} pts
-    </p>
-  )
+  const rankDelta = rankStart.current.rank && me.rank ? rankStart.current.rank - me.rank : 0
 
   if (session.state === 'lobby') {
     return (
-      <Screen>
-        <h1 className="text-4xl font-bold">You're in!</h1>
-        <p className="text-2xl">See your name on the big screen.</p>
-        <p className="text-ink-muted">{game.playerCount} player{game.playerCount === 1 ? '' : 's'} so far</p>
-        {footer}
-      </Screen>
+      <Phone me={me}>
+        <div className="mt-6 flex flex-col items-center gap-4 text-center">
+          <div className="qz-pop relative">
+            <Avatar name={me.nickname} className="h-28 w-28 text-6xl shadow-lg" />
+            <span className="qz-float absolute -right-2 -top-2 flex h-11 w-11 items-center justify-center rounded-full bg-orange-500 text-2xl font-bold text-white shadow-md" aria-hidden="true">π</span>
+          </div>
+          <div className="qz-rise" style={{ animationDelay: '120ms' }}>
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">You&apos;re in</p>
+            <h1 className="text-4xl font-bold">{me.nickname}</h1>
+          </div>
+        </div>
+        <div className="qz-rise rounded-3xl border border-hairline bg-surface p-5 text-center shadow-md" style={{ animationDelay: '220ms' }}>
+          <p className="text-xl font-bold">Look for your name on the big screen</p>
+          <p className="mt-1 text-ink-muted">{game.playerCount} player{game.playerCount === 1 ? '' : 's'} in the lobby</p>
+          <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
+            Waiting for the host to start <WaitingDots />
+          </p>
+        </div>
+        <div className="qz-rise flex items-start gap-3 rounded-2xl bg-orange-500/12 p-4 text-sm" style={{ animationDelay: '320ms' }}>
+          <span className="material-symbols-outlined text-orange-500" aria-hidden="true">bolt</span>
+          <p><span className="font-bold">Speed counts.</span> The faster you answer correctly, the more points you earn.</p>
+        </div>
+      </Phone>
     )
   }
 
   if (session.state === 'question' && question) {
     const startedAtMs = new Date(session.startedAt).getTime()
     const remaining = secondsRemaining({ startedAtMs, timeLimitSeconds: question.timeLimitSeconds, nowMs: nowMs + offset })
-    const answeredNow = question.answered || picked !== null
-    if (answeredNow) {
+    const chosen = picked ?? question.chosenIndex
+    if (question.answered || picked !== null) {
       return (
-        <Screen>
-          <h1 className="text-3xl font-bold">Answer locked in</h1>
-          <p className="text-xl text-ink-muted">Waiting for the others…</p>
-          <p className="text-5xl font-bold">{remaining}</p>
-          {footer}
-        </Screen>
+        <Phone me={me}>
+          <div className="mt-4 flex flex-col items-center gap-5 text-center">
+            <div className="qz-pop flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
+              <span className="material-symbols-outlined text-5xl" aria-hidden="true">lock</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Answer locked in</h1>
+              <p className="mt-1 flex items-center justify-center gap-3 text-ink-muted">Waiting for the others <WaitingDots /></p>
+            </div>
+            <CountdownRing seconds={remaining} total={question.timeLimitSeconds} size={120} />
+            {chosen !== null && chosen !== undefined && question.options[chosen] !== undefined && (
+              <div className="flex w-full items-center gap-4 rounded-3xl border border-hairline bg-surface p-4 text-left shadow-md">
+                <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${OPTION_STYLES[chosen].bg}`}>
+                  <AnswerShape index={chosen} className="h-8 w-8" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Your answer</span>
+                  <span className="block truncate text-xl font-bold">{question.options[chosen]}</span>
+                </span>
+              </div>
+            )}
+          </div>
+        </Phone>
       )
     }
+    const twoOptions = question.options.length === 2
     return (
-      <main className="flex min-h-screen flex-col bg-paper p-3 pt-16 text-ink-900">
-        <QuizThemeToggle />
-        <div className="flex items-center justify-between px-2 py-3">
-          <span className="text-lg">Q{session.index + 1} of {session.questionCount}</span>
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-2xl font-bold text-white">{remaining}</span>
-        </div>
-        <p className="px-2 pb-3 text-center text-xl font-bold">Look at the big screen</p>
-        <div className="grid flex-1 grid-cols-2 gap-3">
+      <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+        <QuizTopBar compact>
+          <span className="rounded-full bg-orange-500 px-4 py-2 text-sm font-bold text-white">Q{session.index + 1} of {session.questionCount}</span>
+          <CountdownRing seconds={remaining} total={question.timeLimitSeconds} size={52} stroke={6} />
+        </QuizTopBar>
+        <p className="mx-auto w-full max-w-md px-4 pt-3 text-center text-lg font-bold leading-snug">{question.text}</p>
+        <div className={`mx-auto grid w-full max-w-md flex-1 auto-rows-fr gap-3 p-4 ${twoOptions ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {question.options.map((option, i) => (
             <button
               key={i}
               type="button"
               disabled={sending || remaining === 0}
               onClick={() => answer(i)}
-              className={`flex flex-col items-center justify-center gap-2 rounded-xl p-3 text-xl font-bold text-white disabled:opacity-60 ${OPTION_STYLES[i].bg}`}
+              className={`flex min-h-[140px] flex-col justify-between rounded-3xl p-4 text-left text-white shadow-lg transition-transform active:scale-[0.97] disabled:opacity-60 ${OPTION_STYLES[i].bg}`}
             >
-              <span className="text-5xl" aria-hidden="true">{OPTION_STYLES[i].shape}</span>
-              <span className="break-words">{option}</span>
+              <AnswerShape index={i} className="h-11 w-11" />
+              <span className="break-words text-xl font-bold leading-tight">{option}</span>
             </button>
           ))}
         </div>
-        {message && <p role="alert" className="mt-2 text-center text-sm text-ink-muted">{message}</p>}
-      </main>
+        {message && <p role="alert" className="pb-4 text-center text-sm text-ink-muted">{message}</p>}
+      </div>
     )
   }
 
@@ -281,47 +392,99 @@ export default function PlayQuiz() {
     const answered = reveal.chosenIndex !== null
     const correct = answered && reveal.chosenIndex === reveal.correctIndex
     return (
-      <Screen tone={correct ? 'good' : 'bad'}>
-        <h1 className="text-5xl font-bold">{correct ? 'Correct!' : answered ? 'Not quite' : "Time's up"}</h1>
-        {correct && <p className="text-3xl font-bold">+{reveal.pointsAwarded}</p>}
+      <ResultScreen tone={correct ? 'good' : answered ? 'bad' : 'neutral'}>
+        <div className="qz-pop flex h-28 w-28 items-center justify-center rounded-full bg-white/20">
+          <span className="material-symbols-outlined text-7xl" aria-hidden="true">{correct ? 'check' : answered ? 'close' : 'timer_off'}</span>
+        </div>
+        <h1 className="qz-rise text-5xl font-bold text-white">{correct ? 'Correct!' : answered ? 'Not quite' : "Time's up"}</h1>
+        {correct && <p className="qz-pop rounded-full bg-white px-6 py-2 text-4xl font-bold text-green-700">+{formatScore(reveal.pointsAwarded)}</p>}
         {!correct && question && (
-          <p className="text-xl">
-            Answer: <span className="font-bold">{question.options[reveal.correctIndex]}</span>
-          </p>
+          <div className="w-full rounded-2xl bg-white/15 p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">The answer was</p>
+            <p className="mt-1 text-2xl font-bold">{question.options[reveal.correctIndex]}</p>
+          </div>
         )}
-        <p className="text-lg">{me.rank ? `You are #${me.rank}` : ''} · {me.score} pts</p>
-      </Screen>
+        <div className="flex items-center gap-3 rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">
+          {me.rank && <span>#{me.rank}</span>}
+          <span>{formatScore(me.score)} pts</span>
+          <RankMove delta={rankDelta} />
+        </div>
+      </ResultScreen>
     )
   }
 
   if (session.state === 'leaderboard') {
     return (
-      <Screen>
-        <h1 className="text-3xl font-bold">{me.rank ? `You are #${me.rank}` : 'Leaderboard'}</h1>
-        <p className="text-2xl font-bold">{me.score} points</p>
-        <ol className="w-full max-w-sm space-y-2 text-left">
-          {(top ?? []).slice(0, 5).map((p) => (
-            <li key={p.id} className="flex justify-between rounded-lg bg-surface border border-hairline text-ink-900 px-4 py-2 text-lg font-semibold">
-              <span>{p.rank}. {p.nickname}</span>
-              <span>{p.total_score}</span>
-            </li>
-          ))}
+      <Phone me={me}>
+        <section className="qz-pop rounded-3xl bg-gradient-to-br from-green-900 to-[#17492f] p-6 text-center text-white shadow-xl">
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">Your position</p>
+          <p className="mt-1 text-7xl font-bold">{me.rank ? `#${me.rank}` : '—'}</p>
+          <div className="mt-2 flex items-center justify-center gap-3 text-xl font-semibold">
+            <span>{formatScore(me.score)} pts</span>
+            <RankMove delta={rankDelta} />
+          </div>
+        </section>
+        <ol className="flex flex-col gap-2">
+          {(top ?? []).slice(0, 5).map((p, i) => {
+            const mine = p.nickname === me.nickname
+            return (
+              <li
+                key={p.id}
+                className={[
+                  'qz-rise flex items-center gap-3 rounded-2xl border p-3',
+                  mine ? 'border-orange-500 bg-orange-500/12' : 'border-hairline bg-surface',
+                ].join(' ')}
+                style={{ animationDelay: `${i * 70}ms` }}
+              >
+                <span className="w-8 text-center text-xl font-bold">{MEDALS[p.rank - 1] ?? p.rank}</span>
+                <Avatar name={p.nickname} className="h-9 w-9 text-base" />
+                <span className="min-w-0 flex-1 truncate text-lg font-semibold">{p.nickname}{mine ? ' (you)' : ''}</span>
+                <span className="text-lg font-bold tabular-nums">{formatScore(p.total_score)}</span>
+              </li>
+            )
+          })}
         </ol>
-        <p className="text-ink-muted">Next question coming up…</p>
-      </Screen>
+        <p className="flex items-center justify-center gap-3 text-sm text-ink-muted">Next question coming up <WaitingDots /></p>
+      </Phone>
     )
   }
 
   if (session.state === 'finished') {
+    const podium = me.rank && me.rank <= 3
     return (
-      <Screen>
-        <Podium me={me} top={top} />
-        <button type="button" onClick={leave} className="mt-4 rounded-lg border border-hairline bg-surface px-6 py-3 text-lg font-bold text-ink-900">
+      <Phone me={me}>
+        {podium && <Confetti count={30} />}
+        <section className="qz-pop mt-2 rounded-3xl bg-gradient-to-br from-green-900 to-[#17492f] p-8 text-center text-white shadow-xl">
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">{podium ? 'You made the podium!' : 'Final result'}</p>
+          <p className="mt-2 text-7xl font-bold">{me.rank ? (MEDALS[me.rank - 1] ?? `#${me.rank}`) : '—'}</p>
+          {me.rank && me.rank > 3 && <p className="text-3xl font-bold">You finished #{me.rank}</p>}
+          <p className="mt-2 text-2xl font-semibold">{formatScore(me.score)} points</p>
+        </section>
+        <ol className="flex flex-col gap-2">
+          {(top ?? []).slice(0, 3).map((p) => (
+            <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface p-3">
+              <span className="w-8 text-center text-xl font-bold">{MEDALS[p.rank - 1] ?? p.rank}</span>
+              <Avatar name={p.nickname} className="h-9 w-9 text-base" />
+              <span className="min-w-0 flex-1 truncate text-lg font-semibold">{p.nickname}</span>
+              <span className="text-lg font-bold tabular-nums">{formatScore(p.total_score)}</span>
+            </li>
+          ))}
+        </ol>
+        <button
+          type="button"
+          onClick={leave}
+          className="mt-2 flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md active:scale-[0.98]"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">replay</span>
           Play again
         </button>
-      </Screen>
+      </Phone>
     )
   }
 
-  return <Screen><p className="text-xl">Waiting for the host…</p>{footer}</Screen>
+  return (
+    <Phone me={me}>
+      <p className="mt-24 flex items-center justify-center gap-3 text-xl text-ink-muted">Waiting for the host <WaitingDots /></p>
+    </Phone>
+  )
 }

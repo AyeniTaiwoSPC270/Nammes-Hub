@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, OPTION_STYLES } from './quiz'
 
 function question(over = {}) {
   return { ...blankQuestion(), text: 'Capital of Nigeria?', options: ['Lagos', 'Abuja', '', ''], correct_index: 1, ...over }
@@ -36,5 +36,33 @@ describe('secondsRemaining', () => {
     expect(secondsRemaining({ startedAtMs: 0, timeLimitSeconds: 20, nowMs: 0 })).toBe(20)
     expect(secondsRemaining({ startedAtMs: 0, timeLimitSeconds: 20, nowMs: 4500 })).toBe(16)
     expect(secondsRemaining({ startedAtMs: 0, timeLimitSeconds: 20, nowMs: 25000 })).toBe(0)
+  })
+})
+
+describe('player avatars', () => {
+  it('gives the same colour to the same nickname every time', () => {
+    expect(avatarStyle('Tobi_Matrix')).toBe(avatarStyle('Tobi_Matrix'))
+    expect(OPTION_STYLES).toContain(avatarStyle('Amina'))
+  })
+  it('uses the first character as the initial, including symbols and emoji', () => {
+    expect(initialOf('  kelechi_π')).toBe('K')
+    expect(initialOf('πe')).toBe('Π')
+    expect(initialOf('   ')).toBe('?')
+    expect(initialOf('😀 fun')).toBe('😀')
+  })
+  it('formats scores with thousands separators', () => {
+    expect(formatScore(2935)).toBe('2,935')
+  })
+})
+
+describe('rankPlayers', () => {
+  it('orders by score and lets ties share a rank', () => {
+    const ranked = rankPlayers([
+      { id: 'a', nickname: 'A', total_score: 500 },
+      { id: 'b', nickname: 'B', total_score: 900 },
+      { id: 'c', nickname: 'C', total_score: 500 },
+      { id: 'd', nickname: 'D', total_score: 100 },
+    ])
+    expect(ranked.map((p) => [p.id, p.rank])).toEqual([['b', 1], ['a', 2], ['c', 2], ['d', 4]])
   })
 })
