@@ -8,6 +8,8 @@ import { parseNumber } from '../../api/_lib/quizGrading.js'
 // letter also works, so a simple list pasted from Excel imports as multiple choice.
 
 export const CSV_COLUMNS = ['type', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct', 'seconds', 'points']
+// Extra columns used by CBT exams, read by name when the sheet has a header row.
+export const CBT_COLUMNS = [...CSV_COLUMNS, 'explanation', 'topic', 'no_shuffle']
 export const CSV_MAX_BYTES = 1024 * 1024
 
 const INJECTION_START = /^[=+\-@]/
@@ -75,14 +77,14 @@ const TYPE_ALIASES = {
 }
 
 // Turns parsed rows into editor questions. Returns the good ones and a list of problems ({ line, message }) for the rest.
-export function questionsFromRows(rows) {
+export function questionsFromRows(rows, { max = MAX_QUESTIONS } = {}) {
   const problems = []
   const questions = []
   if (rows.length === 0) return { questions, problems: [{ line: 1, message: 'The file is empty.' }] }
 
   const head = rows[0].map((c) => c.trim().toLowerCase())
   const hasHeader = head.includes('question')
-  const index = Object.fromEntries(CSV_COLUMNS.map((name) => [name, head.indexOf(name)]))
+  const index = Object.fromEntries(CBT_COLUMNS.map((name) => [name, head.indexOf(name)]))
   // With no header the columns are: question, four answers, correct letter.
   const headerless = { question: 0, option_a: 1, option_b: 2, option_c: 3, option_d: 4, correct: 5 }
   const col = (row, name) => {
@@ -91,9 +93,9 @@ export function questionsFromRows(rows) {
   }
 
   const body = hasHeader ? rows.slice(1) : rows
-  if (body.length > MAX_QUESTIONS) problems.push({ line: 1, message: `A quiz can have at most ${MAX_QUESTIONS} questions; only the first ${MAX_QUESTIONS} are used.` })
+  if (body.length > max) problems.push({ line: 1, message: `A quiz can have at most ${max} questions; only the first ${max} are used.` })
 
-  body.slice(0, MAX_QUESTIONS).forEach((row, i) => {
+  body.slice(0, max).forEach((row, i) => {
     const line = i + (hasHeader ? 2 : 1)
     const typeName = col(row, 'type').toLowerCase()
     const type = TYPE_ALIASES[typeName]
@@ -106,6 +108,9 @@ export function questionsFromRows(rows) {
       text: col(row, 'question'),
       time_limit_seconds: nearest(col(row, 'seconds'), TIME_LIMIT_CHOICES, 20),
       points: nearest(col(row, 'points'), POINT_CHOICES, 1000),
+      explanation: col(row, 'explanation'),
+      topic: col(row, 'topic'),
+      no_shuffle: ['yes', 'true', '1', 'y'].includes(col(row, 'no_shuffle').toLowerCase()),
     }
     const correct = col(row, 'correct')
     if (type === 'multiple' || type === 'poll') {
@@ -142,8 +147,8 @@ export function questionsFromRows(rows) {
   return { questions, problems }
 }
 
-export function questionsFromCsv(text) {
-  return questionsFromRows(parseCsv(text))
+export function questionsFromCsv(text, options) {
+  return questionsFromRows(parseCsv(text), options)
 }
 
 function escapeCell(value) {
@@ -152,8 +157,8 @@ function escapeCell(value) {
 }
 
 // A quiz's questions as CSV text (what import reads back).
-export function questionsToCsv(questions) {
-  const rows = [CSV_COLUMNS]
+export function questionsToCsv(questions, { cbt = false } = {}) {
+  const rows = [cbt ? CBT_COLUMNS : CSV_COLUMNS]
   for (const raw of questions) {
     const q = cleanQuestion(raw)
     const options = [...q.options, '', '', '', ''].slice(0, 4)
@@ -162,7 +167,7 @@ export function questionsToCsv(questions) {
     else if (q.type === 'truefalse') correct = q.correct_index === 0 ? 'True' : 'False'
     else if (q.type === 'numeric') correct = q.numeric_tolerance > 0 ? `${q.numeric_answer}|${q.numeric_tolerance}` : String(q.numeric_answer)
     else if (q.type === 'text') correct = q.accepted_answers.join('|')
-    rows.push([q.type, q.text, ...(q.type === 'numeric' || q.type === 'text' || q.type === 'truefalse' ? ['', '', '', ''] : options), correct, q.time_limit_seconds, q.points])
+    rows.push([q.type, q.text, ...(q.type === 'numeric' || q.type === 'text' || q.type === 'truefalse' ? ['', '', '', ''] : options), correct, q.time_limit_seconds, q.points, ...(cbt ? [q.explanation ?? '', q.topic ?? '', q.no_shuffle ? 'yes' : ''] : [])])
   }
   return rows.map((r) => r.map(escapeCell).join(',')).join('\r\n')
 }

@@ -32,6 +32,7 @@ const navItems = [
     ],
   },
   { to: '/quiz', label: 'Quizzes' },
+  { to: '/cbt', label: 'CBT practice' },
   { to: '/forms', label: 'Forms' },
   { to: '/contact', label: 'Contact' },
 ]

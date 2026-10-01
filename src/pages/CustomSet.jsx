@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { callQuiz } from '../data/quiz'
 import { BrandMark, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
-import { mySetByCode, forgetMySet } from './customSets'
+import { mySetByCode, forgetMySet, saveMySet } from './customSets'
 
 // /set/:code: a quiz someone made from their own questions. From here: practise it, challenge a friend, or duel.
 
@@ -16,6 +16,7 @@ export default function CustomSet() {
   const [copied, setCopied] = useState(false)
   const [asking, setAsking] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [extending, setExtending] = useState(false)
   const mine = mySetByCode(code)
   const link = `${window.location.origin}/set/${code}`
 
@@ -44,6 +45,20 @@ export default function CustomSet() {
       setTimeout(() => setCopied(false), 2000)
     } catch {
       // the link is shown on the page to copy by hand
+    }
+  }
+
+  // The maker can keep the quiz longer (90 or 180 days from today).
+  async function extend(days) {
+    setExtending(true)
+    try {
+      const data = await callQuiz('sets', { op: 'extend', code, manageToken: mine.manageToken, days })
+      setSet((s) => ({ ...s, expiresAt: data.expiresAt }))
+      saveMySet({ ...mine, expiresAt: data.expiresAt })
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setExtending(false)
     }
   }
 
@@ -82,9 +97,18 @@ export default function CustomSet() {
                 <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Community quiz</p>
                 <h1 className="text-3xl font-bold">{set.title}</h1>
                 <p className="text-ink-muted">{set.questionCount} question{set.questionCount === 1 ? '' : 's'}. Deleted on {new Date(set.expiresAt).toLocaleDateString()}.</p>
+                {mine && (
+                  <div className="flex flex-wrap items-center justify-center gap-2 text-sm">
+                    <span className="text-ink-muted">Keep it longer:</span>
+                    {[90, 180].map((d) => (
+                      <button key={d} type="button" disabled={extending} onClick={() => extend(d)} className="min-h-10 rounded-full border border-hairline px-4 font-bold disabled:opacity-60">{d} days</button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <Link to={`/practice/${set.quizId}`} className={`${button} bg-orange-500 text-white`}>Practise it</Link>
+              <Link to={`/cbt/${code}`} className={`${button} bg-orange-500 text-white`}>Take it as a timed CBT exam</Link>
+              <Link to={`/practice/${set.quizId}`} className={`${button} border-2 border-orange-500 text-orange-500`}>Practise it</Link>
               <Link to={`/battle?quiz=${set.quizId}`} className={`${button} border-2 border-orange-500 text-orange-500`}>Challenge a friend or duel</Link>
 
               <div className="flex flex-col items-center gap-3 rounded-3xl border border-hairline bg-surface p-5 text-center shadow-md">

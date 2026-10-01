@@ -2,16 +2,20 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { logError } from '../logError.js'
 import { newPlayerToken, hashToken, createRateLimiter, clientIp } from '../quiz.js'
 import { generateBattleCode, isBattleCode } from '../quizBattle.js'
-import { sanitizeCustomQuestions, cleanTitle, CUSTOM_DAYS } from '../quizCustom.js'
+import { sanitizeCustomQuestions, cleanTitle, cleanDays } from '../quizCustom.js'
+import { cleanCbtSettings, sanitizePersonalSettings } from '../cbt.js'
 
 // Community question sets: anyone can import their own questions and play them in practice and battles, no account needed.
 // A set is stored as a normal quiz marked `is_custom`, found by a private 6-character code, and removed after 30 days.
 // It never appears in the admin quiz list or the public practice and battle lists. The person who made it gets a secret
 // that lets them delete it early; only its hash is stored.
 //
-// One route with an `op`: create, info, remove.
-const OPS = ['create', 'info', 'remove']
-const MAX_ACTIVE_SETS = 500
+// A set can also be taken as a timed CBT exam (see quiz-cbt.js); the person who makes it picks the exam settings and how
+// long it is kept (30, 90 or 180 days) and can extend it later.
+//
+// One route with an `op`: create, info, remove, extend.
+const OPS = ['create', 'info', 'remove', 'extend']
+const MAX_ACTIVE_SETS = 1000
 
 export function createQuizSetsHandler(
   getClient,
@@ -29,7 +33,7 @@ export function createQuizSetsHandler(
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { op, title, questions, code, manageToken } = req.body ?? {}
+    const { op, title, questions, code, manageToken, settings, days } = req.body ?? {}
     if (!OPS.includes(op)) {
       res.status(400).json({ error: 'Unknown request' })
       return
@@ -48,7 +52,7 @@ export function createQuizSetsHandler(
     }
     const find = async () => {
       if (!isBattleCode(code)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, is_custom, expires_at, owner_hash').eq('custom_code', code.toUpperCase()).maybeSingle()
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, is_custom, expires_at, owner_hash, cbt_settings').eq('custom_code', code.toUpperCase()).maybeSingle()
       if (!data || !data.is_custom || (data.expires_at && new Date(data.expires_at).getTime() < now())) return null
       return data
     }
@@ -60,7 +64,20 @@ export function createQuizSetsHandler(
         return
       }
       const { data: rows } = await supabaseAdmin.from('quiz_questions').select('id').eq('quiz_id', set.id)
-      res.status(200).json({ quizId: set.id, title: set.title, questionCount: (rows ?? []).length, expiresAt: set.expires_at })
+      res.status(200).json({ quizId: set.id, title: set.title, questionCount: (rows ?? []).length, expiresAt: set.expires_at, cbt: cleanCbtSettings(set.cbt_settings, (rows ?? []).length) })
+      return
+    }
+
+    if (op === 'extend') {
+      const set = await find()
+      if (!set || typeof manageToken !== 'string' || !set.owner_hash || set.owner_hash !== hashToken(manageToken)) {
+        res.status(404).json({ error: 'No quiz found with that code, or you did not make it.' })
+        return
+      }
+      const expiresAt = iso(now() + cleanDays(days) * 86_400_000)
+      const { error } = await supabaseAdmin.from('quizzes').update({ expires_at: expiresAt }).eq('id', set.id)
+      if (error) return fail(error, 'Could not extend the quiz')
+      res.status(200).json({ expiresAt })
       return
     }
 
@@ -116,7 +133,8 @@ export function createQuizSetsHandler(
           is_custom: true,
           custom_code: setCode,
           owner_hash: hashToken(secret),
-          expires_at: iso(nowMs + CUSTOM_DAYS * 86_400_000),
+          cbt_settings: sanitizePersonalSettings(settings, clean.questions.length),
+          expires_at: iso(nowMs + cleanDays(days) * 86_400_000),
         })
         .select('id, expires_at')
         .single()

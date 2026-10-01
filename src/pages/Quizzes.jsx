@@ -32,6 +32,14 @@ const WAYS = [
     text: 'Paste your questions from a spreadsheet, get a private code, then practise, challenge or duel with it.',
     action: 'Make a quiz',
   },
+  {
+    to: '/cbt',
+    icon: 'assignment',
+    title: 'CBT practice',
+    text: 'Timed exams that work like the real CBT: course question banks by level, a countdown, and a full review at the end.',
+    action: 'Start practising',
+    wide: true,
+  },
 ]
 
 export default function Quizzes() {
@@ -45,7 +53,7 @@ export default function Quizzes() {
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
         {WAYS.map((way) => (
-          <li key={way.to}>
+          <li key={way.to} className={way.wide ? 'sm:col-span-2' : undefined}>
             <Link
               to={way.to}
               className="group flex h-full flex-col gap-3 rounded-lg border border-hairline bg-surface p-6 shadow-md no-underline transition-transform hover:-translate-y-0.5"
