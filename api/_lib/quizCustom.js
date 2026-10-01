@@ -4,8 +4,10 @@
 import { parseNumber, ANSWER_TEXT_MAX, ACCEPTED_ANSWERS_MAX } from './quizGrading.js'
 import { hasBlockedWord } from './quizText.js'
 
-export const CUSTOM_MAX_QUESTIONS = 30
+export const CUSTOM_MAX_QUESTIONS = 100
 export const CUSTOM_DAYS = 30
+export const CUSTOM_DAY_CHOICES = [30, 90, 180]
+export const CUSTOM_EXPLANATION_MAX = 500
 export const CUSTOM_TITLE_MIN = 3
 export const CUSTOM_TITLE_MAX = 60
 export const CUSTOM_TEXT_MAX = 300
@@ -26,6 +28,12 @@ const nearest = (value, choices, fallback) => {
   const n = Number(value)
   if (!Number.isFinite(n)) return fallback
   return choices.reduce((best, c) => (Math.abs(c - n) < Math.abs(best - n) ? c : best), choices[0])
+}
+
+// How long a quiz is kept: 30, 90 or 180 days (anything else becomes 30).
+export function cleanDays(value) {
+  const n = Number(value)
+  return CUSTOM_DAY_CHOICES.includes(n) ? n : CUSTOM_DAYS
 }
 
 export function cleanTitle(input) {
@@ -105,6 +113,13 @@ export function sanitizeCustomQuestions(input) {
       if (accepted.some((a) => hasBlockedWord(a))) return fail('An answer has a word that is not allowed.')
       row.accepted_answers = accepted
     }
+    // Optional extras used by CBT exams: a short explanation shown in the review, and "keep the answers in this order".
+    const explanation = cleanLine(q.explanation).slice(0, CUSTOM_EXPLANATION_MAX)
+    if (explanation) {
+      if (hasBlockedWord(explanation)) return fail('The explanation has a word that is not allowed.')
+      row.explanation = explanation
+    }
+    if (q.no_shuffle === true) row.no_shuffle = true
     questions.push(row)
   })
   return { questions, problems }

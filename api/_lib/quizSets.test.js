@@ -121,7 +121,7 @@ describe('community sets: making one', () => {
   it('limits how many sets one address can make, and how many exist in all', async () => {
     const w = world()
     expect((await w.call({ op: 'create', title: 'My maths quiz', questions: good }, { allowCreate: () => false })).statusCode).toBe(429)
-    const full = world({ quizzes: Array.from({ length: 500 }, (_, i) => ({ id: `c${i}`, is_custom: true })) })
+    const full = world({ quizzes: Array.from({ length: 1000 }, (_, i) => ({ id: `c${i}`, is_custom: true })) })
     expect((await full.call({ op: 'create', title: 'My maths quiz', questions: good })).statusCode).toBe(503)
   })
 

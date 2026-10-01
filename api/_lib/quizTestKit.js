@@ -36,6 +36,9 @@ export function fakeDb(seed = {}) {
     quiz_battle_sides: [],
     quiz_battle_answers: [],
     quiz_battle_ratings: [],
+    cbt_courses: [],
+    cbt_exams: [],
+    cbt_attempts: [],
     ...seed,
   }
   let n = 0
@@ -46,6 +49,7 @@ export function fakeDb(seed = {}) {
     if (table === 'quiz_bracket_matches') return tables.quiz_bracket_matches.some((m) => m.session_id === row.session_id && m.round === row.round && m.slot === row.slot)
     if (table === 'quizzes') return Boolean(row.custom_code) && tables.quizzes.some((q) => q.custom_code === row.custom_code)
     if (table === 'quiz_battles') return tables.quiz_battles.some((b) => b.code === row.code)
+    if (table === 'cbt_attempts') return tables.cbt_attempts.some((a) => a.token_hash === row.token_hash)
     if (table === 'quiz_battle_ratings') return tables.quiz_battle_ratings.some((r) => r.tag_hash === row.tag_hash)
     if (table === 'quiz_battle_sides') return tables.quiz_battle_sides.some((s) => (s.battle_id === row.battle_id && s.slot === row.slot) || (row.token_hash && s.token_hash === row.token_hash))
     if (table === 'quiz_powerup_uses') return tables.quiz_powerup_uses.some((u) => u.player_id === row.player_id && u.question_id === row.question_id)
@@ -74,6 +78,7 @@ export function fakeDb(seed = {}) {
         if (table === 'quiz_sessions') Object.assign(row, { state: 'lobby', current_question_index: -1, question_started_at: null, finished_at: null })
         if (table === 'quiz_players') row.total_score = 0
         if (table === 'quiz_practice_runs') Object.assign(row, { total_score: 0, finished_at: null })
+        if (table === 'cbt_attempts') Object.assign(row, { submitted_at: null, score: null, total: null, results: [], ...payload })
         if (table === 'quiz_battle_sides') Object.assign(row, { finished_at: null, bot_skill: null, ...payload })
         if (table === 'quiz_battles') Object.assign(row, { winner_slot: null, question_started_at: null, reveal_started_at: null, bot_skill: null, rated: false, ...payload })
         tables[table].push(row)
@@ -145,7 +150,7 @@ export function fakeDb(seed = {}) {
         tables.quiz_players.find((p) => p.id === a.p_player).team_id = pick.id
         return { data: pick.id, error: null }
       }
-      if (name === 'quiz_practice_cleanup' || name === 'quiz_battle_cleanup' || name === 'quiz_custom_cleanup') return { data: 0, error: null }
+      if (name === 'quiz_practice_cleanup' || name === 'quiz_battle_cleanup' || name === 'quiz_custom_cleanup' || name === 'cbt_cleanup') return { data: 0, error: null }
       if (name === 'quiz_battle_record') {
         if (tables.quiz_battle_answers.some((x) => x.battle_id === a.p_battle && x.slot === a.p_slot && x.question_id === a.p_question)) return { data: false, error: null }
         tables.quiz_battle_answers.push({ battle_id: a.p_battle, slot: a.p_slot, question_id: a.p_question, chosen_index: a.p_chosen, answer_text: a.p_text, correct: a.p_correct, points_awarded: a.p_points, elapsed_ms: a.p_elapsed })
