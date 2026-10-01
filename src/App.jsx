@@ -84,6 +84,7 @@ const MakeQuiz = lazyRetry(() => import('./pages/MakeQuiz'))
 const CbtHome = lazyRetry(() => import('./pages/cbt/CbtHome'))
 const CbtStart = lazyRetry(() => import('./pages/cbt/CbtStart'))
 const CbtExam = lazyRetry(() => import('./pages/cbt/CbtExam'))
+const CbtMake = lazyRetry(() => import('./pages/cbt/CbtMake'))
 const AdminCbt = lazyRetry(() => import('./pages/admin/AdminCbt'))
 const CustomSet = lazyRetry(() => import('./pages/CustomSet'))
 
@@ -147,6 +148,14 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <CbtHome />
+              </Suspense>
+            }
+          />
+          <Route
+            path="cbt/make"
+            element={
+              <Suspense fallback={null}>
+                <CbtMake />
               </Suspense>
             }
           />
