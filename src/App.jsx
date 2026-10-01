@@ -32,6 +32,7 @@ const ResourceList = lazyRetry(() => import('./pages/resources/ResourceList'))
 const News = lazyRetry(() => import('./pages/News'))
 const NewsDetail = lazyRetry(() => import('./pages/NewsDetail'))
 const Opportunities = lazyRetry(() => import('./pages/Opportunities'))
+const Quizzes = lazyRetry(() => import('./pages/Quizzes'))
 const Awards = lazyRetry(() => import('./pages/Awards'))
 const Forms = lazyRetry(() => import('./pages/Forms'))
 const FormDetail = lazyRetry(() => import('./pages/FormDetail'))
@@ -201,6 +202,7 @@ export default function App() {
             <Route path="news/:id" element={<NewsDetail />} />
             <Route path="opportunities" element={<Opportunities />} />
             <Route path="awards" element={<Awards />} />
+            <Route path="quiz" element={<Quizzes />} />
             <Route path="forms" element={<Forms />} />
             <Route path="forms/:id" element={<FormDetail />} />
             <Route path="login" element={<Login />} />

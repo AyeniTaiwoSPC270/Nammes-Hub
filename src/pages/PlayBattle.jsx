@@ -195,7 +195,7 @@ function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, 
   const make = (mode, vsBot = false) => onCreate({ quizId: chosen.id, mode, vsBot, botSkill, nickname, avatarId })
   return (
     <Shell>
-      <Link to="/" className="text-sm font-semibold text-orange-500">← Back to NAMMES Hub</Link>
+      <Link to="/quiz" className="text-sm font-semibold text-orange-500">← All quizzes</Link>
       <Heading kicker="Battle" title="Challenge someone">
         <p className="text-ink-muted">Pick a quiz and take on a friend, or a bot. No account needed.</p>
       </Heading>

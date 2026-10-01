@@ -79,7 +79,7 @@ export default function MakeQuiz() {
         <QuizBackdrop />
         <QuizTopBar compact />
         <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-5">
-          <Link to="/" className="text-sm font-semibold text-orange-500">← Back to NAMMES Hub</Link>
+          <Link to="/quiz" className="text-sm font-semibold text-orange-500">← All quizzes</Link>
           <div className="flex flex-col items-center gap-2 text-center">
             <BrandMark className="h-14 w-14" />
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Your own questions</p>
