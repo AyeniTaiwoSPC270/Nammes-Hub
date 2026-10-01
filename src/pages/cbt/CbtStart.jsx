@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { callQuiz } from '../../data/quiz'
+import { mySetByCode, forgetMySet, saveMySet } from '../customSets'
 import { callCbt, saveActive, loadActive, clearActive, historyFor, formatDuration, LEVEL_LABEL } from '../../data/cbt'
 import CbtShell from '../../components/cbt/CbtShell'
 
@@ -11,6 +13,83 @@ function Fact({ label, value }) {
       <dt className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">{label}</dt>
       <dd className="text-xl font-bold text-ink-900">{value}</dd>
     </div>
+  )
+}
+
+// For the person who made a personal exam: its share link, keep it longer, or delete it.
+function OwnerPanel({ code, mine, expiresAt, onExtended }) {
+  const navigate = useNavigate()
+  const [copied, setCopied] = useState(false)
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const link = `${window.location.origin}/cbt/${code}`
+
+  async function share() {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: mine.title, url: link })
+        return
+      }
+    } catch {
+      // cancelled: fall through to copying
+    }
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // the link is shown to copy by hand
+    }
+  }
+  async function extend(days) {
+    setBusy(true)
+    setError('')
+    try {
+      const data = await callQuiz('sets', { op: 'extend', code, manageToken: mine.manageToken, days })
+      saveMySet({ ...mine, expiresAt: data.expiresAt })
+      onExtended(data.expiresAt)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function remove() {
+    setBusy(true)
+    try {
+      await callQuiz('sets', { op: 'remove', code, manageToken: mine.manageToken })
+    } catch {
+      // already gone: forgetting it here is still right
+    }
+    forgetMySet(code)
+    navigate('/cbt', { replace: true })
+  }
+
+  return (
+    <section aria-label="Your exam" className="flex flex-col gap-3 rounded-2xl border border-hairline bg-surface p-5">
+      <h2 className="text-lg font-bold">You made this exam</h2>
+      <p className="text-ink-muted">Share the code or link so friends can take it too. Kept until {new Date(expiresAt).toLocaleDateString()}.</p>
+      <p className="text-4xl font-bold tracking-[0.25em]" aria-label={`Exam code ${code.split('').join(' ')}`}>{code}</p>
+      <p className="break-all text-sm text-ink-muted">{link}</p>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <button type="button" onClick={share} className="min-h-11 rounded-xl bg-orange-500 px-5 font-bold text-white">{copied ? 'Link copied!' : 'Share this exam'}</button>
+        <span className="text-ink-muted">Keep it longer:</span>
+        {[90, 180].map((d) => (
+          <button key={d} type="button" disabled={busy} onClick={() => extend(d)} className="min-h-11 rounded-full border border-hairline px-4 font-bold disabled:opacity-60">{d} days</button>
+        ))}
+      </div>
+      {error && <p role="alert" className="text-sm font-semibold text-red-600">{error}</p>}
+      {asking ? (
+        <div role="alert" className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+          <span>Delete this exam for good?</span>
+          <button type="button" disabled={busy} onClick={remove} className="min-h-11 rounded-full bg-red-600 px-4 font-bold text-white">Yes, delete</button>
+          <button type="button" onClick={() => setAsking(false)} className="min-h-11 rounded-full border border-hairline px-4 font-bold">Keep it</button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setAsking(true)} className="self-start text-sm font-semibold text-ink-muted underline">Delete this exam</button>
+      )}
+    </section>
   )
 }
 
@@ -72,6 +151,7 @@ export default function CbtStart() {
   }
 
   const personal = info.kind === 'personal'
+  const mine = personal ? mySetByCode(code) : null
   return (
     <CbtShell title={info.course?.code}>
       <Link to="/cbt" className="text-sm font-semibold text-orange-600">← All exams</Link>
@@ -88,6 +168,8 @@ export default function CbtStart() {
         <Fact label="Pass mark" value={`${info.passMarkPercent}%`} />
         <Fact label="Question bank" value={info.bankSize} />
       </dl>
+
+      {mine && <OwnerPanel code={code} mine={mine} expiresAt={info.expiresAt} onExtended={(expiresAt) => setInfo((i) => ({ ...i, expiresAt }))} />}
 
       <section aria-label="How it works" className="rounded-2xl border border-hairline bg-surface p-5">
         <h2 className="mb-2 text-lg font-bold">How it works</h2>

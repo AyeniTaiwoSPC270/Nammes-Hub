@@ -149,7 +149,7 @@ export default function CbtHome() {
         </section>
       )}
 
-      <Link to="/make" className="rounded-2xl border border-hairline bg-surface p-5 no-underline">
+      <Link to="/cbt/make" className="rounded-2xl border border-hairline bg-surface p-5 no-underline">
         <p className="font-bold text-ink-900">Make your own practice exam</p>
         <p className="text-ink-muted">Paste past questions from a spreadsheet and take them as a timed CBT, up to 100 questions. Private to you and anyone you share the code with.</p>
       </Link>

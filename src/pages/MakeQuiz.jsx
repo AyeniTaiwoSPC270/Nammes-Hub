@@ -8,6 +8,7 @@ import { sanitizeCustomQuestions, cleanTitle, CUSTOM_MAX_QUESTIONS, CUSTOM_DAYS,
 import { BrandMark, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import MathText from '../components/quiz/MathText'
+import CbtShell from '../components/cbt/CbtShell'
 import { loadMySets, saveMySet } from './customSets'
 
 // /make: bring your own questions. Paste them from a spreadsheet (or upload a CSV), check the preview, and get a private
@@ -29,7 +30,10 @@ function answerOf(q) {
   return q.accepted_answers.join(' / ')
 }
 
-export default function MakeQuiz() {
+// `variant="cbt"` is the same maker dressed as an exam page (/cbt/make): exam wording, exam settings open, and it lands on the
+// exam's start page. The default is the quiz version (/make).
+export default function MakeQuiz({ variant = 'quiz' }) {
+  const cbt = variant === 'cbt'
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [text, setText] = useState('')
@@ -77,7 +81,7 @@ export default function MakeQuiz() {
       }
       const data = await callQuiz('sets', { op: 'create', title, questions: parsed.rows, days, settings })
       saveMySet({ code: data.code, manageToken: data.manageToken, title: data.title, quizId: data.quizId, expiresAt: data.expiresAt })
-      navigate(`/set/${data.code}`)
+      navigate(cbt ? `/cbt/${data.code}` : `/set/${data.code}`)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -85,31 +89,40 @@ export default function MakeQuiz() {
     }
   }
 
-  return (
-    <QuizThemeScope theme={null}>
-      <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
-        <QuizBackdrop />
-        <QuizTopBar compact />
-        <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-5">
-          <Link to="/quiz" className="text-sm font-semibold text-orange-500">← All quizzes</Link>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <BrandMark className="h-14 w-14" />
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Your own questions</p>
-            <h1 className="text-3xl font-bold">Make a quiz from a spreadsheet</h1>
-            <p className="text-ink-muted">
-              Paste your questions, get a private code, then take them as a timed CBT exam, practise them, challenge a friend or duel. No account needed.
-            </p>
-          </div>
+  const content = (
+    <>
+          {cbt ? (
+            <Link to="/cbt" className="text-sm font-semibold text-orange-600">← All exams</Link>
+          ) : (
+            <Link to="/quiz" className="text-sm font-semibold text-orange-500">← All quizzes</Link>
+          )}
+          {cbt ? (
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-bold">Make your own practice exam</h1>
+              <p className="text-ink-muted">
+                Paste your past questions from a spreadsheet and take them as a timed CBT exam. You get a private code to share with friends. No account needed.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-center">
+              <BrandMark className="h-14 w-14" />
+              <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Your own questions</p>
+              <h1 className="text-3xl font-bold">Make a quiz from a spreadsheet</h1>
+              <p className="text-ink-muted">
+                Paste your questions, get a private code, then take them as a timed CBT exam, practise them, challenge a friend or duel. No account needed.
+              </p>
+            </div>
+          )}
 
           <section className="flex flex-col gap-4 rounded-3xl border border-hairline bg-surface p-5 shadow-md">
             <label className="flex flex-col gap-2">
-              <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Name your quiz</span>
+              <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">{cbt ? 'Name your exam' : 'Name your quiz'}</span>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={60}
                 autoComplete="off"
-                placeholder="e.g. MTH 101 revision"
+                placeholder={cbt ? 'e.g. MTH 101 past questions' : 'e.g. MTH 101 revision'}
                 className="min-h-14 rounded-2xl border-2 border-hairline bg-paper px-4 text-lg font-semibold text-ink-900 focus:border-orange-500 focus:outline-none"
               />
               {titleCheck?.error && <span className="text-sm font-semibold text-red-600">{titleCheck.error}</span>}
@@ -135,7 +148,7 @@ export default function MakeQuiz() {
                 Download a template
               </button>
             </div>
-            <details className="text-sm text-ink-muted">
+            <details className="text-sm text-ink-muted" open={cbt}>
               <summary className="cursor-pointer font-semibold text-ink-900">Exam settings and how long to keep it</summary>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="flex flex-col gap-1">
@@ -195,21 +208,21 @@ export default function MakeQuiz() {
             onClick={create}
             className="min-h-14 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? 'Making your quiz…' : 'Make my quiz'}
+            {busy ? (cbt ? 'Making your exam…' : 'Making your quiz…') : cbt ? 'Make my exam' : 'Make my quiz'}
           </button>
 
           <form
             className="flex items-center gap-2 rounded-3xl border border-hairline bg-surface p-4 shadow-md"
             onSubmit={(e) => {
               e.preventDefault()
-              if (code.length === 6) navigate(`/set/${code}`)
+              if (code.length === 6) navigate(cbt ? `/cbt/${code}` : `/set/${code}`)
             }}
           >
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
-              placeholder="Got a quiz code?"
-              aria-label="Quiz code"
+              placeholder={cbt ? 'Got an exam code?' : 'Got a quiz code?'}
+              aria-label={cbt ? 'Exam code' : 'Quiz code'}
               autoCapitalize="characters"
               autoComplete="off"
               className="min-h-14 min-w-0 flex-1 rounded-2xl border-2 border-hairline bg-paper px-4 text-lg font-bold uppercase tracking-[0.2em] text-ink-900 focus:border-orange-500 focus:outline-none"
@@ -219,11 +232,11 @@ export default function MakeQuiz() {
 
           {mine.length > 0 && (
             <section aria-label="Your quizzes" className="flex flex-col gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">Quizzes you made on this device</h2>
+              <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">{cbt ? 'Exams you made on this device' : 'Quizzes you made on this device'}</h2>
               <ul className="flex flex-col gap-2">
                 {mine.map((s) => (
                   <li key={s.code}>
-                    <Link to={`/set/${s.code}`} className="flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-3 no-underline">
+                    <Link to={cbt ? `/cbt/${s.code}` : `/set/${s.code}`} className="flex items-center justify-between gap-3 rounded-2xl border border-hairline bg-surface p-3 no-underline">
                       <span className="min-w-0 truncate font-semibold text-ink-900">{s.title}</span>
                       <span className="font-mono text-sm font-bold tracking-[0.15em] text-orange-500">{s.code}</span>
                     </Link>
@@ -232,7 +245,16 @@ export default function MakeQuiz() {
               </ul>
             </section>
           )}
-        </main>
+    </>
+  )
+
+  if (cbt) return <CbtShell>{content}</CbtShell>
+  return (
+    <QuizThemeScope theme={null}>
+      <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+        <QuizBackdrop />
+        <QuizTopBar compact />
+        <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-5">{content}</main>
       </div>
     </QuizThemeScope>
   )
