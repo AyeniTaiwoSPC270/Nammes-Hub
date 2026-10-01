@@ -4,7 +4,13 @@
 import { parseNumber, ANSWER_TEXT_MAX, ACCEPTED_ANSWERS_MAX } from './quizGrading.js'
 import { hasBlockedWord } from './quizText.js'
 
+// Ordinary words that contain a blocked word once letters are squashed together ("therapeutic", "grape", "scrape").
+const INNOCENT = /\w*(grape|drape|scrape|therap|trapez|crape)\w*/gi
+const rude = (text) => hasBlockedWord(String(text).replace(INNOCENT, ' '))
+
 export const CUSTOM_MAX_QUESTIONS = 100
+export const CBT_BANK_MAX_QUESTIONS = 500
+export const CUSTOM_TOPIC_MAX = 60
 export const CUSTOM_DAYS = 30
 export const CUSTOM_DAY_CHOICES = [30, 90, 180]
 export const CUSTOM_EXPLANATION_MAX = 500
@@ -40,19 +46,21 @@ export function cleanTitle(input) {
   const title = cleanLine(input)
   if (title.length < CUSTOM_TITLE_MIN) return { error: `Give your quiz a name (at least ${CUSTOM_TITLE_MIN} characters).` }
   if (title.length > CUSTOM_TITLE_MAX) return { error: `The name can be ${CUSTOM_TITLE_MAX} characters at most.` }
-  if (hasBlockedWord(title)) return { error: 'Please choose a different name.' }
+  if (rude(title)) return { error: 'Please choose a different name.' }
   return { title }
 }
 
 // Turns what was sent into rows ready to store. Returns { questions, problems }: the good questions and a message per
 // question that was refused. Nothing is stored unless every question passes (the caller checks `problems`).
-export function sanitizeCustomQuestions(input) {
+// `trusted` is for admin-made question banks: no word filter and a bigger limit (`max`).
+export function sanitizeCustomQuestions(input, { trusted = false, max = trusted ? CBT_BANK_MAX_QUESTIONS : CUSTOM_MAX_QUESTIONS } = {}) {
   const problems = []
   const questions = []
+  const rudeText = (t) => !trusted && rude(t)
   if (!Array.isArray(input) || input.length === 0) return { questions, problems: [{ line: 1, message: 'Add at least one question.' }] }
-  if (input.length > CUSTOM_MAX_QUESTIONS) problems.push({ line: 1, message: `A quiz can have at most ${CUSTOM_MAX_QUESTIONS} questions.` })
+  if (input.length > max) problems.push({ line: 1, message: `A quiz can have at most ${max} questions.` })
 
-  input.slice(0, CUSTOM_MAX_QUESTIONS).forEach((raw, i) => {
+  input.slice(0, max).forEach((raw, i) => {
     const line = i + 1
     const fail = (message) => problems.push({ line, message })
     const q = raw && typeof raw === 'object' ? raw : {}
@@ -61,7 +69,7 @@ export function sanitizeCustomQuestions(input) {
     const text = cleanLine(q.text)
     if (!text) return fail('The question needs some text.')
     if (text.length > CUSTOM_TEXT_MAX) return fail(`The question is too long (${CUSTOM_TEXT_MAX} characters at most).`)
-    if (hasBlockedWord(text)) return fail('The question has a word that is not allowed.')
+    if (rudeText(text)) return fail('The question has a word that is not allowed.')
 
     const row = {
       type,
@@ -85,7 +93,7 @@ export function sanitizeCustomQuestions(input) {
       if (kept.length < 2) return fail('Give at least two answers.')
       if (kept.length > 4) return fail('At most four answers.')
       if (kept.some((o) => o.text.length > CUSTOM_OPTION_MAX)) return fail(`An answer is too long (${CUSTOM_OPTION_MAX} characters at most).`)
-      if (kept.some((o) => hasBlockedWord(o.text))) return fail('An answer has a word that is not allowed.')
+      if (kept.some((o) => rudeText(o.text))) return fail('An answer has a word that is not allowed.')
       const right = kept.findIndex((o) => o.at === Number(q.correct_index))
       if (right < 0) return fail('Pick a correct answer that is not empty.')
       row.options = kept.map((o) => o.text)
@@ -110,15 +118,17 @@ export function sanitizeCustomQuestions(input) {
       if (accepted.length === 0) return fail('Add at least one accepted answer.')
       if (accepted.length > ACCEPTED_ANSWERS_MAX) return fail(`At most ${ACCEPTED_ANSWERS_MAX} accepted answers.`)
       if (accepted.some((a) => a.length > ANSWER_TEXT_MAX)) return fail(`An accepted answer can be ${ANSWER_TEXT_MAX} characters at most.`)
-      if (accepted.some((a) => hasBlockedWord(a))) return fail('An answer has a word that is not allowed.')
+      if (accepted.some((a) => rudeText(a))) return fail('An answer has a word that is not allowed.')
       row.accepted_answers = accepted
     }
     // Optional extras used by CBT exams: a short explanation shown in the review, and "keep the answers in this order".
     const explanation = cleanLine(q.explanation).slice(0, CUSTOM_EXPLANATION_MAX)
     if (explanation) {
-      if (hasBlockedWord(explanation)) return fail('The explanation has a word that is not allowed.')
+      if (rudeText(explanation)) return fail('The explanation has a word that is not allowed.')
       row.explanation = explanation
     }
+    const topic = cleanLine(q.topic).slice(0, CUSTOM_TOPIC_MAX)
+    if (topic) row.topic = topic
     if (q.no_shuffle === true) row.no_shuffle = true
     questions.push(row)
   })

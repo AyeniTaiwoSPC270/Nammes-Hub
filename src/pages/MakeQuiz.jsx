@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { callQuiz } from '../data/quiz'
-import { questionsFromCsv, CSV_COLUMNS, CSV_MAX_BYTES } from '../data/quizCsv'
+import { questionsFromCsv, CBT_COLUMNS, CSV_COLUMNS, CSV_MAX_BYTES } from '../data/quizCsv'
 import { cleanQuestion } from '../data/quizQuestions'
 import { downloadTextFile } from '../lib/downloadFile'
-import { sanitizeCustomQuestions, cleanTitle, CUSTOM_MAX_QUESTIONS, CUSTOM_DAYS } from '../../api/_lib/quizCustom.js'
+import { sanitizeCustomQuestions, cleanTitle, CUSTOM_MAX_QUESTIONS, CUSTOM_DAYS, CUSTOM_DAY_CHOICES } from '../../api/_lib/quizCustom.js'
 import { BrandMark, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import MathText from '../components/quiz/MathText'
@@ -14,11 +14,11 @@ import { loadMySets, saveMySet } from './customSets'
 // code to practise them, challenge a friend or duel. No account needed; the quiz is deleted after 30 days.
 
 const TEMPLATE = [
-  CSV_COLUMNS.join(','),
-  'multiple,What is the capital of Ghana?,Lagos,Accra,Kumasi,Abuja,B,20,1000',
-  'truefalse,The sun is a star.,,,,,True,10,500',
-  'numeric,How many days are in a leap year?,,,,,366,20,1000',
-  'text,What is the capital of France?,,,,,Paris|paris,30,1000',
+  CBT_COLUMNS.join(','),
+  'multiple,What is the capital of Ghana?,Lagos,Accra,Kumasi,Abuja,B,20,1000,Accra is the capital city.,Geography,',
+  'truefalse,The sun is a star.,,,,,True,10,500,,,',
+  'numeric,How many days are in a leap year?,,,,,366,20,1000,,,',
+  'text,What is the capital of France?,,,,,Paris|paris,30,1000,,,',
 ].join('\r\n')
 
 const TYPE_LABEL = { multiple: 'Multiple choice', truefalse: 'True or false', numeric: 'Number', text: 'Typed answer' }
@@ -36,6 +36,12 @@ export default function MakeQuiz() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [code, setCode] = useState('')
+  // Exam settings (used when the quiz is taken as a timed CBT exam)
+  const [days, setDays] = useState(CUSTOM_DAYS)
+  const [minutes, setMinutes] = useState('')
+  const [passMark, setPassMark] = useState(50)
+  const [shuffleQuestions, setShuffleQuestions] = useState(true)
+  const [shuffleOptions, setShuffleOptions] = useState(true)
   const mine = useMemo(() => loadMySets(), [])
 
   // Read the pasted text the same way the admin import does, then run the same checks the server will.
@@ -63,7 +69,13 @@ export default function MakeQuiz() {
     setBusy(true)
     setError('')
     try {
-      const data = await callQuiz('sets', { op: 'create', title, questions: parsed.rows })
+      const settings = {
+        pass_mark_percent: Number(passMark) || 50,
+        shuffle_questions: shuffleQuestions,
+        shuffle_options: shuffleOptions,
+        ...(Number(minutes) > 0 ? { duration_minutes: Number(minutes) } : {}),
+      }
+      const data = await callQuiz('sets', { op: 'create', title, questions: parsed.rows, days, settings })
       saveMySet({ code: data.code, manageToken: data.manageToken, title: data.title, quizId: data.quizId, expiresAt: data.expiresAt })
       navigate(`/set/${data.code}`)
     } catch (e) {
@@ -85,7 +97,7 @@ export default function MakeQuiz() {
             <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Your own questions</p>
             <h1 className="text-3xl font-bold">Make a quiz from a spreadsheet</h1>
             <p className="text-ink-muted">
-              Paste your questions, get a private code, then practise them, challenge a friend or duel. No account needed. Your quiz is deleted after {CUSTOM_DAYS} days.
+              Paste your questions, get a private code, then take them as a timed CBT exam, practise them, challenge a friend or duel. No account needed.
             </p>
           </div>
 
@@ -124,11 +136,32 @@ export default function MakeQuiz() {
               </button>
             </div>
             <details className="text-sm text-ink-muted">
+              <summary className="cursor-pointer font-semibold text-ink-900">Exam settings and how long to keep it</summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold text-ink-900">Time allowed (minutes)</span>
+                  <input value={minutes} onChange={(e) => setMinutes(e.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" placeholder="Automatic (about 1 minute a question)" className="min-h-11 rounded-xl border-2 border-hairline bg-paper px-3 text-ink-900 focus:border-orange-500 focus:outline-none" />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="font-semibold text-ink-900">Pass mark (%)</span>
+                  <input value={passMark} onChange={(e) => setPassMark(e.target.value.replace(/\D/g, '').slice(0, 3))} inputMode="numeric" className="min-h-11 rounded-xl border-2 border-hairline bg-paper px-3 text-ink-900 focus:border-orange-500 focus:outline-none" />
+                </label>
+                <label className="flex items-center gap-2 font-semibold text-ink-900"><input type="checkbox" checked={shuffleQuestions} onChange={(e) => setShuffleQuestions(e.target.checked)} className="h-5 w-5" /> Shuffle the questions</label>
+                <label className="flex items-center gap-2 font-semibold text-ink-900"><input type="checkbox" checked={shuffleOptions} onChange={(e) => setShuffleOptions(e.target.checked)} className="h-5 w-5" /> Shuffle the answers</label>
+                <label className="flex flex-col gap-1 sm:col-span-2">
+                  <span className="font-semibold text-ink-900">Keep this quiz for</span>
+                  <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="min-h-11 rounded-xl border-2 border-hairline bg-paper px-3 text-ink-900">
+                    {CUSTOM_DAY_CHOICES.map((d) => <option key={d} value={d}>{d} days</option>)}
+                  </select>
+                </label>
+              </div>
+            </details>
+            <details className="text-sm text-ink-muted">
               <summary className="cursor-pointer font-semibold text-ink-900">How should the spreadsheet look?</summary>
               <p className="mt-2">
                 The simplest sheet has no header: the question, four answers, then the letter of the right one (A to D). For more control, use the columns{' '}
                 <code>{CSV_COLUMNS.join(', ')}</code>. Question types: multiple, truefalse, numeric (the <code>correct</code> cell is the number, optionally <code>366|1</code> for a margin) and text (accepted answers
-                separated by <code>|</code>). Up to {CUSTOM_MAX_QUESTIONS} questions. Maths goes between dollar signs, like <code>$x^2$</code>.
+                separated by <code>|</code>). Up to {CUSTOM_MAX_QUESTIONS} questions. Maths goes between dollar signs, like <code>$x^2$</code>. For exams you can add the optional columns <code>explanation</code> (shown in the review after the exam) and <code>no_shuffle</code> (yes, to keep that question's answers in order).
               </p>
             </details>
 

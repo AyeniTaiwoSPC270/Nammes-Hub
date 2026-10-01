@@ -139,6 +139,13 @@ export const ADMIN_SECTIONS = [
     description: 'Build a Kahoot-style quiz and host it live at an event.',
   },
   {
+    path: '/admin/cbt',
+    label: 'CBT Exams',
+    icon: 'assignment',
+    category: 'Engagement',
+    description: 'Upload course question banks for timed CBT practice, and see how students do.',
+  },
+  {
     path: '/admin/broadcasts',
     label: 'Broadcasts',
     icon: 'campaign',

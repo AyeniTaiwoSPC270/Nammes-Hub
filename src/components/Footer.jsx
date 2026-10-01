@@ -11,6 +11,7 @@ const linkGroups = [
       { label: 'Outlines', to: '/outlines' },
       { label: 'Events', to: '/events' },
       { label: 'Quizzes & battles', to: '/quiz' },
+      { label: 'CBT practice', to: '/cbt' },
       { label: 'Meet the Excos', to: '/excos' },
     ],
   },

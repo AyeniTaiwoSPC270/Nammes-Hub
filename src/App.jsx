@@ -81,6 +81,10 @@ const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
 const PlayBattle = lazyRetry(() => import('./pages/PlayBattle'))
 const PracticeList = lazyRetry(() => import('./pages/PracticeList'))
 const MakeQuiz = lazyRetry(() => import('./pages/MakeQuiz'))
+const CbtHome = lazyRetry(() => import('./pages/cbt/CbtHome'))
+const CbtStart = lazyRetry(() => import('./pages/cbt/CbtStart'))
+const CbtExam = lazyRetry(() => import('./pages/cbt/CbtExam'))
+const AdminCbt = lazyRetry(() => import('./pages/admin/AdminCbt'))
 const CustomSet = lazyRetry(() => import('./pages/CustomSet'))
 
 function MaintenanceGate({ children }) {
@@ -138,6 +142,30 @@ export default function App() {
               }
             />
           ))}
+          <Route
+            path="cbt"
+            element={
+              <Suspense fallback={null}>
+                <CbtHome />
+              </Suspense>
+            }
+          />
+          <Route
+            path="cbt/:code"
+            element={
+              <Suspense fallback={null}>
+                <CbtStart />
+              </Suspense>
+            }
+          />
+          <Route
+            path="cbt/:code/exam"
+            element={
+              <Suspense fallback={null}>
+                <CbtExam />
+              </Suspense>
+            }
+          />
           <Route
             path="make"
             element={
@@ -243,6 +271,7 @@ export default function App() {
                 <Route path="admin/quizzes/:id/studio" element={<AdminQuizStudio />} />
                 <Route path="admin/quizzes/games/:sessionId" element={<AdminQuizReport />} />
                 <Route path="admin/quizzes/battles" element={<AdminBattles />} />
+                <Route path="admin/cbt" element={<AdminCbt />} />
                 <Route path="admin/awards" element={<AdminAwards />} />
                 <Route path="admin/awards/new" element={<AdminAwardSeason />} />
                 <Route path="admin/awards/:seasonId/edit" element={<AdminAwardSeason />} />

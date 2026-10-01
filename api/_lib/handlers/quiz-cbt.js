@@ -198,11 +198,12 @@ export function createQuizCbtHandler(
     }
     async function describeAttempt(a) {
       if (a.exam_id) {
-        const { data: exam } = await db.from('cbt_exams').select('title, show_explanations, session_label').eq('id', a.exam_id).maybeSingle()
-        return { title: exam?.title ?? 'Exam', explanations: exam ? exam.show_explanations !== false : true }
+        const { data: exam } = await db.from('cbt_exams').select('title, show_explanations, course_id').eq('id', a.exam_id).maybeSingle()
+        const { data: course } = exam ? await db.from('cbt_courses').select('code').eq('id', exam.course_id).maybeSingle() : { data: null }
+        return { title: exam?.title ?? 'Exam', courseCode: course?.code ?? null, explanations: exam ? exam.show_explanations !== false : true }
       }
       const { data: quiz } = await db.from('quizzes').select('title').eq('id', a.quiz_id).maybeSingle()
-      return { title: quiz?.title ?? 'Exam', explanations: true }
+      return { title: quiz?.title ?? 'Exam', courseCode: null, explanations: true }
     }
 
     function displayAnswers(a, questions) {
@@ -222,6 +223,7 @@ export function createQuizCbtHandler(
         status: 'running',
         mode: a.mode,
         title: target.title,
+        courseCode: target.courseCode ?? target.course?.code ?? null,
         serverNow: now(),
         startedAt: a.started_at,
         deadlineAt: a.deadline_at,
@@ -271,6 +273,7 @@ export function createQuizCbtHandler(
         status: 'submitted',
         mode: a.mode,
         title: info.title,
+        courseCode: info.courseCode,
         score,
         total,
         percent: percentOf(score, total),
@@ -312,7 +315,7 @@ export function createQuizCbtHandler(
 
     if (op === 'resume') {
       const target = await describeAttempt(attempt)
-      res.status(200).json(runningView(attempt, questions, { title: target.title, explanations: target.explanations }))
+      res.status(200).json(runningView(attempt, questions, { title: target.title, courseCode: target.courseCode, explanations: target.explanations }))
       return
     }
 

@@ -166,3 +166,24 @@ describe('grading', () => {
     expect(normaliseCourseCode('  mth   101 ')).toBe('MTH 101')
   })
 })
+
+describe('question cleaning for CBT', () => {
+  it('lets ordinary science and food words through the word filter, but not rude ones', async () => {
+    const { sanitizeCustomQuestions, cleanTitle } = await import('./quizCustom.js')
+    const ok = sanitizeCustomQuestions([{ type: 'truefalse', text: 'Grape juice is a therapeutic drink when you scrape the pip.', correct_index: 0 }])
+    expect(ok.problems).toEqual([])
+    expect(cleanTitle('Therapeutic drugs 101').error).toBeUndefined()
+    expect(sanitizeCustomQuestions([{ type: 'truefalse', text: 'what the shit', correct_index: 0 }]).problems).toHaveLength(1)
+  })
+
+  it('trusts admin banks: no word filter, 500 questions, explanation and topic kept', async () => {
+    const { sanitizeCustomQuestions } = await import('./quizCustom.js')
+    const rows = Array.from({ length: 500 }, (_, i) => ({ type: 'truefalse', text: `Statement ${i}`, correct_index: 0, explanation: 'Because.', topic: ' Algebra ', no_shuffle: true }))
+    const out = sanitizeCustomQuestions(rows, { trusted: true })
+    expect(out.problems).toEqual([])
+    expect(out.questions).toHaveLength(500)
+    expect(out.questions[0]).toMatchObject({ explanation: 'Because.', topic: 'Algebra', no_shuffle: true })
+    expect(sanitizeCustomQuestions([...rows, rows[0]], { trusted: true }).problems[0].message).toMatch(/at most 500/)
+    expect(sanitizeCustomQuestions([{ type: 'truefalse', text: 'rude shit word', correct_index: 0 }], { trusted: true }).problems).toEqual([])
+  })
+})

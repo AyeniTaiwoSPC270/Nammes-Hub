@@ -59,7 +59,7 @@ export default function AdminQuizzes() {
   const [busyId, setBusyId] = useState(null)
   const [askingGame, setAskingGame] = useState(null) // the recent game whose delete or end is waiting for a yes
   const [showAllGames, setShowAllGames] = useState(false)
-  const quizzes = quizzesQuery.data?.filter((x) => !x.is_custom)
+  const quizzes = quizzesQuery.data?.filter((x) => !x.is_custom && !x.is_cbt)
   const sessions = sessionsQuery.data ?? []
 
   const allTags = useMemo(() => [...new Set((quizzes ?? []).flatMap((q) => q.tags ?? []))].sort(), [quizzes])
