@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline screen — design review — NAMMES Hub</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+
+<!-- ============ REAL DESIGN TOKENS (verbatim from src/index.css @theme + .dark) ============ -->
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          'green-900': '#0b2417', 'orange-500': '#ff5a1f', 'orange-600': '#ae3200',
+          'orange-100': '#fff0e6', 'ink-900': '#000904', paper: '#fcf9f8',
+          surface: '#ffffff', 'surface-low': '#f6f3f2', ink: '#1c1b1b',
+          'ink-muted': '#424843', hairline: '#c2c8c1', success: '#1c6b3a',
+          'success-bg': '#e6f0ea', warning: '#a85c00', 'warning-bg': '#fdece0',
+          danger: '#ba1a1a', 'danger-bg': '#ffdad6', brand: '#0b2417',
+          'brand-orange': '#ae3200',
+        },
+        borderRadius: { sm: '4px', md: '8px', lg: '12px', full: '9999px' },
+        fontFamily: {
+          display: ['Public Sans', '-apple-system', 'sans-serif'],
+          body: ['Public Sans', '-apple-system', 'sans-serif'],
+          mono: ['Public Sans', '-apple-system', 'sans-serif'],
+        },
+      },
+    },
+  }
+</script>
+
+<style>
+  :root {
+    --c-paper: #fcf9f8; --c-surface: #ffffff; --c-surface-low: #f6f3f2;
+    --c-ink: #1c1b1b; --c-ink-900: #000904; --c-ink-muted: #424843;
+    --c-hairline: #c2c8c1; --c-brand: #0b2417; --c-brand-orange: #ae3200;
+  }
+  html.dark {
+    --c-paper: #0d1310; --c-surface: #16211b; --c-surface-low: #111a15;
+    --c-ink: #e6e8e5; --c-ink-900: #f7f9f7; --c-ink-muted: #9aa79e;
+    --c-hairline: #2c352f; --c-brand: #5cb88a; --c-brand-orange: #ff9a5c;
+  }
+  body {
+    background-color: var(--c-paper); color: var(--c-ink);
+    transition: background-color .15s, color .15s;
+  }
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle; line-height: 1;
+  }
+  :focus-visible { outline: 2px solid #ff5a1f; outline-offset: 2px; }
+
+  .panel { background-color: var(--c-surface); border-color: var(--c-hairline); }
+  .muted { color: var(--c-ink-muted); }
+  .head { color: var(--c-ink-900); }
+  .link { color: var(--c-brand); }
+
+  /* device frame */
+  #stage { display: flex; align-items: flex-start; justify-content: center; overflow: hidden; }
+  #frame-shell {
+    transform-origin: top center;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px var(--c-hairline), 0 18px 50px rgba(0,0,0,.16);
+    overflow: hidden;
+    background: #0b2417;
+  }
+  #frame { border: 0; display: block; background: #0b2417; }
+
+  .tab {
+    cursor: pointer; border: 1px solid var(--c-hairline);
+    background: var(--c-surface); color: var(--c-ink-muted);
+    border-radius: 8px; font-weight: 600; font-size: 13px;
+    padding: 7px 12px; transition: background-color .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .tab:hover { background: var(--c-surface-low); color: var(--c-ink); }
+  .tab[aria-selected="true"] { background: var(--c-green); border-color: var(--c-green); color: #fff; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+
+<body class="min-h-screen font-body antialiased">
+
+<!-- ================= SHOWCASE CHROME (not part of the screen under review) ================= -->
+<header class="border-b bg-[var(--c-surface)]" style="border-color: var(--c-hairline)">
+  <div class="mx-auto max-w-[1400px] px-5 py-4 sm:px-8">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <img src="../../public/logo-small.png" alt="" width="32" height="32" class="h-8 w-8 object-contain">
+        <div>
+          <p class="font-mono text-[11px] font-bold uppercase tracking-[.05em] text-[var(--c-brand-orange)]">Design review &middot; not merged</p>
+          <h1 class="font-display text-lg font-bold head leading-tight">No-connection screen</h1>
+        </div>
+      </div>
+      <button id="theme" class="tab inline-flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg" id="theme-icon">dark_mode</span>
+        <span id="theme-label">Dark mode</span>
+      </button>
+    </div>
+
+    <!-- controls -->
+    <div class="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3">
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-[11px] font-bold uppercase tracking-[.05em] muted">Viewport</span>
+        <div id="viewports" class="flex gap-2" role="tablist">
+          <button class="tab" role="tab" data-w="390" data-h="844" data-label="Mobile 390">Mobile</button>
+          <button class="tab" role="tab" data-w="768" data-h="1024" data-label="Tablet 768">Tablet</button>
+          <button class="tab" role="tab" data-w="1280" data-h="800" data-label="Desktop 1280">Desktop</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="font-mono text-[11px] font-bold uppercase tracking-[.05em] muted">State</span>
+        <div id="states" class="flex flex-wrap gap-2" role="tablist">
+          <button class="tab" role="tab" data-state="offline">Offline</button>
+          <button class="tab" role="tab" data-state="reconnecting">Reconnecting</button>
+          <button class="tab" role="tab" data-state="online">Back online</button>
+          <button class="tab" role="tab" data-state="live">Live (uses your wifi)</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="zoom-out" class="tab inline-flex items-center gap-1"><span class="material-symbols-outlined text-lg">remove</span></button>
+        <span id="zoom-label" class="min-w-[46px] text-center text-xs font-bold muted">Fit</span>
+        <button id="zoom-in" class="tab inline-flex items-center gap-1"><span class="material-symbols-outlined text-lg">add</span></button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= STAGE ================= -->
+<main id="stage" class="px-5 py-8 sm:px-8" style="min-height: 420px">
+  <div id="frame-shell">
+    <iframe id="frame" title="Offline screen preview" src="screen.html?state=offline"></iframe>
+  </div>
+</main>
+
+<!-- ================= NOTES ================= -->
+<section class="mx-auto max-w-[1400px] px-5 pb-16 sm:px-8">
+  <div class="grid gap-5 lg:grid-cols-3">
+
+    <div class="panel rounded-lg border p-6">
+      <p class="font-mono text-[11px] font-bold uppercase tracking-[.05em] text-[var(--c-brand-orange)]">Where it comes from</p>
+      <h2 class="mt-1.5 text-xl font-bold head">Borrowed from Maintenance</h2>
+      <p class="mt-3 text-sm leading-relaxed muted">
+        Layout, header, illustration technique and footer are lifted from
+        <code class="rounded-sm px-1" style="background: var(--c-surface-low)">src/pages/Maintenance.jsx</code> &mdash;
+        the only existing full-screen state page &mdash; so the two read as the same family.
+      </p>
+      <ul class="mt-4 space-y-2 text-sm muted">
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg" style="color:#1c6b3a">check_circle</span><span>Own logo header, no Navbar/Footer</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg" style="color:#1c6b3a">check_circle</span><span>Centred max-w-xl block, <code>my-auto</code></span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg" style="color:#1c6b3a">check_circle</span><span>DOM-built circle illustration + orange dots</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg" style="color:#1c6b3a">check_circle</span><span>Accent button, <code>SocialIcons</code>, hairline footer</span></li>
+      </ul>
+    </div>
+
+    <div class="panel rounded-lg border p-6">
+      <p class="font-mono text-[11px] font-bold uppercase tracking-[.05em] text-[var(--c-brand-orange)]">Tokens used</p>
+      <h2 class="mt-1.5 text-xl font-bold head">Nothing invented</h2>
+      <table class="mt-4 w-full text-sm">
+        <tbody>
+          <tr><td class="py-1.5 muted">Page fill</td><td class="py-1.5 text-right"><code>bg-green-900</code></td></tr>
+          <tr><td class="py-1.5 muted">Accent</td><td class="py-1.5 text-right"><code>text-orange-500</code></td></tr>
+          <tr><td class="py-1.5 muted">Eyebrow</td><td class="py-1.5 text-right"><code>font-mono text-xs uppercase</code></td></tr>
+          <tr><td class="py-1.5 muted">Button</td><td class="py-1.5 text-right"><code>variant=&quot;accent&quot;</code></td></tr>
+          <tr><td class="py-1.5 muted">Radius</td><td class="py-1.5 text-right"><code>rounded-md / rounded-full</code></td></tr>
+          <tr><td class="py-1.5 muted">Type</td><td class="py-1.5 text-right"><code>3xl &rarr; 4xl h1</code></td></tr>
+          <tr><td class="py-1.5 muted">Motion</td><td class="py-1.5 text-right"><code>150ms / ping / pulse</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel rounded-lg border p-6">
+      <p class="font-mono text-[11px] font-bold uppercase tracking-[.05em] text-[var(--c-brand-orange)]">Merging will touch</p>
+      <h2 class="mt-1.5 text-xl font-bold head">Planned file changes</h2>
+      <ul class="mt-4 space-y-2 text-sm muted">
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg muted">add_circle</span><code>src/pages/Offline.jsx</code> <span class="muted">(new)</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg muted">edit</span><code>src/App.jsx</code> <span class="muted">route + offline gate</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg muted">edit</span><code>index.html</code> <span class="muted">2 icon names</span></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg muted">edit</span><code>src/components/SocialIcons.jsx</code></li>
+        <li class="flex gap-2"><span class="material-symbols-outlined text-lg muted">add_circle</span><code>src/lib/useOnlineStatus.js</code> <span class="muted">(new)</span></li>
+      </ul>
+      <p class="mt-4 rounded-md border p-3 text-xs leading-relaxed" style="background: var(--c-surface-low); border-color: var(--c-hairline); color: var(--c-ink-muted)">
+        Icons to add to <code>icon_names</code>, alphabetically:
+        <code>refresh</code>, <code>sync</code>, <code>wifi_off</code>.
+        <code>check_circle</code> and <code>restart_alt</code> are already loaded.
+        <code>src/lib/iconFont.test.js</code> fails the build if either list drifts.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="panel mt-5 rounded-lg border p-6">
+    <p class="font-mono text-[11px] font-bold uppercase tracking-[.05em] text-[var(--c-brand-orange)]">One thing to decide</p>
+    <h2 class="mt-1.5 text-xl font-bold head">The support links are a network dependency</h2>
+    <p class="mt-3 max-w-3xl text-sm leading-relaxed muted">
+      <code>SocialIcons</code> filters its links against <code>useSiteContentQuery()</code>, which needs the network
+      we just lost &mdash; so on a real offline render it would come back <strong>empty</strong>, exactly when the
+      user most wants a way out. The mockup shows them populated. I&rsquo;d add a small static fallback in
+      <code>SocialIcons</code> (or render the icons locally on this screen) rather than ship a screen whose
+      only escape hatch disappears offline. Tell me which you prefer.
+    </p>
+  </div>
+</section>
+
+<script>
+  const shell = document.getElementById('frame-shell')
+  const frame = document.getElementById('frame')
+  const stage = document.getElementById('stage')
+
+  const viewport = { w: 390, h: 844 }
+  let state = 'offline'
+  let zoom = 'fit'   // 'fit' | number
+
+  function availWidth() {
+    const cs = getComputedStyle(stage)
+    return stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+  }
+
+  function layout() {
+    const scale = zoom === 'fit'
+      ? Math.min(1, availWidth() / viewport.w)
+      : zoom
+
+    frame.style.width = viewport.w + 'px'
+    frame.style.height = viewport.h + 'px'
+    shell.style.transform = 'scale(' + scale + ')'
+    shell.style.marginBottom = (viewport.h * (scale - 1)) + 'px'
+    shell.style.marginLeft = (viewport.w * (scale - 1) / 2) + 'px'
+    document.getElementById('zoom-label').textContent = zoom === 'fit' ? 'Fit' : Math.round(scale * 100) + '%'
+  }
+
+  function load() {
+    frame.src = 'screen.html?state=' + state + '&t=' + Date.now()
+  }
+
+  function select(group, id, attr, cb) {
+    document.querySelectorAll('#' + group + ' .tab').forEach((b) => {
+      b.setAttribute('aria-selected', String(b.dataset[attr] === String(id)))
+    })
+    cb()
+  }
+
+  document.querySelectorAll('#viewports .tab').forEach((b) => {
+    b.addEventListener('click', () => {
+      viewport.w = +b.dataset.w
+      viewport.h = +b.dataset.h
+      zoom = 'fit'
+      select('viewports', b.dataset.w, 'w', layout)
+    })
+  })
+
+  document.querySelectorAll('#states .tab').forEach((b) => {
+    b.addEventListener('click', () => {
+      state = b.dataset.state
+      select('states', state, 'state', load)
+    })
+  })
+
+  document.getElementById('zoom-in').addEventListener('click', () => {
+    const current = zoom === 'fit' ? Math.min(1, availWidth() / viewport.w) : zoom
+    zoom = Math.min(1, current + 0.1)
+    layout()
+  })
+  document.getElementById('zoom-out').addEventListener('click', () => {
+    const current = zoom === 'fit' ? Math.min(1, availWidth() / viewport.w) : zoom
+    zoom = Math.max(0.3, current - 0.1)
+    layout()
+  })
+
+  const themeBtn = document.getElementById('theme')
+  const saved = localStorage.getItem('offline-mockup-theme')
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  let dark = saved ? saved === 'dark' : prefersDark
+
+  function paintTheme() {
+    document.documentElement.classList.toggle('dark', dark)
+    document.getElementById('theme-icon').textContent = dark ? 'light_mode' : 'dark_mode'
+    document.getElementById('theme-label').textContent = dark ? 'Light mode' : 'Dark mode'
+    // The screen itself is a solid brand fill, so it does not change with theme.
+    // Only this showcase chrome swaps tokens, which is exactly what the dark preview shows.
+  }
+  themeBtn.addEventListener('click', () => {
+    dark = !dark
+    localStorage.setItem('offline-mockup-theme', dark ? 'dark' : 'light')
+    paintTheme()
+  })
+
+  window.addEventListener('resize', layout)
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'offline-frame' && zoom === 'fit') {
+      // grow the frame to the screen's natural height (min-h-svh means it fills whatever we give it)
+      frame.style.height = Math.max(e.data.height, viewport.h) + 'px'
+    }
+  })
+
+  paintTheme()
+  select('viewports', viewport.w, 'w', layout)
+  select('states', state, 'state', () => {})
+  layout()
+</script>
+
+</body>
+</html>
