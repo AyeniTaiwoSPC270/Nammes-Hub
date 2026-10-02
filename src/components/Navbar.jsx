@@ -31,8 +31,13 @@ const navItems = [
       { to: '/awards', label: 'Awards' },
     ],
   },
-  { to: '/quiz', label: 'Quizzes' },
-  { to: '/cbt', label: 'CBT practice' },
+  {
+    label: 'Practice',
+    children: [
+      { to: '/quiz', label: 'Quizzes and battles' },
+      { to: '/cbt', label: 'CBT practice' },
+    ],
+  },
   { to: '/forms', label: 'Forms' },
   { to: '/contact', label: 'Contact' },
 ]
