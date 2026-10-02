@@ -33,6 +33,7 @@ const navItems = [
   },
   {
     label: 'Practice',
+    dataTour: 'nav-practice',
     children: [
       { to: '/quiz', label: 'Quizzes and battles' },
       { to: '/cbt', label: 'CBT practice' },
