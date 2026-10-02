@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useSiteContentQuery } from '../data/siteContent'
 
 function WhatsAppIcon(props) {
@@ -55,11 +56,41 @@ const darkLinkClass =
 const lightLinkClass =
   'flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-ink-muted transition-colors hover:border-brand hover:text-brand'
 
+// The offline screen renders while the site content query cannot run, which would leave this row empty at
+// exactly the moment the user needs a way out. Keeping the last known links around means the row survives a
+// reload with no network for anyone who has opened the site before.
+const CACHE_KEY = 'nammes-social-links'
+
+function readCachedLinks() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY)) ?? {}
+  } catch {
+    return {}
+  }
+}
+
 export default function SocialIcons({ className = '', variant = 'dark' }) {
   const contentQuery = useSiteContentQuery()
   const content = contentQuery.data
+  // Read once on mount: if site content is already here it wins, and the cache only matters on a load
+  // that starts without a network. Re-reading on every refetch would be state churn for no gain.
+  const [cached] = useState(() => readCachedLinks())
+
+  useEffect(() => {
+    if (!content) return
+    const links = Object.fromEntries(
+      SOCIAL_PLATFORMS.map(({ key }) => [key, content[key]]).filter(([, url]) => url),
+    )
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(links))
+    } catch {
+      // A full or blocked storage is not worth reporting; the row just falls back to live content.
+    }
+  }, [content])
+
   const linkClass = variant === 'light' ? lightLinkClass : darkLinkClass
-  const links = SOCIAL_PLATFORMS.filter(({ key }) => content?.[key])
+  const urls = content ?? cached
+  const links = SOCIAL_PLATFORMS.filter(({ key }) => urls[key])
 
   if (links.length === 0) return null
 
@@ -68,7 +99,7 @@ export default function SocialIcons({ className = '', variant = 'dark' }) {
       {links.map(({ key, label, Icon }) => (
         <a
           key={key}
-          href={content[key]}
+          href={urls[key]}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}
