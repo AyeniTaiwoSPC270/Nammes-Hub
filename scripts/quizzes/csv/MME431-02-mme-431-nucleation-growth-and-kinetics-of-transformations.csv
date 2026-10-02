@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The Avrami equation describes,The fraction transformed versus time,Stress versus strain,Heat versus time,Mass versus volume,A,20,1000
+multiple,The driving force for nucleation is the,Increase in entropy,Increase in strain,Rise in pressure,Reduction in free energy of the new phase,D,20,1000
+multiple,Critical nucleus size is the size at which the nucleus,Disappears,Is liquid,Becomes stable and grows,Changes colour,C,20,1000
+multiple,Nucleation rate increases with undercooling up to a maximum because of the trade-off between,Stress and strain,Pressure and volume,Mass and energy,Driving force and atomic mobility,D,20,1000
+truefalse,Heterogeneous nucleation happens at defects like grain boundaries.,,,,,True,20,1000
+multiple,Spinodal decomposition differs from nucleation and growth because it,Needs a large barrier,Only occurs in gases,Is slower,Has no nucleation barrier,D,20,1000
+multiple,A coherent interface has,Low interfacial energy,Gases in it,No structure,High interfacial energy,A,20,1000
+multiple,An incoherent interface generally has,High interfacial energy,Zero stress,Low energy,No atoms,A,20,1000
+multiple,Ostwald ripening is the coarsening of,Nothing,Small at the expense of large,Liquids,Large precipitates at the expense of small ones,D,20,1000
+truefalse,Diffusional transformations take place by atomic movement over long distances.,,,,,True,20,1000
+multiple,Martensitic transformation is,Slow,Diffusion controlled,Reversible only in gases,Diffusionless,D,20,1000
+multiple,TTT curves are C-shaped because,Of mass,Nucleation and diffusion rates compete with temperature,Of colour changes,Of pressure,B,20,1000

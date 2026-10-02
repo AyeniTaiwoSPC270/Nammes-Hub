@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Thermal conductivity is highest for which class of material?,Foams,Ceramics like glass,Metals,Polymers,C,20,1000
+multiple,Thermal expansion arises from,Symmetry of the curve,Asymmetry of the interatomic potential energy curve,Electron spin,Nuclear mass,B,20,1000
+multiple,A semiconductor has electrical conductivity,Higher than metals,Lower than an insulator always,Between that of metals and insulators,Zero,C,20,1000
+multiple,An intrinsic semiconductor is one that,Is doped,Has no band gap,Is pure,Contains only metals,C,20,1000
+truefalse,Conductivity of metals generally increases as temperature rises.,,,,,False,20,1000
+multiple,N-type doping introduces,Holes,Neutrons,Protons,Extra electrons,D,20,1000
+multiple,Silicon is doped with boron to make it,Superconducting,N-type,P-type,Insulating,C,20,1000
+multiple,Ferromagnetic materials include,Glass,"Iron, cobalt and nickel",Gold and silver,Copper and zinc,B,20,1000
+multiple,The Curie temperature is where a ferromagnet,Becomes superconducting,Becomes brittle,Loses its ferromagnetism,Melts,C,20,1000
+multiple,"Superconductors have, below a critical temperature,",High resistivity,Zero electrical resistance,Low magnetism only,Infinite resistance,B,20,1000
+truefalse,A large band gap usually means the material is an insulator.,,,,,True,20,1000
+multiple,Dielectric materials are used in,Furnace electrodes,Capacitors,Wires,Springs,B,20,1000

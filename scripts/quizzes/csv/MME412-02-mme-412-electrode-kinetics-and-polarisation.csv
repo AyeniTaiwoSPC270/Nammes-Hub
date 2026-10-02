@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Polarisation is,Coating of metal,Application of stress,Heating,Deviation of electrode potential from its equilibrium value due to current flow,D,20,1000
+multiple,Activation polarisation arises from,Wetting,Ohmic drop,Mass transport only,Slow electrode reaction step,D,20,1000
+multiple,Concentration polarisation is caused by,Slow chemical reaction,Metal grain size,Limited diffusion of reactants to the electrode,Temperature only,C,20,1000
+multiple,The Tafel equation relates,Voltage to time,Stress to strain,Current to resistance,Overpotential to logarithm of current density,D,20,1000
+truefalse,At the corrosion potential the anodic and cathodic currents are equal.,,,,,True,20,1000
+multiple,Exchange current density measures,Rate of forward and reverse reactions at equilibrium,Corrosion rate in air,Crack speed,Hardness,A,20,1000
+multiple,Evans diagrams plot,Stress against strain,Temperature against time,Pressure against volume,Potential against log current,D,20,1000
+multiple,The intersection of the anodic and cathodic lines on an Evans diagram gives,Toughness,Corrosion potential and corrosion current,Yield strength,Melting point,B,20,1000
+multiple,Ohmic drop in an electrolyte increases with,Increasing conductivity,Zero current,Increasing resistivity,Decreasing distance only,C,20,1000
+multiple,A reference electrode commonly used is,Saturated calomel electrode,Graphite only,Platinum wire in air,Steel rod,A,20,1000
+truefalse,Stirring a solution can increase concentration polarisation.,,,,,False,20,1000
+multiple,The Nernst equation gives equilibrium potential as a function of,Grain size,Stress,Hardness,Ion activity,D,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The main iron ore minerals are haematite and,Galena,Cassiterite,Magnetite,Bauxite,C,20,1000
+multiple,Coke in the blast furnace serves as fuel and,Reductant and permeable support,Coolant,Flux,Slag former,A,20,1000
+multiple,Limestone is added to the blast furnace to,Increase carbon,Flux gangue and form slag,Reduce oxygen only,Make coke,B,20,1000
+multiple,Hot blast enters the blast furnace at the,Tuyeres,Bosh top,Top,Taphole,A,20,1000
+truefalse,The blast furnace is a counter-current reactor.,,,,,True,20,1000
+multiple,Product of the blast furnace is,Steel,Pure iron,Hot metal (pig iron),Slag only,C,20,1000
+multiple,Hot metal typically contains about what carbon content?,1 percent,10 percent,0.1 percent,4 to 4.5 percent,D,20,1000
+multiple,Sinter is produced by,Heating fine ore with coke to agglomerate,Melting,Crushing only,Cooling ore,A,20,1000
+multiple,Pellets are made by,Balling fine ore and hardening by heat,Leaching,Cutting ore,Melting,A,20,1000
+truefalse,Blast furnace gas is always vented and never reused.,,,,,False,20,1000
+multiple,The temperature in the raceway zone is about,100 C,500 C,50 C,2000 C,D,20,1000
+multiple,Burden distribution in the furnace affects,Nothing,Weather,Colour,Gas flow and efficiency,D,20,1000

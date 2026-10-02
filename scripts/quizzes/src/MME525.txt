@@ -1,0 +1,55 @@
+# MME 525: Introduction to Composite Materials
+Q|A composite consists of a matrix and a|Reinforcement|Catalyst|Solvent|Gas|a
+Q|The function of the matrix is to|Bind reinforcement and transfer load|Carry all load alone|Be removed|Add colour|a
+Q|Composites are classified by reinforcement as particulate, fibre and|Structural (laminate)|Gaseous|Liquid|Ionic|a
+Q|Which of these is a natural composite?|Wood|Steel|Glass|Copper|a
+T|Composite properties can be tailored by choosing fibre orientation.|true
+Q|Specific strength is|Strength divided by density|Strength times density|Stress times strain|Modulus divided by temperature|a
+Q|A common reason to use composites in aircraft is|High strength to weight ratio|Low cost always|Conductivity|Magnetism|a
+Q|Reinforcement volume fraction is the fraction of|Volume occupied by fibres|Mass of matrix|Cost of resin|Number of layers|a
+Q|Reinforced concrete is a composite of concrete and|Steel bars|Glass|Plastic film|Wood|a
+T|Metal matrix composites can be used at lower temperatures than polymer matrix composites.|false
+Q|Sandwich panels consist of|Stiff skins separated by a light core|Only a core|Only a skin|Only fibres|a
+Q|Cermets combine|Ceramic and metal|Polymer and glass|Wood and steel|Rubber and ceramic|a
+
+# MME 525: Fibres and Matrix Materials
+Q|Glass fibres are cheap and widely used. The common type for general use is|E-glass|Z-glass|A-metal|R-carbon|a
+Q|Carbon fibres are made from|Polyacrylonitrile (PAN) precursor|Sand|Clay|Copper|a
+Q|Aramid fibres such as Kevlar are known for|High tensile strength and impact resistance|High density|Electrical conductivity|Transparency|a
+Q|Common thermoset matrices include|Epoxy and polyester|Polyethylene and nylon|Steel|Aluminium|a
+T|Thermoplastic matrices can be reshaped by reheating.|true
+Q|Metal matrix materials commonly include|Aluminium, magnesium and titanium|Gold|Uranium|Mercury|a
+Q|Ceramic matrix composites are used when|High temperature and oxidation resistance are required|Flexibility is needed|Low weight at low cost only|Transparency is required|a
+Q|Silane coupling agents are used on glass fibres to|Improve bonding with matrix|Colour them|Make them softer|Make them conductive|a
+Q|Fibre aspect ratio is|Length to diameter|Diameter to length|Weight to length|Volume to mass|a
+Q|Natural fibres used in composites include|Jute, sisal and kenaf|Steel|Glass|Silicon carbide|a
+T|The matrix, not the fibres, carries most of the load in a fibre reinforced polymer.|false
+Q|A weakness of polymer matrices compared with metals is|Low temperature capability|High density|High conductivity|Poor corrosion|a
+
+# MME 525: Mechanics of Composites
+Q|Rule of mixtures for longitudinal modulus of a continuous aligned fibre composite is|Ec = Vf Ef + Vm Em|Ec = Ef Em|Ec = Ef / Em|Ec = Vf / Vm|a
+Q|Transverse modulus (iso-stress model) is given by|1/Ec = Vf/Ef + Vm/Em|Ec = Vf Ef|Ec = Ef + Em|Ec = Ef x Em|a
+Q|In the iso-strain model, the fibre and matrix in a longitudinal loading experience|Equal strain|Equal stress|Zero strain|Random stress|a
+Q|Critical fibre length is the minimum length for|Fibre to reach its fracture strength under load|Melting|Colour change|Matrix to fail|a
+T|Short fibre composites are generally less efficient than continuous fibre composites.|true
+Q|A laminate is made of|Several layers (plies) bonded together|One thick block|Powder|Gas|a
+Q|A unidirectional lamina is strongest|Along the fibre direction|Perpendicular to fibres|At 45 degrees|Equally in all directions|a
+Q|A quasi-isotropic laminate uses plies at|0, 45, -45 and 90 degrees|0 degrees only|90 degrees only|Random|a
+Q|Delamination is|Separation of layers in a laminate|Melting|Shrinkage|Corrosion|a
+T|Fibre and matrix thermal expansion mismatch can induce residual stress.|true
+Q|Halpin-Tsai equations are used to estimate|Composite moduli|Hardness|Density only|Melting point|a
+Q|Poisson ratio effects in laminates can cause|Interlaminar stresses at free edges|Nothing|Melting|Colour change|a
+
+# MME 525: Fabrication of Composites
+Q|Hand lay-up involves|Manually placing fibre layers and applying resin|Automated injection|Casting metal|Sintering|a
+Q|Filament winding is ideal for making|Pipes and pressure vessels|Flat plates only|Small gears|Springs|a
+Q|Pultrusion produces|Continuous constant cross-section profiles|Sheets by blowing|Balls|Powders|a
+Q|Resin transfer moulding (RTM) injects resin into|A closed mould containing dry fibre preform|Open air|Powder bed|Furnace|a
+T|Autoclave curing applies heat and pressure to produce high quality aerospace laminates.|true
+Q|Prepreg is|Fibre pre-impregnated with partially cured resin|Dry fibre|Liquid resin only|Bare metal|a
+Q|Vacuum bagging is used to|Remove air and consolidate the laminate|Add air|Melt the fibres|Cool the part|a
+Q|Stir casting is used for|Metal matrix composites|Polymer composites|Wood|Glass|a
+Q|Defects in composites include|Voids, dry spots and fibre misalignment|Only colour|Nothing|Only cracks in steel|a
+T|Curing of epoxy is a strongly endothermic reaction.|false
+Q|Testing of composites includes|Tensile, flexural and interlaminar shear tests|Only hardness on metals|Colour matching|Sound tests|a
+Q|Compression moulding of sheet moulding compound (SMC) is used for|Automotive body panels|Wires|Screws|Bearings|a

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Alumina is extracted from bauxite by the,Bayer process,Pidgeon process,Kroll process,Hall process,A,20,1000
+multiple,In the Bayer process bauxite is digested with,Sulfuric acid,Hot sodium hydroxide,Water only,Cyanide,B,20,1000
+multiple,The by-product of the Bayer process is,Red mud,Steel slag,Carbon,Blue mud,A,20,1000
+multiple,The Hall-Heroult cell anodes are made of,Steel,Copper,Carbon,Platinum,C,20,1000
+truefalse,Aluminium production by electrolysis uses a large amount of electrical energy.,,,,,True,20,1000
+multiple,Cryolite is used in aluminium electrolysis to,Act as anode,Raise the melting point,Lower the melting point of alumina electrolyte,Stop current,C,20,1000
+multiple,Approximate operating temperature of an aluminium electrolysis cell is,25 C,200 C,2500 C,960 C,D,20,1000
+multiple,Magnesium is commonly produced by,Roasting bauxite,Smelting in blast furnace,Electrolysis of molten magnesium chloride or Pidgeon process,Leaching gold,C,20,1000
+multiple,Titanium is produced commercially by the,Bayer process,Mond process,Kroll process,Hall process,C,20,1000
+multiple,In the Kroll process titanium tetrachloride is reduced by,Hydrogen,Magnesium,Copper,Carbon,B,20,1000
+truefalse,Recycling aluminium needs only about 5 percent of the energy of primary production.,,,,,True,20,1000
+multiple,Anode effect in aluminium cells is,A sudden voltage rise due to depletion of alumina,Cooling,Colour change,Increase in current efficiency,A,20,1000

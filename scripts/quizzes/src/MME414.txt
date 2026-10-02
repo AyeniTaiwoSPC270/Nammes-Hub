@@ -1,0 +1,69 @@
+# MME 414: Fluid Flow Fundamentals
+Q|Viscosity is a measure of a fluid's|Resistance to flow|Density|Temperature|Surface tension|a
+Q|Newton's law of viscosity relates shear stress to|Velocity gradient|Pressure only|Temperature only|Density|a
+Q|The Reynolds number is the ratio of|Inertial forces to viscous forces|Viscous to gravity|Pressure to density|Heat to mass|a
+Q|Flow in a pipe is generally laminar when Reynolds number is below about|2100|10|100000|0.1|a
+T|Turbulent flow has higher mixing than laminar flow.|true
+Q|The continuity equation expresses conservation of|Mass|Energy|Momentum only|Charge|a
+Q|Bernoulli's equation relates pressure, velocity and|Elevation|Viscosity|Temperature|Composition|a
+Q|Kinematic viscosity equals dynamic viscosity divided by|Density|Pressure|Velocity|Area|a
+Q|In laminar pipe flow the velocity profile is|Parabolic|Flat|Linear|Random|a
+Q|The Hagen-Poiseuille equation gives pressure drop for|Laminar flow in a pipe|Turbulent flow|Flow in a furnace only|Compressible flow|a
+T|Liquid metals are typically much more viscous than slags.|false
+Q|The unit of dynamic viscosity in SI is|Pa s|m^2/s|N|kg/m^3|a
+
+# MME 414: Heat Transfer by Conduction
+Q|Fourier's law relates heat flux to|Temperature gradient|Velocity|Pressure|Concentration|a
+Q|Thermal conductivity has units of|W/(m K)|W/m^2|J/kg|K/W|a
+Q|For steady one-dimensional conduction through a plane wall, the temperature profile is|Linear|Parabolic|Exponential|Constant|a
+Q|Thermal resistance of a plane wall of thickness L is|L / (k A)|k A / L|L k A|A / L|a
+T|Thermal diffusivity is the ratio of conductivity to density times heat capacity.|true
+Q|In a composite wall, thermal resistances in series|Add|Multiply|Subtract|Cancel|a
+Q|Which material has the highest thermal conductivity?|Copper|Fire brick|Glass|Air|a
+Q|The Biot number compares|Internal conduction resistance to surface convection resistance|Buoyancy to viscous forces|Mass to heat transfer|Stress to strain|a
+Q|Transient heat conduction in a body with small Biot number can be treated as|Lumped system with uniform temperature|Steady state|Infinite slab|No heat transfer|a
+Q|The Fourier number is a dimensionless|Time|Length|Temperature|Force|a
+T|Insulation increases conduction by having low thermal conductivity.|false
+Q|Heat flow through a cylindrical wall varies with radius as|ln(r2/r1)|r2 - r1|r1 r2|r2 / r1|a
+
+# MME 414: Convection and Radiation
+Q|Natural convection is driven by|Density differences|Pumps|Fans|Compressors|a
+Q|The Nusselt number is the ratio of|Convective to conductive heat transfer|Mass to heat transfer|Inertia to viscosity|Gravity to pressure|a
+Q|Newton's law of cooling gives heat flux as|h times temperature difference|k times gradient|Emissivity times T|sigma T|a
+Q|The Prandtl number compares|Momentum diffusivity to thermal diffusivity|Inertia to viscosity|Flow to conduction|Mass to volume|a
+T|Radiative heat transfer needs a medium to travel through.|false
+Q|Stefan-Boltzmann law says radiated power is proportional to|T^4|T|T^2|T^0.5|a
+Q|A black body has emissivity|1|0|0.5|2|a
+Q|The view factor between two surfaces describes|The fraction of radiation leaving one that strikes the other|Conduction|Color|Stress|a
+Q|Forced convection heat transfer coefficient generally increases with|Increasing flow velocity|Decreasing velocity|Decreasing density|Nothing|a
+Q|The Grashof number is associated with|Natural convection|Forced convection only|Radiation|Conduction|a
+T|Emissivity of a real surface is always less than or equal to 1.|true
+Q|Furnaces at high temperature lose most heat by|Radiation|Conduction only|Sound|Electrolysis|a
+
+# MME 414: Mass Transfer and Diffusion
+Q|Fick's first law relates diffusion flux to|Concentration gradient|Pressure gradient|Temperature only|Time only|a
+Q|Fick's second law describes|Non-steady state diffusion|Steady flow|Viscosity|Radiation|a
+Q|The unit of diffusivity is|m^2/s|m/s|kg/m^3|mol|a
+Q|Diffusivity in gases is typically|Higher than in liquids|Lower than in solids|The same as in solids|Zero|a
+T|Diffusivity in liquids is lower than in solids.|false
+Q|The Sherwood number is the mass-transfer analogue of the|Nusselt number|Reynolds number|Prandtl number|Biot number|a
+Q|The Schmidt number compares|Momentum diffusivity to mass diffusivity|Heat to mass|Inertia to gravity|Pressure to velocity|a
+Q|Convective mass transfer coefficient has units of|m/s|m^2/s|kg|mol|a
+Q|The boundary layer model for mass transfer assumes resistance is concentrated in|A thin stagnant layer near the surface|Bulk|Wall|Vapour|a
+Q|Error function solutions are used for diffusion into a|Semi-infinite solid|Finite tube|Sphere only|Gas|a
+T|Mass transfer rate in a liquid metal can limit some refining reactions.|true
+Q|Stirring a melt generally|Increases mass transfer rate|Decreases mass transfer|Has no effect|Stops reactions|a
+
+# MME 414: Transport in Metallurgical Processes
+Q|In steelmaking, bubble stirring of ladles is used to|Improve mixing and homogeneity|Lower temperature|Cool solids|Stop slag formation|a
+Q|Residence time distribution studies are used to characterise|Flow behaviour in reactors|Hardness|Crystal structure|Tensile strength|a
+Q|Stokes' law gives the terminal velocity of a small particle in a fluid and is valid for|Low Reynolds number|High Reynolds number|Turbulent flow only|Vacuum|a
+Q|Inclusion flotation in steel depends on inclusion size and the melt's|Density difference and viscosity|Color|Hardness|Sound speed|a
+T|Convection in a mould affects solidification structure.|true
+Q|Dimensionless groups are used to|Scale up laboratory models to plants|Measure hardness|Count atoms|Determine colour|a
+Q|Water modelling of ladles is based on matching|Froude number|Mach number|Poisson ratio|Curie point|a
+Q|Heat loss from a ladle can be reduced by|Insulating lining and lid|Stirring more|Opening doors|Removing slag|a
+Q|Electromagnetic stirring uses|Magnetic fields to move conductive melts|Gas bubbles|Sound waves|Gravity|a
+Q|The boundary layer thickness decreases with|Increasing velocity|Decreasing velocity|Increasing viscosity|Decreasing density of fluid|a
+T|Natural convection can cause temperature stratification in a large vessel.|true
+Q|The dimensionless group that compares buoyancy to viscous forces is|Grashof number|Reynolds number|Schmidt number|Weber number|a

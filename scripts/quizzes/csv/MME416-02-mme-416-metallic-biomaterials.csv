@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Which metal is widely used for dental and orthopaedic implants for its biocompatibility?,Titanium,Lead,Cadmium,Mercury,A,20,1000
+multiple,Ti-6Al-4V is an alloy of titanium with,Copper and zinc,Nickel and chromium,Aluminium and vanadium,Iron and carbon,C,20,1000
+multiple,316L stainless steel is used for implants because of,Magnetic properties,Corrosion resistance and low cost,Transparency,High density,B,20,1000
+multiple,Cobalt-chromium alloys are chosen for joint replacement because of,Low density,Elastic modulus equal to bone,Wear and corrosion resistance,Biodegradability,C,20,1000
+truefalse,Titanium forms a stable passive oxide layer that improves biocompatibility.,,,,,True,20,1000
+multiple,Nitinol is a shape memory alloy of,Niobium and titanium,Nickel and titanium,Nickel and tin,Nitrogen and iron,B,20,1000
+multiple,Nickel release from alloys is a concern due to,Allergic reactions,Density,Colour change,Conductivity,A,20,1000
+multiple,Fretting and wear at implant interfaces can release,Light,Metal ions and debris,Oxygen,Water,B,20,1000
+multiple,Magnesium alloys are being studied as,Electrical conductors in body,Insulators,Biodegradable implants,Permanent hip stems,C,20,1000
+truefalse,Tantalum is avoided as a biomaterial because it corrodes badly in body fluids.,,,,,False,20,1000
+multiple,"Compared with stainless steel, titanium alloys have",Higher density,Higher modulus,Lower modulus closer to bone,Lower strength to weight,C,20,1000
+multiple,Crevice corrosion is a concern in implants at,Smooth surfaces only,Modular junctions and screw-plate interfaces,Dry areas,Air pockets only,B,20,1000

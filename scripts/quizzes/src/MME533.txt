@@ -1,0 +1,69 @@
+# MME 533: Ironmaking Raw Materials and the Blast Furnace
+Q|The main iron ore minerals are haematite and|Magnetite|Bauxite|Galena|Cassiterite|a
+Q|Coke in the blast furnace serves as fuel and|Reductant and permeable support|Flux|Slag former|Coolant|a
+Q|Limestone is added to the blast furnace to|Flux gangue and form slag|Increase carbon|Reduce oxygen only|Make coke|a
+Q|Hot blast enters the blast furnace at the|Tuyeres|Top|Taphole|Bosh top|a
+T|The blast furnace is a counter-current reactor.|true
+Q|Product of the blast furnace is|Hot metal (pig iron)|Steel|Pure iron|Slag only|a
+Q|Hot metal typically contains about what carbon content?|4 to 4.5 percent|0.1 percent|1 percent|10 percent|a
+Q|Sinter is produced by|Heating fine ore with coke to agglomerate|Cooling ore|Crushing only|Melting|a
+Q|Pellets are made by|Balling fine ore and hardening by heat|Cutting ore|Leaching|Melting|a
+T|Blast furnace gas is always vented and never reused.|false
+Q|The temperature in the raceway zone is about|2000 C|100 C|500 C|50 C|a
+Q|Burden distribution in the furnace affects|Gas flow and efficiency|Colour|Weather|Nothing|a
+
+# MME 533: Blast Furnace Reactions and Slag
+Q|Indirect reduction occurs mainly in the|Upper stack region by CO gas|Hearth|Raceway|Tuyere|a
+Q|Direct reduction involves reduction by|Solid carbon|CO gas|Hydrogen only|Nitrogen|a
+Q|The Boudouard reaction in the furnace generates|CO from CO2 and carbon|Water|Oxygen|Hydrogen|a
+Q|The Rist diagram is used to represent|Blast furnace operating line and mass and heat balance|Stress-strain|Phase diagram|Hardness|a
+T|Blast furnace slag is mainly made of CaO, SiO2, Al2O3 and MgO.|true
+Q|Slag basicity in a blast furnace is controlled to|Remove sulfur|Add silicon only|Add phosphorus|Stop flow|a
+Q|Sulphur in hot metal is removed mainly by|Basic slag|Acidic slag|Air|Water|a
+Q|Silicon in hot metal is mostly formed by reduction of|SiO2 in the lower furnace|Fe2O3|CaO|CO|a
+Q|Phosphorus in the ore largely goes to|The hot metal|The slag|The gas|Nowhere|a
+T|Granulated blast furnace slag cannot be used in cement production.|false
+Q|Coke rate means|Coke consumed per tonne of hot metal|Coke price|Coke colour|Coke size|a
+Q|Injection of pulverised coal through tuyeres is done to|Reduce coke consumption|Increase coke consumption|Cool furnace walls|Clean slag|a
+
+# MME 533: Steelmaking Processes
+Q|Basic oxygen furnace (BOF) steelmaking blows oxygen onto|Hot metal and scrap|Cold iron|Coke|Slag only|a
+Q|The main purpose of steelmaking is to|Reduce carbon and remove impurities like P, S and Si|Add carbon|Melt scrap only|Cast only|a
+Q|Electric arc furnace (EAF) primarily melts|Scrap and direct reduced iron|Iron ore|Coke|Limestone only|a
+Q|Decarburisation in BOF occurs as|C + O to CO|C + N to CN|C + H to CH|C + Fe to Fe3C|a
+T|BOF blowing takes only about 15 to 20 minutes per heat.|true
+Q|Dephosphorisation is favoured by|Basic, oxidising slag at lower temperature|Acidic slag|High temperature|Reducing conditions|a
+Q|Bessemer converter blew|Air through molten pig iron|Oxygen|Hydrogen|Nitrogen|a
+Q|Open hearth furnaces have been largely replaced by|BOF and EAF|Cupola|Crucible|Bloomery|a
+Q|Sponge iron is produced by|Direct reduction of iron ore below melting point|Melting ore|Casting|Forging|a
+T|EAF steelmaking has higher carbon dioxide emissions than BF-BOF when using scrap.|false
+Q|Lime is charged into the BOF to|Form a basic slag|Increase carbon|Cool the metal|Add silicon|a
+Q|Tapping is|Pouring molten steel from the furnace|Charging scrap|Blowing oxygen|Cleaning slag|a
+
+# MME 533: Secondary Steelmaking and Casting
+Q|Secondary metallurgy refines steel after|Primary steelmaking|Rolling|Casting|Forging|a
+Q|Ladle furnace is used for|Reheating and alloying steel|Melting ore|Smelting|Sintering|a
+Q|Vacuum degassing removes|Hydrogen and nitrogen|Carbon only|Iron|Silicon|a
+Q|Deoxidation of steel is done by adding|Aluminium or silicon|Carbon|Oxygen|Sulfur|a
+T|Killed steel is fully deoxidised before casting.|true
+Q|Argon stirring in a ladle is used to|Homogenise temperature and composition and float inclusions|Cool steel|Add oxygen|Add carbon|a
+Q|Continuous casting produces|Slabs, blooms and billets|Powder|Ingots only|Wires|a
+Q|The mould in continuous casting is usually made of|Water-cooled copper|Sand|Plastic|Wood|a
+Q|Breakouts in continuous casting are|Liquid steel escaping through a thin shell|Cooling events|Good practice|Reheating|a
+Q|Electromagnetic stirring in casting helps to|Improve internal quality|Stop flow|Colour|Melt mould|a
+T|Sulphur in steel improves hot workability because it prevents hot shortness.|false
+Q|Inclusion shape control is done with|Calcium treatment|Water|Sugar|Nothing|a
+
+# MME 533: Steel Products and Alloy Steels
+Q|Stainless steel contains at least what percent chromium?|10.5|1|50|90|a
+Q|Low alloy high strength steels (HSLA) use small additions of|Nb, V and Ti|Cu only|Gold|Lead|a
+Q|Tool steels are characterised by|High hardness and wear resistance|Low strength|Softness|Ductility|a
+Q|Adding nickel to steel generally improves|Toughness|Softness|Brittleness|Melting point|a
+T|Manganese helps bind sulphur as MnS and reduces hot shortness.|true
+Q|Weathering steel develops|A protective rust layer|No oxide|Blue film|Coating of zinc|a
+Q|Free-machining steels contain added|Sulphur or lead|Carbon|Zinc|Aluminium|a
+Q|Hot rolling is done|Above the recrystallization temperature|At room temperature|Below zero|Under water|a
+Q|Cold rolled steel sheet has|Better surface finish and tighter tolerances|Rougher surface|Lower strength|No yield|a
+Q|Galvanised steel is coated with|Zinc|Tin|Lead|Copper|a
+T|Nigeria has steel mills, such as Ajaokuta, which were intended to produce iron and steel.|true
+Q|Rebar used in construction is made from|Hot rolled low or medium carbon steel|Stainless steel only|Cast iron|Aluminium|a

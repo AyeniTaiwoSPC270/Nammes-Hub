@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Age hardening of Al-Cu alloy involves formation of,Cementite,Martensite,GP zones and theta prime precipitates,Graphite,C,20,1000
+multiple,Which aluminium series is precipitation hardenable with copper as the main alloying element?,3xxx,1xxx,2xxx,5xxx,C,20,1000
+multiple,Brass is a,Al-Mg alloy,Fe-C alloy,Cu-Sn alloy,Cu-Zn alloy,D,20,1000
+multiple,Beta brass has which structure at high temperature?,BCC ordered,FCC,HCP,Diamond,A,20,1000
+truefalse,Titanium has an allotropic transformation from HCP to BCC on heating.,,,,,True,20,1000
+multiple,The alpha-beta titanium alloy Ti-6Al-4V is widely used in,Electrical wiring,Cutlery,Aerospace,Paper,C,20,1000
+multiple,Nickel-based superalloys gain strength from,Graphite,Gamma prime precipitates,Martensite,Pearlite,B,20,1000
+multiple,Magnesium alloys are known for their,Low density,Brittleness only,High melting point,High density,A,20,1000
+multiple,Solution treatment of aluminium alloys is followed by,Normalising,Melting,Quenching and ageing,Annealing only,C,20,1000
+multiple,Cast aluminium-silicon alloys are modified with sodium or strontium to,Refine the eutectic silicon,Increase porosity,Raise melting point,Add colour,A,20,1000
+truefalse,Bronze generally shows better corrosion resistance in seawater than plain carbon steel.,,,,,True,20,1000
+multiple,Invar is an alloy notable for,Very low thermal expansion,High conductivity,Low density,High magnetism,A,20,1000

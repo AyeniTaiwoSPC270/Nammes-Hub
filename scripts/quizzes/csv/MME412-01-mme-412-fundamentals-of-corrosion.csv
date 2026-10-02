@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Corrosion is best defined as,Mechanical wear only,Deterioration of a material by reaction with its environment,Melting of metal,Fatigue failure,B,20,1000
+multiple,"For corrosion to occur in an electrochemical cell, which four elements are needed?","Anode, cathode, electrolyte and electrical connection","Anode, catalyst, gas, heat",Anode only,"Cathode, filter, oil, wire",A,20,1000
+multiple,At the anode in a corrosion cell,Nothing happens,Reduction occurs,Oxidation occurs and metal dissolves,Hydrogen is stored,C,20,1000
+multiple,Common cathodic reaction in neutral aerated water is,O2 + 2H2O + 4e- to 4OH-,2Cl- to Cl2,Fe to Fe2+,H2 to 2H+,A,20,1000
+truefalse,Corrosion of metals is generally an electrochemical process.,,,,,True,20,1000
+multiple,Rust is chiefly,Iron carbide,Iron oxides and hydroxides,Iron nitride,Pure iron,B,20,1000
+multiple,The unit mpy stands for,Moles per year,Millimetres per year,Metres per year,Mils per year,D,20,1000
+multiple,Corrosion rate from weight loss is calculated using,Stress,Hardness only,"Weight loss, area, time and density",Voltage only,C,20,1000
+multiple,Uniform corrosion is,Only at welds,Localised pits,Even attack over the whole surface,Cracking,C,20,1000
+truefalse,Increasing temperature usually decreases corrosion rate.,,,,,False,20,1000
+multiple,The standard unit of corrosion current density is,V,Ohm,J/mol,A/m^2,D,20,1000
+multiple,Faraday's law is used in corrosion to convert,Force to work,Hardness to strength,Current density to mass loss rate,Stress to strain,C,20,1000

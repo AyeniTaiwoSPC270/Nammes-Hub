@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Basic oxygen furnace (BOF) steelmaking blows oxygen onto,Hot metal and scrap,Cold iron,Slag only,Coke,A,20,1000
+multiple,The main purpose of steelmaking is to,Add carbon,Melt scrap only,Cast only,"Reduce carbon and remove impurities like P, S and Si",D,20,1000
+multiple,Electric arc furnace (EAF) primarily melts,Limestone only,Iron ore,Scrap and direct reduced iron,Coke,C,20,1000
+multiple,Decarburisation in BOF occurs as,C + Fe to Fe3C,C + N to CN,C + H to CH,C + O to CO,D,20,1000
+truefalse,BOF blowing takes only about 15 to 20 minutes per heat.,,,,,True,20,1000
+multiple,Dephosphorisation is favoured by,Reducing conditions,"Basic, oxidising slag at lower temperature",High temperature,Acidic slag,B,20,1000
+multiple,Bessemer converter blew,Air through molten pig iron,Nitrogen,Hydrogen,Oxygen,A,20,1000
+multiple,Open hearth furnaces have been largely replaced by,Bloomery,Crucible,BOF and EAF,Cupola,C,20,1000
+multiple,Sponge iron is produced by,Melting ore,Forging,Casting,Direct reduction of iron ore below melting point,D,20,1000
+truefalse,EAF steelmaking has higher carbon dioxide emissions than BF-BOF when using scrap.,,,,,False,20,1000
+multiple,Lime is charged into the BOF to,Form a basic slag,Cool the metal,Increase carbon,Add silicon,A,20,1000
+multiple,Tapping is,Charging scrap,Cleaning slag,Pouring molten steel from the furnace,Blowing oxygen,C,20,1000

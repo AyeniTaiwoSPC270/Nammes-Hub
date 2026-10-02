@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"Fatigue life has three stages: crack initiation, propagation and",Final fracture,Annealing,Yielding,Hardening,A,20,1000
+multiple,The Basquin equation describes,Creep,Hardness,Low cycle fatigue,High cycle fatigue S-N behaviour,D,20,1000
+multiple,Coffin-Manson relates plastic strain range to,Conductivity,Corrosion,Cycles to failure in low cycle fatigue,Hardness,C,20,1000
+multiple,Mean stress effects on fatigue are accounted for using,Hooke's law,Ohm's law,Goodman or Gerber relations,Fick's law,C,20,1000
+truefalse,Miner's rule sums fractional damage from different load levels.,,,,,True,20,1000
+multiple,Steady state (secondary) creep rate follows,Constant stress independent,Power-law dependence on stress and Arrhenius on temperature,No law,Linear with time,B,20,1000
+multiple,Dislocation creep dominates at,Low stress,Low temperature,High stress and high temperature,Vacuum,C,20,1000
+multiple,Diffusional creep (Nabarro-Herring) involves,Twinning,Phase change,Vacancy flow through grains,Dislocation glide,C,20,1000
+multiple,Coble creep involves diffusion along,Free surface only,Dislocation cores,Nothing,Grain boundaries,D,20,1000
+truefalse,Finer grain size improves creep resistance at high temperature in metals.,,,,,False,20,1000
+multiple,Stress relaxation is,Increase in stress,Decrease in stress at constant strain over time,Crack growth,Constant stress,B,20,1000
+multiple,Deformation mechanism maps show,Material density,Dominant mechanism versus stress and temperature,Phase boundaries,Cost,B,20,1000

@@ -1,0 +1,55 @@
+# MME 526: Failure Analysis Fundamentals
+Q|The first step in a failure investigation is usually|Collecting background information and preserving evidence|Cleaning the fracture surface aggressively|Discarding parts|Reassembling the machine|a
+Q|Fractography is the study of|Fracture surfaces|Grain size only|Corrosion rates|Hardness|a
+Q|Which tool is used to examine fracture surfaces at high magnification?|Scanning electron microscope|Ruler|Vernier caliper|Thermometer|a
+Q|Root cause analysis aims to identify|The underlying reason for failure|Who to blame|Cost|Colour|a
+T|A fracture surface should be protected from damage and contamination.|true
+Q|Chevron marks on a fracture surface point back to|The fracture origin|The end of the crack|Nothing|The grain boundary|a
+Q|Beach marks are typical of|Fatigue fractures|Ductile overload|Brittle cleavage|Creep rupture|a
+Q|Common categories of failure causes are design, material, manufacturing and|Service conditions|Weather forecast|Colour|Price|a
+Q|Non-destructive testing of a failed component helps to|Find additional cracks without further damage|Destroy it|Melt it|Nothing|a
+T|Failure analysis findings should lead to recommendations to prevent recurrence.|true
+Q|Chemical analysis in failure investigations checks|Whether material matches the specification|Only the colour|Surface finish|Weight|a
+Q|Macroscopic examination is done|Before destructive sectioning|After melting|After burning|Last|a
+
+# MME 526: Fracture, Fatigue and Creep Failures
+Q|Ductile overload fracture shows|Necking and dimpled surface|Flat shiny facets|Beach marks|Nothing|a
+Q|Brittle fracture surfaces typically show|Flat cleavage facets with little deformation|Large necking|Dimples|Fibres|a
+Q|Fatigue crack initiation usually starts at|Stress concentrations on the surface|The centre|Nothing|The load|a
+Q|Stress concentration factor Kt increases with|Sharper notches|Smoother surfaces|Larger radii|Lower loads|a
+T|Fatigue failures occur at stresses below the yield strength.|true
+Q|Creep rupture typically shows|Voids at grain boundaries and intergranular cracking|Cleavage|Beach marks|Dimples only|a
+Q|Stress intensity factor K is associated with|Fracture mechanics|Corrosion only|Hardness|Colour|a
+Q|Fracture toughness KIc is|Critical stress intensity for unstable crack growth|Yield strength|Hardness|Melting point|a
+Q|Low temperature can cause steel to fail by|Brittle fracture|Melting|Creep|Flow|a
+Q|Charpy tests are used to determine|The ductile-to-brittle transition|Hardness|Corrosion|Tensile strength|a
+T|Striations seen at high magnification are the typical sign of ductile overload.|false
+Q|Fatigue life can be improved by|Reducing stress concentrations and introducing compressive residual stresses|Adding notches|Making it rougher|Rapid loading|a
+
+# MME 526: Corrosion and Wear Failures
+Q|Stress corrosion cracking requires a combination of tensile stress, susceptible alloy and|A specific corrosive environment|Vacuum|Low temperature only|Zero stress|a
+Q|Pitting can lead to failure by|Acting as stress raisers that initiate cracks|Making metals tougher|Stopping corrosion|Nothing|a
+Q|Abrasive wear is caused by|Hard particles or asperities cutting the surface|Chemical dissolution|Electrical current|Heat only|a
+Q|Adhesive wear occurs by|Material transfer between sliding surfaces|Particles in fluid|Corrosion|Fatigue|a
+T|Erosion is wear caused by impacting particles or liquids.|true
+Q|Galling is a severe form of|Adhesive wear|Corrosion|Creep|Fatigue|a
+Q|Lubrication reduces wear by|Separating surfaces with a film|Raising friction|Adding load|Heating|a
+Q|Hydrogen embrittlement is more of a risk for|High strength steels|Soft copper|Plastics|Aluminium foil|a
+Q|Fretting is caused by|Small amplitude oscillatory motion between contacting surfaces|Continuous rotation|Fluid flow|Heating|a
+Q|Surface hardening to reduce wear includes|Carburising and nitriding|Annealing|Softening|Polishing only|a
+T|Cavitation can cause erosion damage in pumps and propellers.|true
+Q|Galvanic corrosion is avoided by|Electrically isolating dissimilar metals|Using more dissimilar metals|Adding salt|Adding heat|a
+
+# MME 526: Materials Selection
+Q|The first step in selecting materials is to|Define the requirements and constraints of the application|Buy the cheapest material|Choose by colour|Pick randomly|a
+Q|An Ashby chart plots|One property against another for material classes|Temperature against time|Cost against colour|Force against area|a
+Q|A performance index is a combination of properties that|Measures how well a material performs for a given function|Gives price|Gives colour|Gives shape|a
+Q|For a light stiff beam, the performance index to maximise is|E^(1/2) / density|E x density|Density / E|Yield strength / E|a
+T|Material selection should consider cost, availability and manufacturability as well as properties.|true
+Q|For a tie rod minimising mass with a given strength, maximise|Yield strength / density|Density|Modulus|Conductivity|a
+Q|Ranking material candidates is done using|Weighted property methods or screening|Guessing|Lottery|Colour|a
+Q|Life-cycle assessment considers|Environmental impact from production to disposal|Only price|Only weight|Only colour|a
+Q|A material for a hot turbine blade should have high|Creep resistance and oxidation resistance|Low melting point|Low strength|Low cost only|a
+Q|Material indices help when objectives are|Clearly defined, like minimum mass or cost|Random|Unknown|Zero|a
+T|Selection of a process affects the final properties of a component.|true
+Q|Corrosion resistance is especially important for|Marine and chemical plant equipment|Indoor furniture|Paper|Books|a

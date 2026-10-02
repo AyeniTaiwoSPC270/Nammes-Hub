@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Mineral processing aims to,Separate valuable minerals from gangue,Weld metals,Melt ore,Make steel,A,20,1000
+multiple,Liberation in mineral processing means,Dissolving them,Freeing valuable mineral particles from gangue,Coating them,Melting them,B,20,1000
+multiple,Crushing is followed by,Grinding,Casting,Smelting,Forging,A,20,1000
+multiple,Which crusher is commonly used for primary crushing?,Hammer mill only,Rod mill,Ball mill,Jaw crusher,D,20,1000
+truefalse,Comminution is energy-intensive and accounts for a large share of a mine's power use.,,,,,True,20,1000
+multiple,Bond's law relates energy for size reduction to,Density only,Feed and product sizes,Colour,Hardness only,B,20,1000
+multiple,Grade of an ore is the,Concentration of valuable metal,Weight,Size of particles,Colour,A,20,1000
+multiple,Ball mills grind ore using,Tumbling steel balls,Chemicals,Acids,Electric arc,A,20,1000
+multiple,Screening separates particles by,Density,Colour,Size,Magnetism,C,20,1000
+truefalse,Over-grinding wastes energy and can make separation harder.,,,,,True,20,1000
+multiple,Critical speed of a ball mill is the speed at which,Mill stops,Balls melt,Liner wears,Charge centrifuges against the shell,D,20,1000
+multiple,Sampling of ore is important to,Melt ore,Get representative assays,Save time only,Nothing,B,20,1000

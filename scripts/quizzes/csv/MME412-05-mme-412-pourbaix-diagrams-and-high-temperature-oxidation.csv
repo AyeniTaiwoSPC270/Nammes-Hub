@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A Pourbaix diagram plots,Pressure against volume,Temperature against time,Stress against strain,Potential against pH,D,20,1000
+multiple,In a Pourbaix diagram the immunity region indicates,Metal is thermodynamically stable,Oxide forms,Metal dissolves,Fracture,A,20,1000
+multiple,Pourbaix diagrams give information on,Rate of corrosion,"Thermodynamic tendency, not rate",Hardness,Grain size,B,20,1000
+truefalse,The parabolic rate law often describes oxide growth controlled by diffusion.,,,,,True,20,1000
+multiple,Wagner's theory relates oxidation to,Gravity,Ion and electron transport through the oxide scale,Magnetism,Sound,B,20,1000
+multiple,A protective oxide scale is usually,"Compact, adherent and has low diffusion rate",Porous,Cracked,Volatile,A,20,1000
+multiple,Chromium improves high temperature oxidation resistance by forming,Carbon film,CO,Cr2O3 scale,FeO,C,20,1000
+multiple,Breakaway oxidation is,Sudden rapid oxidation after scale failure,Slow growth,Passivation,Reduction,A,20,1000
+multiple,Aluminium oxide scales are valued because they are,Porous,Soluble,Volatile,Stable and slow growing,D,20,1000
+truefalse,Linear oxidation kinetics suggest a non-protective oxide.,,,,,True,20,1000
+multiple,Hot corrosion is associated with,Pure gases only,Molten salt deposits,Cold water,Vacuum,B,20,1000
+multiple,The Pilling-Bedworth ratio above 2 or so often indicates the oxide,Does not form,Is always protective,Is likely to crack or spall,Is a gas,C,20,1000

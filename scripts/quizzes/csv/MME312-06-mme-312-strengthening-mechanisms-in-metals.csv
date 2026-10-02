@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Which is NOT a common strengthening mechanism in metals?,Grain refinement,Solid solution strengthening,Strain hardening,Annealing to coarsen grains,D,20,1000
+multiple,Precipitation hardening requires an alloy with,Only one phase at all temperatures,No solubility change,Decreasing solubility of a solute on cooling,Pure metal,C,20,1000
+multiple,"The stages of precipitation hardening are solution treatment, quench and",Sputtering,Melting,Carburising,Ageing,D,20,1000
+multiple,Overageing results in,Higher strength,Coarse precipitates and reduced strength,Higher hardness,Melting,B,20,1000
+truefalse,Coherent precipitates strengthen a metal by distorting the lattice around them.,,,,,True,20,1000
+multiple,Which alloy is commonly precipitation hardened?,Pure iron,Duralumin (Al-Cu),Pure gold,Pure copper,B,20,1000
+multiple,Dispersion strengthening uses,Fine insoluble particles such as oxides,Heating only,Soluble atoms,Grain growth,A,20,1000
+multiple,Orowan mechanism describes dislocations,Climbing only,Stopping at vacancies,Annihilating at surfaces,Bowing between strong particles,D,20,1000
+multiple,Work hardening increases strength by,Removing dislocations,Growing grains,Increasing dislocation density and interactions,Reducing carbon,C,20,1000
+truefalse,Annealing after cold work restores ductility.,,,,,True,20,1000
+multiple,Yield point phenomenon in low carbon steel is attributed to,Grain growth,Carbon and nitrogen atmospheres at dislocations,Precipitates,Twinning,B,20,1000
+multiple,Strengthening by refining grain size also usually improves,Toughness,Conductivity,Creep resistance at high temperature,Melting point,A,20,1000

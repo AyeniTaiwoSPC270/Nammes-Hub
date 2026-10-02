@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Slip casting uses a,Molten ceramic,Metal die,Laser,Suspension of ceramic powder poured in a porous mould,D,20,1000
+multiple,"In firing, ceramic bodies become dense by",Melting completely,Electrolysis,Cold working,Sintering and vitrification,D,20,1000
+multiple,Green body in ceramics means,Melted ceramic,Unfired shaped ceramic,Fired ceramic,Glazed ceramic,B,20,1000
+multiple,Glazing gives the surface,Metal coating,A glassy coating,Magnetism,Rough finish,B,20,1000
+truefalse,Drying shrinkage of clay bodies can cause cracking.,,,,,True,20,1000
+multiple,Kaolinite is a main raw material of,Copper,Clay-based ceramics (porcelain),Polymers,Steel,B,20,1000
+multiple,Hot pressing ceramics helps to,Stop sintering,Achieve higher density at lower temperature,Colour them,Create cracks,B,20,1000
+multiple,Glass is formed by cooling a melt fast enough to avoid,Crystallisation,Viscosity,Mixing,Melting,A,20,1000
+multiple,Float glass process forms glass sheet on a bath of,Water,Molten tin,Oil,Mercury,B,20,1000
+multiple,Binders in ceramic processing are used to,Increase melting,Give green strength,Create gas,Decrease strength,B,20,1000
+truefalse,Tape casting is used to produce thick solid ceramic blocks.,,,,,False,20,1000
+multiple,Refractory bricks are fired to give,Transparency,Flexibility,Low melting,Strength and stability at high temperature,D,20,1000

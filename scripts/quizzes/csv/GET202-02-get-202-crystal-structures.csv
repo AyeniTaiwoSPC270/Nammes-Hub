@@ -1,0 +1,14 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,How many atoms per unit cell does a face-centred cubic (FCC) structure have?,4,2,6,8,A,20,1000
+multiple,How many atoms per unit cell does a body-centred cubic (BCC) structure have?,2,4,6,1,A,20,1000
+multiple,The coordination number of an FCC structure is,12,6,8,10,A,20,1000
+multiple,The coordination number of a BCC structure is,4,12,8,6,C,20,1000
+multiple,The atomic packing factor of FCC is approximately,0.74,0.52,0.68,0.91,A,20,1000
+multiple,The atomic packing factor of BCC is approximately,0.52,0.34,0.68,0.74,C,20,1000
+truefalse,Hexagonal close-packed (HCP) and FCC structures have the same packing factor.,,,,,True,20,1000
+multiple,Which of these metals is FCC at room temperature?,Tungsten,Zinc,Aluminium,Chromium,C,20,1000
+multiple,Which of these metals is BCC at room temperature?,Copper,Magnesium,Nickel,Iron (alpha),D,20,1000
+multiple,"In a cubic crystal, the Miller indices of a plane that has intercepts at 1, infinity, infinity are",(110),(100),(111),(010),B,20,1000
+multiple,The number of atoms per unit cell in a simple cubic structure is,2,8,4,1,D,20,1000
+truefalse,Polymorphism is the ability of a solid to exist in only one crystal structure.,,,,,False,20,1000
+multiple,"For FCC, the relation between the atomic radius R and the cube edge a is",a = 4R/sqrt(3),a = R sqrt(2),a = 2R,a = 2R sqrt(2),D,20,1000

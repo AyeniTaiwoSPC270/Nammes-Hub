@@ -1,0 +1,14 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The slope of the linear part of the engineering stress-strain curve is the,Ductility,Modulus of elasticity,Toughness,Yield strength,B,20,1000
+multiple,Stress is defined as,Area divided by force,Force times area,Change in length,Force divided by area,D,20,1000
+multiple,Ductility is commonly measured as,Hardness number,Endurance limit,Percent elongation,Modulus,C,20,1000
+truefalse,Toughness is related to the area under the stress-strain curve.,,,,,True,20,1000
+multiple,Hardness is the resistance of a material to,Localized plastic deformation,Corrosion,Electrical flow,Fracture under impact,A,20,1000
+multiple,Which test uses a diamond pyramid indenter?,Vickers,Izod,Brinell,Charpy,A,20,1000
+multiple,The Charpy test measures,Fatigue life,Creep rate,Impact energy,Hardness,C,20,1000
+multiple,Poisson's ratio is the ratio of,Load to area,Stress to strain,Lateral strain to axial strain (negative sign),Yield to tensile strength,C,20,1000
+multiple,Yield strength is commonly taken as the stress at which,Fracture occurs,0.2 percent plastic strain offset,Necking ends,Elastic limit is zero,B,20,1000
+multiple,Resilience is the ability of a material to,Conduct heat,Form a neck,Resist wear,Absorb energy when deformed elastically,D,20,1000
+truefalse,True stress is always less than engineering stress after yielding in tension.,,,,,False,20,1000
+multiple,Strain hardening of a metal generally,Lowers hardness,Increases strength and decreases ductility,Decreases strength and increases ductility,Leaves strength unchanged,B,20,1000
+multiple,Young's modulus of steel is approximately,20 GPa,2000 GPa,2 GPa,200 GPa,D,20,1000

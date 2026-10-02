@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The first law of thermodynamics is a statement of,Absolute zero,Equilibrium constant,Increase of entropy,Conservation of energy,D,20,1000
+multiple,"For a closed system, the change in internal energy equals",Q x W,"Q + W, with W the work done on the system",Q - T,Q / W,B,20,1000
+multiple,Enthalpy H is defined as,U - PV,U - TS,U + TS,U + PV,D,20,1000
+truefalse,Internal energy is a state function.,,,,,True,20,1000
+multiple,The second law of thermodynamics says that for an isolated system the entropy,Decreases,Is always zero,Stays constant in all processes,Never decreases,D,20,1000
+multiple,The third law states that the entropy of a perfect crystal at 0 K is,Zero,Infinite,Equal to enthalpy,One,A,20,1000
+multiple,"At constant pressure, the heat absorbed by a system equals the change in",Enthalpy,Gibbs energy,Internal energy,Entropy,A,20,1000
+truefalse,Heat and work are state functions.,,,,,False,20,1000
+multiple,An adiabatic process is one in which,Volume is zero,No heat is exchanged with the surroundings,Pressure is constant,Temperature is constant,B,20,1000
+multiple,"For an isothermal expansion of an ideal gas, the internal energy change is",Positive,Negative,Zero,Equal to PV,C,20,1000
+multiple,The SI unit of entropy is,K/J,J/mol,J/K,J K,C,20,1000
+multiple,Cp minus Cv for one mole of an ideal gas equals,R/2,R,Zero,2R,B,20,1000

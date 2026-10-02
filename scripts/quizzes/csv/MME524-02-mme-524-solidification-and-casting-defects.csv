@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Chvorinov's rule states that solidification time is proportional to,Volume only,(Volume / surface area) squared,Mould colour,Surface area only,B,20,1000
+multiple,Gas porosity in castings is often caused by,Cold metal,Dissolved hydrogen or entrapped gas,Clean sand,Low pouring speed,B,20,1000
+multiple,Shrinkage cavities form due to,Sand falling,Volume contraction on solidification,Gas release,Slag,B,20,1000
+multiple,Hot tears occur when,Metal is too cold,Casting is restrained during cooling and is weak,Nothing,Sand is wet,B,20,1000
+truefalse,Directional solidification towards the riser helps to avoid shrinkage defects.,,,,,True,20,1000
+multiple,Cold shut is caused by,Excess pouring temperature,Gas,Two streams of metal failing to fuse,Shrinkage,C,20,1000
+multiple,Inclusions in castings include,Only voids,Nothing,Slag and oxide particles,Only cracks,C,20,1000
+multiple,Chills are used in moulds to,Hold cores,Add sand,Increase local cooling rate,Decrease cooling rate,C,20,1000
+multiple,Segregation in castings arises from,Mould shape only,Sand quality,Solute rejection during solidification,Nothing,C,20,1000
+truefalse,Filtering molten metal in the gating system increases inclusions.,,,,,False,20,1000
+multiple,"Hydrogen solubility in aluminium drops sharply on solidification, so degassing uses",Adding sand,Heating more,Nitrogen or argon bubbling,Adding water,C,20,1000
+multiple,Hot spots in a casting are areas that,Have no metal,Solidify first,Solidify last,Are cold,C,20,1000

@@ -1,0 +1,55 @@
+# MME 521: Powder Metallurgy
+Q|The basic steps of powder metallurgy are powder production, blending, compaction and|Sintering|Casting|Forging|Rolling|a
+Q|Atomisation is a method used to produce metal powder by|Breaking up a molten metal stream into droplets|Crushing ore|Drawing wire|Machining|a
+Q|Sintering is carried out at temperature|Below the melting point of the main constituent|Above melting point|At room temperature|At absolute zero|a
+Q|Green density refers to the density of a compact|After compaction, before sintering|After sintering|After forging|Of the loose powder|a
+T|Powder metallurgy is well suited for making parts from high melting point metals like tungsten.|true
+Q|Self-lubricating bearings are made by powder metallurgy because of|Controlled porosity that holds oil|Perfect density|High ductility|Low strength|a
+Q|Hot isostatic pressing (HIP) applies|Heat and uniform gas pressure|Only heat|Only vibration|Only electricity|a
+Q|Sintering occurs mainly by|Atomic diffusion that forms necks between particles|Melting of all particles|Chemical burning|Pressure alone|a
+Q|Lubricants are added to powder before compaction to|Reduce friction with die walls|Increase porosity|Raise melting point|Add colour|a
+T|Powder metallurgy parts usually need little machining after production.|true
+Q|Liquid phase sintering involves|A small amount of liquid that helps densification|No liquid at all|Complete melting|Gas only|a
+Q|Cemented carbide (WC-Co) is a typical product of|Powder metallurgy|Sand casting|Forging|Extrusion|a
+
+# MME 521: Ceramic Processing
+Q|Slip casting uses a|Suspension of ceramic powder poured in a porous mould|Molten ceramic|Metal die|Laser|a
+Q|In firing, ceramic bodies become dense by|Sintering and vitrification|Cold working|Electrolysis|Melting completely|a
+Q|Green body in ceramics means|Unfired shaped ceramic|Fired ceramic|Glazed ceramic|Melted ceramic|a
+Q|Glazing gives the surface|A glassy coating|Metal coating|Rough finish|Magnetism|a
+T|Drying shrinkage of clay bodies can cause cracking.|true
+Q|Kaolinite is a main raw material of|Clay-based ceramics (porcelain)|Steel|Copper|Polymers|a
+Q|Hot pressing ceramics helps to|Achieve higher density at lower temperature|Stop sintering|Create cracks|Colour them|a
+Q|Glass is formed by cooling a melt fast enough to avoid|Crystallisation|Melting|Mixing|Viscosity|a
+Q|Float glass process forms glass sheet on a bath of|Molten tin|Water|Oil|Mercury|a
+Q|Binders in ceramic processing are used to|Give green strength|Decrease strength|Increase melting|Create gas|a
+T|Tape casting is used to produce thick solid ceramic blocks.|false
+Q|Refractory bricks are fired to give|Strength and stability at high temperature|Low melting|Flexibility|Transparency|a
+
+# MME 521: Polymer Processing
+Q|Injection moulding involves|Forcing molten polymer into a mould cavity|Pouring into sand|Rolling sheet|Machining|a
+Q|Extrusion of polymers produces|Continuous profiles such as pipes|Discrete parts only|Powders|Castings|a
+Q|Blow moulding is used to make|Hollow items such as bottles|Solid blocks|Gears only|Wire|a
+Q|Thermoforming heats a polymer sheet and then|Forms it over a mould|Melts it fully|Casts it|Powders it|a
+T|Thermosetting resins are cured by chemical cross-linking during moulding.|true
+Q|Compression moulding is commonly used for|Thermosets|Only pipes|Only bottles|Only wires|a
+Q|Melt flow index measures|Ease of flow of molten polymer|Hardness|Density|Colour|a
+Q|Plasticisers are added to polymers to|Increase flexibility|Increase brittleness|Reduce weight only|Add magnetism|a
+Q|Fillers such as carbon black in rubber|Improve strength and wear resistance|Reduce all strength|Dissolve it|Add colour only|a
+Q|Degradation of polymers in processing can be caused by|Excess heat and shear|Cold|Vacuum|Sound|a
+T|Orientation of polymer chains during processing affects mechanical properties.|true
+Q|Calendering is used to produce|Polymer sheet and film|Cast blocks|Wire|Bolts|a
+
+# MME 521: Joining and Welding Processes
+Q|In arc welding, heat is produced by|An electric arc|Friction only|Chemical flame only|Sunlight|a
+Q|Flux in shielded metal arc welding protects the weld from|Atmospheric contamination|Heat|Current|Cooling|a
+Q|TIG welding uses a|Non-consumable tungsten electrode|Consumable steel wire|Gas flame|Laser|a
+Q|Oxy-acetylene welding uses a|Gas flame|Electric arc|Current only|Electron beam|a
+T|The heat affected zone (HAZ) is the region near a weld whose microstructure is changed by heat.|true
+Q|Brazing joins metals using|A filler metal with melting point above 450 C but below base metal melting|Melting the base metal|No filler|Friction only|a
+Q|Soldering uses filler metals that melt below|450 C|1000 C|2000 C|5000 C|a
+Q|Preheating before welding thick steel helps to reduce|Cracking due to rapid cooling|Weld speed|Gas use|Electrode size|a
+Q|Porosity in welds is commonly caused by|Trapped gases|Good shielding|Low current|Clean material|a
+Q|Friction stir welding is a|Solid state joining process|Melting process|Gas process|Brazing process|a
+T|Higher carbon equivalent decreases risk of cold cracking in steel welds.|false
+Q|Residual stress in welds is caused by|Non-uniform heating and cooling|Perfect cooling|Uniform temperature|Vacuum|a

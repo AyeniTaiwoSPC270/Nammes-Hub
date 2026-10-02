@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Which type of bond involves the transfer of electrons from one atom to another?,Covalent,Van der Waals,Metallic,Ionic,D,20,1000
+multiple,Which bond type is responsible for the high electrical conductivity of metals?,Ionic,Covalent,Hydrogen,Metallic,D,20,1000
+multiple,Diamond is very hard mainly because of its,Metallic bonding,Network of strong covalent bonds,Ionic bonding,Weak van der Waals forces,B,20,1000
+truefalse,Secondary bonds such as van der Waals forces are weaker than primary bonds.,,,,,True,20,1000
+multiple,The atomic number of an element equals the number of,Valence electrons,Protons,Protons plus neutrons,Neutrons,B,20,1000
+multiple,Avogadro's number is approximately,1.6 x 10^-19,9.81,6.022 x 10^23,3.0 x 10^8,C,20,1000
+truefalse,Ionic solids are usually good electrical conductors in the solid state.,,,,,False,20,1000
+multiple,The mass number of an atom is the sum of its,Protons and electrons,Protons and neutrons,Neutrons only,Electrons and neutrons,B,20,1000
+multiple,Isotopes of an element differ in their number of,Electrons,Neutrons,Valence electrons,Protons,B,20,1000
+multiple,Which bond is the main one holding water molecules to each other in ice?,Ionic bond,Hydrogen bond,Covalent network,Metallic bond,B,20,1000
+truefalse,Metallic bonds are strongly directional while covalent bonds are non-directional.,,,,,False,20,1000
+multiple,Materials with strong bonds generally have,High ductility always,Low melting points and high expansion,High melting points and low expansion,Low stiffness,C,20,1000

@@ -1,0 +1,55 @@
+# MME 532: Ore Characterisation and Comminution
+Q|Mineral processing aims to|Separate valuable minerals from gangue|Melt ore|Make steel|Weld metals|a
+Q|Liberation in mineral processing means|Freeing valuable mineral particles from gangue|Melting them|Dissolving them|Coating them|a
+Q|Crushing is followed by|Grinding|Smelting|Casting|Forging|a
+Q|Which crusher is commonly used for primary crushing?|Jaw crusher|Ball mill|Rod mill|Hammer mill only|a
+T|Comminution is energy-intensive and accounts for a large share of a mine's power use.|true
+Q|Bond's law relates energy for size reduction to|Feed and product sizes|Colour|Density only|Hardness only|a
+Q|Grade of an ore is the|Concentration of valuable metal|Size of particles|Colour|Weight|a
+Q|Ball mills grind ore using|Tumbling steel balls|Electric arc|Chemicals|Acids|a
+Q|Screening separates particles by|Size|Density|Magnetism|Colour|a
+T|Over-grinding wastes energy and can make separation harder.|true
+Q|Critical speed of a ball mill is the speed at which|Charge centrifuges against the shell|Mill stops|Balls melt|Liner wears|a
+Q|Sampling of ore is important to|Get representative assays|Melt ore|Save time only|Nothing|a
+
+# MME 532: Gravity, Magnetic and Electrostatic Separation
+Q|Gravity concentration relies on differences in|Density|Colour|Hardness|Shape only|a
+Q|A jig separates minerals using|Pulsating water flow|Magnetism|Acid|Heat|a
+Q|Shaking tables separate minerals by|Flowing film and riffles|Flotation|Smelting|Leaching|a
+Q|Heavy media separation uses a medium with density|Between that of the light and heavy minerals|Higher than both|Lower than both|Equal to water only|a
+T|Magnetic separation is used to concentrate magnetite.|true
+Q|Low-intensity magnetic separators are used for|Strongly magnetic minerals|Non-magnetic|Gold|Glass|a
+Q|Electrostatic separation relies on differences in|Electrical conductivity|Density|Size|Colour|a
+Q|Concentration criterion is used to judge|How easy a gravity separation is|Hardness|Melting|Colour|a
+Q|Cassiterite is concentrated mainly by|Gravity methods|Leaching|Smelting at ore stage|Sound|a
+T|Spirals and hydrocyclones are used only in smelting.|false
+Q|Particle settling in a fluid is described at low Reynolds number by|Stokes' law|Newton's law of cooling|Ohm's law|Fick's law|a
+Q|Sink-float tests are used to|Assess washability of coal|Test hardness|Test colour|Smelt|a
+
+# MME 532: Froth Flotation
+Q|Flotation separates minerals by differences in|Surface wettability|Density|Colour|Magnetism|a
+Q|Collectors are reagents that|Make mineral surfaces hydrophobic|Stop bubbles|Dissolve minerals|Increase pH only|a
+Q|Frothers are added to|Stabilise air bubbles in the froth|Kill bubbles|Dissolve collectors|Sink particles|a
+Q|Depressants are used to|Prevent a mineral from floating|Make all float|Make froth|Add air|a
+T|Activators help collectors to adsorb on mineral surfaces.|true
+Q|pH control in flotation is usually done with|Lime or soda ash|Gold|Iron|Steel|a
+Q|Xanthates are common collectors for|Sulfide minerals|Silicates only|Clay|Wood|a
+Q|Flotation is widely used to concentrate|Copper, lead and zinc sulfides|Gold nuggets by hand|Iron by magnet|Coal only by sieving|a
+Q|Contact angle greater than zero indicates|Some hydrophobicity|Complete wetting|Dissolving|Cooling|a
+T|Bubble size and air flow rate affect flotation performance.|true
+Q|Recovery in flotation is the|Fraction of valuable mineral reporting to the concentrate|Grade of the tailings|Size of bubbles|Energy used|a
+Q|Reverse flotation floats|The gangue, leaving the valuable mineral in the sink|The valuable mineral|Nothing|Gas|a
+
+# MME 532: Dewatering, Plant Design and Evaluation
+Q|Thickeners are used to|Increase the solid concentration of slurry|Dilute slurry|Crush ore|Heat slurry|a
+Q|Filtration separates|Solids from liquids using a porous medium|Two liquids|Gases|Metals|a
+Q|Flocculants help by|Aggregating fine particles to settle faster|Dispersing particles|Dissolving them|Heating them|a
+Q|Tailings are|Waste material after separation|The product|The feed|Fuel|a
+T|Proper tailings management is important for environmental protection.|true
+Q|The recovery formula is R = c(f - t) / f(c - t) where c, f and t are the assays of|Concentrate, feed and tailings|Copper, fluorine, tin|Colour, feed, time|Crusher, filter, thickener|a
+Q|Enrichment ratio is|Concentrate grade divided by feed grade|Feed divided by tailings|Recovery times grade|Size ratio|a
+Q|A flowsheet shows|The sequence of processing operations|Colour of ore|Price|Weather|a
+Q|Hydrocyclones classify particles by|Centrifugal force|Magnetism|Colour|Temperature|a
+T|Closed-circuit grinding returns oversize particles to the mill for further grinding.|true
+Q|Dust control in mineral plants is important for|Worker health and safety|Colour|Weight|Nothing|a
+Q|Mass balance in a plant is based on|Conservation of mass|Conservation of colour|Entropy only|Nothing|a

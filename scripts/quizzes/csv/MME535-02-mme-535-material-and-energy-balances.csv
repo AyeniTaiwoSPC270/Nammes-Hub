@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The general material balance states input plus generation minus output minus consumption equals,Zero always,Price,Volume,Accumulation,D,20,1000
+multiple,"At steady state, accumulation is",Infinite,Positive,Zero,Negative,C,20,1000
+multiple,A basis for calculations is often chosen as,The building,The colour of the feed,1 tonne of product or feed,The weather,C,20,1000
+multiple,Stoichiometric coefficients relate,Only colour,Temperature,Reactant and product amounts,Pressure,C,20,1000
+truefalse,Energy balance uses enthalpy of streams and heat of reaction.,,,,,True,20,1000
+multiple,The limiting reactant is the one that,Is a catalyst,Is in excess,Has the highest cost,Runs out first,D,20,1000
+multiple,Conversion is,Fraction of a reactant that reacts,Cost,Area,Price,A,20,1000
+multiple,Heat of reaction at temperature T can be found from the standard value using,Mass only,Heat capacity data,Colour,Density only,B,20,1000
+multiple,Sensible heat is the heat needed to,Change temperature without phase change,Melt,React,Boil,A,20,1000
+truefalse,Latent heat is absorbed only when temperature changes and never during a phase change.,,,,,False,20,1000
+multiple,A typical metallurgical balance would balance,Only money,Only water,Only staff,"Metal, slag and gas streams",D,20,1000
+multiple,Tie components are used to,Stop flow,Link input and output in a balance when one component is unchanged,Change colour,Tie ropes,B,20,1000

@@ -1,0 +1,6 @@
+node_modules
+out
+.stills
+.env
+voice-elevenlabs/*
+!voice-elevenlabs/.gitkeep

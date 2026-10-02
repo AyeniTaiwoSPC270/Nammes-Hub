@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The Gibbs free energy is defined as,H - TS,U - TS,H + TS,U + PV,A,20,1000
+multiple,A process at constant T and P is spontaneous when the Gibbs energy change is,Positive,Negative,Zero,Infinite,B,20,1000
+multiple,"At equilibrium, at constant T and P, delta G equals",Negative value,One,Zero,Positive value,C,20,1000
+multiple,The relation between standard Gibbs energy change and equilibrium constant K is,dG0 = RT K,dG0 = R ln T,dG0 = -RT ln K,dG0 = -K/RT,C,20,1000
+truefalse,"If K is much smaller than 1, the standard Gibbs energy change is large and negative.",,,,,False,20,1000
+multiple,The Gibbs-Helmholtz relation links Gibbs energy to,Pressure only,Enthalpy and temperature,Heat capacity only,Entropy and volume,B,20,1000
+multiple,Le Chatelier's principle says that a system at equilibrium subjected to a change will,Shift to oppose the change,Double the rate,Ignore it,Stop reacting,A,20,1000
+multiple,"For an exothermic reaction, raising the temperature shifts equilibrium toward the",Solid phase only,No change,Reactants,Products,C,20,1000
+multiple,The Helmholtz energy is defined as,H - TS,U - TS,U + TS,H + PV,B,20,1000
+multiple,The condition of equilibrium for a system at constant T and V is a minimum of,Entropy of surroundings,Enthalpy,Gibbs energy,Helmholtz energy,D,20,1000
+truefalse,A positive delta G means a reaction cannot proceed under any condition.,,,,,False,20,1000
+multiple,The Clausius-Clapeyron equation relates,Stress and strain,Vapour pressure and temperature,Diffusion and time,Current and voltage,B,20,1000

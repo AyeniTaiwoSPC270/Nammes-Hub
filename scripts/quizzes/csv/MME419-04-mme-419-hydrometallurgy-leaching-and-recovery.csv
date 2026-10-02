@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Leaching is,Drying ore,Crushing ore,Dissolving a metal or mineral from ore using a solvent,Melting ore,C,20,1000
+multiple,Gold extraction commonly uses,Ethanol,Sodium chloride,Cyanide solution,Sulfuric acid only,C,20,1000
+multiple,Heap leaching involves,Melting it,Mixing in a furnace,Stacking crushed ore and percolating solution through,Using electrolysis,C,20,1000
+multiple,Solvent extraction separates metals by,Magnetism,Boiling,Cooling,Transferring them between two immiscible liquids,D,20,1000
+truefalse,Cementation recovers metal from solution by displacement with a more active metal.,,,,,True,20,1000
+multiple,Ion exchange is used to,Weld,Smelt,Selectively remove metal ions from solution,Crush ore,C,20,1000
+multiple,The Bayer process is used to produce,Zinc from blende,Steel from scrap,Copper from chalcopyrite,Alumina from bauxite,D,20,1000
+multiple,Activated carbon adsorbs gold from,Cyanide solution,Molten slag,Air,Steel melt,A,20,1000
+multiple,Factors affecting leaching rate include,Colour only,Sound,"Temperature, particle size, concentration and agitation",Gravity only,C,20,1000
+multiple,Pressure leaching is used because,It cools the ore,Higher temperature and oxygen pressure speed up reactions,It dries the ore,It reduces reagent,B,20,1000
+truefalse,Bacterial leaching works only for high grade oxide ores of copper.,,,,,False,20,1000
+multiple,Precipitation of metal hydroxides from solution depends strongly on,Sound,Colour,pH,Altitude,C,20,1000

@@ -1,0 +1,263 @@
+1
+00:00:00,100 --> 00:00:02,033
+Who has the outline?
+
+2
+00:00:02,300 --> 00:00:04,033
+Is this the timetable?
+
+3
+00:00:04,300 --> 00:00:06,033
+Due today?!
+
+4
+00:00:06,300 --> 00:00:07,767
+Where's the outline?
+
+5
+00:00:07,767 --> 00:00:09,033
+When's the exam?
+
+6
+00:00:09,300 --> 00:00:10,633
+NAMMES Hub.
+
+7
+00:00:10,633 --> 00:00:12,033
+One address.
+
+8
+00:00:12,300 --> 00:00:14,733
+Meet NAMMES Hub, the website
+
+9
+00:00:14,733 --> 00:00:17,033
+of NAMMES, UNILAG chapter.
+
+10
+00:00:17,300 --> 00:00:20,467
+Academics, Community, Forms, Contact.
+
+11
+00:00:20,467 --> 00:00:22,033
+No more wahala.
+
+12
+00:00:22,300 --> 00:00:24,800
+You don't need an account to browse.
+
+13
+00:00:24,800 --> 00:00:27,033
+Signing up takes about a minute.
+
+14
+00:00:27,300 --> 00:00:31,167
+Pick your level, then semester, then course.
+
+15
+00:00:31,167 --> 00:00:34,033
+C is compulsory, E is elective.
+
+16
+00:00:34,300 --> 00:00:36,867
+Open a course for its topics,
+
+17
+00:00:36,867 --> 00:00:40,033
+recommended texts and past questions.
+
+18
+00:00:40,300 --> 00:00:44,033
+The official CCMAS curriculum, right there.
+
+19
+00:00:44,300 --> 00:00:46,833
+Class and exam timetables.
+
+20
+00:00:46,833 --> 00:00:49,033
+No more asking around.
+
+21
+00:00:49,300 --> 00:00:51,233
+Punch in your grades and
+
+22
+00:00:51,233 --> 00:00:53,233
+watch your CGPA count up.
+
+23
+00:00:53,233 --> 00:00:54,967
+Sign in to save them,
+
+24
+00:00:54,967 --> 00:00:57,033
+then download your report.
+
+25
+00:00:57,300 --> 00:00:58,333
+Resources:
+
+26
+00:00:58,333 --> 00:01:00,133
+Shared Drive links and
+
+27
+00:01:00,133 --> 00:01:02,067
+materials, one tap away.
+
+28
+00:01:02,300 --> 00:01:04,667
+Events, with photo galleries so
+
+29
+00:01:04,667 --> 00:01:06,533
+you can relive the day.
+
+30
+00:01:06,800 --> 00:01:09,533
+News, straight from the excos.
+
+31
+00:01:09,800 --> 00:01:13,533
+Opportunities, sorted by soonest deadline.
+
+32
+00:01:13,800 --> 00:01:17,333
+Five stages, from nominating to revealed.
+
+33
+00:01:17,333 --> 00:01:20,200
+Members with a department matric
+
+34
+00:01:20,200 --> 00:01:22,533
+number get one vote each.
+
+35
+00:01:22,800 --> 00:01:23,700
+Forms:
+
+36
+00:01:23,700 --> 00:01:25,767
+fill one in, or share
+
+37
+00:01:25,767 --> 00:01:27,533
+it by link or QR.
+
+38
+00:01:27,800 --> 00:01:28,767
+Live quiz!
+
+39
+00:01:28,767 --> 00:01:30,733
+Scan the code, pop into the
+
+40
+00:01:30,733 --> 00:01:32,767
+lobby and pick your fighter.
+
+41
+00:01:32,767 --> 00:01:35,033
+Fifty characters to choose from.
+
+42
+00:01:35,300 --> 00:01:38,167
+Question up, timer running.
+
+43
+00:01:38,167 --> 00:01:40,533
+Tap your answer fast!
+
+44
+00:01:40,800 --> 00:01:44,067
+Bars rise, the leaderboard shuffles.
+
+45
+00:01:44,067 --> 00:01:45,533
+Who's on top?
+
+46
+00:01:45,800 --> 00:01:48,167
+Play in teams, build a streak for
+
+47
+00:01:48,167 --> 00:01:50,533
+bonus points, go double or 50/50.
+
+48
+00:01:50,800 --> 00:01:52,100
+Quiz battles:
+
+49
+00:01:52,100 --> 00:01:54,533
+challenge a friend to a duel.
+
+50
+00:01:54,800 --> 00:01:58,533
+Or run a knockout bracket.
+
+51
+00:01:58,800 --> 00:02:02,033
+Last one standing takes the podium.
+
+52
+00:02:02,300 --> 00:02:03,533
+No account.
+
+53
+00:02:03,533 --> 00:02:05,100
+Just a nickname.
+
+54
+00:02:05,100 --> 00:02:07,533
+Send the link and let us go.
+
+55
+00:02:07,800 --> 00:02:09,200
+The excos run it
+
+56
+00:02:09,200 --> 00:02:11,033
+all from one dashboard.
+
+57
+00:02:11,300 --> 00:02:13,533
+Publish news.
+
+58
+00:02:13,800 --> 00:02:16,533
+Design a form.
+
+59
+00:02:16,800 --> 00:02:19,533
+Move awards through the stages.
+
+60
+00:02:19,800 --> 00:02:22,533
+Host a live quiz.
+
+61
+00:02:22,800 --> 00:02:28,033
+Meet the excos, the AEGIS 26/27 council.
+
+62
+00:02:28,300 --> 00:02:31,533
+Built by students, for students.
+
+63
+00:02:31,800 --> 00:02:34,000
+NAMMES Hub, at nammeshub.
+
+64
+00:02:34,000 --> 00:02:34,700
+com.
+
+65
+00:02:34,700 --> 00:02:35,333
+ng.
+
+66
+00:02:35,333 --> 00:02:38,033
+Grab the Handbook in the footer.

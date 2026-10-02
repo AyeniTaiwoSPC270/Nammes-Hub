@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,An Ellingham diagram plots the standard Gibbs energy of formation of oxides against,Time,Pressure,Temperature,Composition,C,20,1000
+multiple,"On an Ellingham diagram, the lower a metal's line, the",Lower its density,Less stable is its oxide,Higher its melting point,More stable is its oxide,D,20,1000
+multiple,The slope of a line on an Ellingham diagram is approximately equal to,Minus the entropy change,Plus the enthalpy change,The heat capacity,The pressure,A,20,1000
+multiple,Most lines slope upward because oxidation of a solid metal by O2 gas,Gains entropy,Has no entropy change,Consumes gas and loses entropy,Produces more gas,C,20,1000
+truefalse,The C to CO line on an Ellingham diagram slopes downward.,,,,,True,20,1000
+multiple,Carbon can reduce a metal oxide when the carbon-oxygen line lies,At the same point always,Above the metal oxide line,Below the metal oxide line at that temperature,Has no relation,C,20,1000
+multiple,A metal whose oxide line is lower than that of another metal can reduce the oxide of the,Lower-placed oxide,Same oxide,None,Higher-placed oxide,D,20,1000
+multiple,"Which metal oxide is the most stable, at the bottom of the diagram, among these?",Al2O3,Cu2O,NiO,FeO,A,20,1000
+multiple,A change of slope in an Ellingham line indicates a,Constant composition,Experimental error,Change of phase such as melting or boiling,Change in pressure,C,20,1000
+truefalse,Ellingham diagrams show reaction rates.,,,,,False,20,1000
+multiple,The CO/CO2 nomograph on an Ellingham diagram is used to read the,Melting point,Viscosity,Yield stress,Required CO/CO2 ratio for reduction,D,20,1000
+multiple,The intercept of an Ellingham line at 0 K corresponds approximately to the,Activity,Heat capacity,Enthalpy change,Entropy change,C,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Plant layout should aim for,"Safe, efficient flow of materials and people",Obstruction,Maximum distances,Random placement,A,20,1000
+multiple,Capacity of a furnace is determined from,Cost of land,Colour,Brand,Throughput and residence time,D,20,1000
+multiple,Material of construction for corrosive duty should be chosen for,Colour,Lowest cost only,Shape,Corrosion resistance and strength at temperature,D,20,1000
+multiple,Residence time equals,Volume divided by volumetric flow rate,Area over time,Mass over volume,Flow times volume,A,20,1000
+truefalse,Safety distances are needed between hazardous units.,,,,,True,20,1000
+multiple,Design safety factor is applied to,Reduce size always,Remove controls,Increase speed,Account for uncertainty,D,20,1000
+multiple,Pumps and compressors are selected based on,Brand colour,Noise,Weight only,"Flow rate, head and fluid properties",D,20,1000
+multiple,Heat exchangers are sized using,"Duty, overall heat transfer coefficient and log mean temperature difference",Weight,Only colour,Only length,A,20,1000
+multiple,Site selection for a plant depends on,Only price of land,Weather only,Nothing,"Raw material, market, utilities and labour",D,20,1000
+truefalse,Environmental regulations influence plant design.,,,,,True,20,1000
+multiple,Provision for future expansion in layout is,Forbidden,Wasteful always,Good practice,Impossible,C,20,1000
+multiple,Storage tanks for raw materials buffer,Variations in supply and demand,Noise,Colour,Gravity,A,20,1000

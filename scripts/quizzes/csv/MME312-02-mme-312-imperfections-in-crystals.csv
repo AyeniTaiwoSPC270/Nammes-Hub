@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A Frenkel defect consists of,A missing cation-anion pair,An extra plane,Two vacancies,A vacancy and an interstitial of the same atom,D,20,1000
+multiple,A Schottky defect is a,Pair of missing cation and anion,Self interstitial,Stacking fault,Screw dislocation,A,20,1000
+multiple,The equilibrium vacancy concentration increases with,Decreasing temperature,Increasing temperature,Decreasing time,Increasing pressure only,B,20,1000
+truefalse,Dislocations are equilibrium defects.,,,,,False,20,1000
+multiple,The Burgers vector of a dislocation represents,Magnitude and direction of the lattice distortion,Its length,Its temperature,Its charge,A,20,1000
+multiple,For a screw dislocation the Burgers vector is,Parallel to the line,Perpendicular to the line,Zero,Random,A,20,1000
+multiple,Dislocation climb requires,Vacancy diffusion,Shear only,No thermal activation,Twinning,A,20,1000
+multiple,Stacking faults are more common in metals with,High stacking fault energy,No slip,Only BCC,Low stacking fault energy,D,20,1000
+multiple,Low-angle grain boundaries can be described as arrays of,Vacancies,Precipitates,Voids,Dislocations,D,20,1000
+multiple,Dislocation density is measured in,kg/m^3,m per m^3 (or m^-2),J,Pa,B,20,1000
+truefalse,Grain boundaries act as barriers to dislocation motion.,,,,,True,20,1000
+multiple,A twin boundary is a,Random boundary,Special low-energy grain boundary with mirror symmetry,Free surface,Void,B,20,1000

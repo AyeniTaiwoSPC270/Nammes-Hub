@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Hooke's law states that in the elastic range stress is proportional to,Volume,Time,Temperature,Strain,D,20,1000
+multiple,"The relation between E, G and Poisson's ratio is",E = G + v,E = G(1 - v),E = 2G(1 + v),E = 2G/v,C,20,1000
+multiple,Bulk modulus relates pressure to,Shear strain,Time,Length,Volumetric strain,D,20,1000
+multiple,Yielding under a general stress state in ductile metals is often predicted by the,Nernst criterion,Ohm criterion,von Mises criterion,Faraday criterion,C,20,1000
+truefalse,The Tresca criterion is based on maximum shear stress.,,,,,True,20,1000
+multiple,True strain is defined as,ln(L / L0),L - L0,(L - L0) / L0,L0 / L,A,20,1000
+multiple,The flow curve of many metals is described by sigma = K epsilon^n where n is the,Melting point,Density,Poisson ratio,Strain hardening exponent,D,20,1000
+multiple,Plastic deformation in metals is at constant,Temperature only,Pressure only,Volume,Mass only,C,20,1000
+multiple,Bauschinger effect refers to,Increased yield on reversal,Reduced yield strength on load reversal,Melting,No change,B,20,1000
+truefalse,Elastic deformation is permanent once the load is removed.,,,,,False,20,1000
+multiple,Mohr's circle is used for,Hardness,Corrosion,Stress transformation,Phase diagrams,C,20,1000
+multiple,Principal stresses act on planes with,Maximum shear stress,Zero shear stress,Zero normal stress,Random stress,B,20,1000

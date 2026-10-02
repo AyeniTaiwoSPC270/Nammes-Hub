@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,In sand casting the pattern is made slightly larger than the casting to allow for,Colour,Shrinkage,Expansion,Weight,B,20,1000
+multiple,A riser in a casting serves to,Cool the mould,Filter slag,Supply liquid metal to compensate for shrinkage,Hold the pattern,C,20,1000
+multiple,The gating system of a mould is used to,Cool the metal,Remove cores,Deliver molten metal into the cavity,Hold the sand,C,20,1000
+multiple,Cores in casting are used to form,Patterns,Internal cavities,External surfaces,Risers,B,20,1000
+truefalse,Die casting is suited to high-volume production of non-ferrous parts.,,,,,True,20,1000
+multiple,Investment casting is also known as,Sand casting,Lost wax casting,Centrifugal casting,Permanent mould casting,B,20,1000
+multiple,Centrifugal casting is used for,Powders,Complex sculptures only,Wires,Pipes and cylindrical parts,D,20,1000
+multiple,Permanent mould casting uses moulds made of,Metal,Wax,Plaster only,Sand,A,20,1000
+multiple,"Green sand consists of sand, clay and",Oil,Petrol,Alcohol,Water,D,20,1000
+truefalse,Continuous casting is rarely used in steel plants today.,,,,,False,20,1000
+multiple,Pouring temperature that is too low can cause,Hot tears,Gas porosity only,Burn-on,Misruns and cold shuts,D,20,1000
+multiple,Permeability of a mould refers to,Weight,Hardness,Ability to let gases escape,Colour,C,20,1000

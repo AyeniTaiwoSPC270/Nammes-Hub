@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A process flow diagram shows,Only the building,Main equipment and streams of a process,Only staff,Only costs,B,20,1000
+multiple,A P&ID is a,Power and irrigation diagram,Piping and instrumentation diagram,Process idea document,Plant and income document,B,20,1000
+multiple,Design basis includes,Holidays,Colour choice,Names,"Capacity, feed and product specifications",D,20,1000
+multiple,Batch processes differ from continuous by,Never stopping,Having no product,Using no equipment,Processing fixed quantities in separate runs,D,20,1000
+truefalse,Flowsheet development starts from material and energy balances.,,,,,True,20,1000
+multiple,Block flow diagrams give,Detailed piping,A simplified overview of a process,Electrical wiring,Building plans,B,20,1000
+multiple,Unit operations are,Units of measurement,Machines only,Plant managers,"Basic steps such as crushing, heating and separation",D,20,1000
+multiple,Scale-up from laboratory to plant is done carefully because,Nothing changes,Colour changes,Labs are bigger,Behaviour may change at large size,D,20,1000
+truefalse,Pilot plant trials increase the risk of scale-up.,,,,,False,20,1000
+multiple,Yield of a process is,Time,Amount of product obtained compared with the theoretical maximum,Cost,Speed,B,20,1000
+multiple,Recycle streams can,Add noise,Destroy the process,Stop products,Improve conversion and material use,D,20,1000
+multiple,Process control keeps variables such as temperature and flow at,Set points,Random values,Zero,Maximum,A,20,1000

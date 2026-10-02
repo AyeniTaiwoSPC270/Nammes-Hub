@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"The Miller indices of a plane parallel to the x and y axes, intersecting z at 1, are",(110),(111),(100),(001),D,20,1000
+multiple,"The family of directions [100], [010], [001] is written as",{100},<100>,[100],(100),B,20,1000
+multiple,The interplanar spacing d for a cubic crystal with lattice parameter a is,a / sqrt(h^2 + k^2 + l^2),a / (h + k + l),a (h + k + l),a x sqrt(h^2 + k^2 + l^2),A,20,1000
+multiple,Bragg's law is,n lambda = 2 d sin theta,n d = 2 lambda sin theta,lambda = d sin theta,lambda = 2 d cos theta,A,20,1000
+truefalse,X-ray diffraction can be used to identify crystal structures.,,,,,True,20,1000
+multiple,Close-packed planes in FCC are the,{110} planes,{111} planes,{100} planes,{210} planes,B,20,1000
+multiple,The close-packed directions in BCC are,<110>,<100>,<112>,<111>,D,20,1000
+multiple,A crystal system with three unequal axes at 90 degrees is,Orthorhombic,Hexagonal,Tetragonal,Cubic,A,20,1000
+multiple,There are how many Bravais lattices?,230,32,14,7,C,20,1000
+truefalse,A single crystal has the same orientation throughout the sample.,,,,,True,20,1000
+multiple,The linear density of atoms along [110] in FCC is,1/a,4/a,1 / (a sqrt(2)),2 / (a sqrt(2)),D,20,1000
+multiple,The planar density is the number of atoms per unit,Area of plane,Volume,Mass,Length,A,20,1000

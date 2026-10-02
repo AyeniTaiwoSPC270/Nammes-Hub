@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Injection moulding involves,Forcing molten polymer into a mould cavity,Rolling sheet,Machining,Pouring into sand,A,20,1000
+multiple,Extrusion of polymers produces,Powders,Continuous profiles such as pipes,Castings,Discrete parts only,B,20,1000
+multiple,Blow moulding is used to make,Wire,Hollow items such as bottles,Gears only,Solid blocks,B,20,1000
+multiple,Thermoforming heats a polymer sheet and then,Casts it,Forms it over a mould,Powders it,Melts it fully,B,20,1000
+truefalse,Thermosetting resins are cured by chemical cross-linking during moulding.,,,,,True,20,1000
+multiple,Compression moulding is commonly used for,Only wires,Thermosets,Only pipes,Only bottles,B,20,1000
+multiple,Melt flow index measures,Density,Ease of flow of molten polymer,Colour,Hardness,B,20,1000
+multiple,Plasticisers are added to polymers to,Add magnetism,Increase brittleness,Increase flexibility,Reduce weight only,C,20,1000
+multiple,Fillers such as carbon black in rubber,Dissolve it,Improve strength and wear resistance,Reduce all strength,Add colour only,B,20,1000
+multiple,Degradation of polymers in processing can be caused by,Sound,Excess heat and shear,Cold,Vacuum,B,20,1000
+truefalse,Orientation of polymer chains during processing affects mechanical properties.,,,,,True,20,1000
+multiple,Calendering is used to produce,Wire,Polymer sheet and film,Cast blocks,Bolts,B,20,1000

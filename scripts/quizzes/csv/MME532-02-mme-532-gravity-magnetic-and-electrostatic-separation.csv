@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Gravity concentration relies on differences in,Shape only,Density,Hardness,Colour,B,20,1000
+multiple,A jig separates minerals using,Acid,Pulsating water flow,Heat,Magnetism,B,20,1000
+multiple,Shaking tables separate minerals by,Smelting,Flotation,Leaching,Flowing film and riffles,D,20,1000
+multiple,Heavy media separation uses a medium with density,Between that of the light and heavy minerals,Equal to water only,Lower than both,Higher than both,A,20,1000
+truefalse,Magnetic separation is used to concentrate magnetite.,,,,,True,20,1000
+multiple,Low-intensity magnetic separators are used for,Non-magnetic,Glass,Strongly magnetic minerals,Gold,C,20,1000
+multiple,Electrostatic separation relies on differences in,Colour,Size,Density,Electrical conductivity,D,20,1000
+multiple,Concentration criterion is used to judge,Melting,Colour,How easy a gravity separation is,Hardness,C,20,1000
+multiple,Cassiterite is concentrated mainly by,Leaching,Sound,Gravity methods,Smelting at ore stage,C,20,1000
+truefalse,Spirals and hydrocyclones are used only in smelting.,,,,,False,20,1000
+multiple,Particle settling in a fluid is described at low Reynolds number by,Stokes' law,Newton's law of cooling,Fick's law,Ohm's law,A,20,1000
+multiple,Sink-float tests are used to,Test hardness,Smelt,Assess washability of coal,Test colour,C,20,1000

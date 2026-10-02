@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"The basic steps of powder metallurgy are powder production, blending, compaction and",Sintering,Casting,Forging,Rolling,A,20,1000
+multiple,Atomisation is a method used to produce metal powder by,Drawing wire,Crushing ore,Breaking up a molten metal stream into droplets,Machining,C,20,1000
+multiple,Sintering is carried out at temperature,At room temperature,Below the melting point of the main constituent,At absolute zero,Above melting point,B,20,1000
+multiple,Green density refers to the density of a compact,Of the loose powder,After forging,"After compaction, before sintering",After sintering,C,20,1000
+truefalse,Powder metallurgy is well suited for making parts from high melting point metals like tungsten.,,,,,True,20,1000
+multiple,Self-lubricating bearings are made by powder metallurgy because of,Perfect density,Low strength,Controlled porosity that holds oil,High ductility,C,20,1000
+multiple,Hot isostatic pressing (HIP) applies,Only heat,Heat and uniform gas pressure,Only vibration,Only electricity,B,20,1000
+multiple,Sintering occurs mainly by,Melting of all particles,Atomic diffusion that forms necks between particles,Chemical burning,Pressure alone,B,20,1000
+multiple,Lubricants are added to powder before compaction to,Reduce friction with die walls,Raise melting point,Increase porosity,Add colour,A,20,1000
+truefalse,Powder metallurgy parts usually need little machining after production.,,,,,True,20,1000
+multiple,Liquid phase sintering involves,No liquid at all,Gas only,A small amount of liquid that helps densification,Complete melting,C,20,1000
+multiple,Cemented carbide (WC-Co) is a typical product of,Forging,Extrusion,Powder metallurgy,Sand casting,C,20,1000

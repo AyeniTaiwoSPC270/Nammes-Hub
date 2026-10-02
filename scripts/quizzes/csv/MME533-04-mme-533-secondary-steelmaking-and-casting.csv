@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Secondary metallurgy refines steel after,Rolling,Primary steelmaking,Casting,Forging,B,20,1000
+multiple,Ladle furnace is used for,Smelting,Sintering,Reheating and alloying steel,Melting ore,C,20,1000
+multiple,Vacuum degassing removes,Carbon only,Iron,Silicon,Hydrogen and nitrogen,D,20,1000
+multiple,Deoxidation of steel is done by adding,Aluminium or silicon,Sulfur,Oxygen,Carbon,A,20,1000
+truefalse,Killed steel is fully deoxidised before casting.,,,,,True,20,1000
+multiple,Argon stirring in a ladle is used to,Add oxygen,Add carbon,Cool steel,Homogenise temperature and composition and float inclusions,D,20,1000
+multiple,Continuous casting produces,Ingots only,"Slabs, blooms and billets",Wires,Powder,B,20,1000
+multiple,The mould in continuous casting is usually made of,Plastic,Wood,Sand,Water-cooled copper,D,20,1000
+multiple,Breakouts in continuous casting are,Reheating,Liquid steel escaping through a thin shell,Good practice,Cooling events,B,20,1000
+multiple,Electromagnetic stirring in casting helps to,Improve internal quality,Colour,Melt mould,Stop flow,A,20,1000
+truefalse,Sulphur in steel improves hot workability because it prevents hot shortness.,,,,,False,20,1000
+multiple,Inclusion shape control is done with,Sugar,Water,Calcium treatment,Nothing,C,20,1000

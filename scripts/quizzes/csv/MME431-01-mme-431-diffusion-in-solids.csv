@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Fick's first law states that flux J equals,D C,C / D,-D dC/dx,-D x,C,20,1000
+multiple,The diffusion coefficient varies with temperature as,D = D0 exp(-Q / RT),D = D0 / T,D = D0 T,D = D0 T^2,A,20,1000
+multiple,Steady state diffusion means,Flux is zero always,Concentration changes rapidly,Concentration profile does not change with time,Diffusion stops,C,20,1000
+multiple,Kirkendall effect demonstrates that,Vacancies do not exist,Atoms never move,Atoms of different species diffuse at different rates,Diffusion is symmetrical,C,20,1000
+truefalse,Activation energy for diffusion is lower for interstitial than for substitutional diffusion.,,,,,True,20,1000
+multiple,Self-diffusion refers to diffusion of,Atoms of a pure metal in its own lattice,Electrons,Solute in another metal,Gases in metals,A,20,1000
+multiple,The carburising depth increases with,The square root of time,Time squared,Inverse of time,Not time,A,20,1000
+multiple,Short-circuit diffusion paths include,Grain boundaries and dislocations,Nothing,Bulk lattice,Vacancies only,A,20,1000
+multiple,Uphill diffusion can occur when the driving force is,Gravity only,"Chemical potential gradient, not concentration gradient",Temperature alone,Pressure only,B,20,1000
+truefalse,Diffusion is faster at lower temperature.,,,,,False,20,1000
+multiple,Interdiffusion of a couple is described by,Darken's equations,Ohm's law,Hooke's law,Newton's law,A,20,1000
+multiple,"For Fick's second law, the solution for a semi-infinite solid uses the",Gamma function,Error function,Sine function,Bessel function only,B,20,1000

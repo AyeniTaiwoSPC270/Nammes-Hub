@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A composite consists of a matrix and a,Catalyst,Solvent,Reinforcement,Gas,C,20,1000
+multiple,The function of the matrix is to,Bind reinforcement and transfer load,Carry all load alone,Be removed,Add colour,A,20,1000
+multiple,"Composites are classified by reinforcement as particulate, fibre and",Liquid,Gaseous,Ionic,Structural (laminate),D,20,1000
+multiple,Which of these is a natural composite?,Steel,Wood,Copper,Glass,B,20,1000
+truefalse,Composite properties can be tailored by choosing fibre orientation.,,,,,True,20,1000
+multiple,Specific strength is,Modulus divided by temperature,Strength divided by density,Strength times density,Stress times strain,B,20,1000
+multiple,A common reason to use composites in aircraft is,Low cost always,High strength to weight ratio,Conductivity,Magnetism,B,20,1000
+multiple,Reinforcement volume fraction is the fraction of,Volume occupied by fibres,Number of layers,Cost of resin,Mass of matrix,A,20,1000
+multiple,Reinforced concrete is a composite of concrete and,Wood,Plastic film,Steel bars,Glass,C,20,1000
+truefalse,Metal matrix composites can be used at lower temperatures than polymer matrix composites.,,,,,False,20,1000
+multiple,Sandwich panels consist of,Only a skin,Only a core,Stiff skins separated by a light core,Only fibres,C,20,1000
+multiple,Cermets combine,Wood and steel,Ceramic and metal,Polymer and glass,Rubber and ceramic,B,20,1000

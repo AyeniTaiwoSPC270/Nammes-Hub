@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Carbothermic reduction of iron oxide uses,Chlorine,Carbon or carbon monoxide,Nitrogen,Sodium only,B,20,1000
+multiple,The Boudouard reaction is,CO + O2 = CO2,2C + O2 = 2CO,C + CO2 = 2CO,C + H2O = CO + H2,C,20,1000
+multiple,Reduction of FeO by CO occurs as,FeO = Fe + O2,FeO + CO2 = Fe + CO,Fe + CO = FeO,FeO + CO = Fe + CO2,D,20,1000
+multiple,Increasing temperature favours the Boudouard reaction because it is,Not reversible,Exothermic,Isothermal,Endothermic,D,20,1000
+truefalse,The Ellingham diagram helps to choose a reducing agent.,,,,,True,20,1000
+multiple,Hydrogen can reduce metal oxides by,M + H2 = MH2,MO + H2 = M + H2O,MO + H2O = M + O2,M + H2O = MO,B,20,1000
+multiple,Reducing an oxide of a very stable metal like Al2O3 with carbon requires,Air,Very high temperature (impractical) so electrolysis is used,Low temperature,No energy,B,20,1000
+multiple,Activity of an oxide in slag affects reduction because,It changes the colour,It has no effect,It increases the pressure,It changes the effective driving force,D,20,1000
+multiple,The oxygen potential is a measure of,Stress,Conductivity,The chemical potential of oxygen in a system,Temperature,C,20,1000
+multiple,Reduction by aluminium is called,Hydrogen,Aluminothermic (thermite) reduction,Electrolytic,Carbothermic,B,20,1000
+truefalse,Metallothermic reduction uses a less reactive metal to reduce a more reactive one.,,,,,False,20,1000
+multiple,Magnesium is used in the Kroll process to reduce,Lead sulfide,Iron oxide,Titanium tetrachloride,Copper sulfide,C,20,1000

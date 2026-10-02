@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Ultra-high molecular weight polyethylene (UHMWPE) is used as,Stent metal,Acetabular cup liners in hip replacements,Suture needle,Bone cement monomer,B,20,1000
+multiple,Polymethyl methacrylate (PMMA) is used as,Blood vessel graft only,Pacemaker wire,Heart valve leaflet only,Bone cement,D,20,1000
+multiple,Polylactic acid (PLA) is commonly used as,Biodegradable sutures and screws,Electrode,Permanent hip stem,Catheter metal,A,20,1000
+multiple,Bioglass bonds to bone by forming,A hydroxycarbonate apatite layer,Nothing,Metal oxide,Plastic film,A,20,1000
+truefalse,Zirconia is used in dental crowns for high strength and aesthetics.,,,,,True,20,1000
+multiple,Collagen-based materials are used in,Electronics,Engines,Bridges,Wound dressings and tissue scaffolds,D,20,1000
+multiple,Silicone rubber is used in,Soft tissue implants and catheters,Wiring only,Bone plates,Turbine blades,A,20,1000
+multiple,Hydrogels are valued in biomedical use due to,High stiffness,High water content and soft tissue-like properties,Magnetism,Metal content,B,20,1000
+multiple,Degradation of polymeric implants is commonly by,Hydrolysis,Sublimation,Fusion,Magnetism,A,20,1000
+truefalse,Calcium phosphate ceramics such as tricalcium phosphate are completely inert and never resorb.,,,,,False,20,1000
+multiple,Polytetrafluoroethylene (PTFE) is used in,Bone plates,Screws,Vascular grafts,Electrodes,C,20,1000
+multiple,Ceramics used in implants are limited mainly by,Brittleness,Colour,Conductivity,Weight,A,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Stored energy in a cold worked metal is mostly due to,Grain boundaries,Vacancies,Dislocations,Gas,C,20,1000
+multiple,Recovery is the stage where,Dislocations rearrange and stresses relax without new grains,New grains form,Melting occurs,Grains grow,A,20,1000
+multiple,Recrystallization forms,Twins only,Cracks,New strain-free grains,More dislocations,C,20,1000
+multiple,Recrystallization temperature is commonly taken as about what fraction of the melting temperature in K?,1.5,0.05,0.3 to 0.5,0.9,C,20,1000
+truefalse,Greater prior cold work lowers the recrystallization temperature.,,,,,True,20,1000
+multiple,Grain growth reduces,Atomic mass,Temperature,Total grain boundary energy,Grain size,C,20,1000
+multiple,Hot working is done,In vacuum only,Below room temperature,At absolute zero,Above the recrystallization temperature,D,20,1000
+multiple,Cold working is done,Below the recrystallization temperature,At equilibrium,With fire,Above melting,A,20,1000
+multiple,Abnormal grain growth is,Shrinking grains,Selective growth of a few grains,Random cracking,Uniform growth,B,20,1000
+multiple,Texture in metals refers to,Surface roughness,Colour,Preferred crystallographic orientation,Weight,C,20,1000
+truefalse,The final grain size after recrystallization is finer for lower prior deformation.,,,,,False,20,1000
+multiple,Dynamic recrystallization occurs,Never,During hot deformation,Only after cooling,In liquids,B,20,1000

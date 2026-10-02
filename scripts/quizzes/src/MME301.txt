@@ -1,0 +1,83 @@
+# MME 301: Laws of Thermodynamics
+Q|The first law of thermodynamics is a statement of|Conservation of energy|Increase of entropy|Absolute zero|Equilibrium constant|a
+Q|For a closed system, the change in internal energy equals|Q + W, with W the work done on the system|Q x W|Q / W|Q - T|a
+Q|Enthalpy H is defined as|U + PV|U - PV|U + TS|U - TS|a
+T|Internal energy is a state function.|true
+Q|The second law of thermodynamics says that for an isolated system the entropy|Decreases|Stays constant in all processes|Never decreases|Is always zero|c
+Q|The third law states that the entropy of a perfect crystal at 0 K is|Infinite|Zero|One|Equal to enthalpy|b
+Q|At constant pressure, the heat absorbed by a system equals the change in|Internal energy|Enthalpy|Entropy|Gibbs energy|b
+T|Heat and work are state functions.|false
+Q|An adiabatic process is one in which|Temperature is constant|Pressure is constant|No heat is exchanged with the surroundings|Volume is zero|c
+Q|For an isothermal expansion of an ideal gas, the internal energy change is|Positive|Negative|Zero|Equal to PV|c
+Q|The SI unit of entropy is|J/mol|J/K|J K|K/J|b
+Q|Cp minus Cv for one mole of an ideal gas equals|R|2R|R/2|Zero|a
+
+# MME 301: Gibbs Energy and Equilibrium
+Q|The Gibbs free energy is defined as|H - TS|H + TS|U - TS|U + PV|a
+Q|A process at constant T and P is spontaneous when the Gibbs energy change is|Positive|Negative|Zero|Infinite|b
+Q|At equilibrium, at constant T and P, delta G equals|Positive value|Negative value|Zero|One|c
+Q|The relation between standard Gibbs energy change and equilibrium constant K is|dG0 = -RT ln K|dG0 = RT K|dG0 = -K/RT|dG0 = R ln T|a
+T|If K is much smaller than 1, the standard Gibbs energy change is large and negative.|false
+Q|The Gibbs-Helmholtz relation links Gibbs energy to|Entropy and volume|Enthalpy and temperature|Pressure only|Heat capacity only|b
+Q|Le Chatelier's principle says that a system at equilibrium subjected to a change will|Ignore it|Shift to oppose the change|Stop reacting|Double the rate|b
+Q|For an exothermic reaction, raising the temperature shifts equilibrium toward the|Products|Reactants|No change|Solid phase only|b
+Q|The Helmholtz energy is defined as|U - TS|H - TS|U + TS|H + PV|a
+Q|The condition of equilibrium for a system at constant T and V is a minimum of|Gibbs energy|Helmholtz energy|Enthalpy|Entropy of surroundings|b
+T|A positive delta G means a reaction cannot proceed under any condition.|false
+Q|The Clausius-Clapeyron equation relates|Vapour pressure and temperature|Stress and strain|Diffusion and time|Current and voltage|a
+
+# MME 301: Ellingham Diagrams
+Q|An Ellingham diagram plots the standard Gibbs energy of formation of oxides against|Pressure|Temperature|Time|Composition|b
+Q|On an Ellingham diagram, the lower a metal's line, the|Less stable is its oxide|More stable is its oxide|Higher its melting point|Lower its density|b
+Q|The slope of a line on an Ellingham diagram is approximately equal to|Minus the entropy change|Plus the enthalpy change|The heat capacity|The pressure|a
+Q|Most lines slope upward because oxidation of a solid metal by O2 gas|Gains entropy|Consumes gas and loses entropy|Produces more gas|Has no entropy change|b
+T|The C to CO line on an Ellingham diagram slopes downward.|true
+Q|Carbon can reduce a metal oxide when the carbon-oxygen line lies|Above the metal oxide line|Below the metal oxide line at that temperature|At the same point always|Has no relation|b
+Q|A metal whose oxide line is lower than that of another metal can reduce the oxide of the|Higher-placed oxide|Lower-placed oxide|Same oxide|None|a
+Q|Which metal oxide is the most stable, at the bottom of the diagram, among these?|Cu2O|FeO|Al2O3|NiO|c
+Q|A change of slope in an Ellingham line indicates a|Change of phase such as melting or boiling|Change in pressure|Experimental error|Constant composition|a
+T|Ellingham diagrams show reaction rates.|false
+Q|The CO/CO2 nomograph on an Ellingham diagram is used to read the|Required CO/CO2 ratio for reduction|Melting point|Viscosity|Yield stress|a
+Q|The intercept of an Ellingham line at 0 K corresponds approximately to the|Entropy change|Enthalpy change|Heat capacity|Activity|b
+
+# MME 301: Solutions and Activity
+Q|Raoult's law states that the partial pressure of a component in an ideal solution is|Independent of mole fraction|Proportional to its mole fraction|Equal to total pressure|Zero|b
+Q|The activity of a pure solid in its standard state is|Zero|One|Infinity|Equal to its mole fraction squared|b
+Q|Activity coefficient gamma relates activity to|Mole fraction: a = gamma x|Pressure only|Temperature only|Volume|a
+T|In an ideal solution the activity coefficient of each component is greater than 1.|false
+Q|Henry's law applies to the solute in a|Very dilute solution|Pure liquid|Concentrated solution|Gas at high pressure only|a
+Q|A positive deviation from Raoult's law indicates an activity coefficient|Less than 1|Equal to 1|Greater than 1|Negative|c
+Q|The partial molar Gibbs energy of a component is also called its|Activity|Chemical potential|Enthalpy|Pressure|b
+Q|For an ideal solution the enthalpy of mixing is|Positive|Negative|Zero|Infinite|c
+Q|The entropy of mixing of an ideal solution is always|Negative|Zero|Positive|Undefined|c
+Q|The Gibbs-Duhem equation relates the changes in|Chemical potentials of components in a solution|Pressure and volume only|Stress and strain|Heat and work|a
+T|A regular solution has zero enthalpy of mixing.|false
+Q|The standard state for dilute solute in steelmaking is often taken as the 1 weight percent solution, in which activity is based on|Mole fraction|Weight percent|Partial pressure|Density|b
+
+# MME 301: Phase Equilibria
+Q|The Gibbs phase rule for a condensed system at constant pressure is|F = C - P + 1|F = C + P + 2|F = C - P + 2|F = P - C|a
+Q|At the triple point of a one-component system the degrees of freedom are|0|1|2|3|a
+Q|In a binary system the maximum number of phases that can coexist at constant pressure is|2|3|4|1|b
+T|At a eutectic point in a binary system at constant pressure, three phases coexist.|true
+Q|The common tangent construction on Gibbs energy-composition curves is used to find|Equilibrium compositions of two phases|Yield strength|Activation energy|Surface tension|a
+Q|A peritectic reaction is|Liquid to two solids|Liquid plus solid to a different solid|Solid to two solids|Solid to liquid only|b
+Q|The eutectoid reaction is|Solid to two other solids|Liquid to two solids|Liquid plus solid to solid|Gas to liquid|a
+Q|The degrees of freedom in a two-phase region of a binary at constant pressure is|0|1|2|3|b
+Q|Gibbs free energy of mixing curves that show a miscibility gap have|One minimum|Two minima with a hump between|No minimum|A straight line|b
+T|The lever rule can only be applied in single-phase regions.|false
+Q|The solidus is the line below which the alloy is|Completely liquid|Completely solid|Two phase liquid plus solid|Gaseous|b
+Q|Number of components in the system Fe-C is|1|2|3|4|b
+
+# MME 301: Reaction Kinetics and Electrochemical Thermodynamics
+Q|The Arrhenius equation describes the variation of a rate constant with|Pressure|Temperature|Volume|Concentration only|b
+Q|The activation energy is the|Energy released in a reaction|Minimum energy barrier for a reaction|Gibbs energy of formation|Heat of fusion|b
+Q|A catalyst works by|Changing the equilibrium constant|Lowering the activation energy|Raising the temperature|Changing delta G of the reaction|b
+T|A catalyst changes the position of equilibrium.|false
+Q|The rate of a first-order reaction depends on|Concentration raised to the first power|Square of concentration|Temperature only|Nothing|a
+Q|The Nernst equation relates electrode potential to|Ion activity or concentration|Hardness|Stress|Grain size|a
+Q|The standard hydrogen electrode has a potential of|1.00 V|0.00 V|-0.44 V|0.34 V|b
+Q|The relation between cell potential and Gibbs energy is|dG = -nFE|dG = nFE/T|dG = E/nF|dG = -E|a
+Q|Which metal is more active (more negative standard potential)?|Copper|Zinc|Silver|Gold|b
+Q|In a galvanic cell, oxidation occurs at the|Cathode|Anode|Salt bridge|Electrolyte only|b
+T|The Faraday constant F equals about 96,485 coulombs per mole of electrons.|true
+Q|A reaction is diffusion controlled when the|Chemical step is the slowest step|Transport of reactants is the slowest step|Temperature is zero|Activity is zero|b

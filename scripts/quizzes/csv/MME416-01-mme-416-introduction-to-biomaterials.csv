@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A biomaterial is best described as a material that,Is any polymer,Is grown on farms,Is only natural,Interacts with biological systems for a medical purpose,D,20,1000
+multiple,Biocompatibility means,The ability of a material to perform with an appropriate host response,Being cheap,Being magnetic,Being transparent,A,20,1000
+multiple,Which is a common bioinert ceramic used in hip joints?,Brass,Polyethylene wax,Alumina,Lead,C,20,1000
+multiple,Bioactive materials are those that,Form a bond with living tissue,Conduct electricity,Are toxic,Dissolve in seconds,A,20,1000
+truefalse,Bioresorbable materials are gradually broken down and absorbed in the body.,,,,,True,20,1000
+multiple,Hydroxyapatite is chemically similar to,Blood plasma,Skin protein,Hair,The mineral part of bone,D,20,1000
+multiple,Which property is important for a material used in a load-bearing implant?,Transparency,Colour,Fatigue resistance,Low density only,C,20,1000
+multiple,Stress shielding in orthopaedic implants arises from,Implant stiffness much higher than bone,Corrosion,Heat,Implant being too flexible,A,20,1000
+multiple,Sterilisation methods for implants include,Boiling in tea,"Autoclave, gamma radiation, ethylene oxide",Freezing only,Painting,B,20,1000
+truefalse,Foreign body response is a purely mechanical effect with no immune involvement.,,,,,False,20,1000
+multiple,Young's modulus of cortical bone is approximately,10 to 30 GPa,1 TPa,1 MPa,200 GPa,A,20,1000
+multiple,The regulatory framework for medical implants requires,No testing,Colour matching,Biological and mechanical testing,Only cost reports,C,20,1000

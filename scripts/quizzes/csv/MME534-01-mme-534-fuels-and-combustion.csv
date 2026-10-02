@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The calorific value of a fuel is,Heat released per unit mass or volume on complete combustion,Its density,Its price,Its colour,A,20,1000
+multiple,Higher heating value includes,Latent heat of condensation of water vapour,Only carbon,No water,Only ash,A,20,1000
+multiple,Proximate analysis of coal gives,"Elements C, H, N, S",Only ash,Only density,"Moisture, volatile matter, fixed carbon and ash",D,20,1000
+multiple,Ultimate analysis of coal gives,Only moisture,Only volatile matter,Only ash,"Percentages of C, H, O, N and S",D,20,1000
+truefalse,Coke is produced by heating coking coal in the absence of air.,,,,,True,20,1000
+multiple,Stoichiometric combustion uses,Exactly the theoretical amount of air,No air,Excess air,Less air,A,20,1000
+multiple,Excess air is used in furnaces to,Produce smoke,Cool the flame,Reduce efficiency deliberately,Ensure complete combustion,D,20,1000
+multiple,Flame temperature is raised by,Adding excess air,Adding water,Cooling fuel,Preheating air or using oxygen enrichment,D,20,1000
+multiple,Natural gas is mainly,Methane,Hydrogen,Propane,Carbon monoxide,A,20,1000
+multiple,Producer gas is made by,Partial oxidation of coal with air and steam,Burning oil,Cooling gas,Electrolysis,A,20,1000
+truefalse,Coal with lower fixed carbon generally has higher calorific value.,,,,,False,20,1000
+multiple,Liquid fuels used in furnaces include,Water,Fuel oil,Sand,Steel,B,20,1000

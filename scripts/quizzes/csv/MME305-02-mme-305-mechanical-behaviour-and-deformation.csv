@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Slip in crystals occurs most easily on planes that are,Loosely packed,Randomly oriented,Close-packed,Perpendicular to the load,C,20,1000
+multiple,Critical resolved shear stress is given by Schmid's law as,sigma sin(phi),sigma cos(phi) cos(lambda),sigma x phi,sigma / cos(phi),B,20,1000
+multiple,Cold working a metal results in,No change,Decrease in strength,Increase in ductility,Increase in strength and decrease in ductility,D,20,1000
+multiple,Recrystallization occurs on,Cooling to zero Kelvin,Melting,Quenching,Heating a cold worked metal to a sufficiently high temperature,D,20,1000
+truefalse,Dislocation density increases during cold working.,,,,,True,20,1000
+multiple,Twinning is a deformation mechanism that is more common in,FCC at high temp,Liquids,HCP metals and BCC at low temp,Amorphous materials,C,20,1000
+multiple,Necking in a tensile test begins at the,Proportional limit,Fracture point,Yield point,Point of ultimate tensile strength,D,20,1000
+multiple,Ductile fracture surfaces typically appear,Dull and fibrous with cup-and-cone shape,Crystalline facets only,Flat and shiny,Smooth like glass,A,20,1000
+multiple,Brittle fracture in a crystalline metal often occurs by,Diffusion,Necking,Viscous flow,Cleavage,D,20,1000
+truefalse,The ductile-to-brittle transition is typical of FCC metals such as copper as temperature drops.,,,,,False,20,1000
+multiple,Elastic deformation is,Caused by dislocation glide,Always less than 0.001 percent,Recoverable upon load removal,Permanent,C,20,1000
+multiple,Hardness of a metal generally correlates with its,Density,Colour,Thermal conductivity,Tensile strength,D,20,1000

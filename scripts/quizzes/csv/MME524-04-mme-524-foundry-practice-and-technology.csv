@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Foundry melting furnaces include,Oven,"Cupola, induction and crucible",Kiln only,Blast stove,B,20,1000
+multiple,A cupola furnace melts,Steel with electric arc,Aluminium using gas only,Copper by electrolysis,Cast iron using coke,D,20,1000
+multiple,Induction furnaces heat metal by,Electromagnetic induction,Sunlight,Friction,Burning fuel,A,20,1000
+multiple,Fettling refers to,Pouring metal,Cleaning and finishing castings,Mixing sand,Melting metal,B,20,1000
+truefalse,Patterns must have draft angles to allow easy removal from the mould.,,,,,True,20,1000
+multiple,Sand testing includes checking for,Sound,Weight only,"Permeability, moisture and strength",Colour only,C,20,1000
+multiple,Degassing and fluxing treat,Molten metal before pouring,Tools,Patterns,Sand,A,20,1000
+multiple,Shrinkage allowance for cast iron is roughly,30 percent,1 percent,0 percent,10 percent,B,20,1000
+multiple,Yield of a casting is the ratio of,Time to weight,Cost to weight,Casting weight to total poured metal weight,Sand to metal,C,20,1000
+truefalse,Good foundry practice includes safety measures such as protective clothing around molten metal.,,,,,True,20,1000
+multiple,Sprue is the,Vertical channel where metal enters the mould,Pattern,Riser,Core,A,20,1000
+multiple,Non-destructive testing of castings can use,Cutting up every part,Burning,Weighing only,Radiography and ultrasonics,D,20,1000

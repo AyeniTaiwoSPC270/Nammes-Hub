@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Natural convection is driven by,Pumps,Compressors,Density differences,Fans,C,20,1000
+multiple,The Nusselt number is the ratio of,Gravity to pressure,Mass to heat transfer,Convective to conductive heat transfer,Inertia to viscosity,C,20,1000
+multiple,Newton's law of cooling gives heat flux as,sigma T,Emissivity times T,k times gradient,h times temperature difference,D,20,1000
+multiple,The Prandtl number compares,Mass to volume,Inertia to viscosity,Momentum diffusivity to thermal diffusivity,Flow to conduction,C,20,1000
+truefalse,Radiative heat transfer needs a medium to travel through.,,,,,False,20,1000
+multiple,Stefan-Boltzmann law says radiated power is proportional to,T^0.5,T^4,T^2,T,B,20,1000
+multiple,A black body has emissivity,0.5,0,2,1,D,20,1000
+multiple,The view factor between two surfaces describes,Stress,Conduction,Color,The fraction of radiation leaving one that strikes the other,D,20,1000
+multiple,Forced convection heat transfer coefficient generally increases with,Decreasing velocity,Increasing flow velocity,Decreasing density,Nothing,B,20,1000
+multiple,The Grashof number is associated with,Natural convection,Conduction,Radiation,Forced convection only,A,20,1000
+truefalse,Emissivity of a real surface is always less than or equal to 1.,,,,,True,20,1000
+multiple,Furnaces at high temperature lose most heat by,Conduction only,Radiation,Sound,Electrolysis,B,20,1000

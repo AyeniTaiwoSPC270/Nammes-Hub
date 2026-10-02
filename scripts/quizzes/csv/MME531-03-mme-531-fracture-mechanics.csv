@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Griffith's theory explains fracture in brittle materials based on,Hardness,Energy balance for crack growth,Corrosion,Conductivity,B,20,1000
+multiple,"In linear elastic fracture mechanics, K equals",Y sigma sqrt(pi a),sigma a,sigma^2 a,sigma / a,A,20,1000
+multiple,Fracture occurs when K reaches,Zero,KIc,Yield,E,B,20,1000
+multiple,Plane strain fracture toughness is lower than plane stress because,It has more necking,Stress is lower,Constraint reduces plastic deformation,Thickness is lower,C,20,1000
+truefalse,A larger flaw leads to lower fracture stress for the same material.,,,,,True,20,1000
+multiple,Mode I crack loading is,Anti-plane shear,Opening (tensile),In-plane shear,Compression,B,20,1000
+multiple,The plastic zone size at a crack tip increases with,Lower K,Higher yield,Lower temperature only,Higher K and lower yield strength,D,20,1000
+multiple,J integral is used in,Corrosion,Heat transfer,Elastic-plastic fracture mechanics,Diffusion,C,20,1000
+multiple,Crack tip opening displacement (CTOD) is a measure of,Density,Crack tip plastic strain,Hardness,Chemistry,B,20,1000
+multiple,Toughness generally decreases as,Strength decreases,Strength increases,Temperature increases in steel,Ductility increases,B,20,1000
+truefalse,Residual stresses can contribute to crack propagation.,,,,,True,20,1000
+multiple,Compact tension specimens are used to measure,Hardness,Hall effect,Fracture toughness,Conductivity,C,20,1000

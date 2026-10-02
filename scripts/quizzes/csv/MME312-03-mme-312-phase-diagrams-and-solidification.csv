@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"In a binary isomorphous system, the two components are",Completely soluble in each other in the solid state,Forming an eutectic,Only liquid,Completely insoluble,A,20,1000
+multiple,Cu-Ni is an example of an,Isomorphous system,Eutectic system with no solubility,Monotectic,Peritectic system,A,20,1000
+multiple,Coring in an alloy results from,Recrystallization,Slow cooling,Mechanical working,Fast cooling with insufficient diffusion,D,20,1000
+multiple,Homogenisation heat treatment is used to,Remove composition gradients from coring,Create coring,Harden the alloy,Melt it,A,20,1000
+truefalse,Nucleation requires an energy barrier to be overcome.,,,,,True,20,1000
+multiple,Homogeneous nucleation has a critical radius that decreases with,Constant temperature,Decreasing undercooling,Increasing undercooling,Increasing surface energy,C,20,1000
+multiple,Heterogeneous nucleation is easier than homogeneous because it,Needs more undercooling,Is slower,Needs a gas phase,Uses existing surfaces to lower the barrier,D,20,1000
+multiple,Dendritic growth in castings is promoted by,Constitutional undercooling,Zero undercooling,Flat interface stability,Low growth rate,A,20,1000
+multiple,Grain refiners such as titanium-boron are added to aluminium to,Increase grain size,Raise melting point,Promote heterogeneous nucleation and finer grains,Remove oxygen,C,20,1000
+multiple,"In a eutectic alloy, the microstructure commonly appears as",Amorphous,Only precipitates,Single grains,Lamellae of two phases,D,20,1000
+truefalse,The eutectic composition has the lowest melting temperature in its system.,,,,,True,20,1000
+multiple,"Hypoeutectic alloys contain, below the eutectic temperature,",Only eutectic,Only liquid,Primary phase plus eutectic,Only primary,C,20,1000

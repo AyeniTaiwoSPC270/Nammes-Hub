@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Plastic deformation is,Permanent deformation that remains after load removal,Elastic,Reversible,Temporary,A,20,1000
+multiple,Yield criteria predict,Fracture only,Colour,The onset of plastic flow under combined stress,Corrosion,C,20,1000
+multiple,The von Mises yield criterion is based on,Surface energy,Distortion energy,Maximum normal stress,Mass,B,20,1000
+multiple,For uniaxial tension the effective stress equals,The applied stress,Zero,Twice the stress,Half the stress,A,20,1000
+truefalse,Hydrostatic pressure does not cause yielding in ductile metals.,,,,,True,20,1000
+multiple,The flow rule states that plastic strain increments are proportional to,Mass,Deviatoric stresses,Colour,Temperature,B,20,1000
+multiple,Levy-Mises equations relate,Heat to work,Force to area,Time to work,Strain increments to stress deviators,D,20,1000
+multiple,A rigid perfectly plastic material,Has constant flow stress and no elastic strain,Has no yield,Fractures immediately,Is elastic,A,20,1000
+multiple,Work hardening increases flow stress with,Nothing,Plastic strain,Temperature drop only,Time only,B,20,1000
+truefalse,Plastic work is mostly stored as elastic energy.,,,,,False,20,1000
+multiple,Effective strain for uniaxial tension equals,Half the strain,Zero,Double the strain,The axial strain,D,20,1000
+multiple,Plastic deformation is considered to occur at,Decreasing volume,Constant volume,Constant pressure,Zero volume,B,20,1000

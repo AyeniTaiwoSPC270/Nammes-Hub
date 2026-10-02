@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,pH is defined as,-ln[OH-],[H+],-log[H+],log[H+],C,20,1000
+multiple,A solution with pH 3 has hydrogen ion concentration of,10^3 mol/L,3 mol/L,0.3 mol/L,10^-3 mol/L,D,20,1000
+multiple,"At 25 C, pH plus pOH equals",7,0,1,14,D,20,1000
+multiple,A strong acid,Has pH above 7,Dissociates slightly,Dissociates completely in water,Does not dissociate,C,20,1000
+truefalse,Hydrochloric acid is a weak acid.,,,,,False,20,1000
+multiple,A buffer solution,Has pH 0,Resists changes in pH,Contains no ions,Is always acidic,B,20,1000
+multiple,Which of these is a strong base?,NH3,NaOH,CH3COOH,H2O,B,20,1000
+multiple,The solubility product Ksp applies to,Gases,Polymers,Strong acids,Sparingly soluble salts,D,20,1000
+multiple,Molarity is moles of solute per,Gram of solution,Litre of solution,Mole of solvent,Kilogram of solvent,B,20,1000
+multiple,Titration is used to determine,Crystal structure,Density of solids,Melting point,Unknown concentration,D,20,1000
+truefalse,Adding a common ion increases the solubility of a sparingly soluble salt.,,,,,False,20,1000
+multiple,Neutralisation of an acid with a base produces,Only a gas,A metal,Only a salt,Salt and water,D,20,1000

@@ -1,0 +1,83 @@
+# MME 312: Crystallography and Miller Indices
+Q|The Miller indices of a plane parallel to the x and y axes, intersecting z at 1, are|(001)|(100)|(110)|(111)|a
+Q|The family of directions [100], [010], [001] is written as|{100}|<100>|(100)|[100]|b
+Q|The interplanar spacing d for a cubic crystal with lattice parameter a is|a / sqrt(h^2 + k^2 + l^2)|a x sqrt(h^2 + k^2 + l^2)|a / (h + k + l)|a (h + k + l)|a
+Q|Bragg's law is|n lambda = 2 d sin theta|lambda = d sin theta|n d = 2 lambda sin theta|lambda = 2 d cos theta|a
+T|X-ray diffraction can be used to identify crystal structures.|true
+Q|Close-packed planes in FCC are the|{100} planes|{110} planes|{111} planes|{210} planes|c
+Q|The close-packed directions in BCC are|<100>|<110>|<111>|<112>|c
+Q|A crystal system with three unequal axes at 90 degrees is|Cubic|Tetragonal|Orthorhombic|Hexagonal|c
+Q|There are how many Bravais lattices?|7|14|32|230|b
+T|A single crystal has the same orientation throughout the sample.|true
+Q|The linear density of atoms along [110] in FCC is|1 / (a sqrt(2))|2 / (a sqrt(2))|1/a|4/a|b
+Q|The planar density is the number of atoms per unit|Volume|Area of plane|Length|Mass|b
+
+# MME 312: Imperfections in Crystals
+Q|A Frenkel defect consists of|A vacancy and an interstitial of the same atom|Two vacancies|A missing cation-anion pair|An extra plane|a
+Q|A Schottky defect is a|Pair of missing cation and anion|Self interstitial|Screw dislocation|Stacking fault|a
+Q|The equilibrium vacancy concentration increases with|Decreasing temperature|Increasing temperature|Increasing pressure only|Decreasing time|b
+T|Dislocations are equilibrium defects.|false
+Q|The Burgers vector of a dislocation represents|Its length|Magnitude and direction of the lattice distortion|Its charge|Its temperature|b
+Q|For a screw dislocation the Burgers vector is|Perpendicular to the line|Parallel to the line|Random|Zero|b
+Q|Dislocation climb requires|Vacancy diffusion|Shear only|No thermal activation|Twinning|a
+Q|Stacking faults are more common in metals with|High stacking fault energy|Low stacking fault energy|No slip|Only BCC|b
+Q|Low-angle grain boundaries can be described as arrays of|Vacancies|Dislocations|Precipitates|Voids|b
+Q|Dislocation density is measured in|m per m^3 (or m^-2)|kg/m^3|Pa|J|a
+T|Grain boundaries act as barriers to dislocation motion.|true
+Q|A twin boundary is a|Special low-energy grain boundary with mirror symmetry|Random boundary|Free surface|Void|a
+
+# MME 312: Phase Diagrams and Solidification
+Q|In a binary isomorphous system, the two components are|Completely soluble in each other in the solid state|Completely insoluble|Forming an eutectic|Only liquid|a
+Q|Cu-Ni is an example of an|Isomorphous system|Eutectic system with no solubility|Peritectic system|Monotectic|a
+Q|Coring in an alloy results from|Fast cooling with insufficient diffusion|Slow cooling|Mechanical working|Recrystallization|a
+Q|Homogenisation heat treatment is used to|Remove composition gradients from coring|Create coring|Harden the alloy|Melt it|a
+T|Nucleation requires an energy barrier to be overcome.|true
+Q|Homogeneous nucleation has a critical radius that decreases with|Decreasing undercooling|Increasing undercooling|Constant temperature|Increasing surface energy|b
+Q|Heterogeneous nucleation is easier than homogeneous because it|Uses existing surfaces to lower the barrier|Needs more undercooling|Is slower|Needs a gas phase|a
+Q|Dendritic growth in castings is promoted by|Constitutional undercooling|Flat interface stability|Low growth rate|Zero undercooling|a
+Q|Grain refiners such as titanium-boron are added to aluminium to|Increase grain size|Promote heterogeneous nucleation and finer grains|Raise melting point|Remove oxygen|b
+Q|In a eutectic alloy, the microstructure commonly appears as|Lamellae of two phases|Single grains|Only precipitates|Amorphous|a
+T|The eutectic composition has the lowest melting temperature in its system.|true
+Q|Hypoeutectic alloys contain, below the eutectic temperature,|Primary phase plus eutectic|Only eutectic|Only liquid|Only primary|a
+
+# MME 312: Iron-Carbon System and Steels
+Q|The maximum solubility of carbon in austenite is approximately|0.022 percent|0.76 percent|2.14 percent|6.67 percent|c
+Q|The maximum solubility of carbon in ferrite is about|0.022 percent|0.76 percent|2.14 percent|4.3 percent|a
+Q|The eutectoid temperature in the Fe-Fe3C diagram is about|727 C|912 C|1147 C|1538 C|a
+Q|The eutectic composition in the Fe-C diagram is about|0.76 percent C|2.14 percent C|4.3 percent C|6.67 percent C|c
+Q|A hypoeutectoid steel has carbon content|Below 0.76 percent|Exactly 0.76 percent|Above 0.76 and below 2.14 percent|Above 4.3 percent|a
+T|Pearlite is a lamellar mixture of ferrite and graphite.|false
+Q|The eutectic product in the Fe-Fe3C system is called|Pearlite|Ledeburite|Bainite|Martensite|b
+Q|Alpha iron (ferrite) has which crystal structure?|FCC|BCC|HCP|Cubic diamond|b
+Q|Austenite is|FCC gamma iron with dissolved carbon|BCC alpha iron|Iron carbide|HCP|a
+Q|Steel with 0.4 percent carbon is best described as|Low carbon|Medium carbon|High carbon|Cast iron|b
+T|Cementite is a hard and brittle compound.|true
+Q|The A1 line represents the|Eutectoid transformation temperature|Melting point|Curie point only|Eutectic temperature|a
+
+# MME 312: Phase Transformations and Heat Treatment of Steels
+Q|TTT diagrams show|Time, temperature and transformation|Tension, torsion and temperature|Thermal, tensile, toughness|Hardness vs time|a
+Q|Martensite forms from austenite by|Diffusional transformation|Diffusionless shear transformation|Melting|Precipitation only|b
+Q|Bainite is formed at temperatures|Below the pearlite nose and above martensite start|Above the eutectoid|Near melting|Below -200 C only|a
+Q|Hardenability of steel refers to|Its maximum hardness|Depth to which martensite forms on quenching|Its ductility|Its density|b
+Q|The Jominy end quench test measures|Hardenability|Impact strength|Fatigue life|Corrosion|a
+T|Alloying elements such as Cr, Mo and Ni generally reduce hardenability.|false
+Q|Spheroidising is used to|Improve machinability of high carbon steel|Make steel brittle|Harden the surface|Add carbon|a
+Q|Hardness of martensite depends mainly on|Carbon content|Grain colour|Alloy density|Cooling medium only|a
+Q|Retained austenite can occur after quenching when|Martensite finish temperature is below room temperature|Quenching is slow|Steel is pure iron|Carbon is zero|a
+Q|Tempering temperature increases leads to|Higher hardness|Lower hardness and higher toughness|No change|Martensite formation|b
+T|Isothermal annealing transforms austenite at a constant temperature below A1.|true
+Q|Quenching cracks are mainly caused by|Thermal and transformation stresses|Low carbon|Annealing|Rapid heating of pure iron|a
+
+# MME 312: Strengthening Mechanisms in Metals
+Q|Which is NOT a common strengthening mechanism in metals?|Grain refinement|Solid solution strengthening|Annealing to coarsen grains|Strain hardening|c
+Q|Precipitation hardening requires an alloy with|Decreasing solubility of a solute on cooling|No solubility change|Only one phase at all temperatures|Pure metal|a
+Q|The stages of precipitation hardening are solution treatment, quench and|Ageing|Melting|Carburising|Sputtering|a
+Q|Overageing results in|Higher strength|Coarse precipitates and reduced strength|Melting|Higher hardness|b
+T|Coherent precipitates strengthen a metal by distorting the lattice around them.|true
+Q|Which alloy is commonly precipitation hardened?|Duralumin (Al-Cu)|Pure copper|Pure gold|Pure iron|a
+Q|Dispersion strengthening uses|Fine insoluble particles such as oxides|Soluble atoms|Grain growth|Heating only|a
+Q|Orowan mechanism describes dislocations|Bowing between strong particles|Climbing only|Stopping at vacancies|Annihilating at surfaces|a
+Q|Work hardening increases strength by|Increasing dislocation density and interactions|Removing dislocations|Growing grains|Reducing carbon|a
+T|Annealing after cold work restores ductility.|true
+Q|Yield point phenomenon in low carbon steel is attributed to|Carbon and nitrogen atmospheres at dislocations|Precipitates|Grain growth|Twinning|a
+Q|Strengthening by refining grain size also usually improves|Toughness|Creep resistance at high temperature|Conductivity|Melting point|a

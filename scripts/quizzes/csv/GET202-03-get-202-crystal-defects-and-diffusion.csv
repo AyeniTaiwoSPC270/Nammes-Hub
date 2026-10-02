@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A vacancy is an example of a,Point defect,Planar defect,Line defect,Volume defect,A,20,1000
+multiple,A dislocation is an example of a,Point defect,Bulk defect,Line defect,Surface defect,C,20,1000
+multiple,A grain boundary is an example of a,Line defect,Planar defect,Volume defect,Point defect,B,20,1000
+truefalse,Plastic deformation in crystalline metals occurs mainly by dislocation motion.,,,,,True,20,1000
+multiple,Which dislocation has its Burgers vector perpendicular to the dislocation line?,Screw dislocation,Edge dislocation,Helical dislocation,Mixed dislocation,B,20,1000
+multiple,Diffusion in solids occurs faster when,Atoms are larger,Temperature is lower,Temperature is higher,Bonds are stronger,C,20,1000
+multiple,Fick's first law relates diffusion flux to,Crystal structure only,Pressure,Time and temperature,Concentration gradient,D,20,1000
+multiple,Interstitial diffusion is usually faster than vacancy diffusion because,Interstitial atoms are smaller and need no vacancy,Bonds are weaker,Grains are finer,It needs higher temperature,A,20,1000
+truefalse,Diffusion is generally slower along grain boundaries than through the grain interior.,,,,,False,20,1000
+multiple,The temperature dependence of the diffusion coefficient is described by,A parabolic relation,A linear relation,A logarithmic decay in T,An Arrhenius relation,D,20,1000
+multiple,A substitutional solid solution forms most readily when the atomic radii of the two elements differ by less than about,60%,15%,40%,90%,B,20,1000
+multiple,Case hardening of steel by carburizing relies on,Precipitation of copper,Recrystallization,Diffusion of carbon,Melting,C,20,1000

@@ -1,0 +1,83 @@
+# MME 431: Diffusion in Solids
+Q|Fick's first law states that flux J equals|-D dC/dx|D C|-D x|C / D|a
+Q|The diffusion coefficient varies with temperature as|D = D0 exp(-Q / RT)|D = D0 T|D = D0 / T|D = D0 T^2|a
+Q|Steady state diffusion means|Concentration profile does not change with time|Concentration changes rapidly|Diffusion stops|Flux is zero always|a
+Q|Kirkendall effect demonstrates that|Atoms of different species diffuse at different rates|Atoms never move|Vacancies do not exist|Diffusion is symmetrical|a
+T|Activation energy for diffusion is lower for interstitial than for substitutional diffusion.|true
+Q|Self-diffusion refers to diffusion of|Atoms of a pure metal in its own lattice|Solute in another metal|Gases in metals|Electrons|a
+Q|The carburising depth increases with|The square root of time|Time squared|Inverse of time|Not time|a
+Q|Short-circuit diffusion paths include|Grain boundaries and dislocations|Bulk lattice|Vacancies only|Nothing|a
+Q|Uphill diffusion can occur when the driving force is|Chemical potential gradient, not concentration gradient|Temperature alone|Pressure only|Gravity only|a
+T|Diffusion is faster at lower temperature.|false
+Q|Interdiffusion of a couple is described by|Darken's equations|Hooke's law|Ohm's law|Newton's law|a
+Q|For Fick's second law, the solution for a semi-infinite solid uses the|Error function|Sine function|Bessel function only|Gamma function|a
+
+# MME 431: Nucleation, Growth and Kinetics of Transformations
+Q|The Avrami equation describes|The fraction transformed versus time|Stress versus strain|Heat versus time|Mass versus volume|a
+Q|The driving force for nucleation is the|Reduction in free energy of the new phase|Increase in strain|Increase in entropy|Rise in pressure|a
+Q|Critical nucleus size is the size at which the nucleus|Becomes stable and grows|Disappears|Changes colour|Is liquid|a
+Q|Nucleation rate increases with undercooling up to a maximum because of the trade-off between|Driving force and atomic mobility|Pressure and volume|Mass and energy|Stress and strain|a
+T|Heterogeneous nucleation happens at defects like grain boundaries.|true
+Q|Spinodal decomposition differs from nucleation and growth because it|Has no nucleation barrier|Needs a large barrier|Only occurs in gases|Is slower|a
+Q|A coherent interface has|Low interfacial energy|High interfacial energy|No structure|Gases in it|a
+Q|An incoherent interface generally has|High interfacial energy|Low energy|No atoms|Zero stress|a
+Q|Ostwald ripening is the coarsening of|Large precipitates at the expense of small ones|Small at the expense of large|Nothing|Liquids|a
+T|Diffusional transformations take place by atomic movement over long distances.|true
+Q|Martensitic transformation is|Diffusionless|Diffusion controlled|Slow|Reversible only in gases|a
+Q|TTT curves are C-shaped because|Nucleation and diffusion rates compete with temperature|Of colour changes|Of pressure|Of mass|a
+
+# MME 431: Solidification of Metals and Alloys
+Q|Planar interface growth is unstable when there is|Constitutional undercooling|No undercooling|Zero composition|Constant pressure|a
+Q|The partition coefficient k is the ratio of|Solid to liquid solute concentration|Liquid to gas concentration|Hardness ratio|Temperature ratio|a
+Q|Scheil equation assumes|No diffusion in solid, complete mixing in liquid|Full diffusion in solid|No liquid|Equal densities|a
+Q|Microsegregation refers to|Composition variations on the scale of dendrites|Large-scale variation in ingots|Nothing|Gas pores|a
+T|Macrosegregation refers to composition variations over large distances in a casting.|true
+Q|Columnar grains grow|Parallel to the heat flow direction|Randomly|Against heat flow|At 90 degrees|a
+Q|Equiaxed zone in an ingot forms in the|Centre where undercooling is uniform|Surface|Mould wall only|Feeder head only|a
+Q|Rapid solidification leads to|Finer structures and extended solubility|Coarser grains|No change|Porosity only|a
+Q|Secondary dendrite arm spacing decreases with|Increasing cooling rate|Decreasing cooling rate|Increasing time|Adding weight|a
+T|Shrinkage occurs on solidification because the solid is usually less dense than the liquid.|false
+Q|Directional solidification is used to produce|Turbine blades with aligned grains|Powders|Sand|Glass|a
+Q|Eutectic structures can be regular or irregular depending on|Entropy of fusion of phases|Colour|Weight|Shape of mould|a
+
+# MME 431: Deformation, Recovery and Recrystallization
+Q|Stored energy in a cold worked metal is mostly due to|Dislocations|Vacancies|Grain boundaries|Gas|a
+Q|Recovery is the stage where|Dislocations rearrange and stresses relax without new grains|New grains form|Grains grow|Melting occurs|a
+Q|Recrystallization forms|New strain-free grains|More dislocations|Cracks|Twins only|a
+Q|Recrystallization temperature is commonly taken as about what fraction of the melting temperature in K?|0.3 to 0.5|0.9|0.05|1.5|a
+T|Greater prior cold work lowers the recrystallization temperature.|true
+Q|Grain growth reduces|Total grain boundary energy|Grain size|Temperature|Atomic mass|a
+Q|Hot working is done|Above the recrystallization temperature|Below room temperature|At absolute zero|In vacuum only|a
+Q|Cold working is done|Below the recrystallization temperature|Above melting|At equilibrium|With fire|a
+Q|Abnormal grain growth is|Selective growth of a few grains|Uniform growth|Shrinking grains|Random cracking|a
+Q|Texture in metals refers to|Preferred crystallographic orientation|Surface roughness|Colour|Weight|a
+T|The final grain size after recrystallization is finer for lower prior deformation.|false
+Q|Dynamic recrystallization occurs|During hot deformation|Only after cooling|In liquids|Never|a
+
+# MME 431: Non-Ferrous Alloys and Their Heat Treatment
+Q|Age hardening of Al-Cu alloy involves formation of|GP zones and theta prime precipitates|Martensite|Graphite|Cementite|a
+Q|Which aluminium series is precipitation hardenable with copper as the main alloying element?|2xxx|1xxx|3xxx|5xxx|a
+Q|Brass is a|Cu-Zn alloy|Cu-Sn alloy|Al-Mg alloy|Fe-C alloy|a
+Q|Beta brass has which structure at high temperature?|BCC ordered|FCC|HCP|Diamond|a
+T|Titanium has an allotropic transformation from HCP to BCC on heating.|true
+Q|The alpha-beta titanium alloy Ti-6Al-4V is widely used in|Aerospace|Cutlery|Electrical wiring|Paper|a
+Q|Nickel-based superalloys gain strength from|Gamma prime precipitates|Martensite|Graphite|Pearlite|a
+Q|Magnesium alloys are known for their|Low density|High density|High melting point|Brittleness only|a
+Q|Solution treatment of aluminium alloys is followed by|Quenching and ageing|Annealing only|Melting|Normalising|a
+Q|Cast aluminium-silicon alloys are modified with sodium or strontium to|Refine the eutectic silicon|Increase porosity|Raise melting point|Add colour|a
+T|Bronze generally shows better corrosion resistance in seawater than plain carbon steel.|true
+Q|Invar is an alloy notable for|Very low thermal expansion|High magnetism|High conductivity|Low density|a
+
+# MME 431: Fatigue, Creep and High Temperature Behaviour
+Q|Fatigue failure occurs under|Repeated cyclic loading below yield strength|Static load|Impact only|Temperature drop|a
+Q|The S-N curve plots|Stress amplitude against number of cycles to failure|Strain against time|Stress against temperature|Hardness against load|a
+Q|The endurance limit is|Stress below which fatigue failure does not occur (in some steels)|Yield strength|Fracture stress|Melting stress|a
+Q|Fatigue fracture surfaces often show|Beach marks|Cup and cone only|Smooth glass|Fibres|a
+T|Surface finish affects fatigue life.|true
+Q|Creep is|Time-dependent deformation under constant load at high temperature|Instant fracture|Elastic recovery|Hardening|a
+Q|The three stages of creep are primary, secondary and|Tertiary|Elastic|Final elastic|Plastic|a
+Q|Larson-Miller parameter combines|Time and temperature|Stress and strain|Mass and length|Pressure and volume|a
+Q|Creep resistance is improved by|Coarse grains and dispersed particles|Fine grains only|Low melting point|Pure metals|a
+Q|Shot peening improves fatigue life by introducing|Compressive residual stresses|Tensile stress|Holes|Cracks|a
+T|Creep usually becomes significant above about 0.4 times the melting temperature in kelvin.|true
+Q|Paris law relates|Crack growth rate to stress intensity range|Stress to strain|Hardness to temperature|Density to weight|a

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Fatigue failure occurs under,Temperature drop,Static load,Impact only,Repeated cyclic loading below yield strength,D,20,1000
+multiple,The S-N curve plots,Stress against temperature,Strain against time,Stress amplitude against number of cycles to failure,Hardness against load,C,20,1000
+multiple,The endurance limit is,Fracture stress,Yield strength,Stress below which fatigue failure does not occur (in some steels),Melting stress,C,20,1000
+multiple,Fatigue fracture surfaces often show,Cup and cone only,Beach marks,Smooth glass,Fibres,B,20,1000
+truefalse,Surface finish affects fatigue life.,,,,,True,20,1000
+multiple,Creep is,Elastic recovery,Instant fracture,Hardening,Time-dependent deformation under constant load at high temperature,D,20,1000
+multiple,"The three stages of creep are primary, secondary and",Elastic,Plastic,Final elastic,Tertiary,D,20,1000
+multiple,Larson-Miller parameter combines,Mass and length,Stress and strain,Time and temperature,Pressure and volume,C,20,1000
+multiple,Creep resistance is improved by,Low melting point,Coarse grains and dispersed particles,Pure metals,Fine grains only,B,20,1000
+multiple,Shot peening improves fatigue life by introducing,Holes,Compressive residual stresses,Cracks,Tensile stress,B,20,1000
+truefalse,Creep usually becomes significant above about 0.4 times the melting temperature in kelvin.,,,,,True,20,1000
+multiple,Paris law relates,Hardness to temperature,Stress to strain,Crack growth rate to stress intensity range,Density to weight,C,20,1000

@@ -1,0 +1,85 @@
+# GET 202: Atomic Structure and Bonding
+Q|Which type of bond involves the transfer of electrons from one atom to another?|Metallic|Covalent|Ionic|Van der Waals|c
+Q|Which bond type is responsible for the high electrical conductivity of metals?|Ionic|Metallic|Covalent|Hydrogen|b
+Q|Diamond is very hard mainly because of its|Metallic bonding|Ionic bonding|Network of strong covalent bonds|Weak van der Waals forces|c
+T|Secondary bonds such as van der Waals forces are weaker than primary bonds.|true
+Q|The atomic number of an element equals the number of|Neutrons|Protons|Protons plus neutrons|Valence electrons|b
+Q|Avogadro's number is approximately|6.022 x 10^23|3.0 x 10^8|1.6 x 10^-19|9.81|a
+T|Ionic solids are usually good electrical conductors in the solid state.|false
+Q|The mass number of an atom is the sum of its|Protons and electrons|Electrons and neutrons|Protons and neutrons|Neutrons only|c
+Q|Isotopes of an element differ in their number of|Protons|Electrons|Neutrons|Valence electrons|c
+Q|Which bond is the main one holding water molecules to each other in ice?|Hydrogen bond|Ionic bond|Metallic bond|Covalent network|a
+T|Metallic bonds are strongly directional while covalent bonds are non-directional.|false
+Q|Materials with strong bonds generally have|Low melting points and high expansion|High melting points and low expansion|Low stiffness|High ductility always|b
+
+# GET 202: Crystal Structures
+Q|How many atoms per unit cell does a face-centred cubic (FCC) structure have?|2|4|6|8|b
+Q|How many atoms per unit cell does a body-centred cubic (BCC) structure have?|1|2|4|6|b
+Q|The coordination number of an FCC structure is|8|10|12|6|c
+Q|The coordination number of a BCC structure is|8|12|6|4|a
+Q|The atomic packing factor of FCC is approximately|0.52|0.68|0.74|0.91|c
+Q|The atomic packing factor of BCC is approximately|0.68|0.74|0.52|0.34|a
+T|Hexagonal close-packed (HCP) and FCC structures have the same packing factor.|true
+Q|Which of these metals is FCC at room temperature?|Chromium|Aluminium|Zinc|Tungsten|b
+Q|Which of these metals is BCC at room temperature?|Copper|Nickel|Iron (alpha)|Magnesium|c
+Q|In a cubic crystal, the Miller indices of a plane that has intercepts at 1, infinity, infinity are|(100)|(110)|(111)|(010)|a
+Q|The number of atoms per unit cell in a simple cubic structure is|1|2|4|8|a
+T|Polymorphism is the ability of a solid to exist in only one crystal structure.|false
+Q|For FCC, the relation between the atomic radius R and the cube edge a is|a = 2R|a = 4R/sqrt(3)|a = 2R sqrt(2)|a = R sqrt(2)|c
+
+# GET 202: Crystal Defects and Diffusion
+Q|A vacancy is an example of a|Line defect|Point defect|Planar defect|Volume defect|b
+Q|A dislocation is an example of a|Point defect|Line defect|Surface defect|Bulk defect|b
+Q|A grain boundary is an example of a|Point defect|Line defect|Planar defect|Volume defect|c
+T|Plastic deformation in crystalline metals occurs mainly by dislocation motion.|true
+Q|Which dislocation has its Burgers vector perpendicular to the dislocation line?|Screw dislocation|Edge dislocation|Mixed dislocation|Helical dislocation|b
+Q|Diffusion in solids occurs faster when|Temperature is lower|Temperature is higher|Atoms are larger|Bonds are stronger|b
+Q|Fick's first law relates diffusion flux to|Time and temperature|Concentration gradient|Crystal structure only|Pressure|b
+Q|Interstitial diffusion is usually faster than vacancy diffusion because|Interstitial atoms are smaller and need no vacancy|It needs higher temperature|Bonds are weaker|Grains are finer|a
+T|Diffusion is generally slower along grain boundaries than through the grain interior.|false
+Q|The temperature dependence of the diffusion coefficient is described by|A linear relation|An Arrhenius relation|A parabolic relation|A logarithmic decay in T|b
+Q|A substitutional solid solution forms most readily when the atomic radii of the two elements differ by less than about|15%|40%|60%|90%|a
+Q|Case hardening of steel by carburizing relies on|Melting|Diffusion of carbon|Recrystallization|Precipitation of copper|b
+
+# GET 202: Mechanical Properties of Materials
+Q|The slope of the linear part of the engineering stress-strain curve is the|Yield strength|Modulus of elasticity|Toughness|Ductility|b
+Q|Stress is defined as|Force times area|Force divided by area|Area divided by force|Change in length|b
+Q|Ductility is commonly measured as|Percent elongation|Hardness number|Endurance limit|Modulus|a
+T|Toughness is related to the area under the stress-strain curve.|true
+Q|Hardness is the resistance of a material to|Fracture under impact|Localized plastic deformation|Electrical flow|Corrosion|b
+Q|Which test uses a diamond pyramid indenter?|Charpy|Brinell|Vickers|Izod|c
+Q|The Charpy test measures|Hardness|Impact energy|Fatigue life|Creep rate|b
+Q|Poisson's ratio is the ratio of|Lateral strain to axial strain (negative sign)|Stress to strain|Yield to tensile strength|Load to area|a
+Q|Yield strength is commonly taken as the stress at which|Fracture occurs|0.2 percent plastic strain offset|Necking ends|Elastic limit is zero|b
+Q|Resilience is the ability of a material to|Absorb energy when deformed elastically|Resist wear|Form a neck|Conduct heat|a
+T|True stress is always less than engineering stress after yielding in tension.|false
+Q|Strain hardening of a metal generally|Decreases strength and increases ductility|Increases strength and decreases ductility|Leaves strength unchanged|Lowers hardness|b
+Q|Young's modulus of steel is approximately|2 GPa|20 GPa|200 GPa|2000 GPa|c
+
+# GET 202: Classes of Engineering Materials
+Q|Which class of material is typically characterised by ionic and covalent bonding and brittleness?|Metals|Ceramics|Thermoplastics|Elastomers|b
+Q|Polymers are built from repeating units called|Crystals|Monomers|Alloys|Grains|b
+Q|A composite material is formed by combining|Two or more distinct materials with different properties|Only metals|Only polymers|Materials of the same type|a
+T|Thermoplastics soften on heating and cannot be reshaped.|false
+Q|Thermosetting polymers, once cured,|Can be melted and remoulded|Cannot be remelted|Become elastomers|Turn into ceramics|b
+Q|Which is an example of a ceramic?|Brass|Polyethylene|Alumina|Nylon|c
+Q|Which property is typically highest for metals compared with polymers?|Thermal and electrical conductivity|Electrical insulation|Corrosion in seawater|Transparency|a
+Q|Steel is an alloy of iron and|Carbon|Copper|Zinc|Tin|a
+Q|Brass is an alloy of copper and|Tin|Zinc|Nickel|Aluminium|b
+Q|Bronze is primarily an alloy of copper and|Zinc|Lead|Tin|Silicon|c
+T|Glass is a crystalline ceramic with long-range atomic order.|false
+Q|Fibreglass (glass fibre reinforced plastic) is an example of a|Metal|Ceramic|Composite|Pure polymer|c
+
+# GET 202: Phase Diagrams and Heat Treatment Basics
+Q|In the iron-carbon diagram, the eutectoid composition of steel is about|0.022% C|0.76% C|2.14% C|4.3% C|b
+Q|The eutectoid transformation of austenite produces|Ferrite and cementite (pearlite)|Martensite|Liquid and ferrite|Graphite|a
+Q|Steels contain up to about what carbon content?|0.76%|2.1%|4.3%|6.7%|b
+T|Cast irons generally contain more than about 2.1% carbon.|true
+Q|Cementite has the chemical formula|FeC|Fe2C|Fe3C|FeC3|c
+Q|Rapid quenching of austenite can produce|Pearlite|Martensite|Ferrite|Bainite only|b
+Q|Annealing is carried out mainly to|Harden steel|Soften steel and relieve stress|Increase brittleness|Add carbon|b
+Q|Tempering of martensite is done to|Increase hardness|Improve toughness by reducing brittleness|Melt the steel|Make it magnetic|b
+Q|The lever rule is used to find|Hardness|Phase amounts in a two-phase region|Grain size|Load capacity|b
+T|A eutectic reaction is one solid phase transforming into two other solid phases on cooling.|false
+Q|The phase of iron stable at high temperature with an FCC structure is|Ferrite|Austenite|Cementite|Delta ferrite only|b
+Q|Normalizing differs from full annealing mainly because it uses|Furnace cooling|Air cooling|Water quenching|Oil quenching|b

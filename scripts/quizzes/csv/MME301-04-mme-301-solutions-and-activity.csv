@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Raoult's law states that the partial pressure of a component in an ideal solution is,Equal to total pressure,Proportional to its mole fraction,Zero,Independent of mole fraction,B,20,1000
+multiple,The activity of a pure solid in its standard state is,Infinity,Equal to its mole fraction squared,Zero,One,D,20,1000
+multiple,Activity coefficient gamma relates activity to,Temperature only,Volume,Pressure only,Mole fraction: a = gamma x,D,20,1000
+truefalse,In an ideal solution the activity coefficient of each component is greater than 1.,,,,,False,20,1000
+multiple,Henry's law applies to the solute in a,Concentrated solution,Gas at high pressure only,Very dilute solution,Pure liquid,C,20,1000
+multiple,A positive deviation from Raoult's law indicates an activity coefficient,Equal to 1,Negative,Greater than 1,Less than 1,C,20,1000
+multiple,The partial molar Gibbs energy of a component is also called its,Activity,Enthalpy,Pressure,Chemical potential,D,20,1000
+multiple,For an ideal solution the enthalpy of mixing is,Infinite,Negative,Positive,Zero,D,20,1000
+multiple,The entropy of mixing of an ideal solution is always,Positive,Zero,Undefined,Negative,A,20,1000
+multiple,The Gibbs-Duhem equation relates the changes in,Pressure and volume only,Stress and strain,Heat and work,Chemical potentials of components in a solution,D,20,1000
+truefalse,A regular solution has zero enthalpy of mixing.,,,,,False,20,1000
+multiple,"The standard state for dilute solute in steelmaking is often taken as the 1 weight percent solution, in which activity is based on",Partial pressure,Weight percent,Density,Mole fraction,B,20,1000

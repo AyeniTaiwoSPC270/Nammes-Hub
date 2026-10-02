@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Passivity is the state in which a metal,Melts,Forms a thin protective film and corrodes slowly,Dissolves in acid,Corrodes faster,B,20,1000
+multiple,Stainless steel needs at least what chromium content?,About 10.5 percent,90 percent,1 percent,50 percent,A,20,1000
+multiple,Cathodic protection works by,Making the structure the cathode,Making it the anode,Painting only,Heating it,A,20,1000
+multiple,Sacrificial anodes commonly made of,"Zinc, magnesium or aluminium",Copper,Platinum,Gold,A,20,1000
+truefalse,Impressed current cathodic protection uses an external power supply.,,,,,True,20,1000
+multiple,Galvanising is the coating of steel with,Tin,Copper,Nickel,Zinc,D,20,1000
+multiple,Anodising is mostly used on,Wood,Glass,Gold,Aluminium,D,20,1000
+multiple,Corrosion inhibitors work by,Removing oxygen from the metal,Adding acid,Raising temperature,Forming a film or reducing reaction rates,D,20,1000
+multiple,Good design to reduce corrosion avoids,Crevices and dissimilar metal contacts,Smooth joints,Drainage,Coating,A,20,1000
+multiple,Paint coatings protect mainly by,Forming a barrier to the environment,Electron flow,Transformation of metal,Melting,A,20,1000
+truefalse,Tinplate on steel protects the steel even at scratches because tin is more active than iron.,,,,,False,20,1000
+multiple,The Pilling-Bedworth ratio predicts,Melting point,Toughness,Whether an oxide is protective,Conductivity,C,20,1000

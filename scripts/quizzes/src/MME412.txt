@@ -1,0 +1,69 @@
+# MME 412: Fundamentals of Corrosion
+Q|Corrosion is best defined as|Deterioration of a material by reaction with its environment|Mechanical wear only|Fatigue failure|Melting of metal|a
+Q|For corrosion to occur in an electrochemical cell, which four elements are needed?|Anode, cathode, electrolyte and electrical connection|Anode, catalyst, gas, heat|Cathode, filter, oil, wire|Anode only|a
+Q|At the anode in a corrosion cell|Oxidation occurs and metal dissolves|Reduction occurs|Hydrogen is stored|Nothing happens|a
+Q|Common cathodic reaction in neutral aerated water is|O2 + 2H2O + 4e- to 4OH-|Fe to Fe2+|H2 to 2H+|2Cl- to Cl2|a
+T|Corrosion of metals is generally an electrochemical process.|true
+Q|Rust is chiefly|Iron oxides and hydroxides|Iron carbide|Pure iron|Iron nitride|a
+Q|The unit mpy stands for|Mils per year|Metres per year|Millimetres per year|Moles per year|a
+Q|Corrosion rate from weight loss is calculated using|Weight loss, area, time and density|Hardness only|Stress|Voltage only|a
+Q|Uniform corrosion is|Even attack over the whole surface|Localised pits|Cracking|Only at welds|a
+T|Increasing temperature usually decreases corrosion rate.|false
+Q|The standard unit of corrosion current density is|A/m^2|V|Ohm|J/mol|a
+Q|Faraday's law is used in corrosion to convert|Current density to mass loss rate|Stress to strain|Hardness to strength|Force to work|a
+
+# MME 412: Electrode Kinetics and Polarisation
+Q|Polarisation is|Deviation of electrode potential from its equilibrium value due to current flow|Application of stress|Coating of metal|Heating|a
+Q|Activation polarisation arises from|Slow electrode reaction step|Mass transport only|Ohmic drop|Wetting|a
+Q|Concentration polarisation is caused by|Limited diffusion of reactants to the electrode|Slow chemical reaction|Metal grain size|Temperature only|a
+Q|The Tafel equation relates|Overpotential to logarithm of current density|Stress to strain|Current to resistance|Voltage to time|a
+T|At the corrosion potential the anodic and cathodic currents are equal.|true
+Q|Exchange current density measures|Rate of forward and reverse reactions at equilibrium|Corrosion rate in air|Hardness|Crack speed|a
+Q|Evans diagrams plot|Potential against log current|Stress against strain|Temperature against time|Pressure against volume|a
+Q|The intersection of the anodic and cathodic lines on an Evans diagram gives|Corrosion potential and corrosion current|Yield strength|Melting point|Toughness|a
+Q|Ohmic drop in an electrolyte increases with|Increasing resistivity|Increasing conductivity|Decreasing distance only|Zero current|a
+Q|A reference electrode commonly used is|Saturated calomel electrode|Platinum wire in air|Steel rod|Graphite only|a
+T|Stirring a solution can increase concentration polarisation.|false
+Q|The Nernst equation gives equilibrium potential as a function of|Ion activity|Stress|Grain size|Hardness|a
+
+# MME 412: Forms of Corrosion
+Q|Galvanic corrosion occurs when|Two dissimilar metals are in electrical contact in an electrolyte|A single metal is painted|A metal is stressed|Two identical metals are dry|a
+Q|In a galvanic couple, the more active metal acts as the|Anode|Cathode|Electrolyte|Insulator|a
+Q|Pitting corrosion is|Highly localised attack forming cavities|Uniform thinning|Cracking under stress|Erosion only|a
+Q|Crevice corrosion occurs in|Shielded areas with stagnant solution|Open, well-aerated surfaces|Dry air|Vacuum|a
+Q|Intergranular corrosion is attack along|Grain boundaries|Surface only|Weld metal centre|Coating|a
+T|Sensitisation of stainless steel is caused by chromium carbide precipitation at grain boundaries.|true
+Q|Stress corrosion cracking requires|Tensile stress, susceptible material and specific environment|Only compression|Only vacuum|Only high pressure|a
+Q|Dezincification is selective leaching of|Zinc from brass|Copper from bronze|Iron from steel|Nickel from monel|a
+Q|Erosion corrosion is accelerated by|High velocity flow of fluid|Still water|Dry conditions|Low temperature|a
+Q|Hydrogen embrittlement is caused by|Absorbed hydrogen reducing ductility|Oxygen only|Sulfur only|Helium|a
+T|Fretting corrosion occurs only on surfaces with no relative motion at all.|false
+Q|The area ratio that is most damaging in a galvanic couple is|Small anode and large cathode|Large anode and small cathode|Equal areas|No difference|a
+
+# MME 412: Passivity and Corrosion Prevention
+Q|Passivity is the state in which a metal|Forms a thin protective film and corrodes slowly|Corrodes faster|Dissolves in acid|Melts|a
+Q|Stainless steel needs at least what chromium content?|About 10.5 percent|1 percent|50 percent|90 percent|a
+Q|Cathodic protection works by|Making the structure the cathode|Making it the anode|Heating it|Painting only|a
+Q|Sacrificial anodes commonly made of|Zinc, magnesium or aluminium|Gold|Platinum|Copper|a
+T|Impressed current cathodic protection uses an external power supply.|true
+Q|Galvanising is the coating of steel with|Zinc|Tin|Copper|Nickel|a
+Q|Anodising is mostly used on|Aluminium|Gold|Wood|Glass|a
+Q|Corrosion inhibitors work by|Forming a film or reducing reaction rates|Adding acid|Raising temperature|Removing oxygen from the metal|a
+Q|Good design to reduce corrosion avoids|Crevices and dissimilar metal contacts|Smooth joints|Drainage|Coating|a
+Q|Paint coatings protect mainly by|Forming a barrier to the environment|Electron flow|Transformation of metal|Melting|a
+T|Tinplate on steel protects the steel even at scratches because tin is more active than iron.|false
+Q|The Pilling-Bedworth ratio predicts|Whether an oxide is protective|Melting point|Toughness|Conductivity|a
+
+# MME 412: Pourbaix Diagrams and High Temperature Oxidation
+Q|A Pourbaix diagram plots|Potential against pH|Stress against strain|Temperature against time|Pressure against volume|a
+Q|In a Pourbaix diagram the immunity region indicates|Metal is thermodynamically stable|Metal dissolves|Oxide forms|Fracture|a
+Q|Pourbaix diagrams give information on|Thermodynamic tendency, not rate|Rate of corrosion|Grain size|Hardness|a
+T|The parabolic rate law often describes oxide growth controlled by diffusion.|true
+Q|Wagner's theory relates oxidation to|Ion and electron transport through the oxide scale|Gravity|Sound|Magnetism|a
+Q|A protective oxide scale is usually|Compact, adherent and has low diffusion rate|Porous|Cracked|Volatile|a
+Q|Chromium improves high temperature oxidation resistance by forming|Cr2O3 scale|FeO|CO|Carbon film|a
+Q|Breakaway oxidation is|Sudden rapid oxidation after scale failure|Slow growth|Passivation|Reduction|a
+Q|Aluminium oxide scales are valued because they are|Stable and slow growing|Volatile|Soluble|Porous|a
+T|Linear oxidation kinetics suggest a non-protective oxide.|true
+Q|Hot corrosion is associated with|Molten salt deposits|Cold water|Vacuum|Pure gases only|a
+Q|The Pilling-Bedworth ratio above 2 or so often indicates the oxide|Is likely to crack or spall|Is always protective|Does not form|Is a gas|a

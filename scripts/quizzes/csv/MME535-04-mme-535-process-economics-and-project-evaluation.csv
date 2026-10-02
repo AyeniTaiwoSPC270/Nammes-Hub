@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Capital cost is the cost of,Daily wages only,Building and equipping the plant,Sales,Power,B,20,1000
+multiple,Operating cost includes,Only taxes,"Raw materials, labour, energy and maintenance",Only equipment,Only loans,B,20,1000
+multiple,Payback period is the time to,Build the plant,Sell the plant,Recover the investment from net cash flow,Train staff,C,20,1000
+multiple,Net present value (NPV) discounts future cash flows to,Present value,Colour,Future value,Zero,A,20,1000
+truefalse,A project with positive NPV at the required discount rate is generally acceptable.,,,,,True,20,1000
+multiple,Depreciation accounts for,Sales,Loans,Loss of asset value over time,Profit,C,20,1000
+multiple,Break-even point is where,Cost is zero,Revenue is zero,Revenue equals total cost,Profit is maximum,C,20,1000
+multiple,Internal rate of return (IRR) is the discount rate at which NPV is,Maximum,Zero,Negative always,One,B,20,1000
+multiple,Sensitivity analysis studies the effect of,Nothing,Colour,Wall size,Changing key variables on results,D,20,1000
+truefalse,Economies of scale typically raise unit cost as plant size increases.,,,,,False,20,1000
+multiple,Working capital is needed for,Day-to-day operations such as raw material stock,Buying equipment only,Buying land only,Nothing,A,20,1000
+multiple,Feasibility studies assess,Colour only,Only legal,Only engineering,"Technical, economic and environmental viability",D,20,1000

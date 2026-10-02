@@ -1,0 +1,33 @@
+{
+  "name": "nammes-hub-explainer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Motion graphics explainer for NAMMES Hub (Remotion). Kept out of the website build on purpose.",
+  "scripts": {
+    "preview": "tsx scripts/assets-manifest.ts && remotion studio src/index.ts",
+    "render:169": "npm run docs && remotion render src/index.ts Explainer169 out/nammes-hub-explainer-16x9.mp4",
+    "render:916": "npm run docs && remotion render src/index.ts Explainer916 out/nammes-hub-explainer-9x16.mp4",
+    "docs": "tsx scripts/assets-manifest.ts && tsx scripts/generate-docs.ts",
+    "still": "remotion still src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "stills": "tsx scripts/assets-manifest.ts && tsx scripts/stills.ts",
+    "audio": "tsx scripts/generate-audio.ts",
+    "sfx": "tsx scripts/generate-sfx.ts",
+    "voice-text": "tsx scripts/voice-text.ts",
+    "voice-import": "tsx scripts/import-voice.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.530",
+    "@remotion/google-fonts": "4.0.530",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.530"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "5.8.3",
+    "@remotion/bundler": "4.0.530",
+    "@remotion/renderer": "4.0.530"
+  }
+}

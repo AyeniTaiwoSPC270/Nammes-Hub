@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"The three main branches of extractive metallurgy are pyrometallurgy, hydrometallurgy and",Forging,Welding,Electrometallurgy,Powder metallurgy only,C,20,1000
+multiple,Roasting is the heating of an ore,Without any heat,In air to convert sulfides to oxides,In water,With hydrogen only,B,20,1000
+multiple,Smelting is a process in which the metal is,Separated as a molten phase from gangue as slag,Plated,Precipitated from water,Dissolved in acid,A,20,1000
+multiple,Calcination is the thermal decomposition of,Sulfides in water,Oxides by electrolysis,Metals,Carbonates or hydrates,D,20,1000
+truefalse,Hydrometallurgy uses aqueous solutions to extract metals.,,,,,True,20,1000
+multiple,Gangue is,The unwanted mineral matter in an ore,Fuel,Slag from refining,The product metal,A,20,1000
+multiple,Flux is added in smelting to,Increase the ore size,Add carbon,Combine with gangue and form slag,Cool the furnace,C,20,1000
+multiple,Matte is,A slag,A gas,A mixture of metal sulfides produced in smelting,A pure metal,C,20,1000
+multiple,Sulfide ores are commonly converted to oxides by,Roasting,Leaching only,Crushing,Electrolysis,A,20,1000
+truefalse,Electrowinning recovers metal from solution by electrolysis.,,,,,True,20,1000
+multiple,Refining is done to,Remove impurities from crude metal,Crush ore,Make slag,Mine ore,A,20,1000
+multiple,Which ore is the main source of aluminium?,Chalcopyrite,Haematite,Galena,Bauxite,D,20,1000

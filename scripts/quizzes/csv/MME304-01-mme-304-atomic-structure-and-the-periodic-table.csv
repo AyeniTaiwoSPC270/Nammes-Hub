@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The principal quantum number n determines mainly an electron's,Orbital shape,Spin,Shell or energy level,Magnetic orientation,C,20,1000
+multiple,The maximum number of electrons in the n = 3 shell is,18,32,8,2,A,20,1000
+multiple,The shape of an s orbital is,Spherical,Cloverleaf,Double dumbbell,Dumbbell,A,20,1000
+multiple,Electronegativity generally increases,Across a period from left to right,Down a group,Toward the left of a period,With atomic radius,A,20,1000
+multiple,Atomic radius generally decreases,Across a period from left to right,With atomic number in a group,Down a group,Across a period from right to left,A,20,1000
+truefalse,Ionization energy generally increases across a period.,,,,,True,20,1000
+multiple,The Pauli exclusion principle states that,Every orbital holds 4 electrons,Electrons fill the highest orbital first,Electrons have no spin,No two electrons can have the same four quantum numbers,D,20,1000
+multiple,Hund's rule says electrons,Always have opposite spin,Pair up in an orbital before filling others,Fill f orbitals first,Occupy degenerate orbitals singly first,D,20,1000
+multiple,The electron configuration of iron (Z = 26) ends in,4s2 4p6,3d8,3d6 4s2,3d10,C,20,1000
+multiple,Transition metals are characterised by partly filled,d orbitals,f orbitals only,p orbitals,s orbitals,A,20,1000
+truefalse,Noble gases have completely filled outer shells.,,,,,True,20,1000
+multiple,Elements in the same group of the periodic table have the same number of,Valence electrons,Neutrons,Protons,Electron shells,A,20,1000

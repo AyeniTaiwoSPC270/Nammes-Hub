@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A polymer is made of,Small molecules that repeat in long chains,Ionic crystals,Metal atoms,Glass fibres only,A,20,1000
+multiple,The process of joining monomers is called,Annealing,Fusion,Sintering,Polymerisation,D,20,1000
+multiple,Which is a thermoplastic?,Vulcanised rubber,Polyethylene,Bakelite,Epoxy cured,B,20,1000
+multiple,Which polymer is an example of a thermoset?,Polystyrene,PVC,Epoxy,Polypropylene,C,20,1000
+truefalse,Vulcanisation introduces cross-links between rubber chains.,,,,,True,20,1000
+multiple,Crystallinity in polymers generally increases,Flexibility,Solubility,Strength and density,Transparency,C,20,1000
+multiple,In a fibre reinforced composite the matrix,Binds and protects fibres and transfers load,Carries most of the load,Is always a metal,Is unnecessary,A,20,1000
+multiple,Carbon fibre composites are valued for,Low cost,High strength to weight ratio,High density,Weak stiffness,B,20,1000
+multiple,Rule of mixtures gives the composite modulus as,Weighted sum of the phase moduli by volume fraction,Difference of moduli,Average of densities,Product of moduli,A,20,1000
+multiple,Elastomers have,High modulus,No elasticity,Crystalline order,Very high elastic strain and low modulus,D,20,1000
+truefalse,Adding plasticisers makes a polymer more flexible.,,,,,True,20,1000
+multiple,Concrete is a composite of,Cement paste and aggregate,Steel and glass,Wood and ceramic only,Plastic and rubber,A,20,1000

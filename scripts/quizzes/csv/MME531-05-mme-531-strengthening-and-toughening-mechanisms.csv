@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Grain boundary strengthening follows,Fourier's law,Hall-Petch relation,Raoult's law,Ohm's law,B,20,1000
+multiple,The Hall-Petch equation is sigma_y = sigma_0 + k d^(-1/2) where d is the,Grain diameter,Plate thickness,Temperature,Dislocation density,A,20,1000
+multiple,Solid solution strengthening depends on,Colour,Sound,Grain size only,Size and modulus mismatch of solute,D,20,1000
+multiple,Precipitation strengthening is maximised at,Solutionised state,Melting,Peak ageing,Overageing,C,20,1000
+truefalse,"Martensite gets much of its strength from carbon in solution, dislocations and fine structure.",,,,,True,20,1000
+multiple,Transformation toughening is used in,Copper,Lead,Partially stabilised zirconia,Polyethylene,C,20,1000
+multiple,Dual phase steels consist of,Ferrite and martensite,Pearlite and cementite only,Austenite only,Ferrite only,A,20,1000
+multiple,TRIP steels use,Colour change,Transformation of retained austenite to martensite during deformation,Melting,Diffusion,B,20,1000
+multiple,Thermomechanical processing refines grain through,Casting,Controlled rolling and cooling,Annealing only,Melting,B,20,1000
+multiple,Fibre reinforcement toughens ceramics through,Colour,Crack bridging and pull-out,Melting,Sintering only,B,20,1000
+truefalse,Grain refinement raises strength but always lowers toughness.,,,,,False,20,1000
+multiple,"Microalloying elements such as Nb, V and Ti strengthen steel by",Melting,Adding graphite,Nothing,Grain refinement and precipitation,D,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Ductile overload fracture shows,Flat shiny facets,Nothing,Necking and dimpled surface,Beach marks,C,20,1000
+multiple,Brittle fracture surfaces typically show,Fibres,Flat cleavage facets with little deformation,Dimples,Large necking,B,20,1000
+multiple,Fatigue crack initiation usually starts at,Nothing,The centre,Stress concentrations on the surface,The load,C,20,1000
+multiple,Stress concentration factor Kt increases with,Larger radii,Lower loads,Sharper notches,Smoother surfaces,C,20,1000
+truefalse,Fatigue failures occur at stresses below the yield strength.,,,,,True,20,1000
+multiple,Creep rupture typically shows,Beach marks,Voids at grain boundaries and intergranular cracking,Dimples only,Cleavage,B,20,1000
+multiple,Stress intensity factor K is associated with,Hardness,Fracture mechanics,Colour,Corrosion only,B,20,1000
+multiple,Fracture toughness KIc is,Hardness,Critical stress intensity for unstable crack growth,Yield strength,Melting point,B,20,1000
+multiple,Low temperature can cause steel to fail by,Creep,Brittle fracture,Flow,Melting,B,20,1000
+multiple,Charpy tests are used to determine,The ductile-to-brittle transition,Corrosion,Hardness,Tensile strength,A,20,1000
+truefalse,Striations seen at high magnification are the typical sign of ductile overload.,,,,,False,20,1000
+multiple,Fatigue life can be improved by,Rapid loading,Adding notches,Reducing stress concentrations and introducing compressive residual stresses,Making it rougher,C,20,1000

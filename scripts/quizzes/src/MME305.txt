@@ -1,0 +1,69 @@
+# MME 305: Structure of Metals and Alloys
+Q|Which crystal structure is typical of copper, aluminium and nickel?|BCC|FCC|HCP|Simple cubic|b
+Q|Which of these is an HCP metal at room temperature?|Zinc|Copper|Chromium|Aluminium|a
+Q|The number of slip systems in FCC metals is|3|5|12|24|c
+T|FCC metals are generally more ductile than HCP metals.|true
+Q|Hume-Rothery rules predict the formation of|Substitutional solid solutions|Ceramics|Polymer chains|Martensite|a
+Q|An interstitial solid solution forms when solute atoms are|Similar in size to solvent atoms|Much smaller than solvent atoms|Larger than solvent atoms|Identical to solvent atoms|b
+Q|Carbon dissolves in alpha iron (BCC) |Substitutionally|Interstitially|Not at all|As a gas phase|b
+Q|An intermetallic compound has|Variable composition and metallic bonding only|Definite composition and ordered structure|No ordering|No strength|b
+Q|Solid solution strengthening arises because solute atoms|Increase grain size|Hinder dislocation motion|Remove dislocations|Lower melting point|b
+T|A substitutional solid solution can have solute atoms occupying positions in the host lattice.|true
+Q|The grain size of a metal can be reduced by|Slow cooling|Rapid cooling or inoculation|Annealing for long periods|Heating above melting|b
+Q|The Hall-Petch relationship states that yield strength increases with|Increasing grain size|Decreasing grain size|Increasing temperature|Decreasing stress|b
+
+# MME 305: Mechanical Behaviour and Deformation
+Q|Slip in crystals occurs most easily on planes that are|Loosely packed|Close-packed|Randomly oriented|Perpendicular to the load|b
+Q|Critical resolved shear stress is given by Schmid's law as|sigma cos(phi) cos(lambda)|sigma / cos(phi)|sigma sin(phi)|sigma x phi|a
+Q|Cold working a metal results in|Decrease in strength|Increase in strength and decrease in ductility|Increase in ductility|No change|b
+Q|Recrystallization occurs on|Cooling to zero Kelvin|Heating a cold worked metal to a sufficiently high temperature|Melting|Quenching|b
+T|Dislocation density increases during cold working.|true
+Q|Twinning is a deformation mechanism that is more common in|FCC at high temp|HCP metals and BCC at low temp|Amorphous materials|Liquids|b
+Q|Necking in a tensile test begins at the|Yield point|Point of ultimate tensile strength|Fracture point|Proportional limit|b
+Q|Ductile fracture surfaces typically appear|Flat and shiny|Dull and fibrous with cup-and-cone shape|Smooth like glass|Crystalline facets only|b
+Q|Brittle fracture in a crystalline metal often occurs by|Cleavage|Necking|Viscous flow|Diffusion|a
+T|The ductile-to-brittle transition is typical of FCC metals such as copper as temperature drops.|false
+Q|Elastic deformation is|Permanent|Recoverable upon load removal|Caused by dislocation glide|Always less than 0.001 percent|b
+Q|Hardness of a metal generally correlates with its|Tensile strength|Density|Thermal conductivity|Colour|a
+
+# MME 305: Ceramics and Glasses
+Q|Ceramics are generally|Ductile and tough|Hard, brittle and heat resistant|Soft and flexible|Good electrical conductors|b
+Q|The main component of common glass is|Alumina|Silica|Magnesia|Zirconia|b
+Q|The glass transition temperature marks the change from|Liquid to gas|Rigid glassy to rubbery or viscous behaviour|Solid to liquid in crystals|Gas to plasma|b
+T|Glasses have long-range crystalline order.|false
+Q|Which ceramic is widely used as an abrasive and cutting material?|Silicon carbide|Polyethylene|Brass|Rubber|a
+Q|Sintering is|Melting a ceramic fully|Heating a compact of powder to bond particles by diffusion|Cooling rapidly|Coating a metal|b
+Q|Refractory ceramics are used because of their|High melting point and thermal stability|Low density|Electrical conductivity|Ductility|a
+Q|Cement sets by|Drying only|Hydration reactions|Melting|Polymerisation|b
+Q|Ceramics are much stronger in compression than in tension because of|Flaws and cracks that open under tension|Metallic bonding|Ductility|High density|a
+T|Toughened zirconia uses phase transformation to resist crack growth.|true
+Q|Alumina has the chemical formula|Al2O3|AlO|Al3O2|Al2O|a
+Q|Which property of ceramics makes them suitable for electrical insulators?|Free electrons|No free electrons|Ductility|Low melting point|b
+
+# MME 305: Polymers and Composites
+Q|A polymer is made of|Small molecules that repeat in long chains|Metal atoms|Ionic crystals|Glass fibres only|a
+Q|The process of joining monomers is called|Polymerisation|Fusion|Sintering|Annealing|a
+Q|Which is a thermoplastic?|Polyethylene|Epoxy cured|Vulcanised rubber|Bakelite|a
+Q|Which polymer is an example of a thermoset?|Polystyrene|Epoxy|PVC|Polypropylene|b
+T|Vulcanisation introduces cross-links between rubber chains.|true
+Q|Crystallinity in polymers generally increases|Transparency|Strength and density|Flexibility|Solubility|b
+Q|In a fibre reinforced composite the matrix|Carries most of the load|Binds and protects fibres and transfers load|Is always a metal|Is unnecessary|b
+Q|Carbon fibre composites are valued for|High strength to weight ratio|Low cost|Weak stiffness|High density|a
+Q|Rule of mixtures gives the composite modulus as|Weighted sum of the phase moduli by volume fraction|Product of moduli|Difference of moduli|Average of densities|a
+Q|Elastomers have|Very high elastic strain and low modulus|High modulus|No elasticity|Crystalline order|a
+T|Adding plasticisers makes a polymer more flexible.|true
+Q|Concrete is a composite of|Cement paste and aggregate|Steel and glass|Plastic and rubber|Wood and ceramic only|a
+
+# MME 305: Physical Properties of Materials
+Q|Thermal conductivity is highest for which class of material?|Metals|Polymers|Ceramics like glass|Foams|a
+Q|Thermal expansion arises from|Asymmetry of the interatomic potential energy curve|Symmetry of the curve|Electron spin|Nuclear mass|a
+Q|A semiconductor has electrical conductivity|Lower than an insulator always|Between that of metals and insulators|Higher than metals|Zero|b
+Q|An intrinsic semiconductor is one that|Is doped|Is pure|Contains only metals|Has no band gap|b
+T|Conductivity of metals generally increases as temperature rises.|false
+Q|N-type doping introduces|Extra electrons|Holes|Neutrons|Protons|a
+Q|Silicon is doped with boron to make it|N-type|P-type|Insulating|Superconducting|b
+Q|Ferromagnetic materials include|Iron, cobalt and nickel|Copper and zinc|Gold and silver|Glass|a
+Q|The Curie temperature is where a ferromagnet|Melts|Loses its ferromagnetism|Becomes superconducting|Becomes brittle|b
+Q|Superconductors have, below a critical temperature,|Zero electrical resistance|Infinite resistance|Low magnetism only|High resistivity|a
+T|A large band gap usually means the material is an insulator.|true
+Q|Dielectric materials are used in|Capacitors|Wires|Furnace electrodes|Springs|a

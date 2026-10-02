@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Slip line field theory applies to,Brittle fracture,Creep,Plane strain plastic deformation,Elastic deformation,C,20,1000
+multiple,Slip lines are lines of,Principal stress,Maximum shear stress,Zero shear stress,Tensile stress only,B,20,1000
+multiple,"In plane strain, the shear yield stress k equals",Zero,Yield stress,Yield stress / sqrt(3) (von Mises),Yield stress x sqrt(3),C,20,1000
+multiple,The upper bound theorem gives a load that is,Greater than or equal to the true collapse load,Less than true load,Zero,Exactly true always,A,20,1000
+truefalse,The lower bound theorem gives a safe estimate of the load the body can carry.,,,,,True,20,1000
+multiple,Hencky equations describe,Composition,Variation of mean stress along slip lines,Hardness,Temperature,B,20,1000
+multiple,Slip lines in a field always intersect at,Right angles (two families orthogonal),60 degrees,Random angles,30 degrees,A,20,1000
+multiple,Upper bound solutions often use,Assumed velocity fields (kinematically admissible),Colour,Stress fields,Random numbers,A,20,1000
+multiple,Friction in slip line fields is modelled by,Conditions on the tool interface such as m = tau / k,Temperature only,No friction,Random,A,20,1000
+truefalse,Slip line fields apply only to elastic deformation.,,,,,False,20,1000
+multiple,A kinematically admissible velocity field must satisfy,Incompressibility and boundary conditions,Colour,Hardness,Density,A,20,1000
+multiple,Discontinuities in velocity in upper bound models occur across,Free space,Vacuum,Shear planes,Air,C,20,1000

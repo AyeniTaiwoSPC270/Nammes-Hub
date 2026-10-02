@@ -1,0 +1,69 @@
+# MME 416: Introduction to Biomaterials
+Q|A biomaterial is best described as a material that|Interacts with biological systems for a medical purpose|Is grown on farms|Is only natural|Is any polymer|a
+Q|Biocompatibility means|The ability of a material to perform with an appropriate host response|Being cheap|Being magnetic|Being transparent|a
+Q|Which is a common bioinert ceramic used in hip joints?|Alumina|Polyethylene wax|Brass|Lead|a
+Q|Bioactive materials are those that|Form a bond with living tissue|Are toxic|Dissolve in seconds|Conduct electricity|a
+T|Bioresorbable materials are gradually broken down and absorbed in the body.|true
+Q|Hydroxyapatite is chemically similar to|The mineral part of bone|Skin protein|Blood plasma|Hair|a
+Q|Which property is important for a material used in a load-bearing implant?|Fatigue resistance|Transparency|Low density only|Colour|a
+Q|Stress shielding in orthopaedic implants arises from|Implant stiffness much higher than bone|Implant being too flexible|Corrosion|Heat|a
+Q|Sterilisation methods for implants include|Autoclave, gamma radiation, ethylene oxide|Painting|Freezing only|Boiling in tea|a
+T|Foreign body response is a purely mechanical effect with no immune involvement.|false
+Q|Young's modulus of cortical bone is approximately|10 to 30 GPa|200 GPa|1 MPa|1 TPa|a
+Q|The regulatory framework for medical implants requires|Biological and mechanical testing|No testing|Only cost reports|Colour matching|a
+
+# MME 416: Metallic Biomaterials
+Q|Which metal is widely used for dental and orthopaedic implants for its biocompatibility?|Titanium|Lead|Cadmium|Mercury|a
+Q|Ti-6Al-4V is an alloy of titanium with|Aluminium and vanadium|Copper and zinc|Nickel and chromium|Iron and carbon|a
+Q|316L stainless steel is used for implants because of|Corrosion resistance and low cost|High density|Magnetic properties|Transparency|a
+Q|Cobalt-chromium alloys are chosen for joint replacement because of|Wear and corrosion resistance|Low density|Elastic modulus equal to bone|Biodegradability|a
+T|Titanium forms a stable passive oxide layer that improves biocompatibility.|true
+Q|Nitinol is a shape memory alloy of|Nickel and titanium|Nickel and tin|Niobium and titanium|Nitrogen and iron|a
+Q|Nickel release from alloys is a concern due to|Allergic reactions|Colour change|Density|Conductivity|a
+Q|Fretting and wear at implant interfaces can release|Metal ions and debris|Oxygen|Water|Light|a
+Q|Magnesium alloys are being studied as|Biodegradable implants|Permanent hip stems|Electrical conductors in body|Insulators|a
+T|Tantalum is avoided as a biomaterial because it corrodes badly in body fluids.|false
+Q|Compared with stainless steel, titanium alloys have|Lower modulus closer to bone|Higher modulus|Lower strength to weight|Higher density|a
+Q|Crevice corrosion is a concern in implants at|Modular junctions and screw-plate interfaces|Smooth surfaces only|Dry areas|Air pockets only|a
+
+# MME 416: Ceramic and Polymeric Biomaterials
+Q|Ultra-high molecular weight polyethylene (UHMWPE) is used as|Acetabular cup liners in hip replacements|Bone cement monomer|Stent metal|Suture needle|a
+Q|Polymethyl methacrylate (PMMA) is used as|Bone cement|Pacemaker wire|Blood vessel graft only|Heart valve leaflet only|a
+Q|Polylactic acid (PLA) is commonly used as|Biodegradable sutures and screws|Permanent hip stem|Electrode|Catheter metal|a
+Q|Bioglass bonds to bone by forming|A hydroxycarbonate apatite layer|Metal oxide|Plastic film|Nothing|a
+T|Zirconia is used in dental crowns for high strength and aesthetics.|true
+Q|Collagen-based materials are used in|Wound dressings and tissue scaffolds|Engines|Electronics|Bridges|a
+Q|Silicone rubber is used in|Soft tissue implants and catheters|Bone plates|Turbine blades|Wiring only|a
+Q|Hydrogels are valued in biomedical use due to|High water content and soft tissue-like properties|High stiffness|Metal content|Magnetism|a
+Q|Degradation of polymeric implants is commonly by|Hydrolysis|Fusion|Sublimation|Magnetism|a
+T|Calcium phosphate ceramics such as tricalcium phosphate are completely inert and never resorb.|false
+Q|Polytetrafluoroethylene (PTFE) is used in|Vascular grafts|Bone plates|Screws|Electrodes|a
+Q|Ceramics used in implants are limited mainly by|Brittleness|Conductivity|Weight|Colour|a
+
+# MME 416: Tissue Engineering and Scaffolds
+Q|A scaffold in tissue engineering provides|A 3D structure for cells to attach and grow|A weapon|Electrical power|Colouring|a
+Q|Ideal scaffold pore size for bone ingrowth is roughly|100 to 500 micrometres|1 nanometre|10 millimetres|1 micrometre|a
+Q|The three key components of tissue engineering are cells, scaffold and|Signals or growth factors|Solvents|Metals|Gases|a
+Q|Electrospinning is used to make|Nanofibre scaffolds|Bulk metal|Glass|Concrete|a
+T|Porosity and interconnected pores are important for nutrient transport in scaffolds.|true
+Q|3D printing in biomaterials allows|Patient-specific implants|Only mass production|No customisation|Uniform shapes only|a
+Q|Stem cells are valuable because they can|Differentiate into various cell types|Produce metals|Conduct electricity|Become ceramics|a
+Q|Degradation rate of a scaffold should ideally match|Tissue regeneration rate|Nothing|Melting point|Colour|a
+Q|Surface modification of implants is done to improve|Cell adhesion and integration|Colour only|Cost|Weight|a
+T|Osseointegration is the formation of a fibrous soft-tissue layer that separates bone from an implant.|false
+Q|Growth factors such as BMP are used to|Stimulate bone formation|Dissolve the implant|Cool tissue|Stop healing|a
+Q|Decellularised matrices are|Tissue with cells removed, keeping the extracellular matrix|Artificial metals|Plastics|Gels only|a
+
+# MME 416: Testing, Failure and Regulation of Biomaterials
+Q|ISO 10993 is a standard dealing with|Biological evaluation of medical devices|Steel grades|Screw threads|Paint|a
+Q|In vitro testing is done|In a laboratory outside a living organism|In a living animal|In humans only|In space|a
+Q|Cytotoxicity tests evaluate|Whether a material kills cells|Stiffness|Colour|Weight|a
+Q|Fatigue testing of implants simulates|Cyclic loading during walking|Static loads only|Impact only|Thermal shock only|a
+T|Wear debris from joint implants can cause osteolysis.|true
+Q|Common reasons for hip implant failure include|Loosening, wear and infection|Colour change|Magnetism|Noise|a
+Q|Sterility of an implant must be ensured to prevent|Infection|Corrosion only|Colour change|Expansion|a
+Q|Hemocompatibility testing concerns|Material interaction with blood|Bone growth|Hair|Skin colour|a
+Q|Simulated body fluid is used to test|Bioactivity and corrosion in a body-like environment|Tensile strength in air|Melting|Density|a
+T|Clinical trials are never required before implants reach widespread use.|false
+Q|Explantation analysis means|Studying devices removed from patients|Designing new ones|Buying them|Painting them|a
+Q|Galvanic corrosion in implants is avoided by|Not mixing dissimilar metals|Mixing as many as possible|Using thin parts only|Adding iron|a

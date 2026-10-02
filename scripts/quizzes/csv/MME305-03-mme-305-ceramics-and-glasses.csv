@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Ceramics are generally,Ductile and tough,Good electrical conductors,Soft and flexible,"Hard, brittle and heat resistant",D,20,1000
+multiple,The main component of common glass is,Silica,Magnesia,Alumina,Zirconia,A,20,1000
+multiple,The glass transition temperature marks the change from,Solid to liquid in crystals,Rigid glassy to rubbery or viscous behaviour,Gas to plasma,Liquid to gas,B,20,1000
+truefalse,Glasses have long-range crystalline order.,,,,,False,20,1000
+multiple,Which ceramic is widely used as an abrasive and cutting material?,Brass,Polyethylene,Silicon carbide,Rubber,C,20,1000
+multiple,Sintering is,Melting a ceramic fully,Heating a compact of powder to bond particles by diffusion,Cooling rapidly,Coating a metal,B,20,1000
+multiple,Refractory ceramics are used because of their,Low density,Ductility,Electrical conductivity,High melting point and thermal stability,D,20,1000
+multiple,Cement sets by,Drying only,Hydration reactions,Polymerisation,Melting,B,20,1000
+multiple,Ceramics are much stronger in compression than in tension because of,High density,Flaws and cracks that open under tension,Metallic bonding,Ductility,B,20,1000
+truefalse,Toughened zirconia uses phase transformation to resist crack growth.,,,,,True,20,1000
+multiple,Alumina has the chemical formula,Al3O2,AlO,Al2O,Al2O3,D,20,1000
+multiple,Which property of ceramics makes them suitable for electrical insulators?,Ductility,No free electrons,Free electrons,Low melting point,B,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"Which crystal structure is typical of copper, aluminium and nickel?",HCP,BCC,FCC,Simple cubic,C,20,1000
+multiple,Which of these is an HCP metal at room temperature?,Zinc,Copper,Aluminium,Chromium,A,20,1000
+multiple,The number of slip systems in FCC metals is,5,12,3,24,B,20,1000
+truefalse,FCC metals are generally more ductile than HCP metals.,,,,,True,20,1000
+multiple,Hume-Rothery rules predict the formation of,Substitutional solid solutions,Martensite,Polymer chains,Ceramics,A,20,1000
+multiple,An interstitial solid solution forms when solute atoms are,Similar in size to solvent atoms,Larger than solvent atoms,Much smaller than solvent atoms,Identical to solvent atoms,C,20,1000
+multiple,Carbon dissolves in alpha iron (BCC),As a gas phase,Substitutionally,Interstitially,Not at all,C,20,1000
+multiple,An intermetallic compound has,No strength,Variable composition and metallic bonding only,Definite composition and ordered structure,No ordering,C,20,1000
+multiple,Solid solution strengthening arises because solute atoms,Remove dislocations,Hinder dislocation motion,Increase grain size,Lower melting point,B,20,1000
+truefalse,A substitutional solid solution can have solute atoms occupying positions in the host lattice.,,,,,True,20,1000
+multiple,The grain size of a metal can be reduced by,Slow cooling,Annealing for long periods,Heating above melting,Rapid cooling or inoculation,D,20,1000
+multiple,The Hall-Petch relationship states that yield strength increases with,Increasing temperature,Increasing grain size,Decreasing stress,Decreasing grain size,D,20,1000

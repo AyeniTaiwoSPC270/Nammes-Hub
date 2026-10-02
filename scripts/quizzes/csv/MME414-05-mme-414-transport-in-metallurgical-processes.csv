@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"In steelmaking, bubble stirring of ladles is used to",Improve mixing and homogeneity,Stop slag formation,Lower temperature,Cool solids,A,20,1000
+multiple,Residence time distribution studies are used to characterise,Tensile strength,Flow behaviour in reactors,Hardness,Crystal structure,B,20,1000
+multiple,Stokes' law gives the terminal velocity of a small particle in a fluid and is valid for,Vacuum,Turbulent flow only,Low Reynolds number,High Reynolds number,C,20,1000
+multiple,Inclusion flotation in steel depends on inclusion size and the melt's,Hardness,Density difference and viscosity,Sound speed,Color,B,20,1000
+truefalse,Convection in a mould affects solidification structure.,,,,,True,20,1000
+multiple,Dimensionless groups are used to,Count atoms,Determine colour,Measure hardness,Scale up laboratory models to plants,D,20,1000
+multiple,Water modelling of ladles is based on matching,Mach number,Curie point,Poisson ratio,Froude number,D,20,1000
+multiple,Heat loss from a ladle can be reduced by,Stirring more,Opening doors,Insulating lining and lid,Removing slag,C,20,1000
+multiple,Electromagnetic stirring uses,Gas bubbles,Magnetic fields to move conductive melts,Sound waves,Gravity,B,20,1000
+multiple,The boundary layer thickness decreases with,Increasing velocity,Decreasing density of fluid,Decreasing velocity,Increasing viscosity,A,20,1000
+truefalse,Natural convection can cause temperature stratification in a large vessel.,,,,,True,20,1000
+multiple,The dimensionless group that compares buoyancy to viscous forces is,Reynolds number,Grashof number,Weber number,Schmidt number,B,20,1000

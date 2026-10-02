@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The Arrhenius equation describes the variation of a rate constant with,Concentration only,Volume,Temperature,Pressure,C,20,1000
+multiple,The activation energy is the,Minimum energy barrier for a reaction,Heat of fusion,Gibbs energy of formation,Energy released in a reaction,A,20,1000
+multiple,A catalyst works by,Lowering the activation energy,Changing the equilibrium constant,Changing delta G of the reaction,Raising the temperature,A,20,1000
+truefalse,A catalyst changes the position of equilibrium.,,,,,False,20,1000
+multiple,The rate of a first-order reaction depends on,Square of concentration,Nothing,Concentration raised to the first power,Temperature only,C,20,1000
+multiple,The Nernst equation relates electrode potential to,Ion activity or concentration,Hardness,Grain size,Stress,A,20,1000
+multiple,The standard hydrogen electrode has a potential of,0.34 V,0.00 V,1.00 V,-0.44 V,B,20,1000
+multiple,The relation between cell potential and Gibbs energy is,dG = E/nF,dG = -nFE,dG = nFE/T,dG = -E,B,20,1000
+multiple,Which metal is more active (more negative standard potential)?,Copper,Silver,Gold,Zinc,D,20,1000
+multiple,"In a galvanic cell, oxidation occurs at the",Electrolyte only,Cathode,Anode,Salt bridge,C,20,1000
+truefalse,"The Faraday constant F equals about 96,485 coulombs per mole of electrons.",,,,,True,20,1000
+multiple,A reaction is diffusion controlled when the,Transport of reactants is the slowest step,Temperature is zero,Chemical step is the slowest step,Activity is zero,A,20,1000

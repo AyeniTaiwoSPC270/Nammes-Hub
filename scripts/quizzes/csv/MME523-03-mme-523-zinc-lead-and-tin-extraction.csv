@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The main zinc ore is,Chalcocite,Cassiterite,Sphalerite,Galena,C,20,1000
+multiple,The main lead ore is,Haematite,Bauxite,Sphalerite,Galena,D,20,1000
+multiple,The main tin ore is,Galena,Sphalerite,Magnetite,Cassiterite,D,20,1000
+multiple,Zinc is commonly extracted by roasting followed by,Smelting in a blast furnace only,Leaching and electrowinning,Bayer process,Direct casting,B,20,1000
+multiple,Nigeria has significant deposits of,Copper in Kano,Bauxite in Lagos,Diamond in Lagos,Cassiterite on the Jos Plateau,D,20,1000
+truefalse,Lead smelting produces lead bullion that is refined to remove impurities like copper and silver.,,,,,True,20,1000
+multiple,Parkes process is used to remove silver from lead using,Steel,Water,Zinc,Copper,C,20,1000
+multiple,Tin is reduced from its oxide by,Hydrogen only,Sodium,Electrolysis in water,Carbon,D,20,1000
+multiple,The Imperial Smelting Process produces,Zinc and lead simultaneously,Only copper,Only tin,Only steel,A,20,1000
+multiple,Zinc is used mostly for,Making mirrors,Galvanising steel,Cutting tools,Electrical cables,B,20,1000
+truefalse,"Lead is non-toxic, so its use is not restricted in any product.",,,,,False,20,1000
+multiple,Dross in molten lead is removed by,Stirring,Rolling,Freezing,Skimming,D,20,1000

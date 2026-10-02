@@ -1,0 +1,55 @@
+# MME 534: Fuels and Combustion
+Q|The calorific value of a fuel is|Heat released per unit mass or volume on complete combustion|Its density|Its price|Its colour|a
+Q|Higher heating value includes|Latent heat of condensation of water vapour|No water|Only ash|Only carbon|a
+Q|Proximate analysis of coal gives|Moisture, volatile matter, fixed carbon and ash|Elements C, H, N, S|Only ash|Only density|a
+Q|Ultimate analysis of coal gives|Percentages of C, H, O, N and S|Only moisture|Only ash|Only volatile matter|a
+T|Coke is produced by heating coking coal in the absence of air.|true
+Q|Stoichiometric combustion uses|Exactly the theoretical amount of air|Excess air|Less air|No air|a
+Q|Excess air is used in furnaces to|Ensure complete combustion|Cool the flame|Reduce efficiency deliberately|Produce smoke|a
+Q|Flame temperature is raised by|Preheating air or using oxygen enrichment|Adding excess air|Adding water|Cooling fuel|a
+Q|Natural gas is mainly|Methane|Hydrogen|Propane|Carbon monoxide|a
+Q|Producer gas is made by|Partial oxidation of coal with air and steam|Burning oil|Cooling gas|Electrolysis|a
+T|Coal with lower fixed carbon generally has higher calorific value.|false
+Q|Liquid fuels used in furnaces include|Fuel oil|Water|Sand|Steel|a
+
+# MME 534: Heat Balance and Furnace Efficiency
+Q|Thermal efficiency of a furnace is|Useful heat divided by heat input|Fuel price over cost|Weight over time|Area over volume|a
+Q|Major heat loss from furnaces occurs through|Flue gases, walls and openings|Colour|Sound|Gravity|a
+Q|Heat recovery from flue gas can be done using|Recuperators and regenerators|Filters|Fans|Pumps|a
+Q|A recuperator transfers heat from flue gas to|Incoming combustion air through a wall|Steel|Water in tank|The ground|a
+T|A regenerator stores heat in checker bricks and alternates flow direction.|true
+Q|Reducing excess air in a furnace generally|Improves efficiency|Decreases it|Has no effect|Increases flue loss|a
+Q|A Sankey diagram shows|Energy flows and losses|Stress|Phase boundaries|Fracture|a
+Q|Heat storage in furnace walls matters in|Batch furnaces that heat up and cool down often|Steady continuous ones only|Nothing|Electric ovens only|a
+Q|Insulation reduces|Wall heat loss|Fuel quality|Steel strength|Density|a
+Q|Heat balance is based on|Conservation of energy|Conservation of colour|Newton's third law|Ohm's law|a
+T|Furnace efficiency improves when air leaks into the furnace.|false
+Q|Fuel savings can be made by|Waste heat recovery and good insulation|Opening doors|Cooling the burner|Adding more air|a
+
+# MME 534: Furnace Types and Operation
+Q|A reverberatory furnace heats the charge mainly by|Radiation from roof and flame|Electricity|Induction|Friction|a
+Q|A blast furnace is a|Shaft furnace|Rotary furnace|Muffle furnace|Induction furnace|a
+Q|A rotary kiln is used in|Cement and lime production|Electronics|Jewellery|Cutlery|a
+Q|Electric arc furnaces heat using|An arc between electrodes|Gas flame|Induction|Sunlight|a
+T|Induction furnaces are clean and offer good temperature control.|true
+Q|Muffle furnaces separate the charge from|Combustion gases|Heat|Sound|Floor|a
+Q|Soaking pit furnaces are used to|Heat ingots to uniform temperature before rolling|Melt ore|Cool steel|Clean slag|a
+Q|Pusher-type furnaces are used in|Continuous reheating of billets|Melting alloys|Sintering powders only|Smelting ore|a
+Q|Crucible furnaces are suitable for|Melting small quantities of non-ferrous metals|Making steel in tonnes|Roasting ore|Sintering ore|a
+T|Furnace atmosphere has no effect on surface quality in heat treatment.|false
+Q|Burner design affects|Flame shape and heat transfer|Only the colour|Nothing|Weight|a
+Q|Safety in furnace operation includes|Purging before lighting|Ignoring leaks|Opening fuel at max|Removing guards|a
+
+# MME 534: Refractories
+Q|Refractories are materials that|Withstand high temperatures without melting or degrading|Melt easily|Are soft|Conduct heat well|a
+Q|Fireclay bricks are based on|Alumino-silicates|Pure carbon|Metals|Plastics|a
+Q|Silica bricks are acidic and used in|Glass furnaces and coke ovens|Basic steelmaking|Copper electrolysis|Water tanks|a
+Q|Magnesite bricks are|Basic refractories|Acidic|Neutral|Organic|a
+T|Basic slags attack acidic refractories.|true
+Q|Pyrometric cone equivalent (PCE) is a measure of|Refractoriness|Hardness|Density|Colour|a
+Q|Thermal spalling is the|Cracking or flaking due to thermal shock|Melting|Sintering|Oxidising|a
+Q|Refractories for steel ladles often include|Magnesia-carbon bricks|Glass|Wood|Copper|a
+Q|Porosity in a refractory affects|Insulation and slag penetration|Colour|Sound|Electricity only|a
+Q|Refractoriness-under-load test measures|Deformation at high temperature under load|Colour change|Hardness in air|Melting|a
+T|Insulating refractories have low thermal conductivity.|true
+Q|Chrome-magnesite refractories are used where|Both slag and temperature are severe|Room temperature|Wet areas|Only acid slag|a

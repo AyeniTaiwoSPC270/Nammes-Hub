@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The Gibbs phase rule for a condensed system at constant pressure is,F = C - P + 2,F = C - P + 1,F = C + P + 2,F = P - C,B,20,1000
+multiple,At the triple point of a one-component system the degrees of freedom are,3,2,0,1,C,20,1000
+multiple,In a binary system the maximum number of phases that can coexist at constant pressure is,2,4,3,1,C,20,1000
+truefalse,"At a eutectic point in a binary system at constant pressure, three phases coexist.",,,,,True,20,1000
+multiple,The common tangent construction on Gibbs energy-composition curves is used to find,Yield strength,Surface tension,Equilibrium compositions of two phases,Activation energy,C,20,1000
+multiple,A peritectic reaction is,Solid to two solids,Liquid plus solid to a different solid,Solid to liquid only,Liquid to two solids,B,20,1000
+multiple,The eutectoid reaction is,Liquid plus solid to solid,Solid to two other solids,Gas to liquid,Liquid to two solids,B,20,1000
+multiple,The degrees of freedom in a two-phase region of a binary at constant pressure is,3,0,1,2,C,20,1000
+multiple,Gibbs free energy of mixing curves that show a miscibility gap have,A straight line,Two minima with a hump between,One minimum,No minimum,B,20,1000
+truefalse,The lever rule can only be applied in single-phase regions.,,,,,False,20,1000
+multiple,The solidus is the line below which the alloy is,Completely liquid,Completely solid,Gaseous,Two phase liquid plus solid,B,20,1000
+multiple,Number of components in the system Fe-C is,4,1,2,3,C,20,1000

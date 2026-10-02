@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"In the iron-carbon diagram, the eutectoid composition of steel is about",0.76% C,0.022% C,4.3% C,2.14% C,A,20,1000
+multiple,The eutectoid transformation of austenite produces,Graphite,Martensite,Liquid and ferrite,Ferrite and cementite (pearlite),D,20,1000
+multiple,Steels contain up to about what carbon content?,2.1%,4.3%,0.76%,6.7%,A,20,1000
+truefalse,Cast irons generally contain more than about 2.1% carbon.,,,,,True,20,1000
+multiple,Cementite has the chemical formula,Fe2C,FeC3,FeC,Fe3C,D,20,1000
+multiple,Rapid quenching of austenite can produce,Pearlite,Martensite,Ferrite,Bainite only,B,20,1000
+multiple,Annealing is carried out mainly to,Soften steel and relieve stress,Add carbon,Increase brittleness,Harden steel,A,20,1000
+multiple,Tempering of martensite is done to,Melt the steel,Make it magnetic,Improve toughness by reducing brittleness,Increase hardness,C,20,1000
+multiple,The lever rule is used to find,Hardness,Load capacity,Phase amounts in a two-phase region,Grain size,C,20,1000
+truefalse,A eutectic reaction is one solid phase transforming into two other solid phases on cooling.,,,,,False,20,1000
+multiple,The phase of iron stable at high temperature with an FCC structure is,Austenite,Delta ferrite only,Ferrite,Cementite,A,20,1000
+multiple,Normalizing differs from full annealing mainly because it uses,Oil quenching,Furnace cooling,Water quenching,Air cooling,D,20,1000

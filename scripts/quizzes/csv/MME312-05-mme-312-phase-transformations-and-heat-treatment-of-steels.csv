@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,TTT diagrams show,"Thermal, tensile, toughness",Hardness vs time,"Tension, torsion and temperature","Time, temperature and transformation",D,20,1000
+multiple,Martensite forms from austenite by,Diffusionless shear transformation,Diffusional transformation,Precipitation only,Melting,A,20,1000
+multiple,Bainite is formed at temperatures,Below the pearlite nose and above martensite start,Below -200 C only,Near melting,Above the eutectoid,A,20,1000
+multiple,Hardenability of steel refers to,Its maximum hardness,Its density,Depth to which martensite forms on quenching,Its ductility,C,20,1000
+multiple,The Jominy end quench test measures,Corrosion,Impact strength,Hardenability,Fatigue life,C,20,1000
+truefalse,"Alloying elements such as Cr, Mo and Ni generally reduce hardenability.",,,,,False,20,1000
+multiple,Spheroidising is used to,Improve machinability of high carbon steel,Add carbon,Harden the surface,Make steel brittle,A,20,1000
+multiple,Hardness of martensite depends mainly on,Carbon content,Grain colour,Alloy density,Cooling medium only,A,20,1000
+multiple,Retained austenite can occur after quenching when,Carbon is zero,Quenching is slow,Martensite finish temperature is below room temperature,Steel is pure iron,C,20,1000
+multiple,Tempering temperature increases leads to,Lower hardness and higher toughness,Martensite formation,No change,Higher hardness,A,20,1000
+truefalse,Isothermal annealing transforms austenite at a constant temperature below A1.,,,,,True,20,1000
+multiple,Quenching cracks are mainly caused by,Annealing,Thermal and transformation stresses,Rapid heating of pure iron,Low carbon,B,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Fourier's law relates heat flux to,Velocity,Pressure,Concentration,Temperature gradient,D,20,1000
+multiple,Thermal conductivity has units of,J/kg,W/(m K),W/m^2,K/W,B,20,1000
+multiple,"For steady one-dimensional conduction through a plane wall, the temperature profile is",Linear,Parabolic,Exponential,Constant,A,20,1000
+multiple,Thermal resistance of a plane wall of thickness L is,L / (k A),A / L,L k A,k A / L,A,20,1000
+truefalse,Thermal diffusivity is the ratio of conductivity to density times heat capacity.,,,,,True,20,1000
+multiple,"In a composite wall, thermal resistances in series",Cancel,Subtract,Add,Multiply,C,20,1000
+multiple,Which material has the highest thermal conductivity?,Fire brick,Air,Copper,Glass,C,20,1000
+multiple,The Biot number compares,Mass to heat transfer,Internal conduction resistance to surface convection resistance,Stress to strain,Buoyancy to viscous forces,B,20,1000
+multiple,Transient heat conduction in a body with small Biot number can be treated as,Lumped system with uniform temperature,Steady state,Infinite slab,No heat transfer,A,20,1000
+multiple,The Fourier number is a dimensionless,Time,Length,Temperature,Force,A,20,1000
+truefalse,Insulation increases conduction by having low thermal conductivity.,,,,,False,20,1000
+multiple,Heat flow through a cylindrical wall varies with radius as,r2 / r1,r1 r2,ln(r2/r1),r2 - r1,C,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Planar interface growth is unstable when there is,Constant pressure,Zero composition,No undercooling,Constitutional undercooling,D,20,1000
+multiple,The partition coefficient k is the ratio of,Temperature ratio,Solid to liquid solute concentration,Liquid to gas concentration,Hardness ratio,B,20,1000
+multiple,Scheil equation assumes,Equal densities,"No diffusion in solid, complete mixing in liquid",Full diffusion in solid,No liquid,B,20,1000
+multiple,Microsegregation refers to,Large-scale variation in ingots,Nothing,Gas pores,Composition variations on the scale of dendrites,D,20,1000
+truefalse,Macrosegregation refers to composition variations over large distances in a casting.,,,,,True,20,1000
+multiple,Columnar grains grow,At 90 degrees,Parallel to the heat flow direction,Against heat flow,Randomly,B,20,1000
+multiple,Equiaxed zone in an ingot forms in the,Surface,Centre where undercooling is uniform,Feeder head only,Mould wall only,B,20,1000
+multiple,Rapid solidification leads to,Finer structures and extended solubility,Porosity only,Coarser grains,No change,A,20,1000
+multiple,Secondary dendrite arm spacing decreases with,Increasing time,Decreasing cooling rate,Adding weight,Increasing cooling rate,D,20,1000
+truefalse,Shrinkage occurs on solidification because the solid is usually less dense than the liquid.,,,,,False,20,1000
+multiple,Directional solidification is used to produce,Sand,Turbine blades with aligned grains,Glass,Powders,B,20,1000
+multiple,Eutectic structures can be regular or irregular depending on,Entropy of fusion of phases,Colour,Shape of mould,Weight,A,20,1000

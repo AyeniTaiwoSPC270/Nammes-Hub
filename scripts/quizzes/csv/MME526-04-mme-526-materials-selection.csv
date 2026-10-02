@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The first step in selecting materials is to,Choose by colour,Pick randomly,Define the requirements and constraints of the application,Buy the cheapest material,C,20,1000
+multiple,An Ashby chart plots,Cost against colour,Force against area,Temperature against time,One property against another for material classes,D,20,1000
+multiple,A performance index is a combination of properties that,Measures how well a material performs for a given function,Gives shape,Gives colour,Gives price,A,20,1000
+multiple,"For a light stiff beam, the performance index to maximise is",E x density,Yield strength / E,Density / E,E^(1/2) / density,D,20,1000
+truefalse,"Material selection should consider cost, availability and manufacturability as well as properties.",,,,,True,20,1000
+multiple,"For a tie rod minimising mass with a given strength, maximise",Yield strength / density,Modulus,Conductivity,Density,A,20,1000
+multiple,Ranking material candidates is done using,Weighted property methods or screening,Lottery,Guessing,Colour,A,20,1000
+multiple,Life-cycle assessment considers,Only colour,Only price,Environmental impact from production to disposal,Only weight,C,20,1000
+multiple,A material for a hot turbine blade should have high,Low cost only,Low melting point,Creep resistance and oxidation resistance,Low strength,C,20,1000
+multiple,Material indices help when objectives are,Random,"Clearly defined, like minimum mass or cost",Unknown,Zero,B,20,1000
+truefalse,Selection of a process affects the final properties of a component.,,,,,True,20,1000
+multiple,Corrosion resistance is especially important for,Marine and chemical plant equipment,Paper,Indoor furniture,Books,A,20,1000

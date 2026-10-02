@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Rule of mixtures for longitudinal modulus of a continuous aligned fibre composite is,Ec = Ef / Em,Ec = Vf Ef + Vm Em,Ec = Vf / Vm,Ec = Ef Em,B,20,1000
+multiple,Transverse modulus (iso-stress model) is given by,Ec = Vf Ef,1/Ec = Vf/Ef + Vm/Em,Ec = Ef x Em,Ec = Ef + Em,B,20,1000
+multiple,"In the iso-strain model, the fibre and matrix in a longitudinal loading experience",Equal stress,Equal strain,Random stress,Zero strain,B,20,1000
+multiple,Critical fibre length is the minimum length for,Melting,Colour change,Fibre to reach its fracture strength under load,Matrix to fail,C,20,1000
+truefalse,Short fibre composites are generally less efficient than continuous fibre composites.,,,,,True,20,1000
+multiple,A laminate is made of,Several layers (plies) bonded together,Powder,Gas,One thick block,A,20,1000
+multiple,A unidirectional lamina is strongest,Along the fibre direction,At 45 degrees,Perpendicular to fibres,Equally in all directions,A,20,1000
+multiple,A quasi-isotropic laminate uses plies at,"0, 45, -45 and 90 degrees",Random,90 degrees only,0 degrees only,A,20,1000
+multiple,Delamination is,Shrinkage,Separation of layers in a laminate,Melting,Corrosion,B,20,1000
+truefalse,Fibre and matrix thermal expansion mismatch can induce residual stress.,,,,,True,20,1000
+multiple,Halpin-Tsai equations are used to estimate,Composite moduli,Melting point,Density only,Hardness,A,20,1000
+multiple,Poisson ratio effects in laminates can cause,Colour change,Nothing,Interlaminar stresses at free edges,Melting,C,20,1000

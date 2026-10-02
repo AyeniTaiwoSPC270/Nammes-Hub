@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"Stress corrosion cracking requires a combination of tensile stress, susceptible alloy and",A specific corrosive environment,Vacuum,Zero stress,Low temperature only,A,20,1000
+multiple,Pitting can lead to failure by,Nothing,Stopping corrosion,Making metals tougher,Acting as stress raisers that initiate cracks,D,20,1000
+multiple,Abrasive wear is caused by,Electrical current,Hard particles or asperities cutting the surface,Heat only,Chemical dissolution,B,20,1000
+multiple,Adhesive wear occurs by,Fatigue,Particles in fluid,Corrosion,Material transfer between sliding surfaces,D,20,1000
+truefalse,Erosion is wear caused by impacting particles or liquids.,,,,,True,20,1000
+multiple,Galling is a severe form of,Adhesive wear,Creep,Fatigue,Corrosion,A,20,1000
+multiple,Lubrication reduces wear by,Separating surfaces with a film,Raising friction,Adding load,Heating,A,20,1000
+multiple,Hydrogen embrittlement is more of a risk for,Soft copper,Aluminium foil,Plastics,High strength steels,D,20,1000
+multiple,Fretting is caused by,Continuous rotation,Heating,Small amplitude oscillatory motion between contacting surfaces,Fluid flow,C,20,1000
+multiple,Surface hardening to reduce wear includes,Polishing only,Carburising and nitriding,Annealing,Softening,B,20,1000
+truefalse,Cavitation can cause erosion damage in pumps and propellers.,,,,,True,20,1000
+multiple,Galvanic corrosion is avoided by,Adding salt,Electrically isolating dissimilar metals,Adding heat,Using more dissimilar metals,B,20,1000

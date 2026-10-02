@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,"In arc welding, heat is produced by",Sunlight,An electric arc,Chemical flame only,Friction only,B,20,1000
+multiple,Flux in shielded metal arc welding protects the weld from,Atmospheric contamination,Current,Heat,Cooling,A,20,1000
+multiple,TIG welding uses a,Laser,Non-consumable tungsten electrode,Gas flame,Consumable steel wire,B,20,1000
+multiple,Oxy-acetylene welding uses a,Gas flame,Electric arc,Current only,Electron beam,A,20,1000
+truefalse,The heat affected zone (HAZ) is the region near a weld whose microstructure is changed by heat.,,,,,True,20,1000
+multiple,Brazing joins metals using,Friction only,A filler metal with melting point above 450 C but below base metal melting,No filler,Melting the base metal,B,20,1000
+multiple,Soldering uses filler metals that melt below,5000 C,2000 C,1000 C,450 C,D,20,1000
+multiple,Preheating before welding thick steel helps to reduce,Weld speed,Gas use,Cracking due to rapid cooling,Electrode size,C,20,1000
+multiple,Porosity in welds is commonly caused by,Good shielding,Trapped gases,Low current,Clean material,B,20,1000
+multiple,Friction stir welding is a,Solid state joining process,Gas process,Brazing process,Melting process,A,20,1000
+truefalse,Higher carbon equivalent decreases risk of cold cracking in steel welds.,,,,,False,20,1000
+multiple,Residual stress in welds is caused by,Non-uniform heating and cooling,Vacuum,Perfect cooling,Uniform temperature,A,20,1000

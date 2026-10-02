@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The maximum solubility of carbon in austenite is approximately,2.14 percent,0.022 percent,0.76 percent,6.67 percent,A,20,1000
+multiple,The maximum solubility of carbon in ferrite is about,2.14 percent,0.76 percent,0.022 percent,4.3 percent,C,20,1000
+multiple,The eutectoid temperature in the Fe-Fe3C diagram is about,1538 C,1147 C,912 C,727 C,D,20,1000
+multiple,The eutectic composition in the Fe-C diagram is about,6.67 percent C,4.3 percent C,0.76 percent C,2.14 percent C,B,20,1000
+multiple,A hypoeutectoid steel has carbon content,Above 4.3 percent,Below 0.76 percent,Exactly 0.76 percent,Above 0.76 and below 2.14 percent,B,20,1000
+truefalse,Pearlite is a lamellar mixture of ferrite and graphite.,,,,,False,20,1000
+multiple,The eutectic product in the Fe-Fe3C system is called,Bainite,Pearlite,Ledeburite,Martensite,C,20,1000
+multiple,Alpha iron (ferrite) has which crystal structure?,BCC,HCP,Cubic diamond,FCC,A,20,1000
+multiple,Austenite is,BCC alpha iron,HCP,Iron carbide,FCC gamma iron with dissolved carbon,D,20,1000
+multiple,Steel with 0.4 percent carbon is best described as,High carbon,Low carbon,Cast iron,Medium carbon,D,20,1000
+truefalse,Cementite is a hard and brittle compound.,,,,,True,20,1000
+multiple,The A1 line represents the,Curie point only,Eutectoid transformation temperature,Eutectic temperature,Melting point,B,20,1000

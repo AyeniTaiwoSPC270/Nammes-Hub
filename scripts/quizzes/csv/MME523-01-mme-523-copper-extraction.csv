@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The most common copper ore mineral is,Bauxite,Chalcopyrite,Galena,Haematite,B,20,1000
+multiple,Copper concentrate is produced by,Froth flotation,Sintering,Electrolysis,Casting,A,20,1000
+multiple,In copper smelting the product of the furnace is,Matte,Alumina,Steel,Pure copper,A,20,1000
+multiple,Converting of copper matte uses,Air blown through molten matte,Electrolysis,Water,Hydrogen,A,20,1000
+truefalse,Blister copper is about 98 to 99 percent pure.,,,,,True,20,1000
+multiple,Anode copper is refined further by,Casting only,Roasting,Leaching only,Electrolytic refining,D,20,1000
+multiple,Electrolytic refining of copper yields cathodes of about,99.99 percent purity,90 percent,50 percent,10 percent,A,20,1000
+multiple,The SX-EW route for copper involves,Smelting and casting,Hot rolling,Solvent extraction and electrowinning,Roasting and converting,C,20,1000
+multiple,"In copper smelting, iron is removed as",Anode,Gas,Iron silicate slag,Matte,C,20,1000
+multiple,Sulfur dioxide from copper smelters is usually converted to,Copper,Sulfuric acid,Water only,Steel,B,20,1000
+truefalse,Flash smelting uses fine concentrate particles reacting in an oxygen-rich gas stream.,,,,,True,20,1000
+multiple,Fire refining of blister copper removes,Sulfur and oxygen,Silver,Gold,Nickel only,A,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,ISO 10993 is a standard dealing with,Biological evaluation of medical devices,Paint,Screw threads,Steel grades,A,20,1000
+multiple,In vitro testing is done,In a laboratory outside a living organism,In space,In a living animal,In humans only,A,20,1000
+multiple,Cytotoxicity tests evaluate,Stiffness,Whether a material kills cells,Colour,Weight,B,20,1000
+multiple,Fatigue testing of implants simulates,Thermal shock only,Cyclic loading during walking,Impact only,Static loads only,B,20,1000
+truefalse,Wear debris from joint implants can cause osteolysis.,,,,,True,20,1000
+multiple,Common reasons for hip implant failure include,Magnetism,Noise,Colour change,"Loosening, wear and infection",D,20,1000
+multiple,Sterility of an implant must be ensured to prevent,Colour change,Corrosion only,Expansion,Infection,D,20,1000
+multiple,Hemocompatibility testing concerns,Material interaction with blood,Bone growth,Hair,Skin colour,A,20,1000
+multiple,Simulated body fluid is used to test,Bioactivity and corrosion in a body-like environment,Density,Tensile strength in air,Melting,A,20,1000
+truefalse,Clinical trials are never required before implants reach widespread use.,,,,,False,20,1000
+multiple,Explantation analysis means,Painting them,Studying devices removed from patients,Designing new ones,Buying them,B,20,1000
+multiple,Galvanic corrosion in implants is avoided by,Not mixing dissimilar metals,Adding iron,Using thin parts only,Mixing as many as possible,A,20,1000

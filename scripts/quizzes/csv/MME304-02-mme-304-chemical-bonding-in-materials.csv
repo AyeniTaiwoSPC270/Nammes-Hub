@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Ionic bonds form between atoms with,Large electronegativity difference,Identical radii,No valence electrons,Similar electronegativity,A,20,1000
+multiple,The sea of delocalised electrons describes bonding in,Polyethylene chains,Metals,Diamond,Table salt,B,20,1000
+multiple,In a covalent bond atoms,Transfer electrons fully,Lose all electrons,Share neutrons,Share electron pairs,D,20,1000
+multiple,The hybridisation of carbon in diamond is,dsp2,sp3,sp,sp2,B,20,1000
+multiple,The hybridisation of carbon in graphite is,sp,d2sp3,sp2,sp3,C,20,1000
+truefalse,Graphite conducts electricity partly because of delocalised pi electrons.,,,,,True,20,1000
+multiple,Bond energy is generally highest for,Van der Waals bonds,Hydrogen bonds,Dipole interactions,Covalent or ionic bonds,D,20,1000
+multiple,Lattice energy of an ionic crystal increases with,Lower charge,Greater distance,Higher ionic charge and smaller radius,Larger ionic radius,C,20,1000
+multiple,Which molecule is polar?,CH4,H2O,CO2,N2,B,20,1000
+multiple,Hydrogen bonding occurs when hydrogen is bonded to,Sodium,Iron,"N, O or F",Carbon,C,20,1000
+truefalse,Van der Waals forces exist only in polar molecules.,,,,,False,20,1000
+multiple,The molecular shape of water is,Tetrahedral,Linear,Trigonal planar,Bent,D,20,1000

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Forging is the shaping of metal by,Compressive forces,Sintering,Melting,Cutting,A,20,1000
+multiple,Friction in forging causes,No effect,Cooling only,Barrelling and a higher forging load,Lower load,C,20,1000
+multiple,Rolling reduces the thickness of metal by,Melting,Passing it between rotating rolls,Cutting,Pulling through a die only,B,20,1000
+multiple,Draft in rolling is,Roll diameter,Roll width,Initial thickness minus final thickness,Speed of rolls,C,20,1000
+truefalse,Neutral point in rolling is where the strip and roll surface speeds are equal.,,,,,True,20,1000
+multiple,Forward slip is the,Excess of strip exit speed over roll speed,Difference in roll diameters,Nothing,Pressure,A,20,1000
+multiple,Wire drawing pulls metal through,A press,Rolls,A mould,A die,D,20,1000
+multiple,Maximum reduction per pass in drawing is limited by,Ambient air,Colour,Stress needed to draw exceeding strength of the exit wire,Die colour,C,20,1000
+multiple,Extrusion forces metal through,Rolls,A saw,A mould,A die opening,D,20,1000
+truefalse,Hot working increases the force needed to deform metals.,,,,,False,20,1000
+multiple,Roll bite angle depends on,Speed only,Draft and roll radius,Strip colour,Roll colour,B,20,1000
+multiple,The Lubricant in forging and rolling is used to,Reduce friction and wear,Increase load,Cool only,Increase friction,A,20,1000

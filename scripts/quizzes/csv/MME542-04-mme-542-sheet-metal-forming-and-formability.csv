@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Deep drawing forms a flat blank into,A rod,A plate,A cup-shaped part,A wire,C,20,1000
+multiple,Limiting drawing ratio (LDR) is the,Ratio of densities,Ratio of maximum blank diameter to punch diameter that can be drawn,Ratio of loads,Ratio of speeds,B,20,1000
+multiple,Anisotropy ratio r (Lankford value) measures,Hardness,Conductivity,Ratio of width strain to thickness strain,Density,C,20,1000
+multiple,Earing in deep drawing is due to,Planar anisotropy,Water,Nothing,Isotropy,A,20,1000
+truefalse,High r-values improve resistance to thinning and help deep drawing.,,,,,True,20,1000
+multiple,Forming limit diagrams show,Strain combinations at which necking begins,Cost,Corrosion,Phase boundaries,A,20,1000
+multiple,Springback after bending is caused by,Cooling,Melting,Elastic recovery,Plastic deformation only,C,20,1000
+multiple,Wrinkling in deep drawing is reduced by,Removing blank holder,Adding lubricant only,Increasing temperature only,Blank holder force,D,20,1000
+multiple,Stretch forming involves,Casting,Stretching sheet over a die,Forging,Extruding,B,20,1000
+truefalse,A higher strain hardening exponent n reduces stretchability.,,,,,False,20,1000
+multiple,Bend allowance depends on,Colour,Cost,"Bend angle, radius and thickness",Weight,C,20,1000
+multiple,Ironing in drawing is,Annealing,Making flat,Lubricating,Thinning the wall of a drawn cup,D,20,1000

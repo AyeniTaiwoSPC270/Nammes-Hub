@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Electrowinning deposits metal at the,Wall,Anode,Cathode,Salt bridge,C,20,1000
+multiple,Electrorefining of copper uses an anode of,Impure copper,Lead,Graphite,Platinum,A,20,1000
+multiple,The Hall-Heroult process produces,Titanium,Zinc,Steel,Aluminium,D,20,1000
+multiple,The electrolyte in aluminium smelting is,Sulfuric acid,Alumina dissolved in molten cryolite,Molten iron,Seawater,B,20,1000
+truefalse,Current efficiency is the ratio of actual metal deposited to that predicted by Faraday's law.,,,,,True,20,1000
+multiple,Faraday's law states that mass deposited is proportional to,Time only,Voltage only,Temperature squared,Charge passed and equivalent weight,D,20,1000
+multiple,Zone refining is used to purify,Semiconductors and high purity metals,Ore,Slag,Crude steel,A,20,1000
+multiple,Vacuum refining is used to remove,Dissolved gases such as hydrogen,Copper,Chromium,Carbon only,A,20,1000
+multiple,Anode slimes in copper refining contain,Water,Lead only,Iron,Precious metals like gold and silver,D,20,1000
+multiple,Electrodeposition depends on,Altitude,Current density and electrolyte composition,Sound,Colour,B,20,1000
+truefalse,Higher current density always gives better quality deposits.,,,,,False,20,1000
+multiple,Energy consumption in electrolysis depends on cell voltage and,Mass of cell,Colour,Current efficiency,Room size,C,20,1000

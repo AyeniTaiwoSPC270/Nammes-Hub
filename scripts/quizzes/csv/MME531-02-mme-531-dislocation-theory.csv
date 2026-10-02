@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Dislocations move by,Diffusion only,Melting,Glide on slip planes,Evaporation,C,20,1000
+multiple,The Burgers vector for FCC metals is typically,a/2 <110>,a <111>,a/2 <100>,a <100>,A,20,1000
+multiple,Line energy of a dislocation is approximately proportional to,G b^2,b^3,b / G,G / b,A,20,1000
+multiple,Frank-Read source is a mechanism for,Making vacancies,Cooling,Multiplying dislocations,Removing dislocations,C,20,1000
+truefalse,Dislocations interact through their stress fields.,,,,,True,20,1000
+multiple,Peach-Koehler force is the force on a dislocation due to,Applied stress,Colour,Composition,Temperature,A,20,1000
+multiple,Cross slip is possible for,Edge dislocations only,Screw dislocations,Vacancies,Grain boundaries,B,20,1000
+multiple,Dislocation pile-ups occur at,Obstacles such as grain boundaries,Vacuum,Nothing,Free surfaces,A,20,1000
+multiple,Partial dislocations bound a,Grain,Stacking fault,Precipitate,Vacancy,B,20,1000
+multiple,Peierls stress is the,Fracture stress,Lattice friction stress to move a dislocation,Yield stress of polymers,Hall stress,B,20,1000
+truefalse,Taylor hardening relates flow stress to the square root of dislocation density.,,,,,True,20,1000
+multiple,Dislocation climb needs,Diffusion of vacancies,Shear only,Nothing,Magnetism,A,20,1000

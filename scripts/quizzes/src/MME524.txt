@@ -1,0 +1,55 @@
+# MME 524: Casting Processes
+Q|In sand casting the pattern is made slightly larger than the casting to allow for|Shrinkage|Expansion|Colour|Weight|a
+Q|A riser in a casting serves to|Supply liquid metal to compensate for shrinkage|Cool the mould|Hold the pattern|Filter slag|a
+Q|The gating system of a mould is used to|Deliver molten metal into the cavity|Hold the sand|Cool the metal|Remove cores|a
+Q|Cores in casting are used to form|Internal cavities|External surfaces|Risers|Patterns|a
+T|Die casting is suited to high-volume production of non-ferrous parts.|true
+Q|Investment casting is also known as|Lost wax casting|Sand casting|Permanent mould casting|Centrifugal casting|a
+Q|Centrifugal casting is used for|Pipes and cylindrical parts|Complex sculptures only|Powders|Wires|a
+Q|Permanent mould casting uses moulds made of|Metal|Sand|Plaster only|Wax|a
+Q|Green sand consists of sand, clay and|Water|Oil|Alcohol|Petrol|a
+T|Continuous casting is rarely used in steel plants today.|false
+Q|Pouring temperature that is too low can cause|Misruns and cold shuts|Gas porosity only|Hot tears|Burn-on|a
+Q|Permeability of a mould refers to|Ability to let gases escape|Hardness|Weight|Colour|a
+
+# MME 524: Solidification and Casting Defects
+Q|Chvorinov's rule states that solidification time is proportional to|(Volume / surface area) squared|Volume only|Surface area only|Mould colour|a
+Q|Gas porosity in castings is often caused by|Dissolved hydrogen or entrapped gas|Cold metal|Clean sand|Low pouring speed|a
+Q|Shrinkage cavities form due to|Volume contraction on solidification|Gas release|Sand falling|Slag|a
+Q|Hot tears occur when|Casting is restrained during cooling and is weak|Metal is too cold|Sand is wet|Nothing|a
+T|Directional solidification towards the riser helps to avoid shrinkage defects.|true
+Q|Cold shut is caused by|Two streams of metal failing to fuse|Excess pouring temperature|Gas|Shrinkage|a
+Q|Inclusions in castings include|Slag and oxide particles|Only voids|Nothing|Only cracks|a
+Q|Chills are used in moulds to|Increase local cooling rate|Decrease cooling rate|Add sand|Hold cores|a
+Q|Segregation in castings arises from|Solute rejection during solidification|Sand quality|Mould shape only|Nothing|a
+T|Filtering molten metal in the gating system increases inclusions.|false
+Q|Hydrogen solubility in aluminium drops sharply on solidification, so degassing uses|Nitrogen or argon bubbling|Adding sand|Heating more|Adding water|a
+Q|Hot spots in a casting are areas that|Solidify last|Solidify first|Are cold|Have no metal|a
+
+# MME 524: Foundry Metallurgy: Cast Irons and Alloys
+Q|Grey cast iron contains carbon mainly as|Graphite flakes|Cementite|Martensite|Pearlite only|a
+Q|Ductile (nodular) iron is produced by adding|Magnesium or cerium|Sulfur|Lead|Sodium chloride|a
+Q|White cast iron is very hard because carbon is present as|Cementite|Graphite|Martensite|Ferrite|a
+Q|Malleable iron is produced by|Heat treatment of white iron|Casting grey iron|Quenching steel|Electrolysis|a
+T|Silicon promotes graphite formation in cast iron.|true
+Q|Inoculation of grey iron is done to|Control graphite size and prevent chill|Add colour|Reduce carbon|Raise melting point|a
+Q|Cooling rate affects cast iron structure; fast cooling favours|White iron|Grey iron|Ductile iron|Steel|a
+Q|Grey iron has good damping capacity because of|Graphite flakes|Cementite|Martensite|Ferrite|a
+Q|Carbon equivalent of cast iron is calculated as C + (Si + P) / 3 because|Silicon and phosphorus affect the eutectic composition|Nothing changes|They reduce carbon|They are gases|a
+T|Ductile iron has lower ductility than grey iron.|false
+Q|Compacted graphite iron has properties|Between grey and ductile iron|Same as steel|Like white iron|Same as aluminium|a
+Q|Typical use of grey cast iron is|Engine blocks and machine bases|Springs|Electrical wires|Turbine blades|a
+
+# MME 524: Foundry Practice and Technology
+Q|Foundry melting furnaces include|Cupola, induction and crucible|Kiln only|Blast stove|Oven|a
+Q|A cupola furnace melts|Cast iron using coke|Aluminium using gas only|Steel with electric arc|Copper by electrolysis|a
+Q|Induction furnaces heat metal by|Electromagnetic induction|Burning fuel|Sunlight|Friction|a
+Q|Fettling refers to|Cleaning and finishing castings|Pouring metal|Mixing sand|Melting metal|a
+T|Patterns must have draft angles to allow easy removal from the mould.|true
+Q|Sand testing includes checking for|Permeability, moisture and strength|Colour only|Weight only|Sound|a
+Q|Degassing and fluxing treat|Molten metal before pouring|Sand|Patterns|Tools|a
+Q|Shrinkage allowance for cast iron is roughly|1 percent|10 percent|30 percent|0 percent|a
+Q|Yield of a casting is the ratio of|Casting weight to total poured metal weight|Sand to metal|Time to weight|Cost to weight|a
+T|Good foundry practice includes safety measures such as protective clothing around molten metal.|true
+Q|Sprue is the|Vertical channel where metal enters the mould|Riser|Core|Pattern|a
+Q|Non-destructive testing of castings can use|Radiography and ultrasonics|Cutting up every part|Burning|Weighing only|a

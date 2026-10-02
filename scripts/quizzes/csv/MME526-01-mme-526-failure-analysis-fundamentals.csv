@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The first step in a failure investigation is usually,Cleaning the fracture surface aggressively,Reassembling the machine,Collecting background information and preserving evidence,Discarding parts,C,20,1000
+multiple,Fractography is the study of,Grain size only,Corrosion rates,Hardness,Fracture surfaces,D,20,1000
+multiple,Which tool is used to examine fracture surfaces at high magnification?,Scanning electron microscope,Thermometer,Ruler,Vernier caliper,A,20,1000
+multiple,Root cause analysis aims to identify,Who to blame,Colour,The underlying reason for failure,Cost,C,20,1000
+truefalse,A fracture surface should be protected from damage and contamination.,,,,,True,20,1000
+multiple,Chevron marks on a fracture surface point back to,The fracture origin,The grain boundary,Nothing,The end of the crack,A,20,1000
+multiple,Beach marks are typical of,Creep rupture,Brittle cleavage,Fatigue fractures,Ductile overload,C,20,1000
+multiple,"Common categories of failure causes are design, material, manufacturing and",Weather forecast,Service conditions,Colour,Price,B,20,1000
+multiple,Non-destructive testing of a failed component helps to,Find additional cracks without further damage,Nothing,Melt it,Destroy it,A,20,1000
+truefalse,Failure analysis findings should lead to recommendations to prevent recurrence.,,,,,True,20,1000
+multiple,Chemical analysis in failure investigations checks,Surface finish,Weight,Whether material matches the specification,Only the colour,C,20,1000
+multiple,Macroscopic examination is done,Last,After melting,After burning,Before destructive sectioning,D,20,1000

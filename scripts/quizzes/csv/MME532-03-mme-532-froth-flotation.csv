@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Flotation separates minerals by differences in,Colour,Surface wettability,Density,Magnetism,B,20,1000
+multiple,Collectors are reagents that,Stop bubbles,Dissolve minerals,Increase pH only,Make mineral surfaces hydrophobic,D,20,1000
+multiple,Frothers are added to,Stabilise air bubbles in the froth,Dissolve collectors,Kill bubbles,Sink particles,A,20,1000
+multiple,Depressants are used to,Make all float,Add air,Make froth,Prevent a mineral from floating,D,20,1000
+truefalse,Activators help collectors to adsorb on mineral surfaces.,,,,,True,20,1000
+multiple,pH control in flotation is usually done with,Gold,Lime or soda ash,Iron,Steel,B,20,1000
+multiple,Xanthates are common collectors for,Wood,Sulfide minerals,Clay,Silicates only,B,20,1000
+multiple,Flotation is widely used to concentrate,Iron by magnet,Coal only by sieving,Gold nuggets by hand,"Copper, lead and zinc sulfides",D,20,1000
+multiple,Contact angle greater than zero indicates,Some hydrophobicity,Dissolving,Cooling,Complete wetting,A,20,1000
+truefalse,Bubble size and air flow rate affect flotation performance.,,,,,True,20,1000
+multiple,Recovery in flotation is the,Grade of the tailings,Size of bubbles,Fraction of valuable mineral reporting to the concentrate,Energy used,C,20,1000
+multiple,Reverse flotation floats,"The gangue, leaving the valuable mineral in the sink",The valuable mineral,Nothing,Gas,A,20,1000

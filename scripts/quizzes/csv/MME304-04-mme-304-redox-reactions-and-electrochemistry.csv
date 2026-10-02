@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Oxidation is the,Gain of electrons,Gain of protons,Loss of neutrons,Loss of electrons,D,20,1000
+multiple,"In a redox reaction, the oxidising agent is",A catalyst,Oxidised,Reduced,Unchanged,C,20,1000
+multiple,The oxidation number of oxygen in most compounds is,+2,+1,0,-2,D,20,1000
+multiple,The oxidation number of Mn in KMnO4 is,+7,+2,+4,+6,A,20,1000
+truefalse,Reduction takes place at the cathode in an electrolytic or galvanic cell.,,,,,True,20,1000
+multiple,"In electrolysis, the substance deposited is proportional to",Temperature,Time squared,Voltage only,Charge passed,D,20,1000
+multiple,Faraday's first law states that mass deposited is proportional to,Resistance,Pressure,Electric charge,Atomic volume,C,20,1000
+multiple,Which metal would displace copper from copper sulfate solution?,Zinc,Silver,Mercury,Gold,A,20,1000
+multiple,The electrochemical series ranks metals by,Atomic size,Density,Standard electrode potential,Melting point,C,20,1000
+multiple,Rusting of iron requires,Only nitrogen,Oxygen and water,Only dry air,Vacuum,B,20,1000
+truefalse,A sacrificial anode is more noble than the metal it protects.,,,,,False,20,1000
+multiple,The half-reaction at a zinc anode is,Zn2+ + 2e- to Zn,Zn to Zn+ + e-,Zn + 2e- to Zn2-,Zn to Zn2+ + 2e-,D,20,1000

@@ -1,0 +1,69 @@
+# MME 304: Atomic Structure and the Periodic Table
+Q|The principal quantum number n determines mainly an electron's|Shell or energy level|Spin|Orbital shape|Magnetic orientation|a
+Q|The maximum number of electrons in the n = 3 shell is|8|18|32|2|b
+Q|The shape of an s orbital is|Dumbbell|Spherical|Double dumbbell|Cloverleaf|b
+Q|Electronegativity generally increases|Down a group|Across a period from left to right|Toward the left of a period|With atomic radius|b
+Q|Atomic radius generally decreases|Down a group|Across a period from left to right|Across a period from right to left|With atomic number in a group|b
+T|Ionization energy generally increases across a period.|true
+Q|The Pauli exclusion principle states that|No two electrons can have the same four quantum numbers|Electrons fill the highest orbital first|Every orbital holds 4 electrons|Electrons have no spin|a
+Q|Hund's rule says electrons|Pair up in an orbital before filling others|Occupy degenerate orbitals singly first|Fill f orbitals first|Always have opposite spin|b
+Q|The electron configuration of iron (Z = 26) ends in|3d6 4s2|3d8|4s2 4p6|3d10|a
+Q|Transition metals are characterised by partly filled|s orbitals|d orbitals|p orbitals|f orbitals only|b
+T|Noble gases have completely filled outer shells.|true
+Q|Elements in the same group of the periodic table have the same number of|Electron shells|Valence electrons|Neutrons|Protons|b
+
+# MME 304: Chemical Bonding in Materials
+Q|Ionic bonds form between atoms with|Similar electronegativity|Large electronegativity difference|No valence electrons|Identical radii|b
+Q|The sea of delocalised electrons describes bonding in|Metals|Diamond|Table salt|Polyethylene chains|a
+Q|In a covalent bond atoms|Transfer electrons fully|Share electron pairs|Lose all electrons|Share neutrons|b
+Q|The hybridisation of carbon in diamond is|sp|sp2|sp3|dsp2|c
+Q|The hybridisation of carbon in graphite is|sp3|sp2|sp|d2sp3|b
+T|Graphite conducts electricity partly because of delocalised pi electrons.|true
+Q|Bond energy is generally highest for|Van der Waals bonds|Hydrogen bonds|Covalent or ionic bonds|Dipole interactions|c
+Q|Lattice energy of an ionic crystal increases with|Larger ionic radius|Higher ionic charge and smaller radius|Lower charge|Greater distance|b
+Q|Which molecule is polar?|CO2|H2O|CH4|N2|b
+Q|Hydrogen bonding occurs when hydrogen is bonded to|Carbon|N, O or F|Sodium|Iron|b
+T|Van der Waals forces exist only in polar molecules.|false
+Q|The molecular shape of water is|Linear|Bent|Tetrahedral|Trigonal planar|b
+
+# MME 304: Acids, Bases and Solution Chemistry
+Q|pH is defined as|-log[H+]|log[H+]|[H+]|-ln[OH-]|a
+Q|A solution with pH 3 has hydrogen ion concentration of|10^-3 mol/L|10^3 mol/L|3 mol/L|0.3 mol/L|a
+Q|At 25 C, pH plus pOH equals|7|14|1|0|b
+Q|A strong acid|Dissociates completely in water|Dissociates slightly|Does not dissociate|Has pH above 7|a
+T|Hydrochloric acid is a weak acid.|false
+Q|A buffer solution|Resists changes in pH|Has pH 0|Is always acidic|Contains no ions|a
+Q|Which of these is a strong base?|NH3|NaOH|CH3COOH|H2O|b
+Q|The solubility product Ksp applies to|Sparingly soluble salts|Strong acids|Gases|Polymers|a
+Q|Molarity is moles of solute per|Kilogram of solvent|Litre of solution|Mole of solvent|Gram of solution|b
+Q|Titration is used to determine|Unknown concentration|Crystal structure|Melting point|Density of solids|a
+T|Adding a common ion increases the solubility of a sparingly soluble salt.|false
+Q|Neutralisation of an acid with a base produces|Salt and water|Only a gas|Only a salt|A metal|a
+
+# MME 304: Redox Reactions and Electrochemistry
+Q|Oxidation is the|Gain of electrons|Loss of electrons|Gain of protons|Loss of neutrons|b
+Q|In a redox reaction, the oxidising agent is|Oxidised|Reduced|Unchanged|A catalyst|b
+Q|The oxidation number of oxygen in most compounds is|-2|+2|0|+1|a
+Q|The oxidation number of Mn in KMnO4 is|+2|+4|+7|+6|c
+T|Reduction takes place at the cathode in an electrolytic or galvanic cell.|true
+Q|In electrolysis, the substance deposited is proportional to|Charge passed|Voltage only|Time squared|Temperature|a
+Q|Faraday's first law states that mass deposited is proportional to|Electric charge|Resistance|Atomic volume|Pressure|a
+Q|Which metal would displace copper from copper sulfate solution?|Silver|Zinc|Gold|Mercury|b
+Q|The electrochemical series ranks metals by|Standard electrode potential|Density|Melting point|Atomic size|a
+Q|Rusting of iron requires|Oxygen and water|Only dry air|Only nitrogen|Vacuum|a
+T|A sacrificial anode is more noble than the metal it protects.|false
+Q|The half-reaction at a zinc anode is|Zn to Zn2+ + 2e-|Zn2+ + 2e- to Zn|Zn to Zn+ + e-|Zn + 2e- to Zn2-|a
+
+# MME 304: Chemical Kinetics and Equilibrium
+Q|The rate of a chemical reaction generally increases when|Temperature increases|Temperature decreases|Activation energy increases|Concentration falls|a
+Q|The order of a reaction is determined from|The balanced equation only|Experimental rate data|Enthalpy of reaction|Colour change|b
+Q|The half-life of a first-order reaction is|Independent of initial concentration|Proportional to initial concentration|Inversely proportional to concentration|Zero|a
+T|Equilibrium constant depends on temperature.|true
+Q|For the reaction aA + bB to cC + dD, the equilibrium constant is written as|[C]^c [D]^d / [A]^a [B]^b|[A]^a [B]^b / [C]^c [D]^d|[C] + [D]|[A] x [B]|a
+Q|Increasing pressure favours the side of the equilibrium with|Fewer moles of gas|More moles of gas|Higher temperature|Lower density|a
+Q|A catalyst does which of the following?|Speeds up attainment of equilibrium|Changes the equilibrium constant|Is consumed completely|Raises delta G|a
+Q|The rate-determining step is the|Fastest step|Slowest step|First step always|Last step always|b
+Q|The unit of the rate constant for a first-order reaction is|s^-1|mol L^-1 s^-1|L mol^-1 s^-1|mol|a
+T|At equilibrium the forward and reverse rates are equal.|true
+Q|A plot of ln k against 1/T gives a straight line whose slope equals|-Ea/R|Ea R|R/Ea|-R Ea|a
+Q|The collision theory says that for a reaction to occur, molecules must collide with|Sufficient energy and proper orientation|Any orientation|Zero energy|Equal mass|a

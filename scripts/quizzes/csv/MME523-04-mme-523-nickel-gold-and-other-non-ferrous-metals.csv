@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Nickel is refined in the Mond process by forming,Nickel carbonyl,Nickel oxide,Nickel chloride,Nickel sulfate,A,20,1000
+multiple,Nickel laterite ores are processed by,Panning,Smelting or high pressure acid leaching,Flotation only,Bayer process,B,20,1000
+multiple,Gold is commonly recovered from ore by,Bayer process,Smelting,Roasting only,Cyanidation,D,20,1000
+multiple,Gold dissolution in cyanide requires,Oxygen,Nitrogen,Hydrogen,Helium,A,20,1000
+truefalse,Gold can be recovered from cyanide solution by carbon adsorption or zinc precipitation.,,,,,True,20,1000
+multiple,Platinum group metals are often recovered as by-products of,Steelmaking,Nickel and copper refining,Glass,Cement,B,20,1000
+multiple,Chromium is produced from chromite ore mainly as,Pure chromium wire,Ferrochrome,Brass,Bronze,B,20,1000
+multiple,Tungsten is obtained by reducing tungsten oxide with,Air,Water,Hydrogen,Nitrogen,C,20,1000
+multiple,Niobium and tantalum are often found in the mineral,Galena,Limestone,Bauxite,Columbite-tantalite (coltan),D,20,1000
+truefalse,Rare earth elements are easy to separate because their chemistry is very different.,,,,,False,20,1000
+multiple,Panning for gold uses the difference in,Colour only,Density,Magnetism,Sound,B,20,1000
+multiple,Amalgamation for gold uses,Cyanide,Mercury,Copper,Silica,B,20,1000

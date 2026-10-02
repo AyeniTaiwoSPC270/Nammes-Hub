@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Stainless steel contains at least what percent chromium?,90,10.5,50,1,B,20,1000
+multiple,Low alloy high strength steels (HSLA) use small additions of,Gold,Cu only,Lead,"Nb, V and Ti",D,20,1000
+multiple,Tool steels are characterised by,High hardness and wear resistance,Low strength,Softness,Ductility,A,20,1000
+multiple,Adding nickel to steel generally improves,Melting point,Softness,Brittleness,Toughness,D,20,1000
+truefalse,Manganese helps bind sulphur as MnS and reduces hot shortness.,,,,,True,20,1000
+multiple,Weathering steel develops,A protective rust layer,No oxide,Blue film,Coating of zinc,A,20,1000
+multiple,Free-machining steels contain added,Carbon,Aluminium,Sulphur or lead,Zinc,C,20,1000
+multiple,Hot rolling is done,Below zero,Above the recrystallization temperature,Under water,At room temperature,B,20,1000
+multiple,Cold rolled steel sheet has,No yield,Lower strength,Rougher surface,Better surface finish and tighter tolerances,D,20,1000
+multiple,Galvanised steel is coated with,Lead,Tin,Copper,Zinc,D,20,1000
+truefalse,"Nigeria has steel mills, such as Ajaokuta, which were intended to produce iron and steel.",,,,,True,20,1000
+multiple,Rebar used in construction is made from,Aluminium,Stainless steel only,Cast iron,Hot rolled low or medium carbon steel,D,20,1000

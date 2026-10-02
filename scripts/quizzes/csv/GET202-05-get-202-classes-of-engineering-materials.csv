@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Which class of material is typically characterised by ionic and covalent bonding and brittleness?,Elastomers,Metals,Thermoplastics,Ceramics,D,20,1000
+multiple,Polymers are built from repeating units called,Alloys,Monomers,Crystals,Grains,B,20,1000
+multiple,A composite material is formed by combining,Only polymers,Two or more distinct materials with different properties,Materials of the same type,Only metals,B,20,1000
+truefalse,Thermoplastics soften on heating and cannot be reshaped.,,,,,False,20,1000
+multiple,"Thermosetting polymers, once cured,",Can be melted and remoulded,Turn into ceramics,Cannot be remelted,Become elastomers,C,20,1000
+multiple,Which is an example of a ceramic?,Brass,Nylon,Alumina,Polyethylene,C,20,1000
+multiple,Which property is typically highest for metals compared with polymers?,Corrosion in seawater,Electrical insulation,Thermal and electrical conductivity,Transparency,C,20,1000
+multiple,Steel is an alloy of iron and,Tin,Copper,Zinc,Carbon,D,20,1000
+multiple,Brass is an alloy of copper and,Nickel,Tin,Zinc,Aluminium,C,20,1000
+multiple,Bronze is primarily an alloy of copper and,Tin,Silicon,Zinc,Lead,A,20,1000
+truefalse,Glass is a crystalline ceramic with long-range atomic order.,,,,,False,20,1000
+multiple,Fibreglass (glass fibre reinforced plastic) is an example of a,Pure polymer,Ceramic,Metal,Composite,D,20,1000

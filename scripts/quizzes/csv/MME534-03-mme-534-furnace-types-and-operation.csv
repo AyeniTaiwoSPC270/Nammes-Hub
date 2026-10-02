@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A reverberatory furnace heats the charge mainly by,Friction,Electricity,Induction,Radiation from roof and flame,D,20,1000
+multiple,A blast furnace is a,Rotary furnace,Shaft furnace,Muffle furnace,Induction furnace,B,20,1000
+multiple,A rotary kiln is used in,Cement and lime production,Jewellery,Cutlery,Electronics,A,20,1000
+multiple,Electric arc furnaces heat using,Sunlight,Induction,Gas flame,An arc between electrodes,D,20,1000
+truefalse,Induction furnaces are clean and offer good temperature control.,,,,,True,20,1000
+multiple,Muffle furnaces separate the charge from,Floor,Sound,Heat,Combustion gases,D,20,1000
+multiple,Soaking pit furnaces are used to,Melt ore,Heat ingots to uniform temperature before rolling,Cool steel,Clean slag,B,20,1000
+multiple,Pusher-type furnaces are used in,Continuous reheating of billets,Smelting ore,Sintering powders only,Melting alloys,A,20,1000
+multiple,Crucible furnaces are suitable for,Roasting ore,Melting small quantities of non-ferrous metals,Sintering ore,Making steel in tonnes,B,20,1000
+truefalse,Furnace atmosphere has no effect on surface quality in heat treatment.,,,,,False,20,1000
+multiple,Burner design affects,Flame shape and heat transfer,Only the colour,Nothing,Weight,A,20,1000
+multiple,Safety in furnace operation includes,Purging before lighting,Removing guards,Opening fuel at max,Ignoring leaks,A,20,1000

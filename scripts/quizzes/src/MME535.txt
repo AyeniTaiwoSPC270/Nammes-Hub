@@ -1,0 +1,55 @@
+# MME 535: Process Design Basics and Flowsheets
+Q|A process flow diagram shows|Main equipment and streams of a process|Only the building|Only staff|Only costs|a
+Q|A P&ID is a|Piping and instrumentation diagram|Plant and income document|Process idea document|Power and irrigation diagram|a
+Q|Design basis includes|Capacity, feed and product specifications|Colour choice|Holidays|Names|a
+Q|Batch processes differ from continuous by|Processing fixed quantities in separate runs|Never stopping|Having no product|Using no equipment|a
+T|Flowsheet development starts from material and energy balances.|true
+Q|Block flow diagrams give|A simplified overview of a process|Detailed piping|Electrical wiring|Building plans|a
+Q|Unit operations are|Basic steps such as crushing, heating and separation|Units of measurement|Plant managers|Machines only|a
+Q|Scale-up from laboratory to plant is done carefully because|Behaviour may change at large size|Nothing changes|Labs are bigger|Colour changes|a
+T|Pilot plant trials increase the risk of scale-up.|false
+Q|Yield of a process is|Amount of product obtained compared with the theoretical maximum|Cost|Time|Speed|a
+Q|Recycle streams can|Improve conversion and material use|Destroy the process|Stop products|Add noise|a
+Q|Process control keeps variables such as temperature and flow at|Set points|Random values|Zero|Maximum|a
+
+# MME 535: Material and Energy Balances
+Q|The general material balance states input plus generation minus output minus consumption equals|Accumulation|Zero always|Price|Volume|a
+Q|At steady state, accumulation is|Zero|Positive|Negative|Infinite|a
+Q|A basis for calculations is often chosen as|1 tonne of product or feed|The colour of the feed|The building|The weather|a
+Q|Stoichiometric coefficients relate|Reactant and product amounts|Only colour|Temperature|Pressure|a
+T|Energy balance uses enthalpy of streams and heat of reaction.|true
+Q|The limiting reactant is the one that|Runs out first|Has the highest cost|Is in excess|Is a catalyst|a
+Q|Conversion is|Fraction of a reactant that reacts|Cost|Price|Area|a
+Q|Heat of reaction at temperature T can be found from the standard value using|Heat capacity data|Colour|Density only|Mass only|a
+Q|Sensible heat is the heat needed to|Change temperature without phase change|Melt|Boil|React|a
+T|Latent heat is absorbed only when temperature changes and never during a phase change.|false
+Q|A typical metallurgical balance would balance|Metal, slag and gas streams|Only water|Only staff|Only money|a
+Q|Tie components are used to|Link input and output in a balance when one component is unchanged|Tie ropes|Stop flow|Change colour|a
+
+# MME 535: Equipment Sizing and Plant Layout
+Q|Plant layout should aim for|Safe, efficient flow of materials and people|Maximum distances|Obstruction|Random placement|a
+Q|Capacity of a furnace is determined from|Throughput and residence time|Colour|Brand|Cost of land|a
+Q|Material of construction for corrosive duty should be chosen for|Corrosion resistance and strength at temperature|Lowest cost only|Colour|Shape|a
+Q|Residence time equals|Volume divided by volumetric flow rate|Flow times volume|Area over time|Mass over volume|a
+T|Safety distances are needed between hazardous units.|true
+Q|Design safety factor is applied to|Account for uncertainty|Reduce size always|Increase speed|Remove controls|a
+Q|Pumps and compressors are selected based on|Flow rate, head and fluid properties|Brand colour|Weight only|Noise|a
+Q|Heat exchangers are sized using|Duty, overall heat transfer coefficient and log mean temperature difference|Only length|Only colour|Weight|a
+Q|Site selection for a plant depends on|Raw material, market, utilities and labour|Only price of land|Weather only|Nothing|a
+T|Environmental regulations influence plant design.|true
+Q|Provision for future expansion in layout is|Good practice|Wasteful always|Forbidden|Impossible|a
+Q|Storage tanks for raw materials buffer|Variations in supply and demand|Colour|Noise|Gravity|a
+
+# MME 535: Process Economics and Project Evaluation
+Q|Capital cost is the cost of|Building and equipping the plant|Daily wages only|Sales|Power|a
+Q|Operating cost includes|Raw materials, labour, energy and maintenance|Only equipment|Only loans|Only taxes|a
+Q|Payback period is the time to|Recover the investment from net cash flow|Build the plant|Sell the plant|Train staff|a
+Q|Net present value (NPV) discounts future cash flows to|Present value|Future value|Colour|Zero|a
+T|A project with positive NPV at the required discount rate is generally acceptable.|true
+Q|Depreciation accounts for|Loss of asset value over time|Profit|Sales|Loans|a
+Q|Break-even point is where|Revenue equals total cost|Revenue is zero|Cost is zero|Profit is maximum|a
+Q|Internal rate of return (IRR) is the discount rate at which NPV is|Zero|One|Maximum|Negative always|a
+Q|Sensitivity analysis studies the effect of|Changing key variables on results|Colour|Wall size|Nothing|a
+T|Economies of scale typically raise unit cost as plant size increases.|false
+Q|Working capital is needed for|Day-to-day operations such as raw material stock|Buying land only|Buying equipment only|Nothing|a
+Q|Feasibility studies assess|Technical, economic and environmental viability|Colour only|Only legal|Only engineering|a

@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Viscosity is a measure of a fluid's,Surface tension,Density,Resistance to flow,Temperature,C,20,1000
+multiple,Newton's law of viscosity relates shear stress to,Velocity gradient,Pressure only,Temperature only,Density,A,20,1000
+multiple,The Reynolds number is the ratio of,Inertial forces to viscous forces,Heat to mass,Pressure to density,Viscous to gravity,A,20,1000
+multiple,Flow in a pipe is generally laminar when Reynolds number is below about,2100,0.1,10,100000,A,20,1000
+truefalse,Turbulent flow has higher mixing than laminar flow.,,,,,True,20,1000
+multiple,The continuity equation expresses conservation of,Mass,Energy,Momentum only,Charge,A,20,1000
+multiple,"Bernoulli's equation relates pressure, velocity and",Viscosity,Composition,Elevation,Temperature,C,20,1000
+multiple,Kinematic viscosity equals dynamic viscosity divided by,Area,Pressure,Density,Velocity,C,20,1000
+multiple,In laminar pipe flow the velocity profile is,Parabolic,Linear,Flat,Random,A,20,1000
+multiple,The Hagen-Poiseuille equation gives pressure drop for,Laminar flow in a pipe,Turbulent flow,Compressible flow,Flow in a furnace only,A,20,1000
+truefalse,Liquid metals are typically much more viscous than slags.,,,,,False,20,1000
+multiple,The unit of dynamic viscosity in SI is,m^2/s,kg/m^3,N,Pa s,D,20,1000

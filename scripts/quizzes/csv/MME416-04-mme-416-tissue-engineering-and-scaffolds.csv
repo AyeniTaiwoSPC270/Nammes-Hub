@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,A scaffold in tissue engineering provides,Colouring,Electrical power,A weapon,A 3D structure for cells to attach and grow,D,20,1000
+multiple,Ideal scaffold pore size for bone ingrowth is roughly,10 millimetres,100 to 500 micrometres,1 micrometre,1 nanometre,B,20,1000
+multiple,"The three key components of tissue engineering are cells, scaffold and",Signals or growth factors,Solvents,Metals,Gases,A,20,1000
+multiple,Electrospinning is used to make,Concrete,Nanofibre scaffolds,Glass,Bulk metal,B,20,1000
+truefalse,Porosity and interconnected pores are important for nutrient transport in scaffolds.,,,,,True,20,1000
+multiple,3D printing in biomaterials allows,Only mass production,Uniform shapes only,Patient-specific implants,No customisation,C,20,1000
+multiple,Stem cells are valuable because they can,Produce metals,Become ceramics,Conduct electricity,Differentiate into various cell types,D,20,1000
+multiple,Degradation rate of a scaffold should ideally match,Tissue regeneration rate,Nothing,Melting point,Colour,A,20,1000
+multiple,Surface modification of implants is done to improve,Cell adhesion and integration,Colour only,Weight,Cost,A,20,1000
+truefalse,Osseointegration is the formation of a fibrous soft-tissue layer that separates bone from an implant.,,,,,False,20,1000
+multiple,Growth factors such as BMP are used to,Cool tissue,Dissolve the implant,Stop healing,Stimulate bone formation,D,20,1000
+multiple,Decellularised matrices are,"Tissue with cells removed, keeping the extracellular matrix",Artificial metals,Gels only,Plastics,A,20,1000

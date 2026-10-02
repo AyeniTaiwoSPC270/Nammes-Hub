@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Hand lay-up involves,Manually placing fibre layers and applying resin,Sintering,Casting metal,Automated injection,A,20,1000
+multiple,Filament winding is ideal for making,Flat plates only,Pipes and pressure vessels,Springs,Small gears,B,20,1000
+multiple,Pultrusion produces,Balls,Sheets by blowing,Powders,Continuous constant cross-section profiles,D,20,1000
+multiple,Resin transfer moulding (RTM) injects resin into,Powder bed,Open air,Furnace,A closed mould containing dry fibre preform,D,20,1000
+truefalse,Autoclave curing applies heat and pressure to produce high quality aerospace laminates.,,,,,True,20,1000
+multiple,Prepreg is,Bare metal,Dry fibre,Fibre pre-impregnated with partially cured resin,Liquid resin only,C,20,1000
+multiple,Vacuum bagging is used to,Add air,Cool the part,Melt the fibres,Remove air and consolidate the laminate,D,20,1000
+multiple,Stir casting is used for,Glass,Wood,Polymer composites,Metal matrix composites,D,20,1000
+multiple,Defects in composites include,"Voids, dry spots and fibre misalignment",Only cracks in steel,Only colour,Nothing,A,20,1000
+truefalse,Curing of epoxy is a strongly endothermic reaction.,,,,,False,20,1000
+multiple,Testing of composites includes,Colour matching,"Tensile, flexural and interlaminar shear tests",Sound tests,Only hardness on metals,B,20,1000
+multiple,Compression moulding of sheet moulding compound (SMC) is used for,Bearings,Screws,Wires,Automotive body panels,D,20,1000

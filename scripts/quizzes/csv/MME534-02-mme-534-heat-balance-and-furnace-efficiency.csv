@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Thermal efficiency of a furnace is,Fuel price over cost,Weight over time,Useful heat divided by heat input,Area over volume,C,20,1000
+multiple,Major heat loss from furnaces occurs through,Gravity,Colour,Sound,"Flue gases, walls and openings",D,20,1000
+multiple,Heat recovery from flue gas can be done using,Recuperators and regenerators,Filters,Fans,Pumps,A,20,1000
+multiple,A recuperator transfers heat from flue gas to,Incoming combustion air through a wall,Steel,The ground,Water in tank,A,20,1000
+truefalse,A regenerator stores heat in checker bricks and alternates flow direction.,,,,,True,20,1000
+multiple,Reducing excess air in a furnace generally,Has no effect,Improves efficiency,Decreases it,Increases flue loss,B,20,1000
+multiple,A Sankey diagram shows,Energy flows and losses,Stress,Fracture,Phase boundaries,A,20,1000
+multiple,Heat storage in furnace walls matters in,Nothing,Electric ovens only,Batch furnaces that heat up and cool down often,Steady continuous ones only,C,20,1000
+multiple,Insulation reduces,Wall heat loss,Fuel quality,Steel strength,Density,A,20,1000
+multiple,Heat balance is based on,Ohm's law,Newton's third law,Conservation of colour,Conservation of energy,D,20,1000
+truefalse,Furnace efficiency improves when air leaks into the furnace.,,,,,False,20,1000
+multiple,Fuel savings can be made by,Adding more air,Opening doors,Cooling the burner,Waste heat recovery and good insulation,D,20,1000

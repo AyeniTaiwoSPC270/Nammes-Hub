@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Refractories are materials that,Are soft,Melt easily,Conduct heat well,Withstand high temperatures without melting or degrading,D,20,1000
+multiple,Fireclay bricks are based on,Plastics,Alumino-silicates,Pure carbon,Metals,B,20,1000
+multiple,Silica bricks are acidic and used in,Glass furnaces and coke ovens,Water tanks,Basic steelmaking,Copper electrolysis,A,20,1000
+multiple,Magnesite bricks are,Acidic,Organic,Basic refractories,Neutral,C,20,1000
+truefalse,Basic slags attack acidic refractories.,,,,,True,20,1000
+multiple,Pyrometric cone equivalent (PCE) is a measure of,Density,Hardness,Colour,Refractoriness,D,20,1000
+multiple,Thermal spalling is the,Melting,Oxidising,Cracking or flaking due to thermal shock,Sintering,C,20,1000
+multiple,Refractories for steel ladles often include,Copper,Magnesia-carbon bricks,Glass,Wood,B,20,1000
+multiple,Porosity in a refractory affects,Colour,Insulation and slag penetration,Sound,Electricity only,B,20,1000
+multiple,Refractoriness-under-load test measures,Deformation at high temperature under load,Melting,Hardness in air,Colour change,A,20,1000
+truefalse,Insulating refractories have low thermal conductivity.,,,,,True,20,1000
+multiple,Chrome-magnesite refractories are used where,Room temperature,Both slag and temperature are severe,Wet areas,Only acid slag,B,20,1000

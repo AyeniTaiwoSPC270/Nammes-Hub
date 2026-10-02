@@ -1,0 +1,69 @@
+# MME 419: Principles of Extractive Metallurgy
+Q|The three main branches of extractive metallurgy are pyrometallurgy, hydrometallurgy and|Electrometallurgy|Powder metallurgy only|Welding|Forging|a
+Q|Roasting is the heating of an ore|In air to convert sulfides to oxides|Without any heat|In water|With hydrogen only|a
+Q|Smelting is a process in which the metal is|Separated as a molten phase from gangue as slag|Dissolved in acid|Precipitated from water|Plated|a
+Q|Calcination is the thermal decomposition of|Carbonates or hydrates|Sulfides in water|Metals|Oxides by electrolysis|a
+T|Hydrometallurgy uses aqueous solutions to extract metals.|true
+Q|Gangue is|The unwanted mineral matter in an ore|The product metal|Slag from refining|Fuel|a
+Q|Flux is added in smelting to|Combine with gangue and form slag|Increase the ore size|Cool the furnace|Add carbon|a
+Q|Matte is|A mixture of metal sulfides produced in smelting|A pure metal|A slag|A gas|a
+Q|Sulfide ores are commonly converted to oxides by|Roasting|Electrolysis|Leaching only|Crushing|a
+T|Electrowinning recovers metal from solution by electrolysis.|true
+Q|Refining is done to|Remove impurities from crude metal|Crush ore|Mine ore|Make slag|a
+Q|Which ore is the main source of aluminium?|Bauxite|Haematite|Galena|Chalcopyrite|a
+
+# MME 419: Thermodynamics of Smelting and Reduction
+Q|Carbothermic reduction of iron oxide uses|Carbon or carbon monoxide|Chlorine|Sodium only|Nitrogen|a
+Q|The Boudouard reaction is|C + CO2 = 2CO|2C + O2 = 2CO|CO + O2 = CO2|C + H2O = CO + H2|a
+Q|Reduction of FeO by CO occurs as|FeO + CO = Fe + CO2|FeO + CO2 = Fe + CO|Fe + CO = FeO|FeO = Fe + O2|a
+Q|Increasing temperature favours the Boudouard reaction because it is|Endothermic|Exothermic|Isothermal|Not reversible|a
+T|The Ellingham diagram helps to choose a reducing agent.|true
+Q|Hydrogen can reduce metal oxides by|MO + H2 = M + H2O|M + H2 = MH2|MO + H2O = M + O2|M + H2O = MO|a
+Q|Reducing an oxide of a very stable metal like Al2O3 with carbon requires|Very high temperature (impractical) so electrolysis is used|Low temperature|No energy|Air|a
+Q|Activity of an oxide in slag affects reduction because|It changes the effective driving force|It has no effect|It increases the pressure|It changes the colour|a
+Q|The oxygen potential is a measure of|The chemical potential of oxygen in a system|Temperature|Stress|Conductivity|a
+Q|Reduction by aluminium is called|Aluminothermic (thermite) reduction|Carbothermic|Electrolytic|Hydrogen|a
+T|Metallothermic reduction uses a less reactive metal to reduce a more reactive one.|false
+Q|Magnesium is used in the Kroll process to reduce|Titanium tetrachloride|Iron oxide|Copper sulfide|Lead sulfide|a
+
+# MME 419: Slags and Fluxes
+Q|Slag is a|Molten oxide solution floating on metal|Pure metal|Solid alloy|Gas|a
+Q|Basicity of a slag is often expressed as the ratio|CaO / SiO2|SiO2 / CaO|FeO / MnO|Al2O3 / CO2|a
+Q|Acidic oxides include|SiO2 and P2O5|CaO and MgO|Na2O and K2O|FeO only|a
+Q|Basic oxides include|CaO and MgO|SiO2 and P2O5|CO2|SO3|a
+T|Basic slags help remove phosphorus from steel.|true
+Q|A good slag should have|Suitable melting point, viscosity and chemical affinity for impurities|Very high melting point|Density higher than the metal|Solid state at process temperature|a
+Q|Limestone used as flux decomposes to give|CaO|SiO2|Al2O3|Fe2O3|a
+Q|Viscosity of slag decreases with|Increasing temperature|Decreasing temperature|Adding silica only|Nothing|a
+Q|Slag-metal reactions are controlled by|Mass transfer and chemical reactions at the interface|Only gravity|Only colour|Only pressure|a
+Q|Silicate networks in slag are broken by adding|Basic oxides|Silica|Alumina only|Carbon dioxide|a
+T|Slag is always a useless waste with no commercial use.|false
+Q|The desulphurisation of hot metal is favoured by slags that are|Basic and reducing|Acidic and oxidising|Neutral|Gaseous|a
+
+# MME 419: Hydrometallurgy: Leaching and Recovery
+Q|Leaching is|Dissolving a metal or mineral from ore using a solvent|Melting ore|Crushing ore|Drying ore|a
+Q|Gold extraction commonly uses|Cyanide solution|Sulfuric acid only|Sodium chloride|Ethanol|a
+Q|Heap leaching involves|Stacking crushed ore and percolating solution through|Melting it|Using electrolysis|Mixing in a furnace|a
+Q|Solvent extraction separates metals by|Transferring them between two immiscible liquids|Boiling|Cooling|Magnetism|a
+T|Cementation recovers metal from solution by displacement with a more active metal.|true
+Q|Ion exchange is used to|Selectively remove metal ions from solution|Crush ore|Smelt|Weld|a
+Q|The Bayer process is used to produce|Alumina from bauxite|Copper from chalcopyrite|Steel from scrap|Zinc from blende|a
+Q|Activated carbon adsorbs gold from|Cyanide solution|Molten slag|Steel melt|Air|a
+Q|Factors affecting leaching rate include|Temperature, particle size, concentration and agitation|Colour only|Sound|Gravity only|a
+Q|Pressure leaching is used because|Higher temperature and oxygen pressure speed up reactions|It cools the ore|It reduces reagent|It dries the ore|a
+T|Bacterial leaching works only for high grade oxide ores of copper.|false
+Q|Precipitation of metal hydroxides from solution depends strongly on|pH|Sound|Colour|Altitude|a
+
+# MME 419: Electrometallurgy and Refining
+Q|Electrowinning deposits metal at the|Cathode|Anode|Salt bridge|Wall|a
+Q|Electrorefining of copper uses an anode of|Impure copper|Graphite|Lead|Platinum|a
+Q|The Hall-Heroult process produces|Aluminium|Steel|Zinc|Titanium|a
+Q|The electrolyte in aluminium smelting is|Alumina dissolved in molten cryolite|Sulfuric acid|Seawater|Molten iron|a
+T|Current efficiency is the ratio of actual metal deposited to that predicted by Faraday's law.|true
+Q|Faraday's law states that mass deposited is proportional to|Charge passed and equivalent weight|Temperature squared|Voltage only|Time only|a
+Q|Zone refining is used to purify|Semiconductors and high purity metals|Crude steel|Slag|Ore|a
+Q|Vacuum refining is used to remove|Dissolved gases such as hydrogen|Carbon only|Copper|Chromium|a
+Q|Anode slimes in copper refining contain|Precious metals like gold and silver|Iron|Water|Lead only|a
+Q|Electrodeposition depends on|Current density and electrolyte composition|Colour|Altitude|Sound|a
+T|Higher current density always gives better quality deposits.|false
+Q|Energy consumption in electrolysis depends on cell voltage and|Current efficiency|Colour|Mass of cell|Room size|a

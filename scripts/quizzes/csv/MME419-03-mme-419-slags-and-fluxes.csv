@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Slag is a,Gas,Molten oxide solution floating on metal,Pure metal,Solid alloy,B,20,1000
+multiple,Basicity of a slag is often expressed as the ratio,CaO / SiO2,Al2O3 / CO2,FeO / MnO,SiO2 / CaO,A,20,1000
+multiple,Acidic oxides include,CaO and MgO,FeO only,SiO2 and P2O5,Na2O and K2O,C,20,1000
+multiple,Basic oxides include,CO2,CaO and MgO,SO3,SiO2 and P2O5,B,20,1000
+truefalse,Basic slags help remove phosphorus from steel.,,,,,True,20,1000
+multiple,A good slag should have,Very high melting point,"Suitable melting point, viscosity and chemical affinity for impurities",Density higher than the metal,Solid state at process temperature,B,20,1000
+multiple,Limestone used as flux decomposes to give,Fe2O3,Al2O3,SiO2,CaO,D,20,1000
+multiple,Viscosity of slag decreases with,Nothing,Increasing temperature,Adding silica only,Decreasing temperature,B,20,1000
+multiple,Slag-metal reactions are controlled by,Only colour,Only pressure,Only gravity,Mass transfer and chemical reactions at the interface,D,20,1000
+multiple,Silicate networks in slag are broken by adding,Basic oxides,Silica,Alumina only,Carbon dioxide,A,20,1000
+truefalse,Slag is always a useless waste with no commercial use.,,,,,False,20,1000
+multiple,The desulphurisation of hot metal is favoured by slags that are,Neutral,Acidic and oxidising,Gaseous,Basic and reducing,D,20,1000

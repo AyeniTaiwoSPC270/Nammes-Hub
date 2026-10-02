@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Glass fibres are cheap and widely used. The common type for general use is,R-carbon,Z-glass,E-glass,A-metal,C,20,1000
+multiple,Carbon fibres are made from,Copper,Clay,Sand,Polyacrylonitrile (PAN) precursor,D,20,1000
+multiple,Aramid fibres such as Kevlar are known for,High tensile strength and impact resistance,Transparency,Electrical conductivity,High density,A,20,1000
+multiple,Common thermoset matrices include,Aluminium,Polyethylene and nylon,Steel,Epoxy and polyester,D,20,1000
+truefalse,Thermoplastic matrices can be reshaped by reheating.,,,,,True,20,1000
+multiple,Metal matrix materials commonly include,Mercury,Uranium,Gold,"Aluminium, magnesium and titanium",D,20,1000
+multiple,Ceramic matrix composites are used when,Low weight at low cost only,Transparency is required,High temperature and oxidation resistance are required,Flexibility is needed,C,20,1000
+multiple,Silane coupling agents are used on glass fibres to,Improve bonding with matrix,Make them softer,Make them conductive,Colour them,A,20,1000
+multiple,Fibre aspect ratio is,Volume to mass,Length to diameter,Weight to length,Diameter to length,B,20,1000
+multiple,Natural fibres used in composites include,"Jute, sisal and kenaf",Silicon carbide,Glass,Steel,A,20,1000
+truefalse,"The matrix, not the fibres, carries most of the load in a fibre reinforced polymer.",,,,,False,20,1000
+multiple,A weakness of polymer matrices compared with metals is,Poor corrosion,High conductivity,High density,Low temperature capability,D,20,1000

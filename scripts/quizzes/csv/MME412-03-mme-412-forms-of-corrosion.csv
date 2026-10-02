@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Galvanic corrosion occurs when,Two dissimilar metals are in electrical contact in an electrolyte,Two identical metals are dry,A single metal is painted,A metal is stressed,A,20,1000
+multiple,"In a galvanic couple, the more active metal acts as the",Anode,Insulator,Electrolyte,Cathode,A,20,1000
+multiple,Pitting corrosion is,Uniform thinning,Erosion only,Highly localised attack forming cavities,Cracking under stress,C,20,1000
+multiple,Crevice corrosion occurs in,Vacuum,"Open, well-aerated surfaces",Shielded areas with stagnant solution,Dry air,C,20,1000
+multiple,Intergranular corrosion is attack along,Surface only,Coating,Weld metal centre,Grain boundaries,D,20,1000
+truefalse,Sensitisation of stainless steel is caused by chromium carbide precipitation at grain boundaries.,,,,,True,20,1000
+multiple,Stress corrosion cracking requires,Only compression,Only high pressure,"Tensile stress, susceptible material and specific environment",Only vacuum,C,20,1000
+multiple,Dezincification is selective leaching of,Copper from bronze,Nickel from monel,Iron from steel,Zinc from brass,D,20,1000
+multiple,Erosion corrosion is accelerated by,High velocity flow of fluid,Low temperature,Still water,Dry conditions,A,20,1000
+multiple,Hydrogen embrittlement is caused by,Oxygen only,Sulfur only,Absorbed hydrogen reducing ductility,Helium,C,20,1000
+truefalse,Fretting corrosion occurs only on surfaces with no relative motion at all.,,,,,False,20,1000
+multiple,The area ratio that is most damaging in a galvanic couple is,Large anode and small cathode,No difference,Small anode and large cathode,Equal areas,C,20,1000

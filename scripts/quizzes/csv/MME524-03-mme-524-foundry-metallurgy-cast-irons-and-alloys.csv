@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Grey cast iron contains carbon mainly as,Graphite flakes,Pearlite only,Martensite,Cementite,A,20,1000
+multiple,Ductile (nodular) iron is produced by adding,Sulfur,Lead,Magnesium or cerium,Sodium chloride,C,20,1000
+multiple,White cast iron is very hard because carbon is present as,Graphite,Martensite,Cementite,Ferrite,C,20,1000
+multiple,Malleable iron is produced by,Casting grey iron,Electrolysis,Quenching steel,Heat treatment of white iron,D,20,1000
+truefalse,Silicon promotes graphite formation in cast iron.,,,,,True,20,1000
+multiple,Inoculation of grey iron is done to,Add colour,Reduce carbon,Raise melting point,Control graphite size and prevent chill,D,20,1000
+multiple,Cooling rate affects cast iron structure; fast cooling favours,Steel,Ductile iron,White iron,Grey iron,C,20,1000
+multiple,Grey iron has good damping capacity because of,Graphite flakes,Cementite,Ferrite,Martensite,A,20,1000
+multiple,Carbon equivalent of cast iron is calculated as C + (Si + P) / 3 because,Nothing changes,They reduce carbon,Silicon and phosphorus affect the eutectic composition,They are gases,C,20,1000
+truefalse,Ductile iron has lower ductility than grey iron.,,,,,False,20,1000
+multiple,Compacted graphite iron has properties,Same as steel,Between grey and ductile iron,Same as aluminium,Like white iron,B,20,1000
+multiple,Typical use of grey cast iron is,Engine blocks and machine bases,Springs,Electrical wires,Turbine blades,A,20,1000

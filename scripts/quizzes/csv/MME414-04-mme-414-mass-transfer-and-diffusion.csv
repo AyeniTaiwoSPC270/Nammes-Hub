@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Fick's first law relates diffusion flux to,Temperature only,Time only,Concentration gradient,Pressure gradient,C,20,1000
+multiple,Fick's second law describes,Viscosity,Non-steady state diffusion,Radiation,Steady flow,B,20,1000
+multiple,The unit of diffusivity is,m/s,kg/m^3,mol,m^2/s,D,20,1000
+multiple,Diffusivity in gases is typically,Lower than in solids,Zero,The same as in solids,Higher than in liquids,D,20,1000
+truefalse,Diffusivity in liquids is lower than in solids.,,,,,False,20,1000
+multiple,The Sherwood number is the mass-transfer analogue of the,Nusselt number,Reynolds number,Prandtl number,Biot number,A,20,1000
+multiple,The Schmidt number compares,Pressure to velocity,Heat to mass,Momentum diffusivity to mass diffusivity,Inertia to gravity,C,20,1000
+multiple,Convective mass transfer coefficient has units of,m/s,mol,m^2/s,kg,A,20,1000
+multiple,The boundary layer model for mass transfer assumes resistance is concentrated in,Vapour,Bulk,A thin stagnant layer near the surface,Wall,C,20,1000
+multiple,Error function solutions are used for diffusion into a,Gas,Finite tube,Sphere only,Semi-infinite solid,D,20,1000
+truefalse,Mass transfer rate in a liquid metal can limit some refining reactions.,,,,,True,20,1000
+multiple,Stirring a melt generally,Stops reactions,Decreases mass transfer,Has no effect,Increases mass transfer rate,D,20,1000

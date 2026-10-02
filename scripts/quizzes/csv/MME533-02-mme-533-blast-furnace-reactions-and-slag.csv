@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Indirect reduction occurs mainly in the,Tuyere,Upper stack region by CO gas,Hearth,Raceway,B,20,1000
+multiple,Direct reduction involves reduction by,CO gas,Nitrogen,Solid carbon,Hydrogen only,C,20,1000
+multiple,The Boudouard reaction in the furnace generates,Hydrogen,Oxygen,CO from CO2 and carbon,Water,C,20,1000
+multiple,The Rist diagram is used to represent,Stress-strain,Hardness,Phase diagram,Blast furnace operating line and mass and heat balance,D,20,1000
+truefalse,"Blast furnace slag is mainly made of CaO, SiO2, Al2O3 and MgO.",,,,,True,20,1000
+multiple,Slag basicity in a blast furnace is controlled to,Stop flow,Add silicon only,Add phosphorus,Remove sulfur,D,20,1000
+multiple,Sulphur in hot metal is removed mainly by,Basic slag,Water,Acidic slag,Air,A,20,1000
+multiple,Silicon in hot metal is mostly formed by reduction of,Fe2O3,SiO2 in the lower furnace,CO,CaO,B,20,1000
+multiple,Phosphorus in the ore largely goes to,Nowhere,The hot metal,The slag,The gas,B,20,1000
+truefalse,Granulated blast furnace slag cannot be used in cement production.,,,,,False,20,1000
+multiple,Coke rate means,Coke consumed per tonne of hot metal,Coke colour,Coke price,Coke size,A,20,1000
+multiple,Injection of pulverised coal through tuyeres is done to,Clean slag,Cool furnace walls,Increase coke consumption,Reduce coke consumption,D,20,1000

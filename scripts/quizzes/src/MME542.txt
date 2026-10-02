@@ -1,0 +1,55 @@
+# MME 542: Plasticity Foundations
+Q|Plastic deformation is|Permanent deformation that remains after load removal|Temporary|Elastic|Reversible|a
+Q|Yield criteria predict|The onset of plastic flow under combined stress|Fracture only|Corrosion|Colour|a
+Q|The von Mises yield criterion is based on|Distortion energy|Maximum normal stress|Surface energy|Mass|a
+Q|For uniaxial tension the effective stress equals|The applied stress|Zero|Half the stress|Twice the stress|a
+T|Hydrostatic pressure does not cause yielding in ductile metals.|true
+Q|The flow rule states that plastic strain increments are proportional to|Deviatoric stresses|Temperature|Colour|Mass|a
+Q|Levy-Mises equations relate|Strain increments to stress deviators|Force to area|Time to work|Heat to work|a
+Q|A rigid perfectly plastic material|Has constant flow stress and no elastic strain|Is elastic|Has no yield|Fractures immediately|a
+Q|Work hardening increases flow stress with|Plastic strain|Time only|Temperature drop only|Nothing|a
+T|Plastic work is mostly stored as elastic energy.|false
+Q|Effective strain for uniaxial tension equals|The axial strain|Zero|Double the strain|Half the strain|a
+Q|Plastic deformation is considered to occur at|Constant volume|Constant pressure|Zero volume|Decreasing volume|a
+
+# MME 542: Forging, Rolling and Drawing Mechanics
+Q|Forging is the shaping of metal by|Compressive forces|Melting|Cutting|Sintering|a
+Q|Friction in forging causes|Barrelling and a higher forging load|Lower load|No effect|Cooling only|a
+Q|Rolling reduces the thickness of metal by|Passing it between rotating rolls|Cutting|Melting|Pulling through a die only|a
+Q|Draft in rolling is|Initial thickness minus final thickness|Speed of rolls|Roll diameter|Roll width|a
+T|Neutral point in rolling is where the strip and roll surface speeds are equal.|true
+Q|Forward slip is the|Excess of strip exit speed over roll speed|Difference in roll diameters|Nothing|Pressure|a
+Q|Wire drawing pulls metal through|A die|A press|Rolls|A mould|a
+Q|Maximum reduction per pass in drawing is limited by|Stress needed to draw exceeding strength of the exit wire|Colour|Die colour|Ambient air|a
+Q|Extrusion forces metal through|A die opening|Rolls|A saw|A mould|a
+T|Hot working increases the force needed to deform metals.|false
+Q|Roll bite angle depends on|Draft and roll radius|Roll colour|Strip colour|Speed only|a
+Q|The Lubricant in forging and rolling is used to|Reduce friction and wear|Increase friction|Increase load|Cool only|a
+
+# MME 542: Slip Line Field Theory and Upper Bound Methods
+Q|Slip line field theory applies to|Plane strain plastic deformation|Elastic deformation|Brittle fracture|Creep|a
+Q|Slip lines are lines of|Maximum shear stress|Zero shear stress|Principal stress|Tensile stress only|a
+Q|In plane strain, the shear yield stress k equals|Yield stress / sqrt(3) (von Mises)|Yield stress x sqrt(3)|Yield stress|Zero|a
+Q|The upper bound theorem gives a load that is|Greater than or equal to the true collapse load|Less than true load|Zero|Exactly true always|a
+T|The lower bound theorem gives a safe estimate of the load the body can carry.|true
+Q|Hencky equations describe|Variation of mean stress along slip lines|Temperature|Composition|Hardness|a
+Q|Slip lines in a field always intersect at|Right angles (two families orthogonal)|Random angles|30 degrees|60 degrees|a
+Q|Upper bound solutions often use|Assumed velocity fields (kinematically admissible)|Random numbers|Colour|Stress fields|a
+Q|Friction in slip line fields is modelled by|Conditions on the tool interface such as m = tau / k|No friction|Random|Temperature only|a
+T|Slip line fields apply only to elastic deformation.|false
+Q|A kinematically admissible velocity field must satisfy|Incompressibility and boundary conditions|Colour|Hardness|Density|a
+Q|Discontinuities in velocity in upper bound models occur across|Shear planes|Free space|Vacuum|Air|a
+
+# MME 542: Sheet Metal Forming and Formability
+Q|Deep drawing forms a flat blank into|A cup-shaped part|A rod|A wire|A plate|a
+Q|Limiting drawing ratio (LDR) is the|Ratio of maximum blank diameter to punch diameter that can be drawn|Ratio of speeds|Ratio of loads|Ratio of densities|a
+Q|Anisotropy ratio r (Lankford value) measures|Ratio of width strain to thickness strain|Hardness|Conductivity|Density|a
+Q|Earing in deep drawing is due to|Planar anisotropy|Isotropy|Nothing|Water|a
+T|High r-values improve resistance to thinning and help deep drawing.|true
+Q|Forming limit diagrams show|Strain combinations at which necking begins|Phase boundaries|Corrosion|Cost|a
+Q|Springback after bending is caused by|Elastic recovery|Plastic deformation only|Melting|Cooling|a
+Q|Wrinkling in deep drawing is reduced by|Blank holder force|Removing blank holder|Increasing temperature only|Adding lubricant only|a
+Q|Stretch forming involves|Stretching sheet over a die|Extruding|Casting|Forging|a
+T|A higher strain hardening exponent n reduces stretchability.|false
+Q|Bend allowance depends on|Bend angle, radius and thickness|Colour|Weight|Cost|a
+Q|Ironing in drawing is|Thinning the wall of a drawn cup|Making flat|Annealing|Lubricating|a

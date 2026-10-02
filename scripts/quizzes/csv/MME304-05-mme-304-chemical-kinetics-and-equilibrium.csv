@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,The rate of a chemical reaction generally increases when,Activation energy increases,Temperature increases,Temperature decreases,Concentration falls,B,20,1000
+multiple,The order of a reaction is determined from,Enthalpy of reaction,Colour change,The balanced equation only,Experimental rate data,D,20,1000
+multiple,The half-life of a first-order reaction is,Zero,Proportional to initial concentration,Independent of initial concentration,Inversely proportional to concentration,C,20,1000
+truefalse,Equilibrium constant depends on temperature.,,,,,True,20,1000
+multiple,"For the reaction aA + bB to cC + dD, the equilibrium constant is written as",[A] x [B],[C] + [D],[A]^a [B]^b / [C]^c [D]^d,[C]^c [D]^d / [A]^a [B]^b,D,20,1000
+multiple,Increasing pressure favours the side of the equilibrium with,Fewer moles of gas,Higher temperature,More moles of gas,Lower density,A,20,1000
+multiple,A catalyst does which of the following?,Speeds up attainment of equilibrium,Raises delta G,Is consumed completely,Changes the equilibrium constant,A,20,1000
+multiple,The rate-determining step is the,Last step always,First step always,Slowest step,Fastest step,C,20,1000
+multiple,The unit of the rate constant for a first-order reaction is,mol,L mol^-1 s^-1,mol L^-1 s^-1,s^-1,D,20,1000
+truefalse,At equilibrium the forward and reverse rates are equal.,,,,,True,20,1000
+multiple,A plot of ln k against 1/T gives a straight line whose slope equals,-R Ea,Ea R,-Ea/R,R/Ea,C,20,1000
+multiple,"The collision theory says that for a reaction to occur, molecules must collide with",Zero energy,Sufficient energy and proper orientation,Any orientation,Equal mass,B,20,1000

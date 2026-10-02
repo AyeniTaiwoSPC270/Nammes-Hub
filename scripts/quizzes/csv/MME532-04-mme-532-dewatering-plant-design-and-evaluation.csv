@@ -1,0 +1,13 @@
+type,question,option_a,option_b,option_c,option_d,correct,seconds,points
+multiple,Thickeners are used to,Dilute slurry,Increase the solid concentration of slurry,Crush ore,Heat slurry,B,20,1000
+multiple,Filtration separates,Metals,Two liquids,Gases,Solids from liquids using a porous medium,D,20,1000
+multiple,Flocculants help by,Aggregating fine particles to settle faster,Heating them,Dissolving them,Dispersing particles,A,20,1000
+multiple,Tailings are,Waste material after separation,The feed,Fuel,The product,A,20,1000
+truefalse,Proper tailings management is important for environmental protection.,,,,,True,20,1000
+multiple,"The recovery formula is R = c(f - t) / f(c - t) where c, f and t are the assays of","Copper, fluorine, tin","Crusher, filter, thickener","Concentrate, feed and tailings","Colour, feed, time",C,20,1000
+multiple,Enrichment ratio is,Concentrate grade divided by feed grade,Recovery times grade,Feed divided by tailings,Size ratio,A,20,1000
+multiple,A flowsheet shows,The sequence of processing operations,Weather,Price,Colour of ore,A,20,1000
+multiple,Hydrocyclones classify particles by,Colour,Magnetism,Temperature,Centrifugal force,D,20,1000
+truefalse,Closed-circuit grinding returns oversize particles to the mill for further grinding.,,,,,True,20,1000
+multiple,Dust control in mineral plants is important for,Nothing,Worker health and safety,Colour,Weight,B,20,1000
+multiple,Mass balance in a plant is based on,Conservation of colour,Entropy only,Nothing,Conservation of mass,D,20,1000
