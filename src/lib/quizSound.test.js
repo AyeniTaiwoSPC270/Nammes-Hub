@@ -13,6 +13,8 @@ import {
   layersFor,
   styleFor,
   rootIndexAt,
+  rollTimes,
+  applauseSamples,
   DRUMROLL_HIT_MS,
   buzz,
 } from './quizSound'
@@ -161,6 +163,76 @@ describe('what a style resolves to', () => {
     for (const key of MUSIC_STYLES.filter((k) => k !== 'off')) {
       expect(layersFor(styleFor(key))).not.toBeNull()
     }
+  })
+})
+
+// A fixed pseudo-random sequence, so a "random" crowd can be checked the same way every run.
+function seeded(seed) {
+  let a = seed
+  return () => {
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const rms = (samples, from, to) => {
+  let sum = 0
+  for (let i = from; i < to; i += 1) sum += samples[i] * samples[i]
+  return Math.sqrt(sum / (to - from))
+}
+
+describe('the drum roll', () => {
+  it('speeds up: every gap is shorter than the one before', () => {
+    // The first version spaced its hits with (i / count) ** 1.7, which packs them together at the start and spreads
+    // them out at the end, so the roll slowed down. Nothing could hear that, but this can.
+    const times = rollTimes(28, 0.8)
+    const gaps = times.slice(1).map((t, i) => t - times[i])
+    for (let i = 1; i < gaps.length; i += 1) expect(gaps[i]).toBeLessThan(gaps[i - 1])
+    expect(times[0]).toBe(0)
+  })
+  it('finishes before the boom it leads into, with the hits close together at the end', () => {
+    const times = rollTimes(28, 0.8)
+    expect(times.at(-1)).toBeLessThan(0.8)
+    expect(times.at(-1) - times.at(-2)).toBeLessThan(0.012)
+    expect(times[1] - times[0]).toBeGreaterThan(0.03)
+  })
+})
+
+describe('the applause', () => {
+  const RATE = 8000
+  it('is a finite, in-range signal of the length asked for', () => {
+    const crowd = applauseSamples(RATE, 2.6, seeded(1))
+    expect(crowd.length).toBe(Math.floor(RATE * 2.6))
+    for (const x of crowd) {
+      expect(Number.isFinite(x)).toBe(true)
+      expect(Math.abs(x)).toBeLessThanOrEqual(1)
+    }
+  })
+  it('builds, holds and thins out, rather than sitting at one level like a hiss', () => {
+    const crowd = applauseSamples(RATE, 2.6, seeded(2))
+    const second = RATE
+    const start = rms(crowd, 0, Math.floor(second * 0.1))
+    const middle = rms(crowd, Math.floor(second * 0.9), Math.floor(second * 1.4))
+    const end = rms(crowd, crowd.length - Math.floor(second * 0.1), crowd.length)
+    expect(middle).toBeGreaterThan(start * 2)
+    expect(middle).toBeGreaterThan(end * 2)
+  })
+  it('is different every time, so a long night of rounds never repeats the same cheer', () => {
+    const a = applauseSamples(RATE, 1, seeded(3))
+    const b = applauseSamples(RATE, 1, seeded(4))
+    expect(a.some((x, i) => x !== b[i])).toBe(true)
+  })
+  it('is made of separate claps with gaps between them, not one steady level', () => {
+    // A flat bed of noise has almost the same loudness in every 10 ms slice. A crowd of snaps does not.
+    const crowd = applauseSamples(RATE, 2.6, seeded(5))
+    const slice = Math.floor(RATE * 0.01)
+    const levels = []
+    for (let i = Math.floor(RATE * 0.9); i + slice < Math.floor(RATE * 1.6); i += slice) levels.push(rms(crowd, i, i + slice))
+    const mean = levels.reduce((a, b) => a + b, 0) / levels.length
+    const spread = Math.sqrt(levels.reduce((a, b) => a + (b - mean) ** 2, 0) / levels.length) / mean
+    expect(spread).toBeGreaterThan(0.1)
   })
 })
 
