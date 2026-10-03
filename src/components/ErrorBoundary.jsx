@@ -15,7 +15,10 @@ function reloadOnce() {
     if (Date.now() - last < RELOAD_COOLDOWN_MS) return
     sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
   } catch {
-    // Blocked storage only costs us the loop guard; the reload itself is still the right move.
+    // With storage blocked there is nothing that survives a reload to guard against a loop, and a plain
+    // variable would not help either because the reload restarts the script. So skip the automatic reload
+    // entirely; the generic error screen still offers a Reload button for the user to press.
+    return
   }
   window.location.reload()
 }
