@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
-import { quizSound } from '../../lib/quizSound'
 import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl } from '../../data/quizBranding'
 import { useQuizQuery, saveQuizTheme } from '../../data/quiz'
 import {
@@ -24,6 +23,7 @@ import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
 import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from '../../components/admin/quizStudio/StudioPreview'
 import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery'
+import SoundLab from '../../components/admin/quizStudio/SoundLab'
 
 // Quiz Design Studio: choose how a quiz looks on the projector and on phones (colours, backdrop, celebration,
 // event headline), with a live preview, and browse the 50 characters. The look is saved on the quiz and copied into
@@ -150,7 +150,7 @@ export default function AdminQuizStudio() {
             {quiz ? <>How <span className="font-semibold text-ink-900">{quiz.title}</span> looks on the projector and on phones.</> : 'Loading…'}
           </p>
         </div>
-        {tab === 'look' && (
+        {tab !== 'characters' && (
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => setDraft(sanitizeTheme(DEFAULT_THEME))} disabled={!quiz}>
               Reset to default
@@ -164,6 +164,7 @@ export default function AdminQuizStudio() {
 
       <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Studio sections">
         <TabButton active={tab === 'look'} onClick={() => setTab('look')}>Look &amp; feel</TabButton>
+        <TabButton active={tab === 'sound'} onClick={() => setTab('sound')}>Sound</TabButton>
         <TabButton active={tab === 'characters'} onClick={() => setTab('characters')}>Characters (50)</TabButton>
         <Link to="/admin/quizzes" className="ml-auto self-center text-sm text-ink-muted underline">Back to quizzes</Link>
       </div>
@@ -171,6 +172,15 @@ export default function AdminQuizStudio() {
       {tab === 'characters' ? (
         <div className="mt-6">
           <CharacterGallery />
+        </div>
+      ) : tab === 'sound' ? (
+        <div className="mt-6">
+          <SoundLab
+            music={theme.sound.music}
+            effects={theme.sound.effects}
+            onPickMusic={(key) => change({ sound: { ...theme.sound, music: key } })}
+            onPickEffects={(on) => change({ sound: { ...theme.sound, effects: on } })}
+          />
         </div>
       ) : (
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
@@ -235,7 +245,7 @@ export default function AdminQuizStudio() {
               </div>
             </Section>
 
-            <Section title="Sound" hint="Music and effects on the projector. The host can mute any time. Browsers need one click before sound starts.">
+            <Section title="Sound" hint="Music and effects on the projector. Hear every option on the Sound tab before you pick one.">
               <div className="grid grid-cols-3 gap-2">
                 {Object.entries(THEME_MUSIC).map(([key, label]) => (
                   <Choice key={key} selected={theme.sound.music === key} onClick={() => change({ sound: { ...theme.sound, music: key } })} className="px-3 py-2.5">
@@ -245,25 +255,8 @@ export default function AdminQuizStudio() {
               </div>
               <label className="mt-3 flex cursor-pointer items-center gap-3 text-sm font-semibold text-ink-900">
                 <input type="checkbox" className="h-5 w-5" checked={theme.sound.effects} onChange={(e) => change({ sound: { ...theme.sound, effects: e.target.checked } })} />
-                Sound effects (countdown ticks, right and wrong stings, fanfare)
+                Sound effects (countdown ticks, drum roll, right and wrong stings, cheer, fanfare)
               </label>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="secondary" size="sm" onClick={() => { quizSound.unlock(); quizSound.play('correct') }}>Hear a right answer</Button>
-                <Button variant="secondary" size="sm" onClick={() => { quizSound.unlock(); quizSound.play('tickFast') }}>Hear the ticking</Button>
-                {theme.sound.music !== 'off' && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      quizSound.unlock()
-                      quizSound.startMusic(theme.sound.music)
-                      setTimeout(() => quizSound.stopMusic(), 5000)
-                    }}
-                  >
-                    Hear the music (5 s)
-                  </Button>
-                )}
-              </div>
             </Section>
 
             <Section title="Logo and sponsors" hint="An event logo replaces the NAMMES mark at the top. Sponsor logos show on the projector only, never on phones.">

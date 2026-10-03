@@ -9,7 +9,7 @@ import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
 import { useProjectorFit } from '../lib/projectorFit'
 import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
-import { quizSound, tickSound, stateSound, revealSting } from '../lib/quizSound'
+import { quizSound, tickSound, stateSound, revealSting, applauseSound, leaderboardChimes, DRUMROLL_HIT_MS } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import { BracketBoard, BracketPodium, BracketPanel } from '../components/quiz/BracketParts'
@@ -441,10 +441,26 @@ function typedGroups(answers) {
   return [...groups.values()].sort((x, y) => y.count - x.count).slice(0, 6)
 }
 
-function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto }) {
+function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto, holdMs = 0 }) {
   const type = question.type ?? 'multiple'
   const choice = isChoiceType(type)
-  const scored = type !== 'poll'
+  const isPoll = type === 'poll'
+  const scored = !isPoll
+  // When a drum roll is playing, the right answer is held back until the roll lands on it, so the reveal is a
+  // moment instead of something that was already on screen. Polls never roll and never wait, and with sound effects
+  // switched off there is no roll to wait for, so the answer appears exactly as it always did.
+  //
+  // Whether to hold is decided once, here, and never revisited. The hold depends on whether audio is unlocked and
+  // unmuted, either of which can change while this screen is up; reacting to that would take an answer that is
+  // already on screen away again and put it back a moment later.
+  const holdRef = useRef(holdMs)
+  const [unheld, setUnheld] = useState(holdMs <= 0)
+  useEffect(() => {
+    if (holdRef.current <= 0) return undefined
+    const timer = setTimeout(() => setUnheld(true), holdRef.current)
+    return () => clearTimeout(timer)
+  }, [])
+  const revealed = isPoll || unheld
   const max = Math.max(1, ...counts)
   const rightCount = answers.filter((a) => a.correct === true).length
   const percentCorrect = answers.length > 0 ? Math.round((rightCount / answers.length) * 100) : 0
@@ -461,7 +477,7 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
 
   const stats = scored
     ? [
-        { icon: 'target', label: 'Got it right', value: `${percentCorrect}%` },
+        { icon: 'target', label: 'Got it right', value: `${percentCorrect}%`, secret: true },
         { icon: 'bolt', label: 'Fastest correct', value: fastestName ? `${fastestName} · ${(fastest.ms / 1000).toFixed(1)}s` : '—' },
         { icon: 'groups', label: 'Answered', value: `${answers.length} of ${playerCount}` },
       ]
@@ -486,15 +502,15 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
       {choice ? (
         <AnswerTiles question={question}>
           {(option, i) => {
-            const correct = scored && i === question.correct_index
-            const popular = !scored && counts[i] === topVote && topVote > 0
+            const correct = revealed && i === question.correct_index
+            const popular = !revealed ? false : !scored && counts[i] === topVote && topVote > 0
             return (
               <div
                 key={i}
                 className={[
                   'flex flex-col justify-between gap-4 rounded-3xl p-6 text-white shadow-lg transition-all',
                   OPTION_STYLES[i].bg,
-                  correct || popular ? 'qz-pop scale-[1.02] ring-8 ring-ink-900' : scored ? 'opacity-40' : '',
+                  correct || popular ? 'qz-pop scale-[1.02] ring-8 ring-ink-900' : scored && revealed ? 'opacity-40' : '',
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -504,10 +520,15 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
                     </span>
                     <MathText>{option}</MathText>
                   </span>
-                  <span className="rounded-full bg-black/25 px-4 py-1 text-2xl font-bold">{counts[i] ?? 0}</span>
+                  <span className="rounded-full bg-black/25 px-4 py-1 text-2xl font-bold">{revealed ? counts[i] ?? 0 : '?'}</span>
                 </div>
+                {/* The counts and the bars are the answer on a lopsided question, so they are held back with
+                    everything else and grow on the beat of the drum roll instead. */}
                 <div className="h-3 overflow-hidden rounded-full bg-black/25">
-                  <div className="h-full rounded-full bg-white transition-[width] duration-700" style={{ width: `${((counts[i] ?? 0) / max) * 100}%` }} />
+                  <div
+                    className="h-full rounded-full bg-white transition-[width] duration-700"
+                    style={{ width: revealed ? `${((counts[i] ?? 0) / max) * 100}%` : '0%' }}
+                  />
                 </div>
               </div>
             )
@@ -515,17 +536,20 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
         </AnswerTiles>
       ) : (
         <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-2">
-          <div className="qz-pop flex flex-col justify-center gap-2 rounded-3xl bg-green-700 p-8 text-white shadow-lg">
-            <p className="flex items-center gap-2 text-lg font-bold uppercase tracking-[0.12em] text-white/80">
-              <span className="material-symbols-outlined" aria-hidden="true">check</span>
-              Correct answer
-            </p>
-            <p className="break-words text-5xl font-bold sm:text-6xl">{shownAnswer}</p>
-            {type === 'numeric' && Number(question.numeric_tolerance) > 0 && <p className="text-lg text-white/80">Anything within ±{Number(question.numeric_tolerance)} counted.</p>}
+          {revealed ? (
+            <div className="qz-pop flex flex-col justify-center gap-2 rounded-3xl bg-green-700 p-8 text-white shadow-lg">
+              <p className="flex items-center gap-2 text-lg font-bold uppercase tracking-[0.12em] text-white/80">
+                <span className="material-symbols-outlined" aria-hidden="true">check</span>
+                Correct answer
+              </p>
+              <p className="break-words text-5xl font-bold sm:text-6xl">{shownAnswer}</p>
+              {type === 'numeric' && Number(question.numeric_tolerance) > 0 && <p className="text-lg text-white/80">Anything within ±{Number(question.numeric_tolerance)} counted.</p>}
             {type === 'text' && (question.accepted_answers ?? []).length > 1 && (
               <p className="text-lg text-white/80">Also accepted: {(question.accepted_answers ?? []).slice(1).join(', ')}</p>
             )}
-          </div>
+            </div>
+          ) : null}
+
           <div className="rounded-3xl border border-hairline bg-surface p-6 shadow-md">
             <p className="mb-3 text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">What people typed</p>
             {groups.length === 0 ? (
@@ -533,8 +557,8 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
             ) : (
               <ul className="flex flex-col gap-2">
                 {groups.map((g) => (
-                  <li key={g.text} className={`flex items-center gap-3 rounded-xl px-4 py-2 text-xl font-semibold ${g.correct ? 'bg-green-600/15 text-green-600' : 'bg-surface-low'}`}>
-                    <span className="material-symbols-outlined" aria-hidden="true">{g.correct ? 'check_circle' : 'close'}</span>
+                  <li key={g.text} className={`flex items-center gap-3 rounded-xl px-4 py-2 text-xl font-semibold ${g.correct && revealed ? 'bg-green-600/15 text-green-600' : 'bg-surface-low'}`}>
+                    <span className="material-symbols-outlined" aria-hidden="true">{g.correct && revealed ? 'check_circle' : 'close'}</span>
                     <span className="min-w-0 flex-1 truncate">{g.text}</span>
                     <span className="tabular-nums">{g.count}</span>
                   </li>
@@ -553,7 +577,7 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
             </span>
             <div className="min-w-0">
               <div className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">{stat.label}</div>
-              <div className="truncate text-xl font-bold">{stat.value}</div>
+              <div className="truncate text-xl font-bold">{stat.secret && !revealed ? '…' : stat.value}</div>
             </div>
           </div>
         ))}
@@ -577,6 +601,13 @@ const COUNT_DELAY_MS = 450
 const COUNT_MS = 900
 const REORDER_AFTER_MS = 1500
 const REORDER_MS = 1100
+// One chime per row as the board settles into its new order, so a big swing sounds like a run of them rather than one.
+const POINTS_CHIME_MS = 110
+// The drum roll starts here and its boom lands DRUMROLL_HIT_MS later; the right or wrong sting goes on that boom, so
+// the two cannot drift apart if the roll is ever reshaped.
+const DRUMROLL_MS = 300
+const REVEAL_STING_MS = DRUMROLL_MS + DRUMROLL_HIT_MS
+const APPLAUSE_OFFSET_MS = 120
 
 function ScoreCounter({ from, to, className }) {
   const value = useCountUp(from, to, { durationMs: COUNT_MS, delayMs: COUNT_DELAY_MS })
@@ -588,7 +619,7 @@ function ScoreCounter({ from, to, className }) {
 const boardSignature = (players, gains) =>
   `${players.map((p) => `${p.id}:${p.total_score}:${p.streak ?? 0}:${p.nickname}`).join('|')}#${[...gains].join('|')}`
 
-const AnimatedBoard = memo(function AnimatedBoard({ players, gains }) {
+const AnimatedBoard = memo(function AnimatedBoard({ players, gains, effectsOn }) {
   const streaks = useMemo(() => new Map(players.map((p) => [p.id, p.streak ?? 0])), [players])
   const [phase, setPhase] = useState('before')
   useEffect(() => {
@@ -609,6 +640,20 @@ const AnimatedBoard = memo(function AnimatedBoard({ players, gains }) {
       gain: gains.get(p.id) ?? 0,
     }))
   }, [players, gains])
+
+  // One chime per row that climbed, as the board slides into its new order, so a big swing sounds like a run of them.
+  // Read through a ref on purpose: switching sound on part way through the slide must not set the whole board off again.
+  const effectsOnRef = useRef(effectsOn)
+  effectsOnRef.current = effectsOn
+  useEffect(() => {
+    if (phase !== 'after' || !effectsOnRef.current) return undefined
+    const chimes = leaderboardChimes(rows.filter((r) => r.beforeRank - r.rank > 0).length, SHOWN)
+    const timers = []
+    for (let i = 0; i < chimes; i += 1) {
+      timers.push(setTimeout(() => quizSound.play('points'), i * POINTS_CHIME_MS))
+    }
+    return () => timers.forEach(clearTimeout)
+  }, [phase, rows])
 
   const visible = rows.filter((r) => r.index < SHOWN || r.beforeIndex < SHOWN)
   const height = Math.max(1, Math.min(SHOWN, rows.length)) * PITCH - ROW_GAP
@@ -711,7 +756,7 @@ function TeamStandings({ teams, players, scoring, big = false }) {
   )
 }
 
-function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto, teams, scoring, bracket }) {
+function LeaderboardScreen({ title, index, total, players, gains, question, onNext, busy, isLast, auto, teams, scoring, bracket, effectsOn }) {
   // If the round's points arrive a moment after the screen opens (for example after a page reload), start the replay again.
   const replayKey = [...gains.values()].join(',')
   const type = question?.type ?? 'multiple'
@@ -741,7 +786,7 @@ function LeaderboardScreen({ title, index, total, players, gains, question, onNe
           : <p className="text-center text-lg font-semibold text-orange-500">Round {roundOfQuestion(index, bracket.length) + 1}{bracket.rounds ? ` of ${bracket.rounds}` : ''} · question {(index % bracket.length) + 1} of {bracket.length}</p>
       )}
       {teams.length > 0 && <TeamStandings teams={teams} players={players} scoring={scoring} />}
-      <AnimatedBoard key={replayKey} sig={boardSignature(players, gains)} players={players} gains={gains} />
+      <AnimatedBoard key={replayKey} sig={boardSignature(players, gains)} players={players} gains={gains} effectsOn={effectsOn} />
       {answerLabel && (
         <p className="mx-auto max-w-4xl text-center text-ink-muted">
           The answer to that one was <span className="font-bold text-ink-900"><MathText>{answerLabel}</MathText></span>.
@@ -925,7 +970,16 @@ export default function HostQuiz() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'quiz_sessions', filter: `id=eq.${sessionId}` }, (payload) => {
         if (payload.new?.id) applySession(payload.new, true)
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quiz_players', filter: `session_id=eq.${sessionId}` }, () => loadPlayers())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'quiz_players', filter: `session_id=eq.${sessionId}` }, () => {
+        loadPlayers()
+        // A ping as each player arrives, so the host can hear the lobby filling up. Bots are added in one burst, so
+        // only one ping is let through at a time.
+        if (!joinPingRef.current) return
+        const now = Date.now()
+        if (now - lastJoinPingRef.current < 250) return
+        lastJoinPingRef.current = now
+        quizSound.play('join')
+      })
       .subscribe()
     return () => {
       supabase.removeChannel(channel)
@@ -1140,11 +1194,16 @@ export default function HostQuiz() {
   // ---- Sound: music in the lobby and during questions, a tick at the end, stings at each step ----
   const soundCfg = sanitizeTheme(session?.theme).sound
   const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
+  const effectsOn = soundCfg.effects && soundPrefs.unlocked && !soundPrefs.muted
   const rightShare = answers.length > 0 ? Math.round((answers.filter((a) => a.correct === true).length / answers.length) * 100) : 0
   const rightShareRef = useRef(0)
   rightShareRef.current = rightShare
   const questionType = question?.type ?? 'multiple'
   const prevStateRef = useRef(null)
+  // The realtime join handler subscribes once, so it reads these on every render rather than being resubscribed.
+  const joinPingRef = useRef(false)
+  const lastJoinPingRef = useRef(0)
+  joinPingRef.current = effectsOn && state === 'lobby'
 
   useEffect(() => {
     // Any click on the page counts as the "allow sound" click the browser needs.
@@ -1168,11 +1227,20 @@ export default function HostQuiz() {
     if (!soundCfg.effects || !state) return undefined
     const name = stateSound(prev, state)
     if (name) quizSound.play(name)
+    const timers = []
+    // Answering is a short piece of theatre: the horn marks time running out, a drum roll builds while the answer is
+    // put up, and the sting lands as the roll does. The crowd only joins a round most people got right.
     if (state === 'reveal' && prev === 'question' && questionType !== 'poll') {
-      const timer = setTimeout(() => quizSound.play(revealSting(rightShareRef.current)), 650)
-      return () => clearTimeout(timer)
+      timers.push(setTimeout(() => quizSound.play('drumroll'), DRUMROLL_MS))
+      timers.push(setTimeout(() => quizSound.play(revealSting(rightShareRef.current)), REVEAL_STING_MS))
+      timers.push(setTimeout(() => {
+        const cheer = applauseSound(rightShareRef.current)
+        if (cheer) quizSound.play(cheer)
+      }, REVEAL_STING_MS + APPLAUSE_OFFSET_MS))
     }
-    return undefined
+    // Finished: the fanfare leads and the crowd comes in just behind it.
+    if (state === 'finished') timers.push(setTimeout(() => quizSound.play('applause'), 400))
+    return () => timers.forEach(clearTimeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
@@ -1252,6 +1320,7 @@ export default function HostQuiz() {
     screen = (
       <RevealScreen
         {...shared}
+        key={question.id}
         question={question}
         counts={counts}
         answers={answers}
@@ -1261,10 +1330,11 @@ export default function HostQuiz() {
         onNext={advance}
         isLast={isLast}
         auto={auto}
+        holdMs={effectsOn ? REVEAL_STING_MS : 0}
       />
     )
   } else if (session.state === 'leaderboard') {
-    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} bracket={session.bracket_mode ? { length: session.bracket_length, rounds: session.bracket_rounds, matches: bracketMatches } : null} />
+    screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} effectsOn={effectsOn} bracket={session.bracket_mode ? { length: session.bracket_length, rounds: session.bracket_rounds, matches: bracketMatches } : null} />
   } else {
     screen = <FinishedScreen title={quizTitle} players={players} teams={teams} scoring={session.team_scoring} bracket={session.bracket_mode ? { champion: session.bracket_champion, matches: bracketMatches } : null} />
   }

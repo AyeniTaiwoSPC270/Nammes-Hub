@@ -31,10 +31,25 @@ export const THEME_CONFETTI = {
   off: 'None',
 }
 
+// The music the projector can play. 'off' is first because it is the default, and the two original loops come next so
+// the quizzes that already use them are unaffected by the newer styles.
 export const THEME_MUSIC = {
   off: 'No music',
   chill: 'Chill',
   hype: 'Hype',
+  afro: 'Afrobeat',
+  disco: 'Disco',
+  cinematic: 'Cinematic',
+}
+
+// What each loop actually sounds like, for the studio sound lab. The loops are generated in the browser rather than
+// played from a file, so an admin can only pick one by hearing it: this is the card under each Play button.
+export const MUSIC_NOTES = {
+  chill: 'Soft and slow. Good for a quiet lobby or a long quiz.',
+  hype: 'Fast and driving. The most energy of the five.',
+  afro: 'Warm, syncopated and groovy. The one people tap along to.',
+  disco: 'Four to the floor with a bright bass. Bright and playful.',
+  cinematic: 'Slow swelling chords and one big boom a bar. Made to sit under people talking.',
 }
 
 export const MAX_SPONSORS = 6
@@ -68,9 +83,15 @@ function cleanText(value, max) {
   return value.replace(/\s+/g, ' ').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max)
 }
 
+// A choice is only accepted if it really is the name of one. Checking `Object.hasOwn(list, value)` on its own is
+// not enough, because an array like ['chill'] becomes the string 'chill' when used as a key and would pass.
+function oneOf(list, value, fallback) {
+  return typeof value === 'string' && Object.hasOwn(list, value) ? value : fallback
+}
+
 function cleanSound(input) {
   const o = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
-  return { music: Object.hasOwn(THEME_MUSIC, o.music) ? o.music : 'off', effects: o.effects !== false }
+  return { music: oneOf(THEME_MUSIC, o.music, DEFAULT_THEME.sound.music), effects: o.effects !== false }
 }
 
 // A picture path is only kept if it has the exact shape of an uploaded image and, when the quiz is known, sits in that
@@ -95,10 +116,10 @@ function cleanSponsors(input, quizId) {
 export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
   return {
-    look: Object.hasOwn(THEME_LOOKS, t.look) ? t.look : DEFAULT_THEME.look,
+    look: oneOf(THEME_LOOKS, t.look, DEFAULT_THEME.look),
     accent: isHexColor(t.accent) ? t.accent.toLowerCase() : null,
-    pattern: Object.hasOwn(THEME_PATTERNS, t.pattern) ? t.pattern : DEFAULT_THEME.pattern,
-    confetti: Object.hasOwn(THEME_CONFETTI, t.confetti) ? t.confetti : DEFAULT_THEME.confetti,
+    pattern: oneOf(THEME_PATTERNS, t.pattern, DEFAULT_THEME.pattern),
+    confetti: oneOf(THEME_CONFETTI, t.confetti, DEFAULT_THEME.confetti),
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),
     sound: cleanSound(t.sound),
