@@ -100,7 +100,7 @@ export default function Offline({ status = 'offline', onRetry }) {
                 icon_names; a glyph missing from the subset would otherwise render as the word "SYNC". */}
             <span
               aria-hidden="true"
-              className={`material-symbols-outlined text-7xl ${isChecking ? 'text-white/70 motion-safe:animate-spin' : isRecovered ? RECOVERED_TEXT : 'text-orange-500'}`}
+              className={`material-symbols-outlined text-8xl ${isChecking ? 'text-white/70 motion-safe:animate-spin' : isRecovered ? RECOVERED_TEXT : 'text-orange-500'}`}
             >
               {isChecking ? 'sync' : isRecovered ? 'check_circle' : 'wifi_off'}
             </span>
