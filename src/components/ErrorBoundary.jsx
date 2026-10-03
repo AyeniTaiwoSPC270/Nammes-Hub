@@ -24,7 +24,7 @@ function reloadOnce() {
 }
 
 class Boundary extends Component {
-  state = { hasError: false }
+  state = { hasError: false, sawOutage: false }
 
   static getDerivedStateFromError() {
     return { hasError: true }
@@ -36,18 +36,24 @@ class Boundary extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    const wasDown = prevProps.status === 'offline' || prevProps.status === 'checking'
-    if (this.state.hasError && wasDown && this.props.status === 'online') reloadOnce()
+    const { status } = this.props
+    const { hasError, sawOutage } = this.state
+    if (!hasError) return
+    if (!sawOutage && (status === 'offline' || status === 'checking')) {
+      this.setState({ sawOutage: true })
+      return
+    }
+    if (sawOutage && prevProps.status !== 'online' && status === 'online') reloadOnce()
   }
 
   render() {
-    const { hasError } = this.state
+    const { hasError, sawOutage } = this.state
     const { status, retry } = this.props
 
     if (hasError) {
-      // 'checking' stays on this screen so Try again shows the spinner state instead of dropping to the
-      // generic error.
-      if (status === 'offline' || status === 'checking') {
+      // Once an outage has been seen, the offline screen stays up through recovery. Its 'online' state is
+      // a Reload button, which also covers the case where the automatic reload is held back by the cooldown.
+      if (status === 'offline' || status === 'checking' || (sawOutage && status === 'online')) {
         return <Offline status={status} onRetry={retry} />
       }
       return (

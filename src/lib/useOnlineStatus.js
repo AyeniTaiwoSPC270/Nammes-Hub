@@ -56,7 +56,14 @@ export function useOnlineStatus() {
     inFlight.current = true
     if (showChecking) setStatus('checking')
     try {
+      const started = Date.now()
       const verdict = await probe()
+      // A check that answers instantly leaves "Checking..." on screen for no time at all, so a tap looks like
+      // it did nothing. Hold it for a moment when the user asked for it.
+      if (showChecking) {
+        const wait = 600 - (Date.now() - started)
+        if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+      }
 
       if (verdict === REACHABLE) {
         isDown.current = false
