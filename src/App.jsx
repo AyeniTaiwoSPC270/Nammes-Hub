@@ -9,10 +9,9 @@ import { useAuth } from './lib/AuthContext'
 import { useOwnAdminRowQuery } from './data/admins'
 import { useSiteContentQuery } from './data/siteContent'
 import { lazyRetry } from './lib/lazyRetry'
-import { useOnlineStatus } from './lib/useOnlineStatus'
+import Offline from './pages/Offline'
 
 const Maintenance = lazyRetry(() => import('./pages/Maintenance'))
-const Offline = lazyRetry(() => import('./pages/Offline'))
 
 const Home = lazyRetry(() => import('./pages/Home'))
 const About = lazyRetry(() => import('./pages/About'))
@@ -90,29 +89,15 @@ const CbtMake = lazyRetry(() => import('./pages/cbt/CbtMake'))
 const AdminCbt = lazyRetry(() => import('./pages/admin/AdminCbt'))
 const CustomSet = lazyRetry(() => import('./pages/CustomSet'))
 
-// Decides whether the app renders at all, or a full-screen notice takes over. Offline is checked first,
-// and only on a confirmed failed request rather than the browser's optimistic flag, so a captive portal or a
-// dead router doesn't strand the user; useOnlineStatus reloads the original page once a request succeeds
-// again. Maintenance is still read from site content, which we can't reach while offline, and a missing
-// connection is the more urgent of the two problems either way.
-function SiteGate({ children }) {
+function MaintenanceGate({ children }) {
   const location = useLocation()
   const { user } = useAuth()
   const siteContentQuery = useSiteContentQuery()
   const adminRowQuery = useOwnAdminRowQuery(user?.id)
-  const { status, retry } = useOnlineStatus()
 
   const isMaintenanceOn = Boolean(siteContentQuery.data?.maintenance_mode)
   const isAdmin = Boolean(adminRowQuery.data)
   const isLoginPage = location.pathname === '/login'
-
-  if (status === 'offline') {
-    return (
-      <Suspense fallback={null}>
-        <Offline status={status} onRetry={retry} />
-      </Suspense>
-    )
-  }
 
   if (isMaintenanceOn && !isAdmin && !isLoginPage) {
     return (
@@ -129,7 +114,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppUpdateNotifier />
-      <SiteGate>
+      <MaintenanceGate>
         <Routes>
           <Route
             path="maintenance"
@@ -139,7 +124,8 @@ export default function App() {
               </Suspense>
             }
           />
-          {/* Reachable while online so the screen can be reviewed; SiteGate takes over when it isn't. */}
+          {/* Not the normal way to reach the screen: ErrorBoundary shows it when a page fails to load with no
+              connection. This route exists so it can be reviewed without pulling the network. */}
           <Route
             path="offline"
             element={
@@ -316,7 +302,7 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
-      </SiteGate>
+      </MaintenanceGate>
     </ErrorBoundary>
   )
 }

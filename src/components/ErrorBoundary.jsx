@@ -1,8 +1,14 @@
 import { Component } from 'react'
 import ErrorState from './ui/ErrorState'
+import Offline from '../pages/Offline'
 import { reportError } from '../lib/errorTracking'
+import { useOnlineStatus } from '../lib/useOnlineStatus'
 
-export default class ErrorBoundary extends Component {
+// Reaching a page the browser has never fetched means downloading its chunk, and lazyRetry gives up after
+// a couple of attempts. When that happens with no connection there is nothing to show but the offline
+// screen, so it replaces the generic message here. Only a link that actually failed counts: a slow one is
+// left alone, because the chunk may still arrive.
+class Boundary extends Component {
   state = { hasError: false }
 
   static getDerivedStateFromError() {
@@ -15,7 +21,13 @@ export default class ErrorBoundary extends Component {
   }
 
   render() {
-    if (this.state.hasError) {
+    const { hasError } = this.state
+    const { status, retry } = this.props
+
+    if (hasError) {
+      if (status === 'offline') {
+        return <Offline status={status} onRetry={retry} />
+      }
       return (
         <div className="mx-auto max-w-[880px] px-5 py-12 sm:px-6">
           <ErrorState
@@ -27,4 +39,13 @@ export default class ErrorBoundary extends Component {
     }
     return this.props.children
   }
+}
+
+export default function ErrorBoundary({ children }) {
+  const { status, retry } = useOnlineStatus()
+  return (
+    <Boundary status={status} retry={retry}>
+      {children}
+    </Boundary>
+  )
 }
