@@ -69,6 +69,10 @@ function readCachedLinks() {
   }
 }
 
+// These URLs come from an admin form, so they are treated as untrusted input: anything that is not an
+// absolute https link is dropped rather than rendered as a clickable target.
+const isHttps = (url) => typeof url === 'string' && /^https:\/\//i.test(url)
+
 export default function SocialIcons({ className = '', variant = 'dark' }) {
   const contentQuery = useSiteContentQuery()
   const content = contentQuery.data
@@ -90,7 +94,7 @@ export default function SocialIcons({ className = '', variant = 'dark' }) {
 
   const linkClass = variant === 'light' ? lightLinkClass : darkLinkClass
   const urls = content ?? cached
-  const links = SOCIAL_PLATFORMS.filter(({ key }) => urls[key])
+  const links = SOCIAL_PLATFORMS.filter(({ key }) => isHttps(urls[key]))
 
   if (links.length === 0) return null
 

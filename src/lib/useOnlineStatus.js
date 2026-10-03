@@ -1,25 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // navigator.onLine only reports whether an interface is up, which stays true behind a captive portal or a
-// dead router, and browsers fire `online` for a connection that cannot reach anything. So every verdict
-// here comes from a real request; the flag is only used to avoid asking when we already know it's hopeless.
-// Same reasoning as lazyRetry, which retries a dropped chunk import rather than trusting the browser.
+// dead router, and browsers fire `online` for a connection that cannot reach anything. So every verdict here
+// comes from a real request. Same reasoning as lazyRetry, which retries a dropped chunk import rather than
+// trusting the browser.
 const PROBE_URL = `${import.meta.env.BASE_URL || '/'}favicon.svg`
 const POLL_MS = 4000
-const PROBE_TIMEOUT_MS = 5000
-const RELOAD_DELAY_MS = 1200
+// Generous, because a slow link is a working link. Only a request that fails on its own counts as absent,
+// so a few seconds of mobile data never costs the user a page that was about to arrive.
+const PROBE_TIMEOUT_MS = 8000
 
-async function confirmReachable() {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) return false
+const REACHABLE = 'reachable'
+const ABSENT = 'absent'
+const SLOW = 'slow'
+
+async function probe() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return ABSENT
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
   try {
-    await fetch(PROBE_URL, { cache: 'no-store', signal: controller.signal })
-    // Any response at all counts, including a 404 or a 500. Bytes moving is all this is asking; a server
-    // that is up but unhappy is the app's problem to report, not a missing connection.
-    return true
-  } catch {
-    return false
+    // Any response counts, including a 404 or a 500. Bytes moving is all this asks; a server that is up but
+    // unhappy is the app's problem to report, not a missing connection.
+    await fetch(PROBE_URL, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+    return REACHABLE
+  } catch (err) {
+    // An abort is our own timeout expiring, which means the request was still in flight: that is a slow
+    // link, not a dead one. A dead link rejects on its own, usually within milliseconds.
+    return err?.name === 'AbortError' ? SLOW : ABSENT
   } finally {
     clearTimeout(timer)
   }
@@ -27,30 +34,54 @@ async function confirmReachable() {
 
 function initialStatus() {
   if (typeof navigator === 'undefined') return 'online'
-  // navigator.onLine is only ever trusted when it says false: an interface that is down is not a guess,
-  // so we skip the round trip that would otherwise flash a screen of failing queries on a cold load.
-  return navigator.onLine ? 'online' : 'offline'
+  // navigator.onLine is only trusted when it says false: an interface that is down is not a guess.
+  return navigator.onLine ? 'online' : 'checking'
 }
 
-// status is one of 'online' | 'offline' | 'checking'. Callers gate on 'offline' and can treat 'checking'
-// as the transient "we're verifying" state, which is why the screen has three looks and not two.
+// 'online' | 'offline' | 'slow' | 'checking'. Only 'offline' is acted on. 'slow' means the link works but is
+// struggling, so the caller should carry on and let its own requests retry rather than blocking the user.
+// This hook only reports; it never reloads or navigates, because the page it is shown on is one the user is
+// already reading and pulling it out from under them is worse than waiting.
 export function useOnlineStatus() {
   const [status, setStatus] = useState(initialStatus)
-  const hasBeenOffline = useRef(false)
+  const wasOffline = useRef(false)
+  const isDown = useRef(false)
   const inFlight = useRef(false)
 
-  // showChecking is off for background polls, so the screen doesn't flicker to "Checking..." every 4s.
-  // A probe can outlive the interval that started it (it waits up to PROBE_TIMEOUT_MS on a dead network),
-  // so overlapping ones are dropped rather than allowed to queue up against the app's own requests.
+  // showChecking is off for background polls, so the screen doesn't flicker to "Checking..." every 4s. A
+  // probe can outlive the interval that started it, so overlapping ones are dropped rather than queued up
+  // alongside the app's own requests.
   const settle = useCallback(async (showChecking) => {
-    if (inFlight.current) return false
+    if (inFlight.current) return
     inFlight.current = true
     if (showChecking) setStatus('checking')
     try {
-      const reachable = await confirmReachable()
-      if (!reachable) hasBeenOffline.current = true
-      setStatus(reachable ? 'online' : 'offline')
-      return reachable
+      const started = Date.now()
+      const verdict = await probe()
+      // A check that answers instantly leaves "Checking..." on screen for no time at all, so a tap looks like
+      // it did nothing. Hold it for a moment when the user asked for it.
+      if (showChecking) {
+        const wait = 600 - (Date.now() - started)
+        if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+      }
+
+      if (verdict === REACHABLE) {
+        isDown.current = false
+        wasOffline.current = false
+        setStatus('online')
+        return
+      }
+
+      if (verdict === ABSENT) {
+        isDown.current = true
+        wasOffline.current = true
+        setStatus('offline')
+        return
+      }
+
+      // Slow. If we are already showing the offline notice we keep it, because nothing has come back to
+      // prove otherwise and swapping the user onto a page that then stalls is worse than waiting.
+      setStatus(isDown.current ? 'offline' : 'slow')
     } finally {
       inFlight.current = false
     }
@@ -62,37 +93,37 @@ export function useOnlineStatus() {
 
   useEffect(() => {
     const onOffline = () => {
-      hasBeenOffline.current = true
+      isDown.current = true
+      wasOffline.current = true
       setStatus('offline')
     }
     const onOnline = () => {
       settle(true)
     }
+    // A tab left open in the background can come back to a dead connection without ever firing `offline`,
+    // because the browser may have brought the interface down quietly. Ask the moment it is looked at again.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') settle(false)
+    }
 
     window.addEventListener('offline', onOffline)
     window.addEventListener('online', onOnline)
+    document.addEventListener('visibilitychange', onVisible)
     settle(false)
 
-    // Keep asking for as long as we're down. A tab that sat idle in the background can come back to a
-    // dead connection without ever firing `offline`, and the poll is what notices.
+    // Keep asking only once we have actually lost the connection, so a page that is merely slow is left
+    // alone.
     const timer = setInterval(() => {
-      if (hasBeenOffline.current && document.visibilityState === 'visible') settle(false)
+      if (wasOffline.current && document.visibilityState === 'visible') settle(false)
     }, POLL_MS)
 
     return () => {
       clearInterval(timer)
       window.removeEventListener('offline', onOffline)
       window.removeEventListener('online', onOnline)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [settle])
-
-  // Once a real request has succeeded after an outage, put the user back on the page they asked for
-  // rather than leaving them on a screen about having no connection.
-  useEffect(() => {
-    if (status !== 'online' || !hasBeenOffline.current) return undefined
-    const timer = setTimeout(() => window.location.reload(), RELOAD_DELAY_MS)
-    return () => clearTimeout(timer)
-  }, [status])
 
   return { status, retry }
 }

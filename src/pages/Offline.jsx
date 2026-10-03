@@ -29,11 +29,25 @@ const COPY = {
     ),
     label: <>Checking&hellip;</>,
   },
+  // Shown only if the screen is reached while the link is slow rather than gone. We never get here from
+  // ErrorBoundary on a slow link (it leaves the app alone), but the route can be opened by hand.
+  slow: {
+    pill: <>Slow connection&hellip;</>,
+    eyebrow: <>Connection is struggling</>,
+    headline: <>This page is taking a while</>,
+    body: (
+      <>
+        Your connection is working, but it is slow. We&rsquo;re still trying &mdash; close other tabs or
+        switch to a stronger network if this keeps up.
+      </>
+    ),
+    label: 'Try again',
+  },
   online: {
     pill: 'Back online',
     eyebrow: <>Connection restored</>,
     headline: <>You&rsquo;re back online</>,
-    body: <>Your connection is working again. We&rsquo;re reloading the page you were on.</>,
+    body: <>Your connection is working again. Reload to pick up where you left off.</>,
     label: 'Reload page',
   },
 }
@@ -45,9 +59,8 @@ const COPY = {
 const RECOVERED_TEXT = 'text-[#5cb88a]'
 const RECOVERED_DOT = 'bg-[#5cb88a]'
 
-// Deliberately presentational. useOnlineStatus lives in App's SiteGate, so there is exactly one poller and
-// one reload timer; this screen only reflects the status it is handed. The /offline route passes its own
-// status so the screen can be reviewed without having to actually pull the network.
+// Deliberately presentational. The status and retry action come from whoever is showing the screen, so
+// there is one poller for the whole app no matter how many times this renders.
 export default function Offline({ status = 'offline', onRetry }) {
   const copy = COPY[status] ?? COPY.offline
   const isChecking = status === 'checking'
@@ -60,7 +73,7 @@ export default function Offline({ status = 'offline', onRetry }) {
           <img src="/logo-small.png" alt="" width="32" height="32" className="h-8 w-8 object-contain" />
           <span className="font-display text-xl font-bold text-white">NAMMES Hub</span>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80">
+        <div role="status" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80">
           <span className="relative flex h-2 w-2">
             <span
               className={`absolute inline-flex h-full w-full rounded-full opacity-75 motion-safe:animate-ping ${isRecovered ? RECOVERED_DOT : 'bg-orange-500'}`}
@@ -86,6 +99,7 @@ export default function Offline({ status = 'offline', onRetry }) {
             {/* Names are written out rather than held in COPY so iconFont.test.js can still see them in
                 icon_names; a glyph missing from the subset would otherwise render as the word "SYNC". */}
             <span
+              aria-hidden="true"
               className={`material-symbols-outlined text-7xl ${isChecking ? 'text-white/70 motion-safe:animate-spin' : isRecovered ? RECOVERED_TEXT : 'text-orange-500'}`}
             >
               {isChecking ? 'sync' : isRecovered ? 'check_circle' : 'wifi_off'}
@@ -108,6 +122,7 @@ export default function Offline({ status = 'offline', onRetry }) {
           disabled={isChecking}
         >
           <span
+            aria-hidden="true"
             className={`material-symbols-outlined text-[18px] ${isChecking ? 'motion-safe:animate-spin' : ''}`}
           >
             {isRecovered ? 'restart_alt' : 'refresh'}
