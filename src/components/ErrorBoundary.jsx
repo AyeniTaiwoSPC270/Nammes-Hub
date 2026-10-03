@@ -4,10 +4,22 @@ import Offline from '../pages/Offline'
 import { reportError } from '../lib/errorTracking'
 import { useOnlineStatus } from '../lib/useOnlineStatus'
 
-// Reaching a page the browser has never fetched means downloading its chunk, and lazyRetry gives up after
-// a couple of attempts. When that happens with no connection there is nothing to show but the offline
-// screen, so it replaces the generic message here. Only a link that actually failed counts: a slow one is
-// left alone, because the chunk may still arrive.
+// A page that failed to load while offline can only be fixed by loading it again, so once the link is back
+// the app reloads itself. The cooldown stops a page that keeps failing from reloading in a loop.
+const RELOAD_KEY = 'nammes-offline-reload'
+const RELOAD_COOLDOWN_MS = 30000
+
+function reloadOnce() {
+  try {
+    const last = Number(sessionStorage.getItem(RELOAD_KEY)) || 0
+    if (Date.now() - last < RELOAD_COOLDOWN_MS) return
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
+  } catch {
+    // Blocked storage only costs us the loop guard; the reload itself is still the right move.
+  }
+  window.location.reload()
+}
+
 class Boundary extends Component {
   state = { hasError: false }
 
@@ -20,12 +32,19 @@ class Boundary extends Component {
     reportError(error, { componentStack: info?.componentStack })
   }
 
+  componentDidUpdate(prevProps) {
+    const wasDown = prevProps.status === 'offline' || prevProps.status === 'checking'
+    if (this.state.hasError && wasDown && this.props.status === 'online') reloadOnce()
+  }
+
   render() {
     const { hasError } = this.state
     const { status, retry } = this.props
 
     if (hasError) {
-      if (status === 'offline') {
+      // 'checking' stays on this screen so Try again shows the spinner state instead of dropping to the
+      // generic error.
+      if (status === 'offline' || status === 'checking') {
         return <Offline status={status} onRetry={retry} />
       }
       return (
