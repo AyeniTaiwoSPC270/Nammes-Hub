@@ -21,7 +21,7 @@ async function probe() {
   try {
     // Any response counts, including a 404 or a 500. Bytes moving is all this asks; a server that is up but
     // unhappy is the app's problem to report, not a missing connection.
-    await fetch(PROBE_URL, { cache: 'no-store', signal: controller.signal })
+    await fetch(PROBE_URL, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
     return REACHABLE
   } catch (err) {
     // An abort is our own timeout expiring, which means the request was still in flight: that is a slow
@@ -60,6 +60,7 @@ export function useOnlineStatus() {
 
       if (verdict === REACHABLE) {
         isDown.current = false
+        wasOffline.current = false
         setStatus('online')
         return
       }
@@ -92,13 +93,19 @@ export function useOnlineStatus() {
     const onOnline = () => {
       settle(true)
     }
+    // A tab left open in the background can come back to a dead connection without ever firing `offline`,
+    // because the browser may have brought the interface down quietly. Ask the moment it is looked at again.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') settle(false)
+    }
 
     window.addEventListener('offline', onOffline)
     window.addEventListener('online', onOnline)
+    document.addEventListener('visibilitychange', onVisible)
     settle(false)
 
     // Keep asking only once we have actually lost the connection, so a page that is merely slow is left
-    // alone. A tab that sat idle can come back to a dead connection without ever firing `offline`.
+    // alone.
     const timer = setInterval(() => {
       if (wasOffline.current && document.visibilityState === 'visible') settle(false)
     }, POLL_MS)
@@ -107,6 +114,7 @@ export function useOnlineStatus() {
       clearInterval(timer)
       window.removeEventListener('offline', onOffline)
       window.removeEventListener('online', onOnline)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [settle])
 
