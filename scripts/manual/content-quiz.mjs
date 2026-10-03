@@ -187,9 +187,12 @@ ${table(['Section', 'What you can set'], [
   ['Celebration', 'The falling shapes on the podium: maths symbols, stars, petals or none.'],
   ['Event message', 'An optional headline and tagline for your event.'],
   ['Logo and sponsors', 'Upload an event logo (or keep <em>Use the NAMMES mark</em>) and up to six sponsor logos. Sponsors appear only on the big screen, never on phones.'],
-  ['Sound', 'Lobby and question music (off, chill or hype) and sound effects. Use <em>Hear the ticking</em> and <em>Hear a right answer</em> to test.'],
+  ['Sound', 'Lobby and question music (off, chill, hype, afrobeat, disco or cinematic) and sound effects.'],
   ['Characters (50)', 'A gallery of all 50 characters in every mood.'],
 ])}
+<h3>The sound lab</h3>
+<p>The music is generated in the browser rather than played from a recording, so the only honest way to choose a loop is to hear it. Open the <strong>Sound</strong> tab: press <em>Play</em> on any card to hear that loop for twelve seconds (one at a time, and it stops by itself), then <em>Use this</em> to pick it. Below that, every sound effect has a button of its own, grouped by when the game plays it: countdown ticks, a drum roll the answer lands on, a cheer, and the board settling. Press <span class="btn ghost">Stop the music</span> first if you want to hear an effect on its own.</p>
+${note('The music plays in the lobby and during questions, quieter during questions so you can be heard, and stops for the reveal, the leaderboard and the end. <strong>Turn the projector sound on with one click</strong> when the host screen opens, because browsers block audio until you interact with the page.')}
 <p>Choose <span class="btn">Save look</span>. The look applies to <strong>new games</strong> only; a game already running keeps the look it started with.</p>
 
 <h2>Hosting a game</h2>
@@ -210,7 +213,9 @@ ${table(['Control', 'What it does'], [
   ['<strong>Skip question</strong>', 'Discards it: no points and no change to streaks. It asks &ldquo;Sure? Skip it&rdquo; first.'],
   ['Mute and volume', 'A speaker button on the projector screen.'],
 ])}
-${note('Keyboard shortcuts on the projector screen: <strong>Space</strong> ends the question, <strong>P</strong> pauses, <strong>+</strong> adds time, <strong>M</strong> mutes.')}
+<h3>What the game plays by itself</h3>
+<p>With sound effects switched on, the projector plays a ping each time a player joins the lobby, and a tick in the last five seconds of a question (faster in the last two). When time runs out there is a horn and a short drum roll: the right answer, the vote counts and how many people got it right are all held back until the last beat of the roll, then a happy or sad sting plays depending on how many got it right. A round most people got right also gets a cheer. The leaderboard chimes once per row that climbed, and the podium gets a fanfare and a cheer. Switch effects off and everything appears straight away with no sound, exactly as before. Nothing communicates anything on its own: every answer, score and result is on the screen as well.</p>
+${note('Keyboard shortcuts on the projector screen: <strong>Space</strong> ends the question, <strong>P</strong> pauses, <strong>L</strong> locks or unlocks the lobby and <strong>+</strong> adds time.')}
 ${warn('Turn the projector sound on with one click when the page opens, because browsers block audio until you interact with the page. And test the venue Wi-Fi before the event: a weak connection is the most common thing that goes wrong.')}
 <p>If you close the host tab by accident, open the game again from <em>Recent games</em> on the Live Quiz page. The game picks up where it was. Any admin can continue any game.</p>
 
