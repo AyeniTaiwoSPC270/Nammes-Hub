@@ -73,7 +73,7 @@ export default function Offline({ status = 'offline', onRetry }) {
           <img src="/logo-small.png" alt="" width="32" height="32" className="h-8 w-8 object-contain" />
           <span className="font-display text-xl font-bold text-white">NAMMES Hub</span>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80">
+        <div role="status" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/80">
           <span className="relative flex h-2 w-2">
             <span
               className={`absolute inline-flex h-full w-full rounded-full opacity-75 motion-safe:animate-ping ${isRecovered ? RECOVERED_DOT : 'bg-orange-500'}`}
@@ -99,6 +99,7 @@ export default function Offline({ status = 'offline', onRetry }) {
             {/* Names are written out rather than held in COPY so iconFont.test.js can still see them in
                 icon_names; a glyph missing from the subset would otherwise render as the word "SYNC". */}
             <span
+              aria-hidden="true"
               className={`material-symbols-outlined text-7xl ${isChecking ? 'text-white/70 motion-safe:animate-spin' : isRecovered ? RECOVERED_TEXT : 'text-orange-500'}`}
             >
               {isChecking ? 'sync' : isRecovered ? 'check_circle' : 'wifi_off'}
@@ -121,6 +122,7 @@ export default function Offline({ status = 'offline', onRetry }) {
           disabled={isChecking}
         >
           <span
+            aria-hidden="true"
             className={`material-symbols-outlined text-[18px] ${isChecking ? 'motion-safe:animate-spin' : ''}`}
           >
             {isRecovered ? 'restart_alt' : 'refresh'}
