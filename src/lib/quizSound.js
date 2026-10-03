@@ -68,8 +68,8 @@ function savePrefs(p) {
 }
 
 // ---- Effects ----
-// A recipe is a list of steps laid end to end. A step is either a tone (f) or a burst of filtered noise (n), so
-// drums, claps and crowd noise are written in the same shape as the pitched sounds.
+// A recipe is a list of steps laid end to end. A step is a tone, a burst of filtered noise, or (for applause) a whole
+// generated crowd, so drums and claps are written in the same shape as the pitched sounds.
 
 function toneStep(freq, start, dur, type = 'sine', gain = 0.2, extra = {}) {
   return { kind: 'tone', freq, start, dur, type, gain, ...extra }
@@ -79,41 +79,103 @@ function noiseStep(start, dur, gain, centre, extra = {}) {
   return { kind: 'noise', start, dur, gain, centre, ...extra }
 }
 
-// Three very short noise bursts a few milliseconds apart. One burst on its own is a hiss; the little gaps are what
-// make it read as hands hitting together.
+// A hand clap: a few very short snaps a few milliseconds apart, then a small tail. One burst on its own is a hiss; the
+// quick repeats are what make it read as hands hitting together, and the tail is the room.
 function clap(at, gain = 0.09, into = null) {
-  for (const [offset, level] of [[0, 1], [0.011, 0.7], [0.023, 0.45]]) {
-    noise({ start: at + offset, dur: 0.11, gain: gain * level, centre: 1650, q: 0.9 }, into)
+  for (const [offset, level, dur] of [[0, 1, 0.03], [0.009, 0.85, 0.03], [0.019, 0.7, 0.03], [0.03, 0.5, 0.16]]) {
+    noise({ start: at + offset, dur, gain: gain * level, centre: 1500, q: 1.1 }, into)
   }
 }
 
-// A roll of ratchet hits that gets faster and louder, then stops dead on a boom. The host screen holds the answer
-// back for the length of this roll, so the right answer lands on the hit. The three numbers below are its shape,
-// kept as names so that timing can never drift away from the sound.
-const ROLL_LEN = 0.95
-const ROLL_COUNT = 26
+// A kick drum. Laptop and projector speakers cannot play much below 100 Hz, so a kick that only lives down there is
+// felt on a good sound system and simply missing everywhere else. This one starts high and falls fast, so the thump
+// is in a range a small speaker can reproduce, and a tiny click on the front gives it an edge.
+function kick(at, gain = 0.2, into = null) {
+  tone({ freq: 190, slideTo: 48, start: at, dur: 0.24, type: 'sine', gain, attack: 0.002 }, into)
+  tone({ freq: 1400, slideTo: 200, start: at, dur: 0.025, type: 'triangle', gain: gain * 0.5, attack: 0.001 }, into)
+}
+
+// A drum roll: snare hits that come faster and louder, then stop dead on a boom and a crash. The host screen holds the
+// answer back until the boom, so the right answer lands on the hit. The numbers below are its shape, kept as names so
+// that timing can never drift away from the sound.
+const ROLL_COUNT = 28
 const ROLL_HIT = 0.85
 
 // How far into `drumroll` the boom lands, so the reveal can be timed to the hit rather than to a guess.
 export const DRUMROLL_HIT_MS = Math.round(ROLL_HIT * 1000)
 
-function ratchet(dur, count, from, to, centre, q, gain) {
-  const steps = []
-  for (let i = 0; i < count; i += 1) {
-    const at = (i / count) ** 1.7 * (dur - 0.15)
-    steps.push(noiseStep(at, 0.035, gain * (from + (to - from) * (i / (count - 1))), centre, { q, spread: 0.006 }))
-  }
-  return steps
+// When each hit of the roll lands, in seconds from the start. The gaps have to get shorter toward the end, because
+// that is what a roll is. The first version spaced them with `(i / count) ** 1.7`, which does the opposite: it packs
+// the hits together at the start and spreads them out at the end, so the roll slowed down.
+export function rollTimes(count, span) {
+  return Array.from({ length: count }, (_, i) => span * (1 - (1 - i / count) ** 1.7))
 }
 
-// A bed of filtered noise that swells and fades, with claps scattered through it. The scatter is what stops a
-// long cheer from sounding like the same second played over and over.
-function cheer(dur = 2.5, gain = 0.16, centre = 1050) {
-  const steps = [noiseStep(0, dur, gain, centre, { q: 0.6, attack: 0.3 })]
-  for (let i = 0; i < 14; i += 1) {
-    steps.push(noiseStep(0.1 + (i * (dur - 0.5)) / 13, 0.05, gain * 0.3, 1800, { q: 1.6, spread: 0.05, gainSpread: 0.4 }))
+// One snare hit: a burst of high noise for the rattle of the wires and a short falling tone for the drum head. The
+// head is what makes it a drum rather than a hiss, and it sits at 200 Hz so a small speaker can play it.
+function snare(at, gain, dur = 0.14) {
+  return [
+    noiseStep(at, dur, gain, 1800, { type: 'highpass', q: 0.7 }),
+    toneStep(200, at, dur * 0.6, 'triangle', gain * 0.9, { slideTo: 140, attack: 0.002 }),
+  ]
+}
+
+// Every other hit a little softer, the way two hands alternate.
+function roll(count, span, from, to) {
+  return rollTimes(count, span).flatMap((at, i) => snare(at, (from + (to - from) * (i / (count - 1))) * (i % 2 ? 0.8 : 1)))
+}
+
+// ---- Applause ----
+// Applause is a lot of hands, each one a tiny snap. One steady bed of noise sounds like wind, so the crowd is built the
+// way it is made: many short claps, each with its own brightness and loudness, scattered at random, thin at the
+// start, thickest in the middle and thinning out at the end. It is made fresh on every play, so no two cheers match.
+const APPLAUSE_SECONDS = 2.6
+const APPLAUSE_GAIN = 0.4
+const CLAPS_PER_SECOND = 220
+
+export function applauseSamples(rate, seconds, random = Math.random) {
+  const n = Math.max(0, Math.floor(rate * seconds))
+  const out = new Float32Array(n)
+  // How many hands are going at time t, from 0 to 1: a quick build, a full middle and a long thinning-out.
+  const crowd = (t) => Math.max(0.03, Math.min(1, t / (seconds * 0.15), (seconds - t) / (seconds * 0.4)))
+  const pole = (hz) => 1 - Math.exp((-2 * Math.PI * hz) / rate)
+  const target = Math.round(seconds * CLAPS_PER_SECOND * 0.55)
+  for (let placed = 0, tries = 0; placed < target && tries < target * 30; tries += 1) {
+    const at = random() * seconds
+    if (random() > crowd(at)) continue
+    placed += 1
+    const first = Math.floor(at * rate)
+    const len = Math.floor(rate * (0.012 + random() * 0.03))
+    const decay = len / 4
+    // Band-passing the noise by taking a dark copy away from a bright one gives each clap its own colour.
+    const dark = pole(500 + random() * 900)
+    const bright = pole(2400 + random() * 3200)
+    const level = 0.25 + random() * 0.75
+    let lo = 0
+    let hi = 0
+    for (let j = 0; j < len && first + j < n; j += 1) {
+      const white = random() * 2 - 1
+      lo += dark * (white - lo)
+      hi += bright * (white - hi)
+      // A hair of fade-in on the first samples, so the snap does not start with a click.
+      const fade = Math.min(1, j / (rate * 0.0008))
+      out[first + j] += (hi - lo) * Math.exp(-j / decay) * level * fade * 3
+    }
   }
-  return steps
+  // A faint low roar between the snaps, so the gaps are a room full of people and not silence.
+  let bed = 0
+  const roar = pole(1800)
+  for (let i = 0; i < n; i += 1) {
+    bed += roar * (random() * 2 - 1 - bed)
+    out[i] += bed * crowd(i / rate) * 0.2
+  }
+  // Set the loudness, then let the loudest peaks bend instead of clip.
+  let sum = 0
+  for (let i = 0; i < n; i += 1) sum += out[i] * out[i]
+  const rms = Math.sqrt(sum / Math.max(1, n))
+  const scale = rms > 0 ? 0.2 / rms : 0
+  for (let i = 0; i < n; i += 1) out[i] = Math.tanh(out[i] * scale)
+  return out
 }
 
 const EFFECTS = {
@@ -129,11 +191,13 @@ const EFFECTS = {
     [523, 0], [523, 0.14], [523, 0.28], [659, 0.46], [784, 0.7], [659, 0.9], [784, 1.1], [1047, 1.4],
   ].map(([freq, start]) => toneStep(freq, start, start === 1.4 ? 0.9 : 0.16, 'triangle', 0.24)),
   drumroll: [
-    ...ratchet(ROLL_LEN, ROLL_COUNT, 0.04, 0.2, 1500, 0.9, 0.11),
-    toneStep(70, ROLL_HIT, 0.4, 'sine', 0.3, { attack: 0.004 }),
-    noiseStep(ROLL_HIT - 0.02, 0.45, 0.13, 5200, { q: 0.5, attack: 0.004 }),
+    ...roll(ROLL_COUNT, ROLL_HIT - 0.05, 0.05, 0.17),
+    // The hit: a boom that starts high enough for a laptop speaker to play, a crack, and a crash that rings out.
+    toneStep(150, ROLL_HIT, 0.6, 'sine', 0.4, { slideTo: 42, attack: 0.003 }),
+    ...snare(ROLL_HIT, 0.2, 0.25),
+    noiseStep(ROLL_HIT, 1.1, 0.2, 4000, { type: 'highpass', q: 0.5, attack: 0.003 }),
   ],
-  applause: cheer(),
+  applause: [{ kind: 'crowd', start: 0, dur: APPLAUSE_SECONDS, gain: APPLAUSE_GAIN }],
   join: [toneStep(880, 0, 0.1, 'sine', 0.15), toneStep(1318.5, 0.09, 0.22, 'sine', 0.13)],
   points: [toneStep(1046.5, 0, 0.06, 'triangle', 0.15), toneStep(1568, 0.05, 0.19, 'triangle', 0.12)],
 }
@@ -392,7 +456,7 @@ function envelope(dur, attack) {
 // A burst of filtered noise, which is what drums and crowds are made of. `centre` is the frequency it is tuned to
 // and `q` how sharp that is: a hat is a high narrow one, a crowd is a low wide one. `spread` and `gainSpread`
 // scatter the burst a little each time, so a long cheer never sounds like the same second on a loop.
-function noise({ start = 0, dur = 0.15, gain = 0.1, centre = 1000, q = 1, attack = null, spread = 0, gainSpread = 0 }, into) {
+function noise({ start = 0, dur = 0.15, gain = 0.1, centre = 1000, q = 1, type = 'bandpass', attack = null, spread = 0, gainSpread = 0 }, into) {
   const buf = noiseBuffer()
   if (!buf) return
   if (spread) start += (Math.random() * 2 - 1) * spread
@@ -404,11 +468,11 @@ function noise({ start = 0, dur = 0.15, gain = 0.1, centre = 1000, q = 1, attack
   const amp = c.createGain()
   src.buffer = buf
   src.loop = true
-  filter.type = 'bandpass'
+  filter.type = type
   filter.frequency.setValueAtTime(centre, t0)
   filter.Q.setValueAtTime(q, t0)
   amp.gain.setValueAtTime(0.0001, t0)
-  amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), t0 + envelope(dur, attack))
+  amp.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain), t0 + envelope(dur, attack ?? 0.002))
   amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
   src.connect(filter)
   filter.connect(amp)
@@ -416,6 +480,21 @@ function noise({ start = 0, dur = 0.15, gain = 0.1, centre = 1000, q = 1, attack
   // Looping raw noise can land on a repeating grain, so each burst starts from a different point in the buffer.
   src.start(t0, Math.random() * (buf.duration - 0.05))
   src.stop(t0 + dur + 0.05)
+}
+
+// The applause step: build a fresh crowd, a separate one in each ear so the room has width, and play it.
+function crowd({ start = 0, dur = APPLAUSE_SECONDS, gain = APPLAUSE_GAIN }, into) {
+  const c = ctx
+  const buf = c.createBuffer(2, Math.floor(c.sampleRate * dur), c.sampleRate)
+  for (let channel = 0; channel < 2; channel += 1) buf.getChannelData(channel).set(applauseSamples(c.sampleRate, dur))
+  const src = c.createBufferSource()
+  const amp = c.createGain()
+  const t0 = c.currentTime + Math.max(0, start)
+  src.buffer = buf
+  amp.gain.setValueAtTime(gain, t0)
+  src.connect(amp)
+  amp.connect(into ?? master)
+  src.start(t0)
 }
 
 function scheduleMusic() {
@@ -458,10 +537,10 @@ function scheduleMusic() {
     }
     if (style.drums) {
       const d = style.drums
-      if (d.kick?.includes(step)) tone({ freq: d.kickFrom ?? 130, slideTo: 45, start, dur: 0.2, type: 'sine', gain: d.kickGain ?? 0.14, attack: 0.004 }, musicGain)
-      if (d.hat?.includes(step)) noise({ start, dur: 0.05, gain: d.hatGain ?? 0.045, centre: 8200, q: 0.8 }, musicGain)
+      if (d.kick?.includes(step)) kick(start, d.kickGain ?? 0.2, musicGain)
+      if (d.hat?.includes(step)) noise({ start, dur: 0.05, gain: d.hatGain ?? 0.045, centre: 7000, type: 'highpass', q: 0.7 }, musicGain)
       if (d.clap?.includes(step)) clap(start, d.clapGain ?? 0.08, musicGain)
-      if (d.cymbal?.includes(step)) noise({ start, dur: d.cymbalDur ?? 1.1, gain: d.cymbalGain ?? 0.05, centre: 7000, q: 0.4, attack: 0.01 }, musicGain)
+      if (d.cymbal?.includes(step)) noise({ start, dur: d.cymbalDur ?? 1.1, gain: d.cymbalGain ?? 0.05, centre: 5000, type: 'highpass', q: 0.5, attack: 0.003 }, musicGain)
     }
     nextBeat += stepDur
     beatIndex += 1
@@ -499,6 +578,7 @@ export const quizSound = {
       // Each helper reads only the fields it cares about, so a step can go straight in whichever kind it is.
       for (const step of EFFECTS[name]) {
         if (step.kind === 'noise') noise(step)
+        else if (step.kind === 'crowd') crowd(step)
         else tone(step)
       }
     } catch {
