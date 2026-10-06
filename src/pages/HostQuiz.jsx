@@ -106,7 +106,7 @@ function QuestionHeading({ question, size = 'large' }) {
         <img
           src={question.imageUrl}
           alt={question.imageAlt}
-          className={`w-auto max-w-full rounded-2xl border border-hairline bg-white object-contain shadow-md ${big ? 'max-h-[34vh]' : 'max-h-[26vh]'}`}
+          className={`w-auto max-w-full rounded-2xl bg-white object-contain shadow-md ring-1 ring-black/10 ${big ? 'max-h-[34vh]' : 'max-h-[26vh]'}`}
         />
       )}
       <h1 className={`qz-rise px-2 text-center font-bold leading-tight ${big ? 'text-3xl sm:text-5xl' : 'text-2xl sm:text-4xl'}`}>
@@ -195,7 +195,7 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <section className="qz-rise flex flex-col justify-between gap-8 rounded-3xl qz-deep p-8 text-white shadow-xl sm:p-10">
           <div>
-            {theme.headline && <h2 className="mb-4 text-3xl font-bold leading-tight sm:text-5xl">{theme.headline}</h2>}
+            {theme.headline && <h2 className="mb-4 text-3xl font-bold leading-tight text-white sm:text-5xl">{theme.headline}</h2>}
             <p className="text-lg font-semibold uppercase tracking-[0.14em] text-orange-100/80">Join the game</p>
             <p className="mt-1 text-2xl font-semibold sm:text-3xl">
               Go to <span className="text-orange-100">{window.location.host}/play</span> and enter

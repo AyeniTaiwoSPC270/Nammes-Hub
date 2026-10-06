@@ -84,7 +84,7 @@ export function BracketPodium({ matches, championId, players }) {
   ]
   return (
     <section className="mx-auto w-full max-w-4xl rounded-3xl qz-deep p-6 text-white shadow-xl" aria-label="Bracket podium">
-      <h2 className="mb-4 text-center text-2xl font-bold uppercase tracking-[0.12em]">Knockout results</h2>
+      <h2 className="mb-4 text-center text-2xl font-bold uppercase tracking-[0.12em] text-white">Knockout results</h2>
       <ol className="flex flex-wrap items-end justify-center gap-4">
         {entries.map((e, i) => (
           <li key={i} className={`flex flex-col items-center gap-1 rounded-2xl bg-white/10 px-5 py-3 ${i === 0 ? 'scale-110' : ''}`}>
