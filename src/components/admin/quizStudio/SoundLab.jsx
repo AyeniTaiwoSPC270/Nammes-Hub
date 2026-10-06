@@ -15,6 +15,13 @@ import Toggle from '../../ui/Toggle'
 // Long enough to hear a bar, a chord change and a drum pattern rather than a fragment.
 const PREVIEW_MS = 12000
 
+// Which styles have to be found in the library before they can be played. Every other style is a loop the engine
+// generates itself, so it starts from the click with nothing to wait for. Exported because getting this backwards
+// means every Play button on the page silently does nothing.
+export function needsAnImportedFile(style) {
+  return style === 'custom'
+}
+
 export default function SoundLab({ sound, onChange, onToggleEffect }) {
   const prefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
   const supported = quizSound.isSupported()
@@ -69,15 +76,24 @@ export default function SoundLab({ sound, onChange, onToggleEffect }) {
     }
     // The click is the gesture browsers want before any sound at all.
     if (!quizSound.unlock()) return
-    // An imported track is streamed from the browser's own copy of it, which has to be found before it can be started.
-    const address = key === 'custom' ? quizAudio.url(custom.music ?? null) : Promise.resolve(null)
-    address.then((made) => {
-      if (!made) return
-      quizSound.previewMusic(key, { address: made })
-      setPlaying(key)
-      if (stopTimer.current) clearTimeout(stopTimer.current)
-      stopTimer.current = setTimeout(stop, PREVIEW_MS)
-    })
+    // A generated loop needs nothing loaded, so it starts straight away. Only an imported track has to be looked up in
+    // the browser's own copy of it first.
+    // A generated loop needs nothing loaded, so it starts straight away. Only an imported track has to be looked up in the
+    // browser's own copy of it first.
+    if (needsAnImportedFile(key)) {
+      quizAudio.url(custom.music ?? null).then((address) => {
+        if (address) startPreview(key, address)
+      })
+      return
+    }
+    startPreview(key, null)
+  }
+
+  function startPreview(key, address) {
+    quizSound.previewMusic(key, { address })
+    setPlaying(key)
+    if (stopTimer.current) clearTimeout(stopTimer.current)
+    stopTimer.current = setTimeout(stop, PREVIEW_MS)
   }
 
   function hearEffect(name) {

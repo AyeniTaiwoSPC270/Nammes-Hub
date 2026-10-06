@@ -7,6 +7,12 @@ import Button from '../../ui/Button'
 // uploaded anywhere, so every word on this panel is about the one device it is stored on.
 const ACCEPT = 'audio/mpeg,audio/ogg,audio/wav,audio/mp4,audio/x-m4a'
 
+// The files out of a change event, copied. A file input's FileList is live, so clearing the input empties it: anything
+// holding a reference and reading it afterwards gets nothing back, and the import appears to do nothing at all.
+export function filesFromAChange(event) {
+  return Array.from(event?.target?.files ?? [])
+}
+
 export default function AudioLibrary({ clips, state, usage, refresh }) {
   const [busy, setBusy] = useState(false)
   const [refused, setRefused] = useState('')
@@ -28,11 +34,11 @@ export default function AudioLibrary({ clips, state, usage, refresh }) {
     stop()
   }, [stop])
 
-  async function importFiles(kind, fileList) {
+  async function importFiles(kind, files) {
     setBusy(true)
     setRefused('')
     try {
-      for (const file of Array.from(fileList ?? [])) {
+      for (const file of files ?? []) {
         // Sequential on purpose: the limits are counted across the library, so importing a folder's worth of files has to
         // see each one land before the next is judged.
         // eslint-disable-next-line no-await-in-loop
@@ -115,7 +121,9 @@ export default function AudioLibrary({ clips, state, usage, refresh }) {
                   aria-label={`Import ${title.toLowerCase()}`}
                   className="sr-only"
                   onChange={(e) => {
-                    const files = e.target.files
+                    // Copied out before the input is cleared. A file input's FileList is live: setting value to '' empties
+                    // it, so a reference taken first and read later arrives holding nothing and the import does nothing.
+                    const files = filesFromAChange(e)
                     e.target.value = ''
                     importFiles(kind, files)
                   }}
