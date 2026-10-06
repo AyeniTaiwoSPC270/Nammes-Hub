@@ -1203,16 +1203,16 @@ export default function HostQuiz() {
   const effectsOn = soundCfg.effects && soundPrefs.unlocked && !soundPrefs.muted
   // What the answer waits for: the whole reveal is timed off the roll that is really going to play, so switching the
   // roll off, or swapping in an imported one of a different length, cannot leave the answer going up on its own.
-  const drumrollOn = effectsOn && effectOn(soundCfg, 'drumroll')
-  const holdMs = effectsOn ? revealHoldMs(soundCfg, quizSound.customEffectMs('drumroll')) : 0
-  holdMsRef.current = holdMs
+// Read by the auto-advance timer, which is set up once per state and so cannot see the hold computed further down.
+const holdMsRef = useRef(0)
+const drumrollOn = effectsOn && effectOn(soundCfg, 'drumroll')
+const holdMs = effectsOn ? revealHoldMs(soundCfg, quizSound.customEffectMs('drumroll')) : 0
+holdMsRef.current = holdMs
   // Null unless this quiz is playing the admin's own track, and null again if this device does not have it.
   const [musicAddress, setMusicAddress] = useState(null)
   const rightShare = answers.length > 0 ? Math.round((answers.filter((a) => a.correct === true).length / answers.length) * 100) : 0
-  const rightShareRef = useRef(0)
-  rightShareRef.current = rightShare
-  // Read by the auto-advance timer, which is set up once per state and so cannot see the hold computed further down.
-  const holdMsRef = useRef(0)
+const rightShareRef = useRef(0)
+rightShareRef.current = rightShare
   const questionType = question?.type ?? 'multiple'
   const prevStateRef = useRef(null)
   // The realtime join handler subscribes once, so it reads these on every render rather than being resubscribed.
