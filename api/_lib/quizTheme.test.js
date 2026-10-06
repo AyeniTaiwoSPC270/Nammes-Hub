@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   sanitizeTheme, DEFAULT_THEME, THEME_LOOKS, THEME_PATTERNS, THEME_CONFETTI, THEME_HEADLINE_MAX, THEME_TAGLINE_MAX,
+  THEME_EFFECTS, THEME_MUSIC, isClipId,
   themeCssVars, themeAccent, contrastWithWhite, isHexColor,
 } from './quizTheme.js'
 
@@ -9,7 +10,8 @@ describe('sanitizeTheme', () => {
     for (const bad of [undefined, null, 5, 'x', [], {}]) expect(sanitizeTheme(bad)).toEqual(DEFAULT_THEME)
   })
   it('keeps valid choices', () => {
-    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: { music: 'hype', effects: false }, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
+    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -78,14 +80,66 @@ describe('branding: logo and sponsors', () => {
 })
 
 describe('sound settings', () => {
-  it('default to quiet music and effects on', () => {
-    expect(sanitizeTheme({}).sound).toEqual({ music: 'off', effects: true })
+  it('default to quiet music and effects on, with nothing switched off and no imported clips', () => {
+    expect(sanitizeTheme({}).sound).toEqual({ music: 'off', effects: true, off: [], custom: { music: null, effects: {} } })
   })
   it('only accept known music styles, and effects are on unless switched off', () => {
-    expect(sanitizeTheme({ sound: { music: 'chill' } }).sound).toEqual({ music: 'chill', effects: true })
-    expect(sanitizeTheme({ sound: { music: '__proto__', effects: 'no' } }).sound).toEqual({ music: 'off', effects: true })
+    expect(sanitizeTheme({ sound: { music: 'chill' } }).sound.music).toBe('chill')
+    expect(sanitizeTheme({ sound: { music: '__proto__', effects: 'no' } }).sound).toMatchObject({ music: 'off', effects: true })
     expect(sanitizeTheme({ sound: { effects: false } }).sound.effects).toBe(false)
-    expect(sanitizeTheme({ sound: 'loud' }).sound).toEqual({ music: 'off', effects: true })
+    expect(sanitizeTheme({ sound: 'loud' }).sound).toEqual(DEFAULT_THEME.sound)
+  })
+  it('keeps a custom music choice, and falls back to silence when the clip is missing or malformed', () => {
+    expect(sanitizeTheme({ sound: { music: 'custom', custom: { music: 'abc12345' } } }).sound).toEqual({ music: 'custom', effects: true, off: [], custom: { music: 'abc12345', effects: {} } })
+    for (const bad of [{ music: 'custom' }, { music: 'custom', custom: {} }, { music: 'custom', custom: { music: null } }, { music: 'custom', custom: { music: 'no' } }, { music: 'custom', custom: { music: '../../x' } }, { music: 'custom', custom: 'loud' }]) {
+      expect(sanitizeTheme({ sound: bad }).sound.music, JSON.stringify(bad)).toBe('off')
+    }
+  })
+  it('only keep effects that are switched off, once each and in a fixed order', () => {
+    expect(sanitizeTheme({ sound: { off: ['join', 'applause'] } }).sound.off).toEqual(['join', 'applause'])
+    expect(sanitizeTheme({ sound: { off: ['applause', 'join', 'applause'] } }).sound.off).toEqual(['join', 'applause'])
+    for (const bad of ['applause', { applause: true }, 5, null]) expect(sanitizeTheme({ sound: { off: bad } }).sound.off).toEqual([])
+    for (const name of ['__proto__', 'constructor', 'toString', 'not-a-sound', '']) {
+      expect(sanitizeTheme({ sound: { off: [name] } }).sound.off, name).toEqual([])
+    }
+    expect(Object.hasOwn(sanitizeTheme({ sound: { off: ['constructor'] } }).sound.off, 'constructor')).toBe(false)
+  })
+  it('only keep custom clips for known effects, and only ids of the right shape', () => {
+    const good = { drumroll: 'abc12345', join: 'zzzz-9999' }
+    expect(sanitizeTheme({ sound: { custom: { effects: good } } }).sound.custom.effects).toEqual(good)
+    // Every one of these is dropped: an unknown effect, and four ways of writing something that is not a clip id.
+    const bad = { ...good, notASound: 'abc12345', applause: 'short', join: '../evil', tick: 42, lock: ['a'] }
+    expect(sanitizeTheme({ sound: { custom: { effects: bad } } }).sound.custom.effects).toEqual({ drumroll: 'abc12345' })
+    expect(sanitizeTheme({ sound: { custom: { effects: 'loud' } } }).sound.custom.effects).toEqual({})
+    expect(sanitizeTheme({ sound: { custom: 7 } }).sound.custom).toEqual({ music: null, effects: {} })
+  })
+  it('clean a saved theme to the same jsonb every time, so the studio does not see a draft as changed', () => {
+    const once = sanitizeTheme({ sound: { off: ['join', 'tick'], custom: { effects: { tickFast: 'b1b1b1b1', correct: 'c2c2c2c2' } } } })
+    expect(JSON.stringify(sanitizeTheme(once))).toBe(JSON.stringify(once))
+    expect(Object.keys(once.sound.custom.effects)).toEqual(['tickFast', 'correct'])
+  })
+  it('holds a clip id to a fixed shape, so it can only ever be a key into the local library', () => {
+    for (const good of ['abc12345', 'zzzz-9999', 'a'.repeat(40), '0-0-0-0-0-0-0-0']) expect(isClipId(good), good).toBe(true)
+    for (const bad of ['abc1234', 'a'.repeat(41), 'ABC12345', 'abc_12345', 'abc.12345', 'abc/12345', '../x', 'a b', '', 42, null, undefined, ['abc12345']]) {
+      expect(isClipId(bad), String(bad)).toBe(false)
+    }
+  })
+  it('knows an effect for every style of music, and lists custom music as a style', () => {
+    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'custom'])
+  })
+})
+
+describe('a theme at its largest', () => {
+  const good = `${QUIZ_A}/${FILE}-1767261600000.webp`
+  it('stays inside the column check even with every sponsor and every effect customised', () => {
+    // The column is `pg_column_size(theme) < 4000` (20260930190000_quiz_theme.sql), which is a binary size and so runs
+    // a little above this character count for the same document. The largest theme the app can produce measures 2,024
+    // characters, so there is room to spare rather than a knife edge.
+    const custom = { music: 'm'.repeat(40), effects: Object.fromEntries(Object.keys(THEME_EFFECTS).map((name) => [name, 'e'.repeat(40)])) }
+    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
+    expect(Object.keys(full.sound.custom.effects)).toHaveLength(Object.keys(THEME_EFFECTS).length)
+    expect(full.sound.music).toBe('custom')
+    expect(JSON.stringify(full).length).toBeLessThan(3000)
   })
 })
 

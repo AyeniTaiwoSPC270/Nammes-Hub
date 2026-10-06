@@ -41,6 +41,29 @@ export function leaderboardChimes(movedCount, shown = 5) {
   return Math.min(shown, Math.floor(movedCount))
 }
 
+// Whether a sound is on for this game. `sound` is the cleaned `theme.sound`: `effects` is the master switch and `off`
+// is the list of individual effects the admin has switched off, by name. No sound config means everything is on,
+// which is what DEFAULT_THEME says.
+export function effectOn(sound, name) {
+  if (!sound || typeof sound !== 'object') return true
+  if (sound.effects === false) return false
+  return !(Array.isArray(sound.off) && sound.off.includes(name))
+}
+
+// The drum roll does not start the instant the reveal does: it gets a beat to build first, and the answer goes up on the
+// hit at the end of it.
+export const DRUMROLL_START_MS = 300
+
+// How long the reveal screen must hold the answer back, which is the whole of the theatre: the roll, then the sting on
+// its hit. The built-in hit is DRUMROLL_HIT_MS in, but an admin's own roll is however long they trimmed it to be, and a
+// roll that has been switched off has no hit to wait for at all. This is the one place that is decided, so the answer
+// cannot go up before the sound it belongs to, and so it can be checked without a browser.
+export function revealHoldMs(sound, customDrumrollMs = 0) {
+  if (!effectOn(sound, 'drumroll')) return 0
+  const hit = Number.isFinite(customDrumrollMs) && customDrumrollMs > 0 ? Math.round(customDrumrollMs) : DRUMROLL_HIT_MS
+  return DRUMROLL_START_MS + hit
+}
+
 // ---- Preferences (kept on this device) ----
 
 const STORAGE_KEY = 'nammes-quiz-sound'
@@ -340,6 +363,15 @@ let musicStyle = null
 let musicQuiet = false
 let nextBeat = 0
 let beatIndex = 0
+// The admin's own track, when there is one. It is streamed from a blob address rather than decoded, because a three
+// minute track decoded into memory is about sixty megabytes, and it is connected to the same bus as a generated loop so
+// that the duck during a question, the volume, the mute and the fade all behave exactly as they already do.
+let musicElement = null
+
+// What this screen is allowed to play, set once from the cleaned `theme.sound`: which effects the admin switched off,
+// and which of their own clips stand in for a built-in one. A phone sets only the master switch and the off list, so it
+// never reads the music choice or an imported clip.
+let soundCfg = { effects: true, off: [], custom: { music: null, effects: {} } }
 
 function publish() {
   snapshot = { ...prefs }
@@ -497,6 +529,150 @@ function crowd({ start = 0, dur = APPLAUSE_SECONDS, gain = APPLAUSE_GAIN }, into
   src.start(t0)
 }
 
+// ---- Imported clips ----
+// An admin's own effects, decoded once into audio this engine can play like a built-in one. The decode happens when the
+// host screen loads its theme rather than at the moment of a reveal, so a reveal is never late waiting for a file, and a
+// clip that cannot be decoded is left out so the built-in sound stands in instead.
+const customEffects = new Map()
+const customEffectLengths = new Map()
+let loadGeneration = 0
+
+// An import can be a whisper or a recording of the whole hall, and the built-in sounds are all written at a known modest
+// level, so the loudest sample in the clip decides how loud it plays: without this, one imported effect could be several
+// times louder than everything else on the projector with nothing the host could do about it.
+const IMPORTED_PEAK = 0.25
+// The first version capped the gain at 1, so it could only ever turn a clip down, and only one that peaked above its
+// target: everything quieter than that played exactly as recorded. A quiet recording is brought up to the target here,
+// but only so far, so a clip that is mostly hiss is not turned into a wall of it.
+const MAX_BOOST = 4
+
+export function importedGain(buffer) {
+  let peak = 0
+  for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+    const data = buffer.getChannelData(channel)
+    for (let i = 0; i < data.length; i += 1) {
+      const level = Math.abs(data[i])
+      if (level > peak) peak = level
+    }
+  }
+  return peak > 0 ? Math.min(MAX_BOOST, IMPORTED_PEAK / peak) : 1
+}
+
+function playBuffer({ data, gain = 1, start = 0 }) {
+  const c = ctx
+  const src = c.createBufferSource()
+  const amp = c.createGain()
+  const t0 = c.currentTime + Math.max(0, start)
+  src.buffer = data
+  amp.gain.setValueAtTime(gain, t0)
+  src.connect(amp)
+  amp.connect(master)
+  src.start(t0)
+}
+
+// Read every clip the theme names, once. `load` is handed a clip id and answers with the record or null, which is how a
+// clip this device never imported simply comes back empty: the built-in sound is then used, and nothing is said about it
+// on the projector. A quiz never fails because a browser lost some files.
+async function loadCustomEffects(ids, load) {
+  loadGeneration += 1
+  const mine = loadGeneration
+  customEffects.clear()
+  customEffectLengths.clear()
+  const c = audioContext()
+  if (!c || !ids || typeof ids !== 'object' || typeof load !== 'function') return
+  const wanted = Object.entries(ids).filter(([name, id]) => hasEffect(name) && typeof id === 'string' && id)
+  await Promise.all(wanted.map(async ([name, id]) => {
+    try {
+      const record = await load(id)
+      const blob = record?.blob
+      if (!blob) return
+      const bytes = await blob.arrayBuffer()
+      const decoded = await c.decodeAudioData(bytes)
+      if (mine !== loadGeneration || !decoded?.duration) return
+      customEffects.set(name, { buffer: decoded, gain: importedGain(decoded) })
+      // The reveal is timed off the drum roll's own length, so an imported roll has to say how long it is.
+      customEffectLengths.set(name, Math.round(decoded.duration * 1000))
+    } catch {
+      // a clip that will not decode is skipped, and the built-in sound plays instead
+    }
+  }))
+  // The drum roll's length is only known once it has been decoded, and the reveal times its hold off that, so whoever
+  // is listening has to be told the engine changed even though the preferences themselves have not.
+  if (mine === loadGeneration) publish()
+}
+
+function clearCustomEffects() {
+  loadGeneration += 1
+  customEffects.clear()
+  customEffectLengths.clear()
+}
+
+// The admin's own track, on the same bus as a generated loop, so ducking it for a question, turning it down, muting it
+// and fading it out all reach it by exactly the path they always have.
+//
+// Two things a generated loop does not need. First, level: a mastered track peaks near 1.0 and a generated loop near
+// 0.15, so left alone an imported track sits about 20 dB above everything else on the bus and buries the ticks. Second,
+// place: music stops for every reveal and leaderboard, and a track that restarted from its first second each time
+// would only ever play its intro, so the element is kept and simply resumes where it left off.
+const CUSTOM_MUSIC_GAIN = 0.25
+let customTrack = null
+
+function startCustomMusic(bus, address) {
+  stopCustomMusic()
+  if (typeof Audio === 'undefined') return
+  try {
+    if (!customTrack || customTrack.address !== address) {
+      dropCustomTrack()
+      const audio = new Audio()
+      audio.src = address
+      // A lobby with music stops and starts across a whole evening, so the track runs on rather than playing out.
+      audio.loop = true
+      audio.preload = 'auto'
+      // Routing the element through Web Audio is what puts it under the music bus. A source can be made for an element
+      // only once, which is why the pair is kept together and dropped together.
+      const source = ctx.createMediaElementSource(audio)
+      const trim = ctx.createGain()
+      trim.gain.value = CUSTOM_MUSIC_GAIN
+      source.connect(trim)
+      customTrack = { address, audio, source, trim }
+    }
+    customTrack.trim.connect(bus)
+    // A browser that refuses to stream the blob simply plays nothing rather than throwing at the host.
+    customTrack.audio.play().catch(() => {})
+    musicElement = customTrack.audio
+  } catch {
+    dropCustomTrack()
+    musicElement = null
+  }
+}
+
+// Pause, and keep the place.
+function stopCustomMusic() {
+  if (customTrack && musicElement) {
+    try {
+      customTrack.audio.pause()
+      customTrack.trim.disconnect()
+    } catch {
+      // an element or a node that will not stop is already stopped
+    }
+  }
+  musicElement = null
+}
+
+// Let go of the track for good: the host screen or the studio is going away.
+function dropCustomTrack() {
+  if (!customTrack) return
+  try {
+    customTrack.audio.pause()
+    customTrack.trim.disconnect()
+    customTrack.source.disconnect()
+  } catch {
+    // already gone
+  }
+  customTrack = null
+  musicElement = null
+}
+
 function scheduleMusic() {
   const style = STYLES[musicStyle]
   const layers = layersFor(style)
@@ -560,6 +736,16 @@ export const quizSound = {
     return hasEffect(name)
   },
 
+  // The cleaned `theme.sound` for the screen being played. Called once when the screen loads its theme, so every
+  // effect asked for afterwards knows whether this quiz wants it at all.
+  setSoundConfig(sound) {
+    soundCfg = {
+      effects: sound?.effects !== false,
+      off: Array.isArray(sound?.off) ? sound.off : [],
+      custom: sound?.custom && typeof sound.custom === 'object' ? sound.custom : { music: null, effects: {} },
+    }
+  },
+
   // Call from a click or tap. Until then the browser keeps audio switched off.
   unlock() {
     const c = audioContext()
@@ -573,8 +759,26 @@ export const quizSound = {
   },
 
   play(name) {
+    this.soundEffect(name)
+  },
+
+  // The studio sound lab: the same effect, but auditioning it must ignore this quiz's own switches. A Play button that
+  // did nothing next to the switch that turned it off would look broken, and there is no other way to hear what you
+  // just turned off.
+  previewEffect(name) {
+    this.soundEffect(name, { ignoringSwitches: true })
+  },
+
+  soundEffect(name, { ignoringSwitches = false } = {}) {
     if (!prefs.unlocked || prefs.muted || !ctx || !hasEffect(name)) return
+    if (!ignoringSwitches && !effectOn(soundCfg, name)) return
     try {
+      // The admin's own clip for this sound, if it decoded and is still on this device. Otherwise the built-in.
+      const clip = customEffects.get(name)
+      if (clip) {
+        playBuffer(clip)
+        return
+      }
       // Each helper reads only the fields it cares about, so a step can go straight in whichever kind it is.
       for (const step of EFFECTS[name]) {
         if (step.kind === 'noise') noise(step)
@@ -586,17 +790,37 @@ export const quizSound = {
     }
   },
 
-  startMusic(style, { quiet = false } = {}) {
-    if (!prefs.unlocked || !ctx || !hasMusicStyle(style)) return
+  // How long an imported clip for this sound runs for, in milliseconds, or 0 when the built-in one is in use. The reveal
+  // asks for this so it can wait for the drum roll that will really play.
+  customEffectMs(name) {
+    return customEffectLengths.get(name) ?? 0
+  },
+
+  loadCustomEffects,
+  clearCustomEffects,
+  releaseCustomMusic: dropCustomTrack,
+
+  // Start a loop. 'custom' is the one style the engine cannot generate: it plays the admin's own track from the address
+  // it was given, which the caller resolved from the local library, because getting at the file is the store's job and
+  // not the engine's. Without that address there is nothing to play, so nothing starts and the quiz is simply quiet.
+  startMusic(style, { quiet = false, address = null } = {}) {
+    const custom = style === 'custom'
+    if (!prefs.unlocked || !ctx) return
+    if (!custom && !hasMusicStyle(style)) return
+    if (custom && !address) return
     musicQuiet = quiet
     // Already on this loop: the call is only ducking it for a question, so the run and its bus are left alone.
-    if (musicStyle === style && musicTimer) {
+    if (musicStyle === style && this.isMusicPlaying() && (!custom || musicElement?.src === address)) {
       if (musicGain) musicGain.gain.setTargetAtTime(quiet ? MUSIC_DUCK : 1, ctx.currentTime, 0.3)
       return
     }
-    if (musicTimer) clearInterval(musicTimer)
+    this.stopMusic()
     musicStyle = style
-    newMusicBus(quiet)
+    const bus = newMusicBus(quiet)
+    if (custom) {
+      startCustomMusic(bus, address)
+      return
+    }
     nextBeat = ctx.currentTime + 0.05
     beatIndex = 0
     scheduleMusic()
@@ -604,20 +828,21 @@ export const quizSound = {
   },
 
   // The studio audition buttons use this to swap one loop for another without the tail of the last one ringing out.
-  previewMusic(style, { quiet = false } = {}) {
+  previewMusic(style, options = {}) {
     this.stopMusic()
-    this.startMusic(style, { quiet })
+    this.startMusic(style, options)
   },
 
   stopMusic() {
     if (musicTimer) clearInterval(musicTimer)
     musicTimer = null
+    stopCustomMusic()
     musicStyle = null
     fadeOutMusicBus()
   },
 
   isMusicPlaying() {
-    return Boolean(musicTimer)
+    return Boolean(musicTimer || musicElement)
   },
 
   isMusicQuiet() {

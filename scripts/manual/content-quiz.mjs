@@ -187,12 +187,24 @@ ${table(['Section', 'What you can set'], [
   ['Celebration', 'The falling shapes on the podium: maths symbols, stars, petals or none.'],
   ['Event message', 'An optional headline and tagline for your event.'],
   ['Logo and sponsors', 'Upload an event logo (or keep <em>Use the NAMMES mark</em>) and up to six sponsor logos. Sponsors appear only on the big screen, never on phones.'],
-  ['Sound', 'Lobby and question music (off, chill, hype, afrobeat, disco or cinematic) and sound effects.'],
+  ['Sound', 'Lobby and question music (off, chill, hype, afrobeat, disco, cinematic or a track you imported) and sound effects, each of which can be switched off on its own.'],
   ['Characters (50)', 'A gallery of all 50 characters in every mood.'],
 ])}
 <h3>The sound lab</h3>
 <p>The music is generated in the browser rather than played from a recording, so the only honest way to choose a loop is to hear it. Open the <strong>Sound</strong> tab: press <em>Play</em> on any card to hear that loop for twelve seconds (one at a time, and it stops by itself), then <em>Use this</em> to pick it. Below that, every sound effect has a button of its own, grouped by when the game plays it: countdown ticks, a drum roll the answer lands on, a cheer, and the board settling. Press <span class="btn ghost">Stop the music</span> first if you want to hear an effect on its own.</p>
 ${note('The music plays in the lobby and during questions, quieter during questions so you can be heard, and stops for the reveal, the leaderboard and the end. <strong>Turn the projector sound on with one click</strong> when the host screen opens, because browsers block audio until you interact with the page.')}
+<h3>Switching a sound off</h3>
+<p>Every sound effect has a switch of its own beside its <em>Play</em> button. Anything you switch off is silent for the whole game, on the projector and on players&rsquo; phones alike, and the setting is saved with the quiz, so it follows the quiz to whichever computer you host from. <em>Play</em> still makes a sound for a switched-off effect, so you can always hear what you have just turned off. The music choice is separate and always applies.</p>
+${note('Switching off <em>Drum roll</em> also removes the pause before the answer appears, so the answer goes up straight away instead of waiting for a beat that will never arrive.')}
+<h3>Your own music and sound effects</h3>
+<p><em>Your own audio</em> lets you import a background track and your own sound effects. Nothing is uploaded: each clip is kept in the browser on the computer you imported it on. Once a clip is imported you can play it, use it in place of a built-in sound effect from the list beside that effect, or pick it as the <em>My music</em> card for the background.</p>
+${steps([
+  'Press <span class="btn">Import music</span> or <span class="btn">Import sound effects</span> and choose a file. MP3, OGG, WAV and M4A all work.',
+  'Play it to check it, then use it: choose a track on the <em>My music</em> card, or pick your clip from the list under a sound effect.',
+  'Press <em>Delete</em> on a clip to take it off this computer. A quiz that used it falls back to the built-in sound.',
+])}
+${warn('Clips stay in the browser that imported them. Nothing is uploaded and no other computer gets them, so a quiz that uses one plays the built-in sounds anywhere else. Clearing this browser&rsquo;s site data deletes them for good, and a browser can still throw stored files away when a device runs out of space. Host from the computer you imported on.')}
+${note('Limits: music up to 15 MB and 8 minutes, a sound effect up to 1 MB and 10 seconds, and up to 40 clips in 100 MB altogether. A clip is measured before it is stored, so a file the browser cannot play is refused rather than saved to be discovered mid-game. An imported drum roll decides how long the answer is held back, so trim yours to end on the hit. Only import audio you have the right to play.')}
 <p>Choose <span class="btn">Save look</span>. The look applies to <strong>new games</strong> only; a game already running keeps the look it started with.</p>
 
 <h2>Hosting a game</h2>
