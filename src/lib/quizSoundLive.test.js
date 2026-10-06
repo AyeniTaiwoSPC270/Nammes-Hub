@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 // The smallest AudioContext the scheduler will accept: anything that does not exist is built on demand, and a bus that
 // remembers what was set on it is enough to see whether music was asked for and at what level.
 function fakeContext() {
-  const made = { oscillators: 0, buffers: 0, media: 0 }
+  const made = { oscillators: 0, buffers: 0, media: 0, playedBuffers: [] }
   const param = (value = 0) => ({
     value,
     setValueAtTime() {},
@@ -39,7 +39,18 @@ function fakeContext() {
     resume: () => Promise.resolve(),
     createGain: () => node(),
     createOscillator: () => { made.oscillators += 1; return node() },
-    createBufferSource: () => { made.buffers += 1; return node() },
+    createBufferSource: () => {
+      made.buffers += 1
+      const source = node()
+      // A buffer source that starts with no audio assigned is silently inaudible rather than an error, so a source is
+      // only counted once it has actually been given something to play.
+      const start = source.start
+      source.start = (...args) => {
+        if (source.buffer) made.playedBuffers.push(source.buffer)
+        return start(...args)
+      }
+      return source
+    },
     createBiquadFilter: () => node(),
     createMediaElementSource: () => { made.media += 1; return node() },
     createBuffer: (channels, frames) => ({
@@ -145,5 +156,46 @@ describe('an imported track with no file behind it', () => {
     quizSound.stopMusic()
     expect(() => quizSound.startMusic('custom')).not.toThrow()
     expect(quizSound.isMusicPlaying()).toBe(false)
+  })
+})
+
+describe('an imported effect with a real clip behind it', () => {
+  // This is the regression this file exists for. The decoded clip was stored as `{ buffer }` while the thing that plays
+  // it reads `data`, so `src.buffer` was undefined and every imported effect was silent in the studio and in the game.
+  // Nothing threw, so no error was ever logged and no existing test noticed.
+  const DECODED = { numberOfChannels: 1, duration: 2, getChannelData: () => new Float32Array(4) }
+  let decodes
+
+  beforeAll(async () => {
+    decodes = 0
+    ctx.decodeAudioData = () => {
+      decodes += 1
+      return Promise.resolve(DECODED)
+    }
+    await quizSound.loadCustomEffects({ applause: 'clip-applause' }, (id) =>
+      Promise.resolve({ blob: { arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) } }))
+  })
+
+  it('plays the clip itself, not silence and not the built-in', () => {
+    quizSound.setSoundConfig({ effects: true, off: [] })
+    ctx.made.playedBuffers.length = 0
+    quizSound.play('applause')
+    expect(decodes).toBeGreaterThan(0)
+    expect(ctx.made.playedBuffers, 'the decoded clip should reach the output').toContain(DECODED)
+  })
+
+  it('auditions it from the studio the same way', () => {
+    ctx.made.playedBuffers.length = 0
+    quizSound.previewEffect('applause')
+    expect(ctx.made.playedBuffers).toContain(DECODED)
+  })
+
+  it('reports the clip length, so a reveal timed off the drum roll waits for it', () => {
+    quizSound.loadCustomEffects({ drumroll: 'clip-roll' }, () =>
+      Promise.resolve({ blob: { arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) } }))
+    return quizSound.loadCustomEffects({ drumroll: 'clip-roll' }, () =>
+      Promise.resolve({ blob: { arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) } })).then(() => {
+        expect(quizSound.customEffectMs('drumroll')).toBe(2000)
+      })
   })
 })
