@@ -9,8 +9,9 @@ import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
 import { useProjectorFit } from '../lib/projectorFit'
 import { AnswerShape, Avatar, CountdownRing, Confetti, QuizBackdrop, QuizTopBar, SoundControl, SponsorStrip } from '../components/quiz/QuizParts'
-import { quizSound, tickSound, stateSound, revealSting, applauseSound, leaderboardChimes, DRUMROLL_HIT_MS } from '../lib/quizSound'
+import { quizSound, tickSound, stateSound, revealSting, applauseSound, leaderboardChimes, revealHoldMs, effectOn, DRUMROLL_START_MS } from '../lib/quizSound'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
+import { quizAudio } from '../lib/quizAudioStore'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import { BracketBoard, BracketPodium, BracketPanel } from '../components/quiz/BracketParts'
 import { isRoundEnd, roundOfQuestion } from '../../api/_lib/quizBracketMath.js'
@@ -603,11 +604,11 @@ const REORDER_AFTER_MS = 1500
 const REORDER_MS = 1100
 // One chime per row as the board settles into its new order, so a big swing sounds like a run of them rather than one.
 const POINTS_CHIME_MS = 110
-// The drum roll starts here and its boom lands DRUMROLL_HIT_MS later; the right or wrong sting goes on that boom, so
-// the two cannot drift apart if the roll is ever reshaped.
-const DRUMROLL_MS = 300
-const REVEAL_STING_MS = DRUMROLL_MS + DRUMROLL_HIT_MS
+// How long the drum roll runs for before the sting lands on it, and how far behind the sting the crowd comes in. Both
+// How far behind the sting the crowd comes in, and how long the time's-up horn rings for. With the drum roll switched
+// off the sting has no roll to land on, so it waits just past the end of the horn instead of playing over it.
 const APPLAUSE_OFFSET_MS = 120
+const HORN_TAIL_MS = 600
 
 function ScoreCounter({ from, to, className }) {
   const value = useCountUp(from, to, { durationMs: COUNT_MS, delayMs: COUNT_DELAY_MS })
@@ -1046,7 +1047,9 @@ export default function HostQuiz() {
   // clicking. The last leaderboard finishes the game. The server ignores a repeat, so a click at the same moment is harmless.
   useEffect(() => {
     if (!autoOn || (state !== 'reveal' && state !== 'leaderboard')) return undefined
-    const timer = setTimeout(() => advance(), AUTO_ADVANCE_MS)
+    // The answer is held back while the roll plays, so the time to read it only starts once it is up.
+    const wait = AUTO_ADVANCE_MS + (state === 'reveal' ? holdMsRef.current : 0)
+    const timer = setTimeout(() => advance(), wait)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOn, state, session?.current_question_index])
@@ -1193,11 +1196,23 @@ export default function HostQuiz() {
 
   // ---- Sound: music in the lobby and during questions, a tick at the end, stings at each step ----
   const soundCfg = sanitizeTheme(session?.theme).sound
+  // The countdown re-renders this screen four times a second and sanitizeTheme hands back a fresh object every time, so
+  // the engine is told what this quiz wants by what it cleaned, not by the object it came back in.
+  const soundKey = JSON.stringify(soundCfg)
   const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
   const effectsOn = soundCfg.effects && soundPrefs.unlocked && !soundPrefs.muted
+  // What the answer waits for: the whole reveal is timed off the roll that is really going to play, so switching the
+  // roll off, or swapping in an imported one of a different length, cannot leave the answer going up on its own.
+  const drumrollOn = effectsOn && effectOn(soundCfg, 'drumroll')
+  const holdMs = effectsOn ? revealHoldMs(soundCfg, quizSound.customEffectMs('drumroll')) : 0
+  holdMsRef.current = holdMs
+  // Null unless this quiz is playing the admin's own track, and null again if this device does not have it.
+  const [musicAddress, setMusicAddress] = useState(null)
   const rightShare = answers.length > 0 ? Math.round((answers.filter((a) => a.correct === true).length / answers.length) * 100) : 0
   const rightShareRef = useRef(0)
   rightShareRef.current = rightShare
+  // Read by the auto-advance timer, which is set up once per state and so cannot see the hold computed further down.
+  const holdMsRef = useRef(0)
   const questionType = question?.type ?? 'multiple'
   const prevStateRef = useRef(null)
   // The realtime join handler subscribes once, so it reads these on every render rather than being resubscribed.
@@ -1212,14 +1227,37 @@ export default function HostQuiz() {
     return () => {
       window.removeEventListener('pointerdown', unlock)
       quizSound.stopMusic()
+      quizSound.clearCustomEffects()
+      quizSound.releaseCustomMusic()
     }
   }, [])
 
   useEffect(() => {
+    // The engine needs to know what this quiz wants before the first sound is asked for.
+    quizSound.setSoundConfig(soundCfg)
+    // Imported effects are read and decoded once here, while the lobby is still filling, rather than at the moment of a
+    // reveal. A clip this device does not have simply comes back empty and the built-in sound plays instead.
+    quizSound.loadCustomEffects(soundCfg.custom.effects, quizAudio.get)
+    // The track is streamed rather than decoded, so the engine is handed an address once the library has made one. It
+    // stays null for every quiz that is not using an imported track, and for one this device has lost.
+    let live = true
+    const wanted = soundCfg.music === 'custom' ? soundCfg.custom.music : null
+    quizAudio.url(wanted).then((address) => {
+      if (live) setMusicAddress(address)
+    })
+    return () => {
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [soundKey])
+
+  useEffect(() => {
     const playing = soundCfg.music !== 'off' && (state === 'lobby' || state === 'question') && !paused
-    if (playing) quizSound.startMusic(soundCfg.music, { quiet: state === 'question' })
+    // 'custom' with nothing to stream is not playing: the engine ignores it, so an imported track this device has lost
+    // means a quiet lobby rather than an error on the projector.
+    if (playing) quizSound.startMusic(soundCfg.music, { quiet: state === 'question', address: musicAddress })
     else quizSound.stopMusic()
-  }, [soundCfg.music, state, paused, soundPrefs.unlocked])
+  }, [soundCfg.music, musicAddress, state, paused, soundPrefs.unlocked])
 
   useEffect(() => {
     const prev = prevStateRef.current
@@ -1229,14 +1267,17 @@ export default function HostQuiz() {
     if (name) quizSound.play(name)
     const timers = []
     // Answering is a short piece of theatre: the horn marks time running out, a drum roll builds while the answer is
-    // put up, and the sting lands as the roll does. The crowd only joins a round most people got right.
+    // put up, and the sting lands as the roll does. The crowd only joins a round most people got right. With the roll
+    // switched off there is nothing to build to, so the sting waits just past the end of the horn rather than landing
+    // on top of it: the answer still goes up at once, only the sting is held.
+    const stingMs = drumrollOn ? holdMs : HORN_TAIL_MS
     if (state === 'reveal' && prev === 'question' && questionType !== 'poll') {
-      timers.push(setTimeout(() => quizSound.play('drumroll'), DRUMROLL_MS))
-      timers.push(setTimeout(() => quizSound.play(revealSting(rightShareRef.current)), REVEAL_STING_MS))
+      if (drumrollOn) timers.push(setTimeout(() => quizSound.play('drumroll'), DRUMROLL_START_MS))
+      timers.push(setTimeout(() => quizSound.play(revealSting(rightShareRef.current)), stingMs))
       timers.push(setTimeout(() => {
         const cheer = applauseSound(rightShareRef.current)
         if (cheer) quizSound.play(cheer)
-      }, REVEAL_STING_MS + APPLAUSE_OFFSET_MS))
+      }, stingMs + APPLAUSE_OFFSET_MS))
     }
     // Finished: the fanfare leads and the crowd comes in just behind it.
     if (state === 'finished') timers.push(setTimeout(() => quizSound.play('applause'), 400))
@@ -1270,7 +1311,11 @@ export default function HostQuiz() {
   const auto = {
     on: autoOn,
     toggle: () => setAutoOn((on) => !on),
-    secondsLeft: autoSecondsLeft({ enteredMs: enteredRef.current.ms, nowMs }),
+    secondsLeft: autoSecondsLeft({
+      enteredMs: enteredRef.current.ms,
+      nowMs,
+      totalMs: AUTO_ADVANCE_MS + (state === 'reveal' ? holdMs : 0),
+    }),
   }
   const counts = question ? question.options.map((_, i) => answers.filter((a) => a.chosen_index === i).length) : []
   const shared = { title: quizTitle, index: session.current_question_index, total: questions.length, busy }
@@ -1330,7 +1375,7 @@ export default function HostQuiz() {
         onNext={advance}
         isLast={isLast}
         auto={auto}
-        holdMs={effectsOn ? REVEAL_STING_MS : 0}
+        holdMs={holdMs}
       />
     )
   } else if (session.state === 'leaderboard') {

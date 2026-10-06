@@ -176,10 +176,14 @@ export default function AdminQuizStudio() {
       ) : tab === 'sound' ? (
         <div className="mt-6">
           <SoundLab
-            music={theme.sound.music}
-            effects={theme.sound.effects}
-            onPickMusic={(key) => change({ sound: { ...theme.sound, music: key } })}
-            onPickEffects={(on) => change({ sound: { ...theme.sound, effects: on } })}
+            sound={theme.sound}
+            onChange={(sound) => change({ sound })}
+            onToggleEffect={(name) => change({
+              sound: {
+                ...theme.sound,
+                off: theme.sound.off.includes(name) ? theme.sound.off.filter((x) => x !== name) : [...theme.sound.off, name],
+              },
+            })}
           />
         </div>
       ) : (
@@ -247,16 +251,29 @@ export default function AdminQuizStudio() {
 
             <Section title="Sound" hint="Music and effects on the projector. Hear every option on the Sound tab before you pick one.">
               <div className="grid grid-cols-3 gap-2">
-                {Object.entries(THEME_MUSIC).map(([key, label]) => (
+                {/* 'custom' is left out here on purpose: an imported track is chosen from a list of files that only
+                    exists in the browser, so it cannot be picked from a row of fixed buttons. */}
+                {Object.entries(THEME_MUSIC).filter(([key]) => key !== 'custom').map(([key, label]) => (
                   <Choice key={key} selected={theme.sound.music === key} onClick={() => change({ sound: { ...theme.sound, music: key } })} className="px-3 py-2.5">
                     {label}
                   </Choice>
                 ))}
               </div>
+              {theme.sound.music === 'custom' && (
+                <p className="mt-2 rounded-xl border border-orange-500/40 bg-orange-500/10 p-3 text-sm font-semibold text-ink-900">
+                  Playing a track you imported. Change it, or choose a built-in loop, on the Sound tab.
+                </p>
+              )}
               <label className="mt-3 flex cursor-pointer items-center gap-3 text-sm font-semibold text-ink-900">
                 <input type="checkbox" className="h-5 w-5" checked={theme.sound.effects} onChange={(e) => change({ sound: { ...theme.sound, effects: e.target.checked } })} />
                 Sound effects (countdown ticks, drum roll, right and wrong stings, cheer, fanfare)
               </label>
+              {theme.sound.off.length > 0 && (
+                <p className="mt-2 text-sm text-ink-muted">
+                  {theme.sound.off.length === 1 ? 'One effect is' : `${theme.sound.off.length} effects are`} switched off
+                  in the game. Change them on the Sound tab.
+                </p>
+              )}
             </Section>
 
             <Section title="Logo and sponsors" hint="An event logo replaces the NAMMES mark at the top. Sponsor logos show on the projector only, never on phones.">

@@ -311,6 +311,12 @@ function PlayQuizGame({ onTheme }) {
   const inGame = useRef(false)
   const soundPrefs = useSyncExternalStore(quizSound.subscribe, quizSound.getSnapshot)
   const effectsOn = theme.sound.effects && soundPrefs.unlocked && !soundPrefs.muted
+
+  // Phones keep their own built-in sounds: they honour what the admin has switched off, but an imported clip stays on
+  // the device it was imported on, so the custom ids and the music choice are deliberately not passed on.
+  useEffect(() => {
+    quizSound.setSoundConfig({ effects: theme.sound.effects, off: theme.sound.off })
+  }, [theme.sound.effects, theme.sound.off])
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves

@@ -32,7 +32,8 @@ export const THEME_CONFETTI = {
 }
 
 // The music the projector can play. 'off' is first because it is the default, and the two original loops come next so
-// the quizzes that already use them are unaffected by the newer styles.
+// the quizzes that already use them are unaffected by the newer styles. 'custom' is the admin's own imported track,
+// which is why it is listed last: it is the one style the engine cannot generate.
 export const THEME_MUSIC = {
   off: 'No music',
   chill: 'Chill',
@@ -40,6 +41,7 @@ export const THEME_MUSIC = {
   afro: 'Afrobeat',
   disco: 'Disco',
   cinematic: 'Cinematic',
+  custom: 'My music',
 }
 
 // What each loop actually sounds like, for the studio sound lab. The loops are generated in the browser rather than
@@ -50,6 +52,36 @@ export const MUSIC_NOTES = {
   afro: 'Warm, syncopated and groovy. The one people tap along to.',
   disco: 'Four to the floor with a bright bass. Bright and playful.',
   cinematic: 'Slow swelling chords and one big boom a bar. Made to sit under people talking.',
+  custom: 'A track you imported on this computer. It loops all game and stays on the device that imported it.',
+}
+
+// Every sound effect a quiz can play, and what each one is for. This list lives here rather than only in the browser
+// engine because sanitizeTheme has to stay pure and the server checks a saved theme too, so an effect a quiz switched
+// off has to be a name this file knows. A test asserts it agrees with EFFECT_GROUPS in quizSound.js, so an effect can
+// never be added to the engine without somewhere for the studio to hear it. The order matches those groups, which
+// also keeps a saved theme's custom clips in a stable order however the admin filled them in.
+export const THEME_EFFECTS = {
+  tick: 'Tick, last 5 seconds',
+  tickFast: 'Fast tick, last 2 seconds',
+  timeUp: "Time's up horn",
+  start: 'Question starts',
+  lock: 'Answer locked in',
+  join: 'A player joined',
+  drumroll: 'Drum roll',
+  correct: 'Right answer',
+  wrong: 'Wrong answer',
+  applause: 'Crowd applause',
+  whoosh: 'Board whoosh',
+  points: 'Points chime',
+  fanfare: 'Fanfare',
+}
+
+// A clip id is a key into the local library in one browser, never a path or a URL, so it is held to a fixed shape: no
+// slashes, no dots, nothing that could escape the library or be read as part of an address.
+const CLIP_ID = /^[a-z0-9-]{8,40}$/
+
+export function isClipId(value) {
+  return typeof value === 'string' && CLIP_ID.test(value)
 }
 
 export const MAX_SPONSORS = 6
@@ -65,7 +97,7 @@ export const DEFAULT_THEME = Object.freeze({
   confetti: 'math',
   headline: '',
   tagline: '',
-  sound: Object.freeze({ music: 'off', effects: true }),
+  sound: Object.freeze({ music: 'off', effects: true, off: Object.freeze([]), custom: Object.freeze({ music: null, effects: Object.freeze({}) }) }),
   logo: null,
   sponsors: Object.freeze([]),
   showSponsors: Object.freeze({ lobby: true, finish: true }),
@@ -89,9 +121,37 @@ function oneOf(list, value, fallback) {
   return typeof value === 'string' && Object.hasOwn(list, value) ? value : fallback
 }
 
+// Which effects a quiz has switched off: only names the list knows, each once, in the list's own order so that
+// cleaning a theme twice gives the same jsonb back.
+function cleanOff(input) {
+  if (!Array.isArray(input)) return []
+  return Object.keys(THEME_EFFECTS).filter((name) => input.includes(name))
+}
+
+// An admin's own clips, by id. An id is only ever a key into the library on one device, so it is checked against a
+// fixed shape and an unknown effect name is dropped rather than kept for later.
+function cleanCustom(input) {
+  const c = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  const map = c.effects && typeof c.effects === 'object' && !Array.isArray(c.effects) ? c.effects : {}
+  const effects = {}
+  for (const name of Object.keys(THEME_EFFECTS)) {
+    if (isClipId(map[name])) effects[name] = map[name]
+  }
+  return { music: isClipId(c.music) ? c.music : null, effects }
+}
+
 function cleanSound(input) {
   const o = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
-  return { music: oneOf(THEME_MUSIC, o.music, DEFAULT_THEME.sound.music), effects: o.effects !== false }
+  const custom = cleanCustom(o.custom)
+  const music = oneOf(THEME_MUSIC, o.music, DEFAULT_THEME.sound.music)
+  return {
+    // Asking for your own music with no clip to play is not a music style the engine can honour, so it settles to
+    // silence rather than to a generated loop the admin did not choose.
+    music: music === 'custom' && !custom.music ? 'off' : music,
+    effects: o.effects !== false,
+    off: cleanOff(o.off),
+    custom,
+  }
 }
 
 // A picture path is only kept if it has the exact shape of an uploaded image and, when the quiz is known, sits in that

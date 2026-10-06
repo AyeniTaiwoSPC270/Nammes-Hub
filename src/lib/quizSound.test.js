@@ -16,9 +16,15 @@ import {
   rollTimes,
   applauseSamples,
   DRUMROLL_HIT_MS,
+  DRUMROLL_START_MS,
+  revealHoldMs,
+  effectOn,
+  importedGain,
   buzz,
 } from './quizSound'
-import { THEME_MUSIC, MUSIC_NOTES, sanitizeTheme } from '../../api/_lib/quizTheme.js'
+import { THEME_MUSIC, MUSIC_NOTES, THEME_EFFECTS, DEFAULT_THEME, sanitizeTheme } from '../../api/_lib/quizTheme.js'
+
+const DEFAULT_SOUND = DEFAULT_THEME.sound
 
 describe('sound rules', () => {
   it('ticks only in the last five seconds, faster in the last two', () => {
@@ -58,6 +64,55 @@ describe('sound rules', () => {
     // The sting used to sit at a hand-picked offset that drifted away from the roll whenever it was reshaped.
     expect(DRUMROLL_HIT_MS).toBeGreaterThan(400)
     expect(DRUMROLL_HIT_MS).toBeLessThan(1200)
+  })
+})
+
+describe('switching sounds off', () => {
+  const OFF_JOIN = { effects: true, off: ['join'] }
+  it('plays everything unless the quiz has switched an effect off', () => {
+    expect(effectOn(undefined, 'join')).toBe(true)
+    expect(effectOn(DEFAULT_SOUND, 'join')).toBe(true)
+    expect(effectOn(OFF_JOIN, 'join')).toBe(false)
+    expect(effectOn(OFF_JOIN, 'tick')).toBe(true)
+  })
+  it('turns every effect off with the master switch', () => {
+    expect(effectOn({ effects: false, off: [] }, 'tick')).toBe(false)
+    expect(effectOn({ effects: false }, 'tick')).toBe(false)
+  })
+  it('ignores a junk off list rather than throwing on it', () => {
+    for (const off of ['join', null, undefined, 7, { join: true }]) {
+      expect(effectOn({ effects: true, off }, 'join'), String(off)).toBe(true)
+    }
+  })
+})
+
+describe('how long the reveal holds the answer back', () => {
+  it('waits for the built-in roll to land its hit', () => {
+    expect(revealHoldMs(DEFAULT_SOUND)).toBe(DRUMROLL_START_MS + DRUMROLL_HIT_MS)
+    expect(revealHoldMs(DEFAULT_SOUND, 0)).toBe(DRUMROLL_START_MS + DRUMROLL_HIT_MS)
+  })
+  it('waits for an imported roll instead, because the built-in hit time means nothing for one', () => {
+    expect(revealHoldMs(DEFAULT_SOUND, 2400)).toBe(DRUMROLL_START_MS + 2400)
+    expect(revealHoldMs(DEFAULT_SOUND, 900.6)).toBe(DRUMROLL_START_MS + 901)
+  })
+  it('holds nothing at all when the roll is switched off, because there is no hit to wait for', () => {
+    expect(revealHoldMs({ effects: true, off: ['drumroll'] })).toBe(0)
+    expect(revealHoldMs({ effects: true, off: ['drumroll'] }, 2400)).toBe(0)
+    expect(revealHoldMs({ effects: true, off: ['join', 'drumroll', 'applause'] })).toBe(0)
+  })
+  it('holds nothing at all when effects are off entirely', () => {
+    expect(revealHoldMs({ effects: false, off: [] })).toBe(0)
+    expect(revealHoldMs({ effects: false, off: [] }, 2400)).toBe(0)
+  })
+  it('does not wait for a clip that never decoded, and does not wait backwards', () => {
+    for (const junk of [NaN, -1, Infinity, '1200', null, undefined]) {
+      expect(revealHoldMs(DEFAULT_SOUND, junk), String(junk)).toBe(DRUMROLL_START_MS + DRUMROLL_HIT_MS)
+    }
+  })
+  it('builds the hold out of a theme the server already cleaned', () => {
+    const sound = sanitizeTheme({ sound: { music: 'chill', off: ['drumroll', 'not-a-sound'] } }).sound
+    expect(revealHoldMs(sound)).toBe(0)
+    expect(revealHoldMs(sanitizeTheme({}).sound)).toBe(DRUMROLL_START_MS + DRUMROLL_HIT_MS)
   })
 })
 
@@ -241,9 +296,11 @@ describe('what the studio offers', () => {
     expect(MUSIC_STYLES).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic'])
   })
   it('can play every style the studio offers, so the two lists cannot drift apart', () => {
-    for (const key of MUSIC_STYLES.filter((k) => k !== 'off')) {
-      expect(hasMusicStyle(key)).toBe(true)
-      expect(Object.hasOwn(THEME_MUSIC, key)).toBe(true)
+    // 'off' is silence and 'custom' is the admin's own clip, so neither has a generated loop behind it; both are
+    // checked on their own below.
+    for (const key of MUSIC_STYLES.filter((k) => k !== 'off' && k !== 'custom')) {
+      expect(hasMusicStyle(key), key).toBe(true)
+      expect(Object.hasOwn(THEME_MUSIC, key), key).toBe(true)
     }
     expect(hasMusicStyle('off')).toBe(false)
     expect(hasMusicStyle('nope')).toBe(false)
@@ -254,13 +311,20 @@ describe('what the studio offers', () => {
     }
   })
   it('keeps the two original loops and takes the three newer ones', () => {
-    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic'])
+    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'custom'])
+  })
+  it('offers the admin their own track as a style, but cannot generate one', () => {
+    // 'custom' is the one style with no generated loop behind it: it is a clip from the library on one device, so
+    // sanitizeTheme only keeps the choice when there is a clip id to go with it.
+    expect(hasMusicStyle('custom')).toBe(false)
+    expect(sanitizeTheme({ sound: { music: 'custom', custom: { music: 'abc12345' } } }).sound.music).toBe('custom')
+    expect(sanitizeTheme({ sound: { music: 'custom' } }).sound.music).toBe('off')
   })
   it('accepts a saved theme using any of the styles, and falls back for anything else', () => {
-    expect(sanitizeTheme({ sound: { music: 'afro' } }).sound).toEqual({ music: 'afro', effects: true })
-    expect(sanitizeTheme({ sound: { music: 'cinematic', effects: false } }).sound).toEqual({ music: 'cinematic', effects: false })
-    expect(sanitizeTheme({ sound: { music: 'dub' } }).sound).toEqual({ music: 'off', effects: true })
-    expect(sanitizeTheme({}).sound).toEqual({ music: 'off', effects: true })
+    expect(sanitizeTheme({ sound: { music: 'afro' } }).sound).toMatchObject({ music: 'afro', effects: true })
+    expect(sanitizeTheme({ sound: { music: 'cinematic', effects: false } }).sound).toMatchObject({ music: 'cinematic', effects: false })
+    expect(sanitizeTheme({ sound: { music: 'dub' } }).sound).toMatchObject({ music: 'off', effects: true })
+    expect(sanitizeTheme({}).sound).toMatchObject({ music: 'off', effects: true })
   })
   it('refuses a choice that only looks like one once used as an object key', () => {
     // ['chill'] becomes the string 'chill' as a key, so a plain hasOwn check let a hand-edited row through with an
@@ -282,10 +346,38 @@ describe('what the studio offers', () => {
     const listed = EFFECT_GROUPS.flatMap((g) => g.items.map(([name]) => name))
     expect(new Set(listed).size).toBe(listed.length)
   })
+  it('knows an effect for every name the lab lists, so nothing can be switched off by an unknown name', () => {
+    // sanitizeTheme can only keep an effect in a quiz's off list if this list has it, so an effect added to the engine
+    // without being added here could never be turned off.
+    const listed = EFFECT_GROUPS.flatMap((g) => g.items.map(([name]) => name))
+    for (const name of listed) expect(Object.hasOwn(THEME_EFFECTS, name), name).toBe(true)
+    for (const name of Object.keys(THEME_EFFECTS)) expect(listed, name).toContain(name)
+    expect(Object.keys(THEME_EFFECTS)).toHaveLength(listed.length)
+  })
+  it('describes every effect it knows, so the studio has a label for each switch', () => {
+    for (const [name, label] of Object.entries(THEME_EFFECTS)) expect(label, name).toBeTruthy()
+  })
   it('still offers the sounds the game has always played', () => {
     for (const name of ['tick', 'tickFast', 'timeUp', 'correct', 'wrong', 'lock', 'start', 'whoosh', 'fanfare']) {
       expect(hasEffect(name)).toBe(true)
     }
+  })
+})
+
+describe('the level of an imported effect', () => {
+  const clip = (peak) => ({ numberOfChannels: 1, getChannelData: () => Float32Array.of(0, peak * 0.4, -peak, peak * 0.1) })
+  it('brings a quiet clip and a loud clip to the same peak', () => {
+    expect(importedGain(clip(0.1)) * 0.1).toBeCloseTo(importedGain(clip(1)) * 1, 6)
+  })
+  it('turns a very quiet clip up, but only so far', () => {
+    expect(importedGain(clip(0.1))).toBeGreaterThan(1)
+    expect(importedGain(clip(0.001))).toBeLessThanOrEqual(4)
+  })
+  it('is no louder than the loudest built-in effect, so an import cannot bury the rest of the game', () => {
+    expect(importedGain(clip(1)) * 1).toBeLessThanOrEqual(0.5)
+  })
+  it('leaves silence alone rather than dividing by nothing', () => {
+    expect(importedGain({ numberOfChannels: 1, getChannelData: () => new Float32Array(8) })).toBe(1)
   })
 })
 
