@@ -46,7 +46,7 @@ describe('quiz-create', () => {
     const res = fakeRes()
     await createQuizCreateHandler(() => db, { makeCode: () => '333333' })(admin({ quizId: QUIZ }), res)
     expect(res.statusCode).toBe(200)
-    expect(db.tables.quiz_sessions.at(-1).theme).toEqual({ look: 'royal', accent: '#ff00aa', pattern: 'math', image: null, backdropOpacity: 8, backdropScale: 100, backdropBlur: 0, backdropDim: 0, confetti: 'math', headline: 'Freshers Night', tagline: '', sound: DEFAULT_THEME.sound, logo: null, sponsors: [], showSponsors: { lobby: true, finish: true } })
+    expect(db.tables.quiz_sessions.at(-1).theme).toEqual({ look: 'royal', accent: '#ff00aa', pattern: 'math', image: null, backdropOpacity: 8, backdropScale: 100, backdropBlur: 0, backdropDim: 0, backdropFit: 'cover', confetti: 'math', headline: 'Freshers Night', tagline: '', sound: DEFAULT_THEME.sound, logo: null, sponsors: [], showSponsors: { lobby: true, finish: true } })
   })
   it('gives a quiz with no look the default one', async () => {
     const db = fakeDb()
@@ -222,7 +222,7 @@ describe('answering and the answer-leak rule', () => {
     const { db, a, state } = await setup()
     db.tables.quiz_sessions[0].theme = { look: 'ocean', headline: 'Hello', accent: 'red; background:url(x)' }
     const res = await state(a.token)
-    expect(res.body.theme).toEqual({ look: 'ocean', accent: null, pattern: 'math', image: null, backdropOpacity: 8, backdropScale: 100, backdropBlur: 0, backdropDim: 0, confetti: 'math', headline: 'Hello', tagline: '', sound: DEFAULT_THEME.sound, logo: null, sponsors: [], showSponsors: { lobby: true, finish: true } })
+    expect(res.body.theme).toEqual({ look: 'ocean', accent: null, pattern: 'math', image: null, backdropOpacity: 8, backdropScale: 100, backdropBlur: 0, backdropDim: 0, backdropFit: 'cover', confetti: 'math', headline: 'Hello', tagline: '', sound: DEFAULT_THEME.sound, logo: null, sponsors: [], showSponsors: { lobby: true, finish: true } })
   })
   it('does not send the correct answer to phones while the question is open', async () => {
     const { a, state } = await setup()
