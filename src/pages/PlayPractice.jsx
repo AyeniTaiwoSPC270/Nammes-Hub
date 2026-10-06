@@ -33,7 +33,7 @@ function saveSaved(value) {
 function Shell({ children, tone }) {
   const bg = tone === 'good' ? 'bg-green-700 text-white' : tone === 'bad' ? 'bg-red-700 text-white' : 'bg-paper text-ink-900'
   return (
-    <div className={`relative flex min-h-[100dvh] flex-col ${bg}`}>
+    <div className={`relative isolate flex min-h-[100dvh] flex-col ${bg}`}>
       {!tone && <QuizBackdrop />}
       {!tone && <QuizTopBar compact />}
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">{children}</main>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
-import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl } from '../../data/quizBranding'
+import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl, BACKDROP_MAX_EDGE, BACKDROP_MAX_BYTES } from '../../data/quizBranding'
 import { useQuizQuery, saveQuizTheme } from '../../data/quiz'
 import {
   DEFAULT_THEME,
@@ -10,6 +10,7 @@ import {
   THEME_PATTERNS,
   THEME_CONFETTI,
   THEME_MUSIC,
+  BACKDROP_RANGES,
   MAX_SPONSORS,
   THEME_HEADLINE_MAX,
   THEME_TAGLINE_MAX,
@@ -17,10 +18,12 @@ import {
   themeAccent,
   contrastWithWhite,
 } from '../../../api/_lib/quizTheme.js'
+import { isQuizImagePath } from '../../../api/_lib/quizImage.js'
 import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
+import { Slider } from '../../components/admin/forms/DesignControls'
 import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from '../../components/admin/quizStudio/StudioPreview'
 import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery'
 import SoundLab from '../../components/admin/quizStudio/SoundLab'
@@ -102,9 +105,10 @@ export default function AdminQuizStudio() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const clean = await saveQuizTheme(id, theme)
-      // Pictures the saved look no longer uses are deleted from storage.
+      // Pictures the saved look no longer uses are deleted from storage — but only ones that belong to this quiz, so a
+      // hand-edited row pointing at some other quiz's file cannot take that file down with it.
       const keep = new Set(brandingPaths(clean))
-      await removeBrandingFiles(brandingPaths(saved).filter((p) => !keep.has(p)))
+      await removeBrandingFiles(brandingPaths(saved).filter((p) => !keep.has(p) && isQuizImagePath(p, id)))
       return clean
     },
     onSuccess: async () => {
@@ -125,12 +129,13 @@ export default function AdminQuizStudio() {
 
   const screenList = surface === 'projector' ? PROJECTOR_SCREENS : PHONE_SCREENS
 
-  // Uploads a logo or sponsor picture right away (it is only part of the look once you press Save).
-  async function addPicture(file, apply) {
+  // Uploads a logo, sponsor or backdrop picture right away (it is only part of the look once you press Save). A backdrop
+  // is allowed to be far bigger than a logo, so the caller passes the limits it wants.
+  async function addPicture(file, apply, limits = {}) {
     setBrandError('')
     setBrandBusy(true)
     try {
-      const path = await uploadBrandingImage(id, file)
+      const path = await uploadBrandingImage(id, file, limits)
       apply(path, file.name.replace(/\.[^.]+$/, '').slice(0, 40))
     } catch (e) {
       setBrandError(e.message)
@@ -229,7 +234,7 @@ export default function AdminQuizStudio() {
               )}
             </Section>
 
-            <Section title="Backdrop" hint="A very faint pattern behind the screens, so text always stays clear.">
+            <Section title="Backdrop" hint="A faint pattern behind the screens, so text always stays clear. Your own picture shows on the projector only, never on phones.">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {Object.entries(THEME_PATTERNS).map(([key, label]) => (
                   <Choice key={key} selected={theme.pattern === key} onClick={() => change({ pattern: key })} className="px-3 py-2.5">
@@ -237,6 +242,81 @@ export default function AdminQuizStudio() {
                   </Choice>
                 ))}
               </div>
+
+              {theme.pattern === 'image' && (
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <span className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-hairline bg-surface-low">
+                    {theme.image
+                      ? <img src={brandingUrl(theme.image)} alt="" className="h-full w-full object-cover" />
+                      : <span className="material-symbols-outlined text-2xl text-ink-muted" aria-hidden="true">add_photo_alternate</span>}
+                  </span>
+                  <label className="cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                    {theme.image ? 'Replace picture' : 'Upload a picture'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={brandBusy}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        e.target.value = ''
+                        if (f) addPicture(f, (path) => change({ pattern: 'image', image: path }), { maxEdge: BACKDROP_MAX_EDGE, maxBytes: BACKDROP_MAX_BYTES })
+                      }}
+                    />
+                  </label>
+                  {theme.image && <Button variant="ghost" size="sm" onClick={() => change({ image: null })}>Remove picture</Button>}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col gap-3">
+                <Slider
+                  label="Strength"
+                  className="accent-orange-500"
+                  value={theme.backdropOpacity}
+                  min={BACKDROP_RANGES.opacity.min}
+                  max={BACKDROP_RANGES.opacity.max}
+                  step={BACKDROP_RANGES.opacity.step}
+                  unit={BACKDROP_RANGES.opacity.unit}
+                  onChange={(backdropOpacity) => change({ backdropOpacity })}
+                />
+                {theme.pattern !== 'none' && (
+                  <>
+                    <Slider
+                      label="Size"
+                      className="accent-orange-500"
+                      value={theme.backdropScale}
+                      min={BACKDROP_RANGES.scale.min}
+                      max={BACKDROP_RANGES.scale.max}
+                      step={BACKDROP_RANGES.scale.step}
+                      unit={BACKDROP_RANGES.scale.unit}
+                      onChange={(backdropScale) => change({ backdropScale })}
+                    />
+                    <Slider
+                      label="Blur"
+                      className="accent-orange-500"
+                      value={theme.backdropBlur}
+                      min={BACKDROP_RANGES.blur.min}
+                      max={BACKDROP_RANGES.blur.max}
+                      step={BACKDROP_RANGES.blur.step}
+                      unit={BACKDROP_RANGES.blur.unit}
+                      onChange={(backdropBlur) => change({ backdropBlur })}
+                    />
+                  </>
+                )}
+                {theme.pattern === 'image' && (
+                  <Slider
+                    label="Fade back"
+                    className="accent-orange-500"
+                    value={theme.backdropDim}
+                    min={BACKDROP_RANGES.dim.min}
+                    max={BACKDROP_RANGES.dim.max}
+                    step={BACKDROP_RANGES.dim.step}
+                    unit={BACKDROP_RANGES.dim.unit}
+                    onChange={(backdropDim) => change({ backdropDim })}
+                  />
+                )}
+              </div>
+              {theme.pattern !== 'none' && <p className="mt-2 text-xs text-ink-muted">Keep the strength low and the fade high, so the projector stays easy to read from the back row.</p>}
             </Section>
 
             <Section title="Celebration" hint="What rains down on the final leaderboard.">

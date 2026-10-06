@@ -14,7 +14,9 @@ export function ControlSection({ title, children, action }) {
   )
 }
 
-export function Slider({ label, value, min, max, step = 1, unit = '', onChange }) {
+// `className` replaces the default accent so a screen themed in another colour (the quiz studio follows the quiz accent)
+// can reuse this instead of hand-rolling the same input.
+export function Slider({ label, value, min, max, step = 1, unit = '', className = 'accent-green-900', onChange }) {
   return (
     <label className="flex flex-col gap-1">
       <span className="flex items-center justify-between text-xs text-ink-muted">
@@ -28,7 +30,7 @@ export function Slider({ label, value, min, max, step = 1, unit = '', onChange }
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-6 w-full cursor-pointer accent-green-900"
+        className={`h-6 w-full cursor-pointer ${className}`}
       />
     </label>
   )

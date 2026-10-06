@@ -32,7 +32,7 @@ function Frame({ width, height, maxWidth, children }) {
   return (
     <div ref={ref} className="mx-auto w-full" style={{ maxWidth: maxWidth ?? width, height: height * scale }}>
       <div
-        className="relative overflow-hidden rounded-2xl border border-hairline bg-paper text-ink-900 shadow-md"
+        className="relative isolate overflow-hidden rounded-2xl border border-hairline bg-paper text-ink-900 shadow-md"
         style={{ width, height, transform: `scale(${scale})`, transformOrigin: 'top left' }}
       >
         {children}
@@ -207,7 +207,7 @@ export default function StudioPreview({ theme, surface, screen, title }) {
   return (
     <QuizThemeScope theme={theme} className="block">
       <Frame width={projector ? 960 : 300} height={projector ? 540 : 600} maxWidth={projector ? 960 : 300}>
-        <QuizBackdrop />
+        <QuizBackdrop surface={projector ? 'projector' : 'phone'} />
         <MiniBar title={title} />
         {projector ? (
           <>

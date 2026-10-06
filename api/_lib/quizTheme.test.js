@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   sanitizeTheme, DEFAULT_THEME, THEME_LOOKS, THEME_PATTERNS, THEME_CONFETTI, THEME_HEADLINE_MAX, THEME_TAGLINE_MAX,
-  THEME_EFFECTS, THEME_MUSIC, isClipId,
+  THEME_EFFECTS, THEME_MUSIC, BACKDROP_RANGES, isClipId,
   themeCssVars, themeAccent, contrastWithWhite, isHexColor,
 } from './quizTheme.js'
 
@@ -11,7 +11,7 @@ describe('sanitizeTheme', () => {
   })
   it('keeps valid choices', () => {
     const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
-    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -74,7 +74,7 @@ describe('branding: logo and sponsors', () => {
     expect(sanitizeTheme({ showSponsors: { lobby: false } }).showSponsors).toEqual({ lobby: false, finish: true })
   })
   it('stays small enough for the database limit even at the maximum', () => {
-    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })) }, { quizId: QUIZ_A })
+    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'image', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })) }, { quizId: QUIZ_A })
     expect(JSON.stringify(full).length).toBeLessThan(2000)
   })
 })
@@ -133,10 +133,11 @@ describe('a theme at its largest', () => {
   const good = `${QUIZ_A}/${FILE}-1767261600000.webp`
   it('stays inside the column check even with every sponsor and every effect customised', () => {
     // The column is `pg_column_size(theme) < 4000` (20260930190000_quiz_theme.sql), which is a binary size and so runs
-    // a little above this character count for the same document. The largest theme the app can produce measures 2,024
-    // characters, so there is room to spare rather than a knife edge.
+    // a little above this character count for the same document. The largest theme the app can produce — every field at
+    // its limit, a backdrop picture, six sponsors and a full set of custom clips — measures 2,100 characters, so there is
+    // room to spare rather than a knife edge.
     const custom = { music: 'm'.repeat(40), effects: Object.fromEntries(Object.keys(THEME_EFFECTS).map((name) => [name, 'e'.repeat(40)])) }
-    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
+    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'image', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
     expect(Object.keys(full.sound.custom.effects)).toHaveLength(Object.keys(THEME_EFFECTS).length)
     expect(full.sound.music).toBe('custom')
     expect(JSON.stringify(full).length).toBeLessThan(3000)
@@ -153,6 +154,49 @@ describe('looks', () => {
   it('offers patterns and confetti styles including "none"', () => {
     expect(Object.keys(THEME_PATTERNS)).toContain('none')
     expect(Object.keys(THEME_CONFETTI)).toContain('off')
+  })
+})
+
+describe('backdrop settings', () => {
+  const pic = `${QUIZ_A}/${FILE}-1767261600000.webp`
+  it('starts faintly, at the size it was designed at, with nothing blurred or faded', () => {
+    expect(sanitizeTheme({})).toMatchObject({ pattern: 'math', image: null, backdropOpacity: 8, backdropScale: 100, backdropBlur: 0, backdropDim: 0 })
+  })
+  it('keeps an uploaded picture when the image backdrop is chosen', () => {
+    const t = sanitizeTheme({ pattern: 'image', image: pic }, { quizId: QUIZ_A })
+    expect(t.pattern).toBe('image')
+    expect(t.image).toBe(pic)
+  })
+  it("falls back to Plain when 'my image' is chosen with no picture, but keeps the picture for next time", () => {
+    // The same rule cleanSound uses for asking for custom music with no clip: settle to the neutral option rather than
+    // leave the screens with a backdrop they cannot draw.
+    for (const bad of [null, undefined, '', 5, 'https://evil.example/x.png', `${QUIZ_B}/${FILE}.webp`]) {
+      expect(sanitizeTheme({ pattern: 'image', image: bad }, { quizId: QUIZ_A }).pattern, String(bad)).toBe('none')
+    }
+    expect(sanitizeTheme({ pattern: 'image', image: pic }, { quizId: QUIZ_A }).image).toBe(pic)
+  })
+  it('holds every slider inside its range, so nothing unbounded reaches a CSS length or percentage', () => {
+    const set = { backdropOpacity: 900, backdropScale: -4, backdropBlur: 1e9, backdropDim: 55.4 }
+    expect(sanitizeTheme(set)).toMatchObject({ backdropOpacity: 100, backdropScale: 50, backdropBlur: 24, backdropDim: 55 })
+    // Anything that is not a plain finite number is dropped rather than coerced.
+    for (const bad of ['40', null, undefined, {}, [], NaN, Infinity, -Infinity, true]) {
+      expect(sanitizeTheme({ backdropOpacity: bad, backdropScale: bad, backdropBlur: bad, backdropDim: bad })).toMatchObject({
+        backdropOpacity: DEFAULT_THEME.backdropOpacity,
+        backdropScale: DEFAULT_THEME.backdropScale,
+        backdropBlur: DEFAULT_THEME.backdropBlur,
+        backdropDim: DEFAULT_THEME.backdropDim,
+      })
+    }
+  })
+  it('offers every slider a range the sanitizer keeps, so the studio cannot hand out a value that gets thrown away', () => {
+    expect(Object.keys(BACKDROP_RANGES)).toEqual(['opacity', 'scale', 'blur', 'dim'])
+    const field = (name) => `backdrop${name[0].toUpperCase()}${name.slice(1)}`
+    for (const [name, { min, max, step }] of Object.entries(BACKDROP_RANGES)) {
+      expect(min, name).toBeLessThan(max)
+      expect(step, name).toBeGreaterThan(0)
+      expect(sanitizeTheme({ [field(name)]: min })[field(name)], `${name} min`).toBe(min)
+      expect(sanitizeTheme({ [field(name)]: max })[field(name)], `${name} max`).toBe(max)
+    }
   })
 })
 
