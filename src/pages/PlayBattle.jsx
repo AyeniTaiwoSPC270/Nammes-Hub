@@ -648,7 +648,7 @@ export default function PlayBattle() {
       <Shell tone={r.mine.correct ? 'good' : 'bad'}>
         <div className="mt-4 flex flex-col items-center gap-4 text-center">
           <div className="qz-pop h-28 w-28 rounded-full bg-white/20 p-2"><Character id={view.me.avatarId ?? 0} mood={r.mine.correct ? 'dance' : 'sad'} /></div>
-          <h1 className="text-4xl font-bold">{r.mine.correct ? 'Correct!' : r.mine.timedOut ? "Time's up" : 'Not quite'}</h1>
+          <h1 className="text-4xl font-bold text-white">{r.mine.correct ? 'Correct!' : r.mine.timedOut ? "Time's up" : 'Not quite'}</h1>
           {r.mine.correct && <p className="rounded-full bg-white px-6 py-2 text-3xl font-bold text-green-700">+{formatScore(r.mine.pointsAwarded)}</p>}
           {label && <p className="w-full rounded-2xl bg-white/15 p-3 text-xl font-bold">Answer: <MathText>{label}</MathText></p>}
           <p className="rounded-full bg-black/20 px-5 py-2 font-semibold">
@@ -679,7 +679,7 @@ export default function PlayBattle() {
       <Shell tone={result.correct ? 'good' : 'bad'}>
         <div className="mt-6 flex flex-col items-center gap-4 text-center">
           <div className="qz-pop h-36 w-36 rounded-full bg-white/20 p-3"><Character id={view.me.avatarId ?? 0} mood={result.correct ? 'dance' : 'sad'} /></div>
-          <h1 className="text-5xl font-bold">{result.correct ? 'Correct!' : result.timedOut ? "Time's up" : 'Not quite'}</h1>
+          <h1 className="text-5xl font-bold text-white">{result.correct ? 'Correct!' : result.timedOut ? "Time's up" : 'Not quite'}</h1>
           {result.correct && <p className="rounded-full bg-white px-6 py-2 text-4xl font-bold text-green-700">+{formatScore(result.pointsAwarded)}</p>}
           {!result.correct && label && (
             <div className="w-full rounded-2xl bg-white/15 p-4">
@@ -694,7 +694,7 @@ export default function PlayBattle() {
             type="button"
             disabled={busy}
             onClick={() => run({ op: 'next', token }, (d) => { setTyped(''); timedOutFor.current = -1; accept(d) })}
-            className={`${bigButton} w-full bg-white text-ink-900`}
+            className={`${bigButton} w-full bg-white text-green-900`}
           >
             {last ? 'See my results' : 'Next question'}
           </button>
@@ -714,7 +714,7 @@ export default function PlayBattle() {
           <CountdownRing seconds={remaining ?? question.timeLimitSeconds} total={question.timeLimitSeconds} size={52} stroke={6} />
         </div>
         {question.multiplier === 2 && <span className="mx-auto rounded-full bg-orange-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-white">Double points</span>}
-        {question.imageUrl && <img src={question.imageUrl} alt={question.imageAlt} className="mx-auto max-h-40 w-auto max-w-full rounded-2xl border border-hairline bg-white object-contain p-1" />}
+        {question.imageUrl && <img src={question.imageUrl} alt={question.imageAlt} className="mx-auto max-h-40 w-auto max-w-full rounded-2xl bg-white object-contain p-1 shadow-sm ring-1 ring-black/10" />}
         <p className="text-center text-lg font-bold leading-snug"><MathText>{question.text}</MathText></p>
         {waitingForThem ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">

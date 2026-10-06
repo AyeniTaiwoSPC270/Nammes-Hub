@@ -618,7 +618,7 @@ function PlayQuizGame({ onTheme }) {
             </div>
           )}
           {question.imageUrl && (
-            <button type="button" onClick={() => setZoomed(true)} className="block max-w-full cursor-zoom-in rounded-2xl border border-hairline bg-white p-1 shadow-sm" aria-label="Enlarge the picture">
+            <button type="button" onClick={() => setZoomed(true)} className="block max-w-full cursor-zoom-in rounded-2xl bg-white p-1 shadow-sm ring-1 ring-black/10" aria-label="Enlarge the picture">
               <img src={question.imageUrl} alt={question.imageAlt} className="max-h-40 w-auto max-w-full rounded-xl object-contain" />
             </button>
           )}
