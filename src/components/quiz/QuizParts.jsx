@@ -152,12 +152,16 @@ const WAVE = 'M0 40Q90 0 180 40T360 40T540 40T720 40V80H0z'
 // `surface` decides whether an uploaded picture is drawn. Phones pass nothing and so get 'phone', which means forgetting
 // the prop can only ever leave the picture off the projector, never push it onto fifty players' screens.
 export function QuizBackdrop({ surface = 'phone' }) {
-  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim } = useQuizTheme()
+  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim, backdropFit } = useQuizTheme()
   const photo = surface === 'projector' && pattern === 'image' && image ? brandingUrl(image) : null
   const opacity = backdropOpacity / 100
   const scale = backdropScale / 100
   // A blurred layer fades to nothing at its own edge, so it is grown by the blur radius to keep the corners filled.
   const softened = { filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined, inset: backdropBlur > 0 ? `-${backdropBlur}px` : 0 }
+  // A picture has to reach every corner, so its zoom starts at 1 and only ever crops in further. Letting the size slider
+  // scale it below 1 would shrink the whole picture away from the edges and leave the page showing through.
+  const photoZoom = Math.max(1, scale)
+  const fit = { cover: 'object-cover', contain: 'object-contain', stretch: 'object-fill' }[backdropFit] ?? 'object-cover'
 
   return (
     <div
@@ -170,7 +174,7 @@ export function QuizBackdrop({ surface = 'phone' }) {
     >
       {photo ? (
         <div className="absolute overflow-hidden" style={softened}>
-          <img src={photo} alt="" className="h-full w-full object-cover" style={{ opacity, transform: `scale(${scale})` }} />
+          <img src={photo} alt="" className={`h-full w-full ${fit}`} style={{ opacity, transform: `scale(${photoZoom})` }} />
         </div>
       ) : (
         <div className="absolute overflow-hidden" style={softened}>

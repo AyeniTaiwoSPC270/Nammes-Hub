@@ -32,6 +32,15 @@ export const THEME_CONFETTI = {
   off: 'None',
 }
 
+// How an uploaded backdrop picture meets the screen. 'cover' fills it and hides whatever hangs over the edge, which is
+// what a background normally wants; 'contain' shows the whole picture and leaves the page colour in the gaps; 'stretch'
+// fills it and distorts. Without a choice here an admin can only ever lose part of their picture.
+export const THEME_BACKDROP_FITS = {
+  cover: 'Fill the screen',
+  contain: 'Whole picture',
+  stretch: 'Stretch to fill',
+}
+
 // The music the projector can play. 'off' is first because it is the default, and the two original loops come next so
 // the quizzes that already use them are unaffected by the newer styles. 'custom' is the admin's own imported track,
 // which is why it is listed last: it is the one style the engine cannot generate.
@@ -110,6 +119,7 @@ export const DEFAULT_THEME = Object.freeze({
   backdropScale: 100,
   backdropBlur: 0,
   backdropDim: 0,
+  backdropFit: 'cover',
   confetti: 'math',
   headline: '',
   tagline: '',
@@ -217,6 +227,7 @@ export function sanitizeTheme(input, { quizId } = {}) {
     backdropScale: num(BACKDROP_RANGES.scale, t.backdropScale, DEFAULT_THEME.backdropScale),
     backdropBlur: num(BACKDROP_RANGES.blur, t.backdropBlur, DEFAULT_THEME.backdropBlur),
     backdropDim: num(BACKDROP_RANGES.dim, t.backdropDim, DEFAULT_THEME.backdropDim),
+    backdropFit: oneOf(THEME_BACKDROP_FITS, t.backdropFit, DEFAULT_THEME.backdropFit),
     confetti: oneOf(THEME_CONFETTI, t.confetti, DEFAULT_THEME.confetti),
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),
