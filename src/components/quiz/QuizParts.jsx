@@ -117,23 +117,23 @@ const GLYPHS = ['π', 'Σ', '∫', '√', 'Δ', 'λ', 'θ', '∞', '≈', '±']
 const SPARKLES = ['✦', '✧', '★', '✶']
 
 // Faint symbols scattered behind the page. Positions come from the index so it renders the same every time.
-function GlyphField({ glyphs, count = 14 }) {
+function GlyphField({ glyphs, count = 14, opacity, scale }) {
   const items = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
         glyph: glyphs[i % glyphs.length],
         left: (i * 37 + 8) % 92,
         top: (i * 53 + 5) % 90,
-        size: 28 + ((i * 17) % 44),
+        size: (28 + ((i * 17) % 44)) * scale,
         rotate: ((i * 41) % 50) - 25,
       })),
-    [glyphs, count],
+    [glyphs, count, scale],
   )
   return items.map((item, i) => (
     <span
       key={i}
-      className="absolute select-none font-bold text-brand opacity-[0.05]"
-      style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, transform: `rotate(${item.rotate}deg)` }}
+      className="absolute select-none font-bold text-brand"
+      style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, opacity, transform: `rotate(${item.rotate}deg)` }}
     >
       {item.glyph}
     </span>
@@ -142,9 +142,23 @@ function GlyphField({ glyphs, count = 14 }) {
 
 const WAVE = 'M0 40Q90 0 180 40T360 40T540 40T720 40V80H0z'
 
-// The page background chosen in the studio: a soft two-colour glow plus one pattern, all very faint so text stays readable.
-export function QuizBackdrop() {
-  const { pattern } = useQuizTheme()
+// The page background chosen in the studio: a soft two-colour glow plus one pattern or the admin's own picture, kept
+// faint so text always stays clear. This layer sits at `-z-10`, so every element that mounts it has to open its own
+// stacking context (`isolate`). Without that the negative z-index escapes to the root, paints underneath the wrapper's own
+// `bg-paper` and is never seen — which is how every live screen hid its backdrop while the studio preview looked fine,
+// because a scaled frame happens to create a stacking context as a side effect. quizBackdrop.test.js fails the build if
+// a screen is wired up without it.
+//
+// `surface` decides whether an uploaded picture is drawn. Phones pass nothing and so get 'phone', which means forgetting
+// the prop can only ever leave the picture off the projector, never push it onto fifty players' screens.
+export function QuizBackdrop({ surface = 'phone' }) {
+  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim } = useQuizTheme()
+  const photo = surface === 'projector' && pattern === 'image' && image ? brandingUrl(image) : null
+  const opacity = backdropOpacity / 100
+  const scale = backdropScale / 100
+  // A blurred layer fades to nothing at its own edge, so it is grown by the blur radius to keep the corners filled.
+  const softened = { filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined, inset: backdropBlur > 0 ? `-${backdropBlur}px` : 0 }
+
   return (
     <div
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
@@ -154,29 +168,40 @@ export function QuizBackdrop() {
           'radial-gradient(60rem 40rem at 0% -10%, color-mix(in srgb, var(--qz-glow-a, #ff5a1f) 14%, transparent), transparent 70%), radial-gradient(50rem 36rem at 100% 0%, color-mix(in srgb, var(--qz-glow-b, #0b2417) 12%, transparent), transparent 70%)',
       }}
     >
-      {pattern === 'math' && <GlyphField glyphs={GLYPHS} />}
-      {pattern === 'stars' && <GlyphField glyphs={SPARKLES} count={18} />}
-      {pattern === 'dots' && (
-        <div
-          className="absolute inset-0 text-brand opacity-[0.09]"
-          style={{ backgroundImage: 'radial-gradient(currentColor 1.6px, transparent 1.8px)', backgroundSize: '26px 26px' }}
-        />
+      {photo ? (
+        <div className="absolute overflow-hidden" style={softened}>
+          <img src={photo} alt="" className="h-full w-full object-cover" style={{ opacity, transform: `scale(${scale})` }} />
+        </div>
+      ) : (
+        <div className="absolute overflow-hidden" style={softened}>
+          {pattern === 'math' && <GlyphField glyphs={GLYPHS} opacity={opacity} scale={scale} />}
+          {pattern === 'stars' && <GlyphField glyphs={SPARKLES} count={18} opacity={opacity} scale={scale} />}
+          {pattern === 'dots' && (
+            <div
+              className="absolute inset-0 text-brand"
+              style={{ opacity, backgroundImage: 'radial-gradient(currentColor 1.6px, transparent 1.8px)', backgroundSize: `${26 * scale}px ${26 * scale}px` }}
+            />
+          )}
+          {pattern === 'grid' && (
+            <div
+              className="absolute inset-0 text-brand"
+              style={{
+                opacity,
+                backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
+                backgroundSize: `${44 * scale}px ${44 * scale}px`,
+              }}
+            />
+          )}
+          {pattern === 'waves' && (
+            <svg className="absolute inset-x-0 bottom-0 w-full text-brand" viewBox="0 0 720 80" preserveAspectRatio="none" style={{ opacity, height: `${14 * scale}rem` }}>
+              <path d={WAVE} fill="currentColor" />
+              <path d={WAVE} fill="currentColor" transform="translate(-140 14)" />
+            </svg>
+          )}
+        </div>
       )}
-      {pattern === 'grid' && (
-        <div
-          className="absolute inset-0 text-brand opacity-[0.06]"
-          style={{
-            backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
-            backgroundSize: '44px 44px',
-          }}
-        />
-      )}
-      {pattern === 'waves' && (
-        <svg className="absolute inset-x-0 bottom-0 h-56 w-full text-brand opacity-[0.07]" viewBox="0 0 720 80" preserveAspectRatio="none">
-          <path d={WAVE} fill="currentColor" />
-          <path d={WAVE} fill="currentColor" transform="translate(-140 14)" />
-        </svg>
-      )}
+      {/* A picture is a picture: this washes it back towards the page colour so a photo can never swallow the text. */}
+      {photo && backdropDim > 0 && <div className="absolute inset-0 bg-paper" style={{ opacity: backdropDim / 100 }} />}
     </div>
   )
 }

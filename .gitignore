@@ -40,3 +40,7 @@ storage-backup/
 
 # generated HTML for the handbook (the PDF in public/documents is the deliverable)
 scripts/manual/out/
+
+# rendered video, voiceover and stills for the explainer. Build output with its own node_modules inside, about 1GB, so it
+# must never be staged: `git add -A` would otherwise pull all of it in. Nothing here belongs in the repository.
+video/
