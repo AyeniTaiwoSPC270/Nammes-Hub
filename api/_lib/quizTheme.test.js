@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   sanitizeTheme, DEFAULT_THEME, THEME_LOOKS, THEME_PATTERNS, THEME_CONFETTI, THEME_HEADLINE_MAX, THEME_TAGLINE_MAX,
-  THEME_EFFECTS, THEME_MUSIC, BACKDROP_RANGES, isClipId,
+  THEME_EFFECTS, THEME_MUSIC, BACKDROP_RANGES, THEME_BACKDROP_FITS, isClipId,
   themeCssVars, themeAccent, contrastWithWhite, isHexColor,
 } from './quizTheme.js'
 
@@ -11,7 +11,7 @@ describe('sanitizeTheme', () => {
   })
   it('keeps valid choices', () => {
     const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
-    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -174,6 +174,16 @@ describe('backdrop settings', () => {
       expect(sanitizeTheme({ pattern: 'image', image: bad }, { quizId: QUIZ_A }).pattern, String(bad)).toBe('none')
     }
     expect(sanitizeTheme({ pattern: 'image', image: pic }, { quizId: QUIZ_A }).image).toBe(pic)
+  })
+  it('fills the screen by default, and only offers the three ways a picture can meet it', () => {
+    // A background that defaulted to showing the whole picture would letterbox on most projectors, and one that always
+    // filled would silently cut off parts of it. Both have to be askable for.
+    expect(Object.keys(THEME_BACKDROP_FITS)).toEqual(['cover', 'contain', 'stretch'])
+    expect(sanitizeTheme({}).backdropFit).toBe('cover')
+    for (const fit of Object.keys(THEME_BACKDROP_FITS)) expect(sanitizeTheme({ backdropFit: fit }).backdropFit, fit).toBe(fit)
+    for (const bad of ['__proto__', 'constructor', 'zoom', '', 5, null, undefined, ['cover']]) {
+      expect(sanitizeTheme({ backdropFit: bad }).backdropFit, String(bad)).toBe('cover')
+    }
   })
   it('holds every slider inside its range, so nothing unbounded reaches a CSS length or percentage', () => {
     const set = { backdropOpacity: 900, backdropScale: -4, backdropBlur: 1e9, backdropDim: 55.4 }

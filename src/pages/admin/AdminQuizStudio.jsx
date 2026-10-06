@@ -10,6 +10,7 @@ import {
   THEME_PATTERNS,
   THEME_CONFETTI,
   THEME_MUSIC,
+  THEME_BACKDROP_FITS,
   BACKDROP_RANGES,
   MAX_SPONSORS,
   THEME_HEADLINE_MAX,
@@ -269,6 +270,25 @@ export default function AdminQuizStudio() {
               )}
 
               <div className="mt-4 flex flex-col gap-3">
+                {theme.pattern === 'image' && (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold text-ink">Fit</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(THEME_BACKDROP_FITS).map(([key, label]) => (
+                        <Choice key={key} selected={theme.backdropFit === key} onClick={() => change({ backdropFit: key })} className="px-3 py-2.5">
+                          {label}
+                        </Choice>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {theme.backdropFit === 'contain'
+                        ? 'The whole picture shows. Where it does not reach, the page colour fills in.'
+                        : theme.backdropFit === 'stretch'
+                          ? 'Fills the screen exactly, but stretches anything that is not the screen’s shape.'
+                          : 'Fills the screen. Parts of the picture that do not fit are cut off.'}
+                    </p>
+                  </div>
+                )}
                 <Slider
                   label="Strength"
                   className="accent-orange-500"
@@ -282,10 +302,10 @@ export default function AdminQuizStudio() {
                 {theme.pattern !== 'none' && (
                   <>
                     <Slider
-                      label="Size"
+                      label={theme.pattern === 'image' ? 'Zoom' : 'Size'}
                       className="accent-orange-500"
                       value={theme.backdropScale}
-                      min={BACKDROP_RANGES.scale.min}
+                      min={theme.pattern === 'image' ? 100 : BACKDROP_RANGES.scale.min}
                       max={BACKDROP_RANGES.scale.max}
                       step={BACKDROP_RANGES.scale.step}
                       unit={BACKDROP_RANGES.scale.unit}
