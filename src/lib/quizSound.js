@@ -589,7 +589,10 @@ async function loadCustomEffects(ids, load) {
       const bytes = await blob.arrayBuffer()
       const decoded = await c.decodeAudioData(bytes)
       if (mine !== loadGeneration || !decoded?.duration) return
-      customEffects.set(name, { buffer: decoded, gain: importedGain(decoded) })
+      // `playBuffer` reads `data`, so the decoded clip has to be stored under that name. It used to be stored as
+      // `buffer`, which left `data` undefined and every imported effect silent: a blank AudioBufferSourceNode is not an
+      // error, so nothing was logged and nothing threw.
+      customEffects.set(name, { data: decoded, gain: importedGain(decoded) })
       // The reveal is timed off the drum roll's own length, so an imported roll has to say how long it is.
       customEffectLengths.set(name, Math.round(decoded.duration * 1000))
     } catch {
