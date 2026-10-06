@@ -41,7 +41,7 @@ function saveSaved(value) {
 // Standard phone screen: slim bar (with the player's name and score once they are in) and a centred column.
 function Phone({ me, children }) {
   return (
-    <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+    <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
       <QuizBackdrop />
       <QuizTopBar compact>
         {me && (
@@ -599,7 +599,8 @@ function PlayQuizGame({ onTheme }) {
     const canFifty = question.powerupsLeft.includes('fifty') && type === 'multiple' && question.options.length === 4
     const blocked = sending || remaining === 0 || session.paused
     return (
-      <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+      <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+        <QuizBackdrop />
         <QuizTopBar compact>
           <span className="rounded-full bg-orange-500 px-4 py-2 text-sm font-bold text-white">Q{session.index + 1} of {session.questionCount}</span>
           <CountdownRing seconds={remaining} total={ringTotal} size={52} stroke={6} />

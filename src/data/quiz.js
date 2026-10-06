@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { quizImagePath, IMAGE_BUCKET, IMAGE_ALT_MAX } from '../../api/_lib/quizImage.js'
 import { sanitizeGameOptions } from '../../api/_lib/quizGrading.js'
+import { BRANDING_BUCKET } from './quizBranding'
 import { cleanQuestion, validateQuestion, cleanTags, MAX_QUESTIONS } from './quizQuestions'
 import { validateTeamSettings, cleanTeams } from './quizTeams'
 
@@ -255,6 +256,29 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
   return quizId
 }
 
+// A look's pictures live in one quiz's own folder, so a copy of that quiz needs its own copies of them, the same way the
+// questions' pictures are copied above. Carrying the source's paths over instead would be quietly destructive: the first
+// save cleans a theme against the new quiz's id, finds every path foreign, drops the logo, the sponsors and the backdrop,
+// and then deletes the original quiz's files as orphans.
+async function copyBrandingTheme(theme, newId) {
+  const source = sanitizeTheme(theme)
+  const copy = async (path, offset) => {
+    const to = quizImagePath({ quizId: newId, questionId: crypto.randomUUID(), ext: path.split('.').pop(), stamp: Date.now() + offset })
+    const { error } = await supabase.storage.from(BRANDING_BUCKET).copy(path, to)
+    return error ? null : to
+  }
+  const logo = source.logo ? await copy(source.logo, 0) : null
+  const image = source.image ? await copy(source.image, 1) : null
+  const sponsors = []
+  for (const [i, sponsor] of source.sponsors.entries()) {
+    const path = await copy(sponsor.path, 2 + i)
+    if (path) sponsors.push({ ...sponsor, path })
+  }
+  // Cleaned against the new id, so an image backdrop whose copy failed settles back to a pattern rather than pointing at
+  // a file that is not there.
+  return sanitizeTheme({ ...source, logo, image, sponsors }, { quizId: newId })
+}
+
 // Makes a copy of a quiz (questions, pictures, settings, look) called "Copy of ...". Returns the new quiz id.
 export async function duplicateQuiz(id) {
   const source = await fetchQuizWithQuestions(id)
@@ -264,7 +288,6 @@ export async function duplicateQuiz(id) {
       title: `Copy of ${source.title}`.slice(0, 120),
       max_players: source.max_players,
       game_options: sanitizeGameOptions(source.game_options),
-      theme: sanitizeTheme(source.theme),
       tags: cleanTags(source.tags),
     })
     .select('id')
@@ -272,6 +295,9 @@ export async function duplicateQuiz(id) {
   if (error) throw error
   const newId = created.id
   try {
+    // The look is written after the copy exists, because its pictures have to be re-pointed at the new quiz's folder.
+    const { error: themeError } = await supabase.from('quizzes').update({ theme: await copyBrandingTheme(source.theme, newId) }).eq('id', newId)
+    if (themeError) throw themeError
     const rows = []
     for (const [position, q] of source.questions.entries()) {
       const questionId = crypto.randomUUID()

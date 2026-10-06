@@ -16,6 +16,7 @@ export const THEME_LOOKS = {
 }
 
 export const THEME_PATTERNS = {
+  image: 'My image',
   math: 'Maths symbols',
   dots: 'Dots',
   grid: 'Grid',
@@ -90,10 +91,25 @@ export const SPONSOR_NAME_MAX = 40
 export const THEME_HEADLINE_MAX = 60
 export const THEME_TAGLINE_MAX = 80
 
+// How far the backdrop can be pushed. The studio drives its sliders off these, so a slider cannot drift from the range
+// the sanitizer allows. `scale` is a percentage of the size each pattern is designed at, not a new size in pixels, so
+// the patterns keep their proportions at every setting.
+export const BACKDROP_RANGES = {
+  opacity: { min: 0, max: 100, step: 1, unit: '%' },
+  scale: { min: 50, max: 200, step: 5, unit: '%' },
+  blur: { min: 0, max: 24, step: 1, unit: 'px' },
+  dim: { min: 0, max: 90, step: 5, unit: '%' },
+}
+
 export const DEFAULT_THEME = Object.freeze({
   look: 'classic',
   accent: null,
   pattern: 'math',
+  image: null,
+  backdropOpacity: 8,
+  backdropScale: 100,
+  backdropBlur: 0,
+  backdropDim: 0,
   confetti: 'math',
   headline: '',
   tagline: '',
@@ -119,6 +135,14 @@ function cleanText(value, max) {
 // not enough, because an array like ['chill'] becomes the string 'chill' when used as a key and would pass.
 function oneOf(list, value, fallback) {
   return typeof value === 'string' && Object.hasOwn(list, value) ? value : fallback
+}
+
+// A slider reading: a finite number held inside its range. Anything else (a string, null, NaN) falls back to the
+// default rather than reaching a CSS length or percentage, and a number that overshoots is pulled back to the edge
+// instead of being thrown away, so a hand-edited row can never scale a backdrop to infinity.
+function num(range, value, fallback) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback
+  return Math.min(range.max, Math.max(range.min, Math.round(value)))
 }
 
 // Which effects a quiz has switched off: only names the list knows, each once, in the list's own order so that
@@ -172,13 +196,27 @@ function cleanSponsors(input, quizId) {
   return out
 }
 
+// 'image' only means something with a picture behind it, so an image backdrop with nothing usable uploaded settles to
+// Plain rather than leaving a backdrop the screens have nothing to draw. The picture is kept either way, so choosing a
+// pattern again and coming back does not need a second upload.
+function cleanPattern(value, image) {
+  const pattern = oneOf(THEME_PATTERNS, value, DEFAULT_THEME.pattern)
+  return pattern === 'image' && !image ? 'none' : pattern
+}
+
 // Anything goes in, a complete valid theme comes out (bad or missing values fall back to the defaults).
 export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  const image = cleanPath(t.image, quizId)
   return {
     look: oneOf(THEME_LOOKS, t.look, DEFAULT_THEME.look),
     accent: isHexColor(t.accent) ? t.accent.toLowerCase() : null,
-    pattern: oneOf(THEME_PATTERNS, t.pattern, DEFAULT_THEME.pattern),
+    pattern: cleanPattern(t.pattern, image),
+    image,
+    backdropOpacity: num(BACKDROP_RANGES.opacity, t.backdropOpacity, DEFAULT_THEME.backdropOpacity),
+    backdropScale: num(BACKDROP_RANGES.scale, t.backdropScale, DEFAULT_THEME.backdropScale),
+    backdropBlur: num(BACKDROP_RANGES.blur, t.backdropBlur, DEFAULT_THEME.backdropBlur),
+    backdropDim: num(BACKDROP_RANGES.dim, t.backdropDim, DEFAULT_THEME.backdropDim),
     confetti: oneOf(THEME_CONFETTI, t.confetti, DEFAULT_THEME.confetti),
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),

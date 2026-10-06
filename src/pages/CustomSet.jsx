@@ -76,7 +76,7 @@ export default function CustomSet() {
   const button = 'flex min-h-14 items-center justify-center rounded-2xl px-6 text-xl font-bold no-underline shadow-md'
   return (
     <QuizThemeScope theme={null}>
-      <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+      <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
         <QuizBackdrop />
         <QuizTopBar compact />
         <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">

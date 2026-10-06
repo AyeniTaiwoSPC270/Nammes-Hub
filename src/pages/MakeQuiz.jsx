@@ -251,7 +251,7 @@ export default function MakeQuiz({ variant = 'quiz' }) {
   if (cbt) return <CbtShell>{content}</CbtShell>
   return (
     <QuizThemeScope theme={null}>
-      <div className="relative flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+      <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
         <QuizBackdrop />
         <QuizTopBar compact />
         <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-4 px-4 py-5">{content}</main>

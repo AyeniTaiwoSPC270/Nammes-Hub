@@ -28,8 +28,8 @@ function Stage({ title, chip, footer, children }) {
   const mainRef = useRef(null)
   useProjectorFit(mainRef, { baseMaxWidth: 1400 })
   return (
-    <div className="relative flex min-h-screen flex-col bg-paper text-ink-900">
-      <QuizBackdrop />
+    <div className="relative isolate flex min-h-screen flex-col bg-paper text-ink-900">
+      <QuizBackdrop surface="projector" />
       <QuizTopBar title={title}>
         {chip}
         <SoundControl />
