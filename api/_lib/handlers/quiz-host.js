@@ -7,8 +7,9 @@ import {
   isComeback, sanitizeGameOptions, ANSWER_GRACE_MS, DEFAULT_MAX_PLAYERS, AVATAR_COUNT,
 } from '../quiz.js'
 import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_ONCE } from '../quizBots.js'
-import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion } from '../quizBracket.js'
+import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion, fitsBracketLength, bracketLengthsThatFit } from '../quizBracket.js'
 import { settleRound } from '../quizBracketEngine.js'
+import { sessionQuestionIds, currentQuestion } from '../quizSessionQuestions.js'
 
 const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay', 'setBracket', 'end']
 const STEP_OPS = ['pause', 'resume', 'extend', 'skip', 'botsPlay']
@@ -137,11 +138,11 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
     }
 
     if (op === 'skip') {
-      const { data: questions } = await supabaseAdmin.from('quiz_questions').select('id, position').eq('quiz_id', session.quiz_id)
-      const count = (questions ?? []).length
-      const current = (questions ?? []).find((q) => q.position === session.current_question_index)
-      if (current) {
-        const { error } = await supabaseAdmin.rpc('quiz_skip_question', { p_session: sessionId, p_question: current.id })
+      const questionIds = await sessionQuestionIds(supabaseAdmin, session)
+      const count = questionIds.length
+      const currentId = questionIds[session.current_question_index] ?? null
+      if (currentId) {
+        const { error } = await supabaseAdmin.rpc('quiz_skip_question', { p_session: sessionId, p_question: currentId })
         if (error) return fail(error, 'Could not skip the question')
       }
       // Straight to the next question (or the end), without a reveal or leaderboard for the discarded one.
@@ -195,9 +196,22 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
           res.status(409).json({ error: 'A team game cannot also be a bracket', session })
           return
         }
-        const { count: questionCount } = await supabaseAdmin.from('quiz_questions').select('id', { count: 'exact', head: true }).eq('quiz_id', session.quiz_id)
-        if ((questionCount ?? 0) < size) {
-          res.status(409).json({ error: `A match of ${size} needs a quiz with at least ${size} questions`, session })
+        const questionCount = (await sessionQuestionIds(supabaseAdmin, session)).length
+        const { count: playerCount } = await supabaseAdmin
+          .from('quiz_players')
+          .select('id', { count: 'exact', head: true })
+          .eq('session_id', sessionId)
+        // Not "is there a match worth having" but "will this get down to one player". A bracket that runs out of
+        // questions early crowns the highest scorer overall rather than a winner by elimination, which is not what a host
+        // asking for a knockout expects. The lobby only offers lengths that pass this.
+        if (!fitsBracketLength(playerCount, questionCount, size)) {
+          const fitting = bracketLengthsThatFit(playerCount, questionCount)
+          res.status(409).json({
+            error: fitting.length > 0
+              ? `This game draws ${questionCount} questions, which is not enough for matches of ${size} to knock ${playerCount} players down to one. Use ${fitting.map((n) => (n === 1 ? '1 question' : `${n} questions`)).join(' or ')} a match.`
+              : `This game draws ${questionCount} questions, which is too few for any bracket with ${playerCount} players. Ask for more questions first.`,
+            session,
+          })
           return
         }
       }
@@ -276,7 +290,7 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
         res.status(200).json({ answered: 0 })
         return
       }
-      const { data: question } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).eq('position', session.current_question_index).maybeSingle()
+      const question = await currentQuestion(supabaseAdmin, session)
       if (!question) {
         res.status(200).json({ answered: 0 })
         return

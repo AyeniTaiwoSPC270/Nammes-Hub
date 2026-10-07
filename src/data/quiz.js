@@ -174,7 +174,7 @@ export function useQuizQuery(id) {
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
 // edited and reordered questions; questions the admin removed are deleted first. Pictures are uploaded first
 // (under a fresh name, so phones never show a stale cached copy) and the old files are removed afterwards.
-export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled, battleEnabled }) {
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled, battleEnabled, drawSettings, battleQuestionCount }) {
   const cleaned = questions.map(cleanQuestion)
   const teamFields = teamSettings
     ? {
@@ -191,6 +191,10 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
     ...teamFields,
     ...(practiceEnabled === undefined ? {} : { practice_enabled: Boolean(practiceEnabled) }),
     ...(battleEnabled === undefined ? {} : { battle_enabled: Boolean(battleEnabled) }),
+    // Question banks. Undefined means "leave it alone" (some callers save a quiz without touching these), so only the
+    // editor, which always has the whole form, writes them.
+    ...(drawSettings === undefined ? {} : { draw_settings: drawSettings }),
+    ...(battleQuestionCount === undefined ? {} : { battle_question_count: battleQuestionCount }),
   }
   const staleFiles = []
   let quizId = id
@@ -248,6 +252,7 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
       difficulty: q.difficulty ?? null,
       image_path: imagePath,
       image_alt: imagePath ? String(q.image_alt ?? '').trim().slice(0, IMAGE_ALT_MAX) : null,
+      no_shuffle: q.no_shuffle === true,
     })
   }
   const { error } = await supabase.from('quiz_questions').upsert(rows, { onConflict: 'id' })
@@ -289,6 +294,8 @@ export async function duplicateQuiz(id) {
       max_players: source.max_players,
       game_options: sanitizeGameOptions(source.game_options),
       tags: cleanTags(source.tags),
+      draw_settings: source.draw_settings ?? null,
+      battle_question_count: source.battle_question_count ?? null,
     })
     .select('id')
     .single()
@@ -324,6 +331,7 @@ export async function duplicateQuiz(id) {
         difficulty: q.difficulty ?? null,
         image_path: imagePath,
         image_alt: imagePath ? q.image_alt : null,
+        no_shuffle: q.no_shuffle === true,
       })
     }
     if (rows.length > 0) {
@@ -384,8 +392,14 @@ export async function fetchGameReport(sessionId) {
   const { data: session, error } = await supabase.from('quiz_sessions').select('*, quizzes(title)').eq('id', sessionId).maybeSingle()
   if (error) throw error
   if (!session) throw new Error('Game not found')
+  // Only the questions this game asked, in the order it asked them. A game draws a subset of the quiz, so reporting every
+  // question in the quiz would count questions nobody was asked, and could name one of them the hardest. A game that
+  // started before question banks has no frozen list and falls back to the quiz's own order.
+  const drawnIds = Array.isArray(session.question_ids) && session.question_ids.length > 0 ? session.question_ids : null
   const [questions, players, questionStats, distribution, playerStats, teams, bracket] = await Promise.all([
-    supabase.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).order('position'),
+    drawnIds
+      ? supabase.from('quiz_questions').select('*').in('id', drawnIds)
+      : supabase.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).order('position'),
     supabase.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id').eq('session_id', sessionId),
     supabase.from('quiz_question_stats').select('*').eq('session_id', sessionId),
     supabase.from('quiz_answer_distribution').select('*').eq('session_id', sessionId),
@@ -394,9 +408,16 @@ export async function fetchGameReport(sessionId) {
     supabase.from('quiz_bracket_matches').select('*').eq('session_id', sessionId).order('round').order('slot'),
   ])
   for (const result of [questions, players, questionStats, distribution, playerStats, teams, bracket]) if (result.error) throw result.error
+  // Put the drawn questions back into play order, because the database hands them back in whatever order it likes.
+  const orderedQuestions = drawnIds
+    ? (() => {
+      const byId = new Map((questions.data ?? []).map((q) => [q.id, q]))
+      return drawnIds.map((id) => byId.get(id)).filter(Boolean)
+    })()
+    : questions.data
   return {
     session,
-    questions: questions.data,
+    questions: orderedQuestions,
     players: players.data,
     questionStats: questionStats.data,
     distribution: distribution.data,

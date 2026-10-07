@@ -171,6 +171,23 @@ function Answers({ question, onChange }) {
       <p className="mt-1 text-xs text-ink-muted">
         {type === 'poll' ? 'A poll has no right answer. Leave a box empty for fewer than four.' : 'Tick the circle next to the correct answer. Leave a box empty for fewer than four answers.'}
       </p>
+      {type === 'multiple' && (
+        <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4"
+            checked={question.no_shuffle === true}
+            onChange={(e) => onChange({ ...question, no_shuffle: e.target.checked })}
+          />
+          <span>
+            <span className="block font-semibold text-ink-900">Keep these answers in this order</span>
+            <span className="block text-xs text-ink-muted">
+              Use this when an answer only makes sense in place, like &ldquo;All of the above&rdquo;. Questions like that are spotted
+              automatically, so you only need this for the ones that are missed.
+            </span>
+          </span>
+        </label>
+      )}
     </>
   )
 }

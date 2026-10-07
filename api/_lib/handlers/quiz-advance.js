@@ -3,6 +3,7 @@ import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
 import { nextState, stepUpdate } from '../quiz.js'
+import { sessionQuestionIds } from '../quizSessionQuestions.js'
 import { isRoundEnd, roundOfQuestion } from '../quizBracket.js'
 import { startBracket, settleRound } from '../quizBracketEngine.js'
 
@@ -44,11 +45,10 @@ export function createQuizAdvanceHandler(getClient, { now = () => new Date() } =
       return
     }
 
-    const { count } = await supabaseAdmin
-      .from('quiz_questions')
-      .select('id', { count: 'exact', head: true })
-      .eq('quiz_id', session.quiz_id)
-    const next = nextState(session, count ?? 0)
+    // The game's own frozen list, so the end of the game is the number of questions it actually drew and cannot be changed by
+    // editing the quiz while it runs.
+    const questionIds = await sessionQuestionIds(supabaseAdmin, session)
+    const next = nextState(session, questionIds.length)
     if (!next) {
       res.status(400).json({ error: 'This game cannot go any further' })
       return

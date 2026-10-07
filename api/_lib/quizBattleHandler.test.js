@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { createQuizBattleHandler } from './handlers/quiz-battle.js'
 import quizRouter from '../quiz.js'
 import { QUIZ, fakeRes, fakeDb, anon } from './quizTestKit.js'
-import { DUEL_START_DELAY_MS, DUEL_REVEAL_MS, DUEL_FORFEIT_MS, DUEL_OPEN_TTL_MS } from './quizBattle.js'
+import { DUEL_START_DELAY_MS, DUEL_REVEAL_MS, DUEL_FORFEIT_MS, DUEL_OPEN_TTL_MS, battleWeight, eloUpdate } from './quizBattle.js'
 
 const START = Date.parse('2026-10-01T10:00:00.000Z')
 
@@ -334,10 +334,24 @@ describe('battle: rankings', () => {
     expect(rows).toHaveLength(2)
     const mine = rows.find((r) => r.nickname === 'Ada')
     const theirs = rows.find((r) => r.nickname === 'Bayo')
-    expect(mine).toMatchObject({ rating: 1016, wins: 1, losses: 0 })
-    expect(theirs).toMatchObject({ rating: 984, wins: 0, losses: 1 })
+    // A three-question duel is a much smaller test than the ten-question battle the rating was tuned around, so it moves
+    // the ladder by less than a full step. The winner still goes up and the loser still comes down by the same amount.
+    expect(mine).toMatchObject({ wins: 1, losses: 0 })
+    expect(theirs).toMatchObject({ wins: 0, losses: 1 })
+    expect(mine.rating).toBeGreaterThan(1000)
+    expect(theirs.rating).toBeLessThan(1000)
+    expect(mine.rating - 1000).toBe(1000 - theirs.rating)
+    expect(mine.rating).toBeLessThan(1016) // strictly less than the old flat step
     expect(JSON.stringify(rows)).not.toContain(TAG_A) // only hashes are stored
     expect(w.db.tables.quiz_battles[0].rated).toBe(true)
+  })
+
+  it('a longer battle moves the ladder further than a short one, won the same way', async () => {
+    // The same 3 questions asked twice is not possible, so this compares the weight maths directly at the level where it
+    // lives: a full ten-question win is worth a full step, a two-question one is worth a fraction.
+    expect(battleWeight({ questionCount: 10, winnerPoints: 3500, loserPoints: 0, pointsAvailable: 3500 })).toBeGreaterThan(0.9)
+    expect(battleWeight({ questionCount: 2, winnerPoints: 700, loserPoints: 0, pointsAvailable: 700 })).toBeLessThan(0.5)
+    expect(eloUpdate(1000, 1000, 'a')).toEqual(eloUpdate(1000, 1000, 'a', 1)) // the default is today's behaviour
   })
 
   it('never rates a duel against a bot, or a player against themselves', async () => {
@@ -371,7 +385,8 @@ describe('battle: rankings', () => {
     await playDuel(w)
     const all = (await w.call({ op: 'ranking', period: 'all', tag: TAG_B })).body
     expect(all.top.map((r) => r.nickname)).toEqual(['Ada', 'Bayo'])
-    expect(all.top[0]).toMatchObject({ rank: 1, rating: 1016, wins: 1 })
+    expect(all.top[0]).toMatchObject({ rank: 1, wins: 1 })
+    expect(all.top[0].rating).toBeGreaterThan(1000)
     expect(all.you).toMatchObject({ nickname: 'Bayo', rank: 2, losses: 1 })
     expect(JSON.stringify(all)).not.toMatch(/tag_hash|token/)
     const week = (await w.call({ op: 'ranking', period: 'week' })).body

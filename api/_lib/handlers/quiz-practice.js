@@ -8,6 +8,7 @@ import {
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
 import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
+import { cleanDrawSettings, buildQuestionSet, shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
 
 // Practice mode: one person replays a quiz on their own phone, no host. Questions are sent one at a time, so a player
 // never receives a later question (or any answer) in advance. After each answer they see the result at once.
@@ -62,13 +63,30 @@ export function createQuizPracticeHandler(
 
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, expires_at').eq('id', id).maybeSingle()
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, expires_at, draw_settings').eq('id', id).maybeSingle()
       const expired = data?.expires_at && new Date(data.expires_at).getTime() < now()
       return data && data.practice_enabled && !expired ? data : null
     }
-    async function playableQuestions(id) {
+    // Everything in the quiz that a practice run could ask: polls have no right answer, so they never appear here.
+    async function bankOf(id) {
       const { data } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', id)
-      return (data ?? []).filter((q) => (q.type ?? 'multiple') !== 'poll').sort((a, b) => a.position - b.position)
+      return (data ?? []).filter((q) => (q.type ?? 'multiple') !== 'poll')
+    }
+    // Rows for a list of ids, back in the order they were given (the database hands them back in whatever order it likes).
+    async function questionsByIds(ids) {
+      if (ids.length === 0) return []
+      const { data } = await supabaseAdmin.from('quiz_questions').select('*').in('id', ids)
+      const byId = new Map((data ?? []).map((q) => [q.id, q]))
+      return ids.map((id) => byId.get(id)).filter(Boolean)
+    }
+    // The questions this run will ask, in play order. A run started now has its own frozen list; one started before
+    // question banks has none, and gets the whole bank in the quiz's own order, which is how practice always worked.
+    async function runQuestions(run) {
+      const bank = await bankOf(run.quiz_id)
+      if (!Array.isArray(run.question_ids) || run.question_ids.length === 0) {
+        return [...bank].sort((a, b) => a.position - b.position)
+      }
+      return questionsByIds(run.question_ids)
     }
     const fail = async (error, message) => {
       console.error(`quiz-practice: ${op} failed`, error)
@@ -142,6 +160,10 @@ export function createQuizPracticeHandler(
         answer = { chosen_index: null, answer_text: null, correct: false, points_awarded: 0 }
       }
       const type = question.type ?? 'multiple'
+      // Answers go out in the order this run drew them, and the result reports them back in that same order. Stored
+      // answers keep their own positions.
+      const order = run.option_orders?.[question.id] ?? null
+      const count = (question.options ?? []).length
       const out = {
         ...base,
         score,
@@ -151,7 +173,7 @@ export function createQuizPracticeHandler(
         question: {
           type,
           text: question.text,
-          options: isChoiceType(type) ? question.options : [],
+          options: shownOptions(question, order),
           timeLimitSeconds: question.time_limit_seconds,
           multiplier: question.points_multiplier ?? 1,
           imageUrl: publicImageUrl(baseUrl, question.image_path, run.quiz_id),
@@ -159,20 +181,21 @@ export function createQuizPracticeHandler(
         },
       }
       if (answer) {
-        out.result = resultFor(question, answer)
+        out.result = resultFor(question, answer, order)
         out.race = await raceFor(run, questions, run.current_index)
       }
       return out
     }
 
-    function resultFor(question, answer) {
+    function resultFor(question, answer, order = null) {
       const type = question.type ?? 'multiple'
+      const count = (question.options ?? []).length
       return {
         correct: answer.correct === true,
         pointsAwarded: answer.points_awarded ?? 0,
-        chosenIndex: answer.chosen_index ?? null,
+        chosenIndex: answer.chosen_index == null ? null : shownIndex(order, answer.chosen_index, count),
         answerText: answer.answer_text ?? null,
-        correctIndex: isChoiceType(type) ? question.correct_index : null,
+        correctIndex: isChoiceType(type) ? shownIndex(order, question.correct_index, count) : null,
         correctText: correctText(question),
         timedOut: answer.chosen_index == null && answer.answer_text == null,
       }
@@ -198,11 +221,14 @@ export function createQuizPracticeHandler(
 
     // ---- list: every quiz open for practice (for the public practice page) ----
     if (op === 'list') {
-      const { data: quizzes } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, archived_at, is_custom').eq('practice_enabled', true)
+      const { data: quizzes } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, archived_at, is_custom, draw_settings').eq('practice_enabled', true)
       const out = []
-      for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
-        const count = (await playableQuestions(q.id)).length
-        if (count > 0) out.push({ id: q.id, title: q.title, questionCount: count, battleEnabled: q.battle_enabled === true })
+for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
+        const bank = await bankOf(q.id)
+        if (bank.length === 0) continue // nothing to play, so nothing to offer
+        // What one run will actually ask, not how many the quiz holds.
+        const count = cleanDrawSettings(q.draw_settings, bank.length).questionsPerGame
+        out.push({ id: q.id, title: q.title, questionCount: count, battleEnabled: q.battle_enabled === true })
       }
       res.status(200).json({ quizzes: out.sort((a, b) => a.title.localeCompare(b.title)) })
       return
@@ -215,9 +241,10 @@ export function createQuizPracticeHandler(
         res.status(404).json({ error: 'This quiz is not open for practice' })
         return
       }
-      const questions = await playableQuestions(quiz.id)
+      // The intro screen's "N questions" is what one run will ask, so it has to be the drawn count and not the size of the bank.
+      const questions = cleanDrawSettings(quiz.draw_settings, (await bankOf(quiz.id)).length).questionsPerGame
       const { data: finished } = await supabaseAdmin.from('quiz_practice_runs').select('id').eq('quiz_id', quiz.id).not('finished_at', 'is', null)
-      res.status(200).json({ title: quiz.title, questionCount: questions.length, battleEnabled: quiz.battle_enabled === true, ghostCount: (finished ?? []).length, theme: sanitizeTheme(quiz.theme, { quizId: quiz.id }) })
+      res.status(200).json({ title: quiz.title, questionCount: questions, battleEnabled: quiz.battle_enabled === true, ghostCount: (finished ?? []).length, theme: sanitizeTheme(quiz.theme, { quizId: quiz.id }) })
       return
     }
 
@@ -260,11 +287,15 @@ export function createQuizPracticeHandler(
         res.status(400).json({ error: 'Pick one of the characters' })
         return
       }
-      const questions = await playableQuestions(quiz.id)
-      if (questions.length === 0) {
+      const bank = await bankOf(quiz.id)
+      if (bank.length === 0) {
         res.status(404).json({ error: 'This quiz has no questions to practise yet' })
         return
       }
+      // Drawn once and frozen onto the run, so a player who reloads mid-run sees the same questions and the same answer
+      // order, and editing the quiz mid-run cannot change it. Practice draws from the same bank as a hosted game.
+      const { questionIds, optionOrders } = buildQuestionSet(bank, cleanDrawSettings(quiz.draw_settings, bank.length))
+      const questions = await questionsByIds(questionIds)
       if (!RACE_MODES.includes(race) || !BOT_SKILL_CHOICES.includes(raceSkill)) {
         res.status(400).json({ error: 'Pick who to race' })
         return
@@ -291,6 +322,8 @@ export function createQuizPracticeHandler(
           race_mode: race,
           race_skill: race === 'bots' ? raceSkill : null,
           race_ghosts: ghosts,
+          question_ids: questionIds,
+          option_orders: optionOrders,
         })
         .select('*')
         .single()
@@ -308,7 +341,7 @@ export function createQuizPracticeHandler(
       res.status(404).json({ error: 'This quiz is not open for practice any more' })
       return
     }
-    const questions = await playableQuestions(run.quiz_id)
+    const questions = await runQuestions(run)
 
     if (op === 'state') {
       res.status(200).json(await view(run, questions, quiz))
@@ -327,7 +360,10 @@ export function createQuizPracticeHandler(
         res.status(409).json({ error: 'You already answered this question' })
         return
       }
-      const graded = gradeAnswer(question, { chosenIndex, answerText })
+      // A player answers the option they were shown, so a shuffled question is turned back into its stored position before
+      // grading, and refused rather than graded against whatever happens to be there.
+      const storedIndex = originalIndex(run.option_orders?.[question.id] ?? null, chosenIndex, (question.options ?? []).length)
+      const graded = gradeAnswer(question, { chosenIndex: storedIndex ?? chosenIndex, answerText })
       if (!graded.ok) {
         res.status(400).json({ error: graded.error })
         return
@@ -352,7 +388,7 @@ export function createQuizPracticeHandler(
       }
       const answer = { chosen_index: late ? null : graded.chosenIndex, answer_text: late ? null : graded.answerText, correct, points_awarded: points }
       const { data: fresh } = await supabaseAdmin.from('quiz_practice_runs').select('total_score').eq('id', run.id).maybeSingle()
-      res.status(200).json({ result: resultFor(question, answer), score: fresh?.total_score ?? run.total_score + points, race: await raceFor(run, questions, run.current_index) })
+      res.status(200).json({ result: resultFor(question, answer, run.option_orders?.[question.id] ?? null), score: fresh?.total_score ?? run.total_score + points, race: await raceFor(run, questions, run.current_index) })
       return
     }
 

@@ -86,7 +86,7 @@ ${note('The practice top 10 is labelled <em>just for fun</em> because instant fe
 <h3>Challenge a friend</h3>
 <p>You and your friend play the <strong>same questions at different times</strong>.</p>
 ${steps([
-  'Choose <em>Challenge a friend</em>. Answer a set of up to 10 questions.',
+  'Choose <em>Challenge a friend</em>. Answer the set of questions the quiz chose for battles.',
   'When you finish, choose <em>Share the link</em> and send it in a chat. The message reads <em>Battle me on NAMMES Hub</em>.',
   'Your friend opens the link, sees your nickname, character and <strong>only your final score</strong> (<em>Your score to beat</em>), and plays the same questions.',
   'Both of you then see the <strong>head-to-head</strong>: each score, who won each question, and the winner. You can return to the same link later to see the result.',

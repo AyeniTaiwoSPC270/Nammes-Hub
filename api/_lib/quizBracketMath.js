@@ -4,10 +4,28 @@ import { seeded } from './quizBots.js'
 
 export const BRACKET_LENGTHS = [1, 3, 5]
 
-// How many rounds a game can hold: enough to get down to one player, limited by how many questions the quiz has.
+// How many rounds it takes to knock every player out but one.
+export function roundsToGetDownToOne(playerCount) {
+  return Math.max(1, Math.ceil(Math.log2(Math.max(2, playerCount))))
+}
+
+// How many rounds a game can hold: enough to get down to one player, limited by how many questions the game will ask.
+//
+// The cap matters more than it looks. A bracket that runs out of questions before it reaches a final has no winner by
+// elimination, so the game quietly crowns whoever scored highest overall instead. That is a fine fallback but not what a
+// host who asked for a knockout meant, which is why fitsBracketLength below refuses those lengths outright.
 export function bracketRounds(playerCount, questionCount, length) {
-  const needed = Math.max(1, Math.ceil(Math.log2(Math.max(2, playerCount))))
-  return Math.max(0, Math.min(needed, Math.floor(questionCount / length)))
+  return Math.max(0, Math.min(roundsToGetDownToOne(playerCount), Math.floor(questionCount / length)))
+}
+
+// Whether a match of `length` questions can actually get down to one player, given how many questions the game will ask.
+export function fitsBracketLength(playerCount, questionCount, length) {
+  return bracketRounds(playerCount, questionCount, length) === roundsToGetDownToOne(playerCount)
+}
+
+// The match lengths worth offering, shortest first. An empty list means this game cannot hold a bracket at all.
+export function bracketLengthsThatFit(playerCount, questionCount) {
+  return BRACKET_LENGTHS.filter((length) => fitsBracketLength(playerCount, questionCount, length))
 }
 
 export const roundOfQuestion = (index, length) => Math.floor(index / length)

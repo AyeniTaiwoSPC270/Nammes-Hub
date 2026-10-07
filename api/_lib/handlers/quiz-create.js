@@ -5,6 +5,7 @@ import { isUuid } from '../validate.js'
 import { generateJoinCode, isMaxPlayers, DEFAULT_MAX_PLAYERS, sanitizeGameOptions } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { cleanTeams, TEAM_SCORING } from '../quizTeams.js'
+import { cleanDrawSettings, buildQuestionSet } from '../quizDraw.js'
 
 const CODE_ATTEMPTS = 8
 
@@ -53,24 +54,39 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
       return
     }
 
-    const { count, error: countError } = await supabaseAdmin
-      .from('quiz_questions')
-      .select('id', { count: 'exact', head: true })
-      .eq('quiz_id', quizId)
-    if (countError) {
-      console.error('quiz-create: question count failed', countError)
-      await logError(supabaseAdmin, 'quiz-create', countError, 500)
+    // No limit given: use the quiz's own default. The game keeps its own copy of the limit and of the look (theme),
+    // so later edits never change a running game.
+    const { data: quiz, error: quizError } = await supabaseAdmin
+      .from('quizzes')
+      .select('max_players, theme, game_options, team_mode, team_scoring, team_presets, draw_settings')
+      .eq('id', quizId)
+      .maybeSingle()
+    if (quizError) {
+      console.error('quiz-create: quiz read failed', quizError)
+      await logError(supabaseAdmin, 'quiz-create', quizError, 500)
       res.status(500).json({ error: 'Could not start the game' })
       return
     }
-    if (!count) {
+
+    // Draw the questions this game will ask, once, and freeze them onto the session. Everything downstream (phones, the
+    // projector, the report, the bracket) then reads this list rather than the quiz, so a game plays the same questions
+    // for everyone and editing the quiz mid-game cannot change its length.
+    const { data: bank, error: bankError } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', quizId)
+    if (bankError) {
+      console.error('quiz-create: question read failed', bankError)
+      await logError(supabaseAdmin, 'quiz-create', bankError, 500)
+      res.status(500).json({ error: 'Could not start the game' })
+      return
+    }
+    if ((bank ?? []).length === 0) {
       res.status(400).json({ error: 'Add at least one question before hosting this quiz' })
       return
     }
-
-    // No limit given: use the quiz's own default. The game keeps its own copy of the limit and of the look (theme),
-    // so later edits never change a running game.
-    const { data: quiz } = await supabaseAdmin.from('quizzes').select('max_players, theme, game_options, team_mode, team_scoring, team_presets').eq('id', quizId).maybeSingle()
+    const { questionIds, optionOrders } = buildQuestionSet(bank, cleanDrawSettings(quiz?.draw_settings, bank.length))
+    if (questionIds.length === 0) {
+      res.status(400).json({ error: 'Add at least one question before hosting this quiz' })
+      return
+    }
     const limit = maxPlayers ?? quiz?.max_players ?? DEFAULT_MAX_PLAYERS
     const theme = sanitizeTheme(quiz?.theme, { quizId })
     const useTeams = teamMode ?? quiz?.team_mode ?? false
@@ -90,7 +106,17 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
       const { data, error } = await supabaseAdmin
         .from('quiz_sessions')
-        .insert({ quiz_id: quizId, join_code: makeCode(), max_players: limit, theme, game_options: gameOptions, team_mode: useTeams, team_scoring: scoring })
+        .insert({
+            quiz_id: quizId,
+            join_code: makeCode(),
+            max_players: limit,
+            theme,
+            game_options: gameOptions,
+            team_mode: useTeams,
+            team_scoring: scoring,
+            question_ids: questionIds,
+            option_orders: optionOrders,
+          })
         .select('id, join_code')
         .single()
       if (!error) {

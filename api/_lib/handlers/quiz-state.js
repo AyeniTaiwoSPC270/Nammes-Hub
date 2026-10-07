@@ -4,6 +4,8 @@ import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
 import { rankTeams } from '../quizTeams.js'
 import { bracketViewFor } from '../quizBracket.js'
+import { sessionQuestionIds, currentQuestion, optionOrderFor } from '../quizSessionQuestions.js'
+import { shownOptions, shownIndex } from '../quizDraw.js'
 
 const TOP_N = 10
 
@@ -50,10 +52,11 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
       return
     }
 
-    const [{ data: players }, { count: questionCount }] = await Promise.all([
+    const [{ data: players }, questionIds] = await Promise.all([
       supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id').eq('session_id', session.id),
-      supabaseAdmin.from('quiz_questions').select('id', { count: 'exact', head: true }).eq('quiz_id', session.quiz_id),
+      sessionQuestionIds(supabaseAdmin, session),
     ])
+    const questionCount = questionIds.length
     const gameOptions = sanitizeGameOptions(session.game_options)
     const ranked = rankPlayers(players ?? [])
     const teamRows = session.team_mode
@@ -96,13 +99,12 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
     }
 
     if (['question', 'reveal', 'leaderboard'].includes(session.state)) {
-      const { data: question } = await supabaseAdmin
-        .from('quiz_questions')
-        .select('*')
-        .eq('quiz_id', session.quiz_id)
-        .eq('position', session.current_question_index)
-        .maybeSingle()
+      const question = await currentQuestion(supabaseAdmin, session)
       if (question) {
+        // Answers go out in the order this game drew, and everything reported back is mapped back to it, so what a
+        // phone (and the projector) sees is the same everywhere. Stored answers keep their original positions.
+        const optionOrder = optionOrderFor(session, question.id)
+        const optionCount = (question.options ?? []).length
         const { data: answer } = await supabaseAdmin
           .from('quiz_answers')
           .select('chosen_index, points_awarded, bonus_points, answer_text, correct')
@@ -121,18 +123,21 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         out.question = {
           type,
           text: question.text,
-          options: isChoiceType(type) ? question.options : [],
+          options: shownOptions(question, optionOrder),
           timeLimitSeconds: question.time_limit_seconds,
           multiplier: question.points_multiplier ?? 1,
           imageUrl: publicImageUrl(baseUrl, question.image_path, session.quiz_id),
           imageAlt: question.image_alt ?? '',
           answered: Boolean(answer),
           // Only this player's own pick, so a phone that reloads mid-question still shows what it chose.
-          chosenIndex: answer ? answer.chosen_index : null,
+          chosenIndex: answer ? shownIndex(optionOrder, answer.chosen_index, optionCount) : null,
           answerText: answer ? answer.answer_text : null,
           powerup: used,
+          // fiftyFiftyHidden works in stored positions, so the option it removes is the one this player actually saw.
           hidden: used === 'fifty'
-            ? fiftyFiftyHidden({ playerId: player.id, questionId: question.id, optionCount: question.options.length, correctIndex: question.correct_index })
+            ? fiftyFiftyHidden({ playerId: player.id, questionId: question.id, optionCount, correctIndex: question.correct_index })
+              .map((i) => shownIndex(optionOrder, i, optionCount))
+              .filter((i) => i !== null)
             : [],
           powerupsLeft,
         }
@@ -145,9 +150,9 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         }
         if (session.state !== 'question') {
           out.reveal = {
-            correctIndex: isChoiceType(type) && type !== 'poll' ? question.correct_index : null,
+            correctIndex: isChoiceType(type) && type !== 'poll' ? shownIndex(optionOrder, question.correct_index, optionCount) : null,
             correctText: correctText(question),
-            chosenIndex: answer ? answer.chosen_index : null,
+            chosenIndex: answer ? shownIndex(optionOrder, answer.chosen_index, optionCount) : null,
             answerText: answer ? answer.answer_text : null,
             correct: answer ? answer.correct : null,
             pointsAwarded: answer ? answer.points_awarded : 0,
@@ -162,12 +167,10 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
     }
     // Phones fetch the next picture while the leaderboard is up, so the next question does not wait on it.
     if (session.state === 'leaderboard') {
-      const { data: upcoming } = await supabaseAdmin
-        .from('quiz_questions')
-        .select('image_path')
-        .eq('quiz_id', session.quiz_id)
-        .eq('position', session.current_question_index + 1)
-        .maybeSingle()
+      const nextId = questionIds[session.current_question_index + 1] ?? null
+      const { data: upcoming } = nextId
+        ? await supabaseAdmin.from('quiz_questions').select('image_path').eq('id', nextId).maybeSingle()
+        : { data: null }
       out.nextImageUrl = upcoming ? publicImageUrl(baseUrl, upcoming.image_path, session.quiz_id) : null
     }
 

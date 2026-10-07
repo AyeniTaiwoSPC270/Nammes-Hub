@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bracketRounds, pairPlayers, matchWinner, botRoundScore, matchRows, bracketViewFor, podium, isRoundEnd, roundOfQuestion, winnerId } from './quizBracket.js'
+import { bracketRounds, pairPlayers, matchWinner, botRoundScore, matchRows, bracketViewFor, podium, isRoundEnd, roundOfQuestion, winnerId, bracketLengthsThatFit, fitsBracketLength, roundsToGetDownToOne } from './quizBracket.js'
 import { createQuizAdvanceHandler } from './handlers/quiz-advance.js'
 import { createQuizHostHandler } from './handlers/quiz-host.js'
 import { createQuizStateHandler } from './handlers/quiz-state.js'
@@ -17,6 +17,28 @@ describe('bracket maths', () => {
     expect(bracketRounds(0, 12, 3)).toBe(1)
     expect(bracketRounds(8, 2, 3)).toBe(0)
   })
+  it('only offers match lengths that can get down to one player', () => {
+    // Four players need two rounds, so a length only fits when two of them fit inside the questions the game will ask.
+    expect(roundsToGetDownToOne(4)).toBe(2)
+    expect(roundsToGetDownToOne(8)).toBe(3)
+    expect(roundsToGetDownToOne(1)).toBe(1)
+    expect(roundsToGetDownToOne(0)).toBe(1)
+
+    // Ten questions, four players: every length fits, because two rounds of five is exactly ten.
+    expect(bracketLengthsThatFit(4, 10)).toEqual([1, 3, 5])
+    // Six questions, four players: two rounds of 3 fit, but two rounds of 5 would need ten.
+    expect(bracketLengthsThatFit(4, 6)).toEqual([1, 3])
+    // Four questions, four players: only single questions, four rounds deep.
+    expect(bracketLengthsThatFit(4, 4)).toEqual([1])
+    // One question cannot knock anyone out with four players, so nothing fits at all.
+    expect(bracketLengthsThatFit(4, 1)).toEqual([])
+    // Two players need only one round, so a single question is enough.
+    expect(bracketLengthsThatFit(2, 1)).toEqual([1])
+
+    expect(fitsBracketLength(4, 6, 3)).toBe(true)
+    expect(fitsBracketLength(4, 6, 5)).toBe(false)
+  })
+
   it('groups questions into rounds', () => {
     expect([0, 1, 2, 3, 5].map((i) => roundOfQuestion(i, 3))).toEqual([0, 0, 0, 1, 1])
     expect([0, 1, 2, 3, 5].map((i) => isRoundEnd(i, 3))).toEqual([false, false, true, false, true])
@@ -236,15 +258,38 @@ describe('setBracket (host control)', () => {
     db.tables.quiz_sessions[0].state = 'question'
     expect((await hostOp(db, { op: 'setBracket', enabled: true })).statusCode).toBe(409)
   })
-  it('refuses a bad length, a quiz that is too short, and a team game', async () => {
+  it('refuses a bad length, a length that cannot finish, and a team game', async () => {
     const db = game({ session: { bracket_mode: false } })
     expect((await hostOp(db, { op: 'setBracket', enabled: true, length: 2 })).statusCode).toBe(400)
     expect((await hostOp(db, { op: 'setBracket', enabled: true, length: 5, botSkill: 'genius' })).statusCode).toBe(400)
-    db.tables.quiz_questions = questions.slice(0, 2)
-    expect((await hostOp(db, { op: 'setBracket', enabled: true, length: 3 })).statusCode).toBe(409)
-    db.tables.quiz_questions = questions
+
+    // Six questions and four players needs two rounds to get to one, so matches of 3 work but matches of 5 do not: they
+    // would use 10 questions the game does not have, and the bracket would quietly stop short.
+    expect((await hostOp(db, { op: 'setBracket', enabled: true, length: 3 })).statusCode).toBe(200)
+    const tooLong = await hostOp(db, { op: 'setBracket', enabled: true, length: 5 })
+    expect(tooLong.statusCode).toBe(409)
+    expect(tooLong.body.error).toMatch(/6 questions/)
+    expect(tooLong.body.error).toMatch(/3 questions/)
+
     db.tables.quiz_sessions[0].team_mode = true
     expect((await hostOp(db, { op: 'setBracket', enabled: true, length: 1 })).statusCode).toBe(409)
+  })
+
+  it('measures the bracket against the questions the game drew, not the questions in the quiz', async () => {
+    // A game that drew 4 of the quiz's 6 questions cannot run matches of 3 with four players, however long the quiz is.
+    const db = game({ session: { bracket_mode: false, question_ids: ['q1', 'q2', 'q3', 'q4'] } })
+    const res = await hostOp(db, { op: 'setBracket', enabled: true, length: 3 })
+    expect(res.statusCode).toBe(409)
+    expect(res.body.error).toMatch(/draws 4 questions/)
+    // One question a match fits four players in four rounds.
+    expect((await hostOp(db, { op: 'setBracket', enabled: true, length: 1 })).statusCode).toBe(200)
+  })
+
+  it('still refuses when nothing at all fits', async () => {
+    const db = game({ session: { bracket_mode: false, question_ids: ['q1'] } })
+    const res = await hostOp(db, { op: 'setBracket', enabled: true, length: 1 })
+    expect(res.statusCode).toBe(409)
+    expect(res.body.error).toMatch(/too few/)
   })
 })
 

@@ -1,36 +1,16 @@
-// CBT practice exams: the rules that do not need a database. Drawing and shuffling a paper, grading an attempt and
-// cleaning exam settings. The handler (handlers/quiz-cbt.js) puts these together with the clock and the tables.
+// CBT practice exams: the rules that do not need a database. Cleaning exam settings, drawing and shuffling a paper, and
+// grading an attempt. The handler (handlers/quiz-cbt.js) puts these together with the clock and the tables.
 import { gradeAnswer, isChoiceType, correctText, ANSWER_TEXT_MAX } from './quizGrading.js'
+import { clampInt, buildQuestionSet } from './quizDraw.js'
+
+// Drawing, shuffling and the answer-order guard moved to quizDraw.js when quizzes grew question banks, so the live quiz,
+// battles and practice could use the same rules. Re-exported here so this module still offers what it always did.
+export { shuffled, keepsOptionOrder } from './quizDraw.js'
 
 export const CBT_GRACE_MS = 10_000 // answers saved this long after the deadline still count (slow phones, slow networks)
 export const CBT_RESULT_TTL_MS = 24 * 60 * 60_000 // the review stays readable on the server this long after submitting
 export const CBT_MAX_MINUTES = 240
 export const CBT_LEVELS = ['100', '200', '300', '400', '500', 'other']
-
-// Answers like "All of the above" only make sense in the order they were typed, so those questions are never shuffled.
-const ORDER_DEPENDENT = /\b(all|none|both|any|neither)\s+of\s+(the\s+)?(above|these|them)\b|\b(a|b|c|d)\s*(and|&|,)\s*(a|b|c|d)\b|\bboth\b.*\band\b|\ball\s+(the\s+)?above\b|\bnone\s+(of\s+)?(the\s+)?above\b/i
-
-export function keepsOptionOrder(question) {
-  if (question.no_shuffle) return true
-  if ((question.type ?? 'multiple') !== 'multiple') return true // true/false stays True, False
-  return (question.options ?? []).some((option) => ORDER_DEPENDENT.test(String(option)))
-}
-
-// A fair shuffle (Fisher-Yates). `rand` is injectable so tests are repeatable.
-export function shuffled(list, rand = Math.random) {
-  const a = [...list]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function clampInt(value, min, max, fallback) {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return fallback
-  return Math.min(max, Math.max(min, Math.round(n)))
-}
 
 // The settings a paper runs with. `source` is an exam row or a personal exam's stored settings (same field names).
 // `bankSize` is how many questions the paper has to draw from.
@@ -66,18 +46,13 @@ export function sanitizePersonalSettings(input, questionCount) {
 
 // Picks the questions for one attempt and the order each question's answers are shown in.
 // Returns { questionIds, optionOrders }, where optionOrders[id][i] is the original position of the answer shown at i.
+// A poll is not an exam question, so it never takes part.
 export function buildAttempt(bank, settings, rand = Math.random) {
-  const playable = bank.filter((q) => (q.type ?? 'multiple') !== 'poll').sort((a, b) => a.position - b.position)
-  let chosen = playable
-  if (settings.mode !== 'fixed' && settings.drawCount && settings.drawCount < playable.length) chosen = shuffled(playable, rand).slice(0, settings.drawCount)
-  const ordered = settings.shuffleQuestions ? shuffled(chosen, rand) : [...chosen].sort((a, b) => a.position - b.position)
-  const optionOrders = {}
-  for (const q of ordered) {
-    if (!isChoiceType(q.type ?? 'multiple')) continue
-    const identity = q.options.map((_, i) => i)
-    optionOrders[q.id] = settings.shuffleOptions && !keepsOptionOrder(q) ? shuffled(identity, rand) : identity
-  }
-  return { questionIds: ordered.map((q) => q.id), optionOrders }
+  return buildQuestionSet(
+    bank.filter((q) => (q.type ?? 'multiple') !== 'poll'),
+    settings,
+    rand,
+  )
 }
 
 // A question as the student's browser gets it: no answer key, answers in the order they will see them.
