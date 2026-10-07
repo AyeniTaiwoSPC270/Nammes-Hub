@@ -1,5 +1,4 @@
 import { avatarInfo } from '../../data/quizCharacters'
-import './characters.css'
 
 // One of the 50 quiz characters, drawn as SVG (no image files). Who it is comes from `id` (0 to 49); the catalogue in
 // src/data/quizCharacters.js says which body, headpiece, face, outfit and moves it has. `mood` changes the face and

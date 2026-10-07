@@ -5,6 +5,10 @@ import { avatarStyle, initialOf } from '../../data/quiz'
 import QuizThemeToggle from './QuizThemeToggle'
 import Character from './Character'
 import { useQuizTheme } from './QuizTheme'
+// The characters' moves live in this stylesheet, so it is imported here rather than in Character.jsx: the result
+// card renders that same component to an SVG string on the server, and Node cannot parse a stylesheet. Every browser
+// consumer of Character reaches it through QuizParts.
+import './characters.css'
 
 // Small building blocks shared by the host (projector) and player (phone) quiz screens.
 
