@@ -33,14 +33,24 @@ const SILVER = '#c7ccd1'
 const BRONZE = '#b07a3c'
 const QUIZ_GLYPHS = ['π', 'Σ', '∫', '√', 'Δ', 'λ', 'θ', '∞', '≈', '±']
 
-// Rows stop short of the footer rather than being counted from the top: a 150-player game used to run the last row
-// straight through the NAMMES mark, and push the "and N more" line off the bottom of the canvas where nobody could
-// read it.
+export const FOOTER_TOP = CARD_HEIGHT - 110
 const ROW_TOP = 850
 const ROW_HEIGHT = 78
-const ROWS_DRAWN = 11
-// Where the footer rule sits, which is the floor every row has to stay above.
-export const FOOTER_TOP = CARD_HEIGHT - 110
+// Room left below the last row for the "and N more" line and its descenders, so a full board never sits on the footer
+// rule. Measured, not guessed: with a smaller margin the summary line's descenders touched the rule.
+const ROWS_FLOOR_MARGIN = 110
+// Team standings take space the rows then do not get, so the row count has to be worked out from where the rows
+// actually start rather than fixed once at the top. A 150-player team game overran the footer until this did.
+const TEAMS_HEADING = 52
+const TEAM_ROW = 72
+const TEAMS_GAP = 12
+const MAX_TEAMS = 6
+
+// How many rows fit above the footer from this starting point. The renderer and its test both call this, so the cap
+// cannot drift from the layout the way a constant duplicated in a test can.
+export function rowsThatFit(from) {
+  return Math.max(0, Math.floor((FOOTER_TOP - ROWS_FLOOR_MARGIN - from) / ROW_HEIGHT))
+}
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath()
@@ -53,7 +63,9 @@ function roundRect(ctx, x, y, w, h, r) {
 }
 
 // Shrinks the type until it fits the box, so a 20-character nickname never runs off the card.
-function fittedFont(ctx, text, maxWidth, startSize, family = 'Public Sans Bold') {
+// Sets ctx.font to the largest size at which the text fits maxWidth. Callers draw immediately afterwards; the
+// contract is the ctx.font it leaves behind, so nothing is returned.
+function fitFont(ctx, text, maxWidth, startSize, family = 'Public Sans Bold') {
   let size = startSize
   ctx.font = `bold ${size}px "${family}"`
   while (ctx.measureText(text).width > maxWidth && size > 24) {
@@ -76,11 +88,12 @@ function palette(card, theme) {
   return { accent, onBackground, deepA: look.deep[0], deepB: look.deep[1] }
 }
 
-// Injected by the endpoint so that only the endpoint reaches the network, and tests never do.
-let backgroundLoader = async () => null
-export function setBackgroundLoader(fn) { backgroundLoader = fn }
+// Passed in rather than held in module state: a serverless instance is reused across requests, so a module-level
+// loader set inside the request handler is a cross-request race. Only the endpoint reaches the network; tests pass
+// their own and never do.
+const NO_BACKGROUND = async () => null
 
-async function drawBackdrop(ctx, card, theme, colors) {
+async function drawBackdrop(ctx, card, theme, colors, loadBackground) {
   const t = sanitizeTheme(theme)
   const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT)
   bg.addColorStop(0, colors.deepA)
@@ -89,7 +102,7 @@ async function drawBackdrop(ctx, card, theme, colors) {
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 
   // A background picture replaces the pattern rather than sitting under it: two busy layers read as noise.
-  const buffer = card.background ? await backgroundLoader(card.background) : null
+  const buffer = card.background ? await loadBackground(card.background) : null
   if (buffer) {
     try {
       const image = await loadImage(buffer)
@@ -152,7 +165,7 @@ function drawFooter(ctx, colors) {
   ctx.fillText('NAMMES HUB', CARD_WIDTH / 2, CARD_HEIGHT - 60)
 }
 
-export async function renderPersonalCard({ card, theme, quiz, me }) {
+export async function renderPersonalCard({ card, theme, quiz, me, loadBackground = NO_BACKGROUND }) {
   ensureFonts()
   const c = sanitizeCard(card)
   const t = sanitizeTheme(theme)
@@ -160,12 +173,12 @@ export async function renderPersonalCard({ card, theme, quiz, me }) {
   const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT)
   const ctx = canvas.getContext('2d')
 
-  await drawBackdrop(ctx, c, t, colors)
+  await drawBackdrop(ctx, c, t, colors, loadBackground)
   ctx.textAlign = 'center'
 
   if (c.showTitle && quiz?.title) {
     ctx.fillStyle = 'rgba(255,255,255,0.72)'
-    fittedFont(ctx, quiz.title, CARD_WIDTH - 160, 40, 'Public Sans')
+    fitFont(ctx, quiz.title, CARD_WIDTH - 160, 40, 'Public Sans')
     ctx.fillText(quiz.title, CARD_WIDTH / 2, 150)
   }
 
@@ -174,12 +187,11 @@ export async function renderPersonalCard({ card, theme, quiz, me }) {
     await drawCharacter(ctx, me.avatarId, CARD_WIDTH / 2, 620, 460, me.rank && me.rank <= 3 ? 'dance' : 'happy')
   }
 
-  // The one big line on the card.
   ctx.fillStyle = '#ffffff'
-  fittedFont(ctx, me.nickname, CARD_WIDTH - 120, 96, 'Playfair Display')
+  fitFont(ctx, me.nickname, CARD_WIDTH - 120, 96, 'Playfair Display')
   ctx.fillText(me.nickname, CARD_WIDTH / 2, 960)
 
-  // Rank when there is one. Practice has none, so no band is drawn at all rather than an empty one.
+  // A practice run has no leaderboard, so there is no band to draw rather than an empty one.
   const hasRank = Boolean(c.showPlacement && me.rank)
   if (hasRank) {
     drawRankBand(ctx, me.rank, CARD_WIDTH / 2, 1060, 460)
@@ -215,7 +227,7 @@ export async function renderPersonalCard({ card, theme, quiz, me }) {
   return canvas.toBuffer('image/png')
 }
 
-export async function renderBoardCard({ card, theme, quiz, ranked, teams }) {
+export async function renderBoardCard({ card, theme, quiz, ranked, teams, loadBackground = NO_BACKGROUND }) {
   ensureFonts()
   const c = sanitizeCard(card)
   const t = sanitizeTheme(theme)
@@ -224,7 +236,7 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams }) {
   const ctx = canvas.getContext('2d')
   const rows = ranked ?? []
 
-  await drawBackdrop(ctx, c, t, colors)
+  await drawBackdrop(ctx, c, t, colors, loadBackground)
   ctx.textAlign = 'center'
 
   ctx.fillStyle = 'rgba(255,255,255,0.72)'
@@ -248,22 +260,22 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams }) {
     if (!p) continue
     await drawCharacter(ctx, p.avatarId, x + 100, 700 - height - 100, 160, place === 1 ? 'dance' : 'happy')
     ctx.fillStyle = '#ffffff'
-    fittedFont(ctx, p.nickname, 190, 34)
+    fitFont(ctx, p.nickname, 190, 34)
     ctx.fillText(p.nickname, x + 100, 740)
     ctx.font = 'bold 30px "Public Sans Bold"'
     ctx.fillStyle = 'rgba(255,255,255,0.85)'
     ctx.fillText(String(p.score), x + 100, 782)
   }
 
-  // Team standings take the space a board card has for them, and push the rows down to match.
+  const shownTeams = (teams ?? []).slice(0, MAX_TEAMS)
   let y = ROW_TOP
-  if (teams?.length) {
+  if (shownTeams.length) {
     ctx.textAlign = 'center'
     ctx.fillStyle = 'rgba(255,255,255,0.85)'
     ctx.font = 'bold 34px "Public Sans Bold"'
     ctx.fillText('Teams', CARD_WIDTH / 2, y + 10)
-    y += 52
-    for (const team of teams.slice(0, 6)) {
+    y += TEAMS_HEADING
+    for (const team of shownTeams) {
       ctx.fillStyle = 'rgba(255,255,255,0.08)'
       roundRect(ctx, 80, y - 40, CARD_WIDTH - 160, 64, 14)
       ctx.fill()
@@ -275,20 +287,20 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams }) {
       }
       ctx.fillStyle = '#ffffff'
       ctx.font = 'bold 34px "Public Sans Bold"'
-      fittedFont(ctx, team.name ?? '', 700, 34)
+      fitFont(ctx, team.name ?? '', 700, 34)
       ctx.fillText(team.name ?? '', 140, y)
-ctx.textAlign = 'right'
-    ctx.fillStyle = colors.onBackground
-    ctx.fillText(String(team.score ?? ''), CARD_WIDTH - 110, y)
+      ctx.textAlign = 'right'
+      ctx.fillStyle = colors.onBackground
+      ctx.fillText(String(team.score ?? ''), CARD_WIDTH - 110, y)
       ctx.textAlign = 'center'
-      y += 72
+      y += TEAM_ROW
     }
-    y += 12
+    y += TEAMS_GAP
   }
 
-  // Everyone below the podium as rows, capped so a 150-player game still fits above the footer.
+  // Everyone below the podium as rows, capped to whatever is left above the footer now the teams have had theirs.
   const rest = rows.slice(3)
-  const shown = rest.slice(0, ROWS_DRAWN)
+  const shown = rest.slice(0, rowsThatFit(y))
   for (const p of shown) {
     ctx.fillStyle = 'rgba(255,255,255,0.10)'
     roundRect(ctx, 80, y - 44, CARD_WIDTH - 160, 68, 14)
@@ -299,7 +311,7 @@ ctx.textAlign = 'right'
     ctx.fillText(String(p.rank), 110, y)
     await drawCharacter(ctx, p.avatarId, 210, y - 10, 52, 'happy')
     ctx.fillStyle = '#ffffff'
-    fittedFont(ctx, p.nickname, 520, 34)
+    fitFont(ctx, p.nickname, 520, 34)
     ctx.fillText(p.nickname, 280, y)
     ctx.textAlign = 'right'
     ctx.fillStyle = colors.onBackground
@@ -318,7 +330,7 @@ ctx.textAlign = 'right'
   return canvas.toBuffer('image/png')
 }
 
-export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, forfeit, questionCount }) {
+export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, forfeit, questionCount, loadBackground = NO_BACKGROUND }) {
   ensureFonts()
   const c = sanitizeCard(card)
   const t = sanitizeTheme(theme)
@@ -326,7 +338,7 @@ export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, for
   const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT)
   const ctx = canvas.getContext('2d')
 
-  await drawBackdrop(ctx, c, t, colors)
+  await drawBackdrop(ctx, c, t, colors, loadBackground)
   ctx.textAlign = 'center'
 
   ctx.fillStyle = 'rgba(255,255,255,0.72)'
@@ -345,7 +357,7 @@ export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, for
     const won = winnerSlot === s.slot
     await drawCharacter(ctx, s.avatarId, cx, 800, 420, won ? 'dance' : 'happy')
     ctx.fillStyle = '#ffffff'
-    fittedFont(ctx, s.nickname, 380, 56)
+    fitFont(ctx, s.nickname, 380, 56)
     ctx.fillText(s.nickname, cx, 1110)
     ctx.fillStyle = won ? GOLD : 'rgba(255,255,255,0.85)'
     ctx.font = 'bold 86px "Public Sans Bold"'

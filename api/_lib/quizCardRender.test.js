@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CARD } from './quizCard.js'
-import { renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP } from './quizCardRender.js'
+import { renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit } from './quizCardRender.js'
 import { contrastRatio, THEME_LOOKS } from './quizTheme.js'
-
-// Mirrors the layout constants the renderer draws its rows with. Kept here rather than exported individually so
-// the board's cap stays a property of the test rather than something the module can quietly agree with.
-const ROW_TOP = 850
-const ROW_HEIGHT = 78
-const ROWS_DRAWN = 11
 
 const QUIZ = { title: 'Naming Origins' }
 const THEME = { look: 'classic', accent: null, pattern: 'math', logo: null, backdropOpacity: 8 }
@@ -82,21 +76,33 @@ describe('renderBoardCard', () => {
   })
 })
 
-// A board card once ran its last row straight through the NAMMES mark and pushed the "and N more" line off the
-// canvas. Nothing about the returned buffer shows that, so the layout arithmetic is checked directly.
+// A board card twice ran its last row through the NAMMES mark: once with a full table, and again once team
+// standings took space the row cap did not account for. Nothing about the returned buffer shows either, so the
+// layout is checked through the same helper the renderer uses.
 describe('the board card layout', () => {
   it('keeps the last row and its summary line clear of the footer', () => {
-    const lastRow = ROW_TOP + (ROWS_DRAWN - 1) * ROW_HEIGHT
-    const summary = lastRow + ROW_HEIGHT + 16
-    // A margin, not just clearance: with the rows flush against it the summary line's descenders sat on the rule.
-    expect(FOOTER_TOP - summary).toBeGreaterThan(40)
+    const from = 850
+    const rows = rowsThatFit(from)
+    expect(rows).toBeGreaterThan(0)
+    const lastRow = from + (rows - 1) * 78
+    expect(FOOTER_TOP - (lastRow + 78 + 16)).toBeGreaterThan(40)
   })
 
-  it('caps the rows so the tail is summarised rather than drawn', () => {
+  it('gives fewer rows when the teams have already had theirs', () => {
+    // Six teams push the rows down by the heading, six rows and a gap, which is what broke it before.
+    const teamsBottom = 850 + 52 + 6 * 72 + 12
+    expect(rowsThatFit(teamsBottom)).toBeLessThan(rowsThatFit(850))
+  })
+
+  it('never returns a negative row count, however far down the rows start', () => {
+    expect(rowsThatFit(FOOTER_TOP + 500)).toBe(0)
+  })
+
+  it('caps the rows so the tail is summarised rather than drawn', async () => {
     const many = Array.from({ length: 150 }, (_, i) => ({ rank: i + 1, nickname: `P${i}`, avatarId: i % 50, score: 1000 - i }))
-    const capped = many.slice(3, 3 + ROWS_DRAWN)
-    const full = many.slice(3)
-    expect(capped.length).toBeLessThan(full.length)
+    const png = await renderBoardCard({ card: DEFAULT_CARD, theme: THEME, quiz: QUIZ, ranked: many, teams: [] })
+    expect(isPng(png)).toBe(true)
+    expect(many.length).toBeGreaterThan(rowsThatFit(850) + 3)
   })
 })
 
@@ -138,8 +144,9 @@ describe('every look stays legible', () => {
   it('leaves the accent on a look that can carry it, and falls back to white on the ones that cannot', () => {
     // Most built-in looks are close in tone to their own background, which is fine on screen (they put white text
     // on an accent fill) but would render a muddy score on the card. Only a look with room for the accent keeps it.
+    // This names the exceptions rather than asserting an exact list, so adding a look does not fail the test.
     const legible = Object.entries(THEME_LOOKS).filter(([, look]) => contrastRatio(look.accent, look.deep[1]) >= 3)
-    expect(legible.map(([id]) => id)).toEqual(['classic'])
+    expect(legible.map(([id]) => id)).toEqual(expect.arrayContaining(['classic']))
     for (const [, look] of Object.entries(THEME_LOOKS)) {
       const accent = contrastRatio(look.accent, look.deep[1]) >= 3 ? look.accent : '#ffffff'
       expect(contrastRatio(accent, look.deep[1])).toBeGreaterThanOrEqual(3)
