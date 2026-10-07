@@ -261,6 +261,15 @@ export function contrastWithWhite(hex) {
   return Math.round((1.05 / (luminance(hex) + 0.05)) * 100) / 100
 }
 
+// How readable one colour is on another (1 to 21). The card draws its score in the accent on the look's own dark
+// background, and several looks are close in tone — mono grey on near-black, forest green on dark green — so it has
+// to be able to ask whether the accent is legible there at all rather than assume it.
+export function contrastRatio(a, b) {
+  if (!isHexColor(a) || !isHexColor(b)) return 1
+  const [light, dark] = luminance(a) > luminance(b) ? [luminance(a), luminance(b)] : [luminance(b), luminance(a)]
+  return Math.round(((light + 0.05) / (dark + 0.05)) * 100) / 100
+}
+
 // The CSS variables a theme sets on the page. The accent replaces the site's orange everywhere in the quiz screens.
 export function themeCssVars(theme) {
   const t = sanitizeTheme(theme)
