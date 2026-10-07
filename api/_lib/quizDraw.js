@@ -115,3 +115,18 @@ export function shownAnswer(answer, optionOrder) {
   const at = shownIndex(optionOrder, answer.chosen_index, optionOrder.length)
   return at === null ? answer : { ...answer, chosen_index: at }
 }
+
+// The projector holds its questions in an array it indexes by the game's current_question_index, so slot i has to be the
+// question the phones are being asked at index i.
+//
+// A question can go missing: an admin editing the quiz mid-game deletes it, and the row is gone by the time the projector
+// asks for it. Dropping it would slide every later question along by one, so the projector would show a different question
+// from the one the phones are answering. Leaving a null in its slot keeps the index meaning what it says, and the count
+// honest. `rows` are the database rows for these ids in any order.
+export function shownSlots(ids, rows, orders = {}) {
+  const byId = new Map((rows ?? []).map((q) => [q.id, q]))
+  return (ids ?? []).map((id) => {
+    const row = byId.get(id)
+    return row ? shownQuestion(row, orders[row.id] ?? null) : null
+  })
+}

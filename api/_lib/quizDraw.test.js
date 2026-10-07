@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   cleanDrawSettings, buildQuestionSet, keepsOptionOrder, shuffled, clampInt,
-  shownOptions, originalIndex, shownIndex, DRAW_MAX_QUESTIONS,
+  shownOptions, originalIndex, shownIndex, shownQuestion, shownAnswer, shownSlots, DRAW_MAX_QUESTIONS,
 } from './quizDraw.js'
 
 // A repeatable stand-in for Math.random, so a shuffle is the same shuffle twice.
@@ -177,5 +177,68 @@ describe('shownOptions and the index maps', () => {
     expect(originalIndex(null, 2, 4)).toBe(2)
     expect(shownIndex(null, 2, 4)).toBe(2)
     expect(shownOptions(q)).toEqual(q.options)
+  })
+
+  it('shownQuestion moves the key to where the answer sits on screen', () => {
+    // This question's right answer is the third one stored, Kumasi.
+    expect(q.correct_index).toBe(2)
+    const shown = shownQuestion(q, [2, 0, 3, 1])
+    expect(shown.options).toEqual(['Kumasi', 'Lagos', 'Ibadan', 'Accra'])
+    expect(shown.options[shown.correct_index]).toBe('Kumasi')
+    expect(shown.correct_index).toBe(0)
+  })
+
+  it('shownQuestion leaves a question with no order untouched', () => {
+    expect(shownQuestion(q, null)).toBe(q)
+    expect(shownQuestion({ ...q, type: 'text', options: [] }, [0, 1])).toBeTruthy()
+  })
+
+  it('shownQuestion has no correct answer for a poll', () => {
+    const poll = { ...q, type: 'poll', correct_index: null }
+    expect(shownQuestion(poll, [2, 0, 3, 1]).correct_index).toBeNull()
+  })
+
+  it('shownAnswer reports a stored pick where the player saw it', () => {
+    expect(shownAnswer({ chosen_index: 2 }, [2, 0, 3, 1]).chosen_index).toBe(0)
+    expect(shownAnswer({ chosen_index: 1 }, [2, 0, 3, 1]).chosen_index).toBe(3)
+    // A typed answer has no index to move.
+    expect(shownAnswer({ chosen_index: null, answer_text: 'Paris' }, [0, 1])).toEqual({ chosen_index: null, answer_text: 'Paris' })
+  })
+})
+
+describe('shownSlots', () => {
+  const row = (id, n) => ({ id, position: n, type: 'multiple', text: `Q${n}`, options: ['a', 'b'], correct_index: 1 })
+  const ids = ['a', 'b', 'c']
+  const rows = [row('a', 0), row('b', 1), row('c', 2)]
+
+  it('lines slot i up with id i, whatever order the rows came back in', () => {
+    expect(shownSlots(ids, rows).map((q) => q.id)).toEqual(ids)
+    expect(shownSlots(ids, [...rows].reverse()).map((q) => q.id)).toEqual(ids)
+  })
+
+  it('applies the answer order each question was drawn with', () => {
+    const slots = shownSlots(ids, rows, { b: [1, 0] })
+    expect(slots[1].options).toEqual(['b', 'a'])
+    expect(slots[0].options).toEqual(['a', 'b'])
+  })
+
+  it('keeps a slot empty for a question that no longer exists, without sliding the others', () => {
+    // The projector indexes this array by current_question_index, so dropping a deleted question would shift every later
+    // one and put a different question on screen than the phones are being asked.
+    const slots = shownSlots(ids, [row('a', 0), row('c', 2)]) // 'b' was deleted from the quiz mid-game
+    expect(slots).toHaveLength(3)
+    expect(slots[1]).toBeNull()
+    expect(slots[0].id).toBe('a')
+    expect(slots[2].id).toBe('c')
+  })
+
+  it('has one slot per id even when every question is gone', () => {
+    expect(shownSlots(ids, [])).toEqual([null, null, null])
+    expect(shownSlots(ids, [])).toHaveLength(ids.length)
+  })
+
+  it('copes with nothing to show at all', () => {
+    expect(shownSlots([], [])).toEqual([])
+    expect(shownSlots(undefined, undefined)).toEqual([])
   })
 })

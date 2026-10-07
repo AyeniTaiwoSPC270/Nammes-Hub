@@ -4,7 +4,7 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
-import { shownQuestion, shownAnswer } from '../../api/_lib/quizDraw.js'
+import { shownQuestion, shownAnswer, shownSlots } from '../../api/_lib/quizDraw.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
@@ -959,11 +959,13 @@ export default function HostQuiz() {
         ])
         if (cancelled) return
         if (qs) {
-          const orders = data.option_orders ?? {}
-          const byId = new Map(qs.map((q) => [q.id, q]))
-          const ordered = (ids ?? qs.map((q) => q.id)).map((id) => byId.get(id)).filter(Boolean)
-          setQuestions(ordered.map((q) => shownQuestion(q, orders[q.id] ?? null)))
-          setOptionOrders(orders)
+          // Held in the order the game will ask, one slot per drawn question, so a slot's index is the game's own
+          // current_question_index. A question deleted from the quiz while this game is running leaves a null in its slot
+          // rather than being dropped: dropping it would shift every later question along by one and put a different
+          // question on the projector than the phones are being asked. The phones look theirs up by id, so they are right
+          // either way.
+          setQuestions(shownSlots(ids ?? qs.map((q) => q.id), qs, data.option_orders ?? {}))
+          setOptionOrders(data.option_orders ?? {})
         }
         if (data.team_mode) {
           const { data: teamRows } = await supabase.from('quiz_teams').select('*').eq('session_id', sessionId).order('position')
