@@ -51,6 +51,8 @@ export function BrandMark({ className = 'h-9 w-9' }) {
 }
 
 // "Presented with" logos for the projector (never on phones). More than four rotate in groups of four.
+// Sponsor logos, on the lobby and the final screen. The tile is h-24 with an 80px logo, which is roughly a sixth of the
+// projector's height: big enough to read across a room, and four of them plus the gaps still fit a 960px lobby.
 export function SponsorStrip({ placement, className = '' }) {
   const { sponsors, showSponsors } = useQuizTheme()
   const [page, setPage] = useState(0)
@@ -67,8 +69,8 @@ export function SponsorStrip({ placement, className = '' }) {
       <span className="text-xs font-bold uppercase tracking-[0.18em] text-ink-muted">Presented with</span>
       <div className="flex flex-wrap items-center justify-center gap-3">
         {shown.map((s) => (
-          <span key={s.path} className="flex h-16 items-center rounded-xl bg-white px-4 shadow-sm ring-1 ring-black/5">
-            <img src={brandingUrl(s.path)} alt={s.name} className="max-h-12 w-auto max-w-[9rem] object-contain" />
+          <span key={s.path} className="flex h-24 items-center rounded-xl bg-white px-5 shadow-sm ring-1 ring-black/5">
+            <img src={brandingUrl(s.path)} alt={s.name} className="max-h-20 w-auto max-w-[16rem] object-contain" />
           </span>
         ))}
       </div>

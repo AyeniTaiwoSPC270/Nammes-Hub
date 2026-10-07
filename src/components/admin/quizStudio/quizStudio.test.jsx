@@ -23,6 +23,23 @@ describe('studio preview', () => {
     expect(html).toContain('Phones out')
     expect(html).toContain('--color-orange-500:#123456')
   })
+
+  it('draws the lobby headline in white, not the default ink', () => {
+    // index.css puts text-ink-900 on every h1/h2/h3. A rule that lands on the element beats one merely inherited from
+    // the panel behind it, so the headline has to say white itself or it goes black on the dark panel. HostQuiz does.
+    const html = renderToStaticMarkup(<StudioPreview theme={theme} surface="projector" screen="lobby" title="" />)
+    const headline = html.slice(0, html.indexOf('Freshers Night')).match(/<h2[^>]*>$/)[0]
+    expect(headline).toContain('text-white')
+    expect(headline).not.toMatch(/text-ink-900|text-black/)
+  })
+
+  it('gives sponsor logos room to be read across a room', () => {
+    const q = '11111111-1111-4111-8111-111111111111'
+    const path = `${q}/33333333-3333-4333-8333-333333333333.webp`
+    const html = renderToStaticMarkup(<StudioPreview theme={{ sponsors: [{ name: 'Acme', path }] }} surface="projector" screen="lobby" title="" />)
+    const img = html.match(/<img[^>]*alt="Acme"[^>]*>/)[0]
+    expect(img).toMatch(/max-h-20/) // 80px tall, about a sixth of the projector
+  })
   it('shows sponsors on the lobby and the finish, and not when switched off', () => {
     const q = '11111111-1111-4111-8111-111111111111'
     const path = `${q}/33333333-3333-4333-8333-333333333333.webp`
