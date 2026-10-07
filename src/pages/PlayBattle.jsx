@@ -166,12 +166,18 @@ function Champions({ ranking, period, onPeriod }) {
       {top.length === 0 ? (
         <p className="text-center text-ink-muted">{period === 'week' ? 'No finished battles this week yet. Be the first!' : 'No ranked battles yet.'}</p>
       ) : (
-        <ol className="flex flex-col gap-2">
+<ol className="flex flex-col gap-2">
           {top.map((p) => (
-            <li key={p.rank} className="flex items-center gap-3 rounded-2xl border border-hairline bg-paper p-2">
+            <li
+              key={p.rank}
+              className={`flex items-center gap-3 rounded-2xl border p-2 ${p.isYou ? 'border-orange-500 bg-orange-500/10' : 'border-hairline bg-paper'}`}
+            >
               <span className="w-8 text-center text-lg font-bold">{MEDALS[p.rank - 1] ?? p.rank}</span>
               <Avatar name={p.nickname} avatarId={p.avatarId} mood="static" className="h-10 w-10" />
-              <span className="min-w-0 flex-1 truncate font-semibold">{p.nickname}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{p.nickname}</span>
+                {p.isYou && <span className="block text-xs font-bold text-brand-orange">This is you</span>}
+              </span>
               <span className="text-right text-sm text-ink-muted">{p.wins}W {p.losses}L</span>
               {period === 'all' && <span className="w-12 text-right font-bold tabular-nums">{p.rating}</span>}
             </li>
