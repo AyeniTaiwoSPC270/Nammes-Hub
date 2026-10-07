@@ -23,6 +23,7 @@ import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
 import QuestionCard from '../../components/admin/quizEditor/QuestionCard'
 import TeamSettings from '../../components/admin/quizEditor/TeamSettings'
+import BankSettings, { NEW_BANK_SETTINGS, bankSettingsFromRow, saveBankSettings } from '../../components/admin/quizEditor/BankSettings'
 import { DEFAULT_TEAM_SETTINGS } from '../../data/quizTeams'
 import QuizImportModal from '../../components/admin/quizLibrary/QuizImportModal'
 import QuestionBankModal from '../../components/admin/quizLibrary/QuestionBankModal'
@@ -50,9 +51,10 @@ export default function AdminQuizEditor() {
   const [addType, setAddType] = useState('multiple')
   const [tags, setTags] = useState('')
   const [teamSettings, setTeamSettings] = useState(DEFAULT_TEAM_SETTINGS)
-  const [practiceEnabled, setPracticeEnabled] = useState(false)
-  const [battleEnabled, setBattleEnabled] = useState(false)
-  const [dialog, setDialog] = useState(null) // 'import' or 'bank'
+const [practiceEnabled, setPracticeEnabled] = useState(false)
+const [battleEnabled, setBattleEnabled] = useState(false)
+const [bank, setBank] = useState(NEW_BANK_SETTINGS)
+const [dialog, setDialog] = useState(null) // 'import' or 'bank'
 
   useEffect(() => {
     if (!id || !quizQuery.data || loaded) return
@@ -67,12 +69,16 @@ export default function AdminQuizEditor() {
     })
     setPracticeEnabled(Boolean(quizQuery.data.practice_enabled))
     setBattleEnabled(Boolean(quizQuery.data.battle_enabled))
+    setBank({
+      ...bankSettingsFromRow(quizQuery.data),
+      battleQuestionCount: quizQuery.data.battle_question_count == null ? '' : String(quizQuery.data.battle_question_count),
+    })
     setQuestions(quizQuery.data.questions.map(questionFromRow))
     setLoaded(true)
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled, battleEnabled }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled, battleEnabled, ...saveBankSettings(bank, questions.length) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -161,6 +167,8 @@ export default function AdminQuizEditor() {
 
           <TeamSettings settings={teamSettings} onChange={setTeamSettings} />
 
+          <BankSettings settings={bank} onChange={setBank} questionCount={questions.length} />
+
           <fieldset className="rounded-lg border border-hairline bg-surface p-4">
             <legend className="px-1 text-sm font-bold text-ink-900">Practice mode</legend>
             <label className="flex cursor-pointer items-start gap-3">
@@ -182,7 +190,7 @@ export default function AdminQuizEditor() {
               <span>
                 <span className="block font-semibold text-ink-900">Open for battles</span>
                 <span className="block text-sm text-ink-muted">
-                  Players can challenge a friend or play a live duel (even against a bot) on this quiz, without a host. Each battle uses up to 10 of the quiz&apos;s questions.
+                  Players can challenge a friend or play a live duel (even against a bot) on this quiz, without a host. Each battle uses the number of questions set above.
                   {' '}Players start at <code>{window.location.origin}/battle</code>.
                 </span>
               </span>

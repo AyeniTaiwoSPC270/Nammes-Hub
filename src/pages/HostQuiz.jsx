@@ -4,6 +4,7 @@ import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
+import { shownQuestion, shownAnswer } from '../../api/_lib/quizDraw.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
@@ -887,6 +888,8 @@ export default function HostQuiz() {
   const [players, setPlayers] = useState([])
   const [teams, setTeams] = useState([])
   const [answerSet, setAnswerSet] = useState({ questionId: null, rows: [] })
+  // The answer order each question was drawn with, kept here so the stored answers can be read in the order on screen.
+  const [optionOrders, setOptionOrders] = useState({})
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -944,12 +947,24 @@ export default function HostQuiz() {
       applySession(data, false)
       loadPlayers()
       if (first) {
+        // The questions this game actually asks, in its drawn order, with each question's answers already moved into the order the
+        // phones were given. A game that started before question banks has no frozen list, so it falls back to the quiz's own
+        // questions in order, with their answers as written.
+        const ids = Array.isArray(data.question_ids) && data.question_ids.length > 0 ? data.question_ids : null
         const [{ data: qs }, { data: quiz }] = await Promise.all([
-          supabase.from('quiz_questions').select('*').eq('quiz_id', data.quiz_id).order('position'),
+          ids
+            ? supabase.from('quiz_questions').select('*').in('id', ids)
+            : supabase.from('quiz_questions').select('*').eq('quiz_id', data.quiz_id).order('position'),
           supabase.from('quizzes').select('title').eq('id', data.quiz_id).maybeSingle(),
         ])
         if (cancelled) return
-        if (qs) setQuestions(qs)
+        if (qs) {
+          const orders = data.option_orders ?? {}
+          const byId = new Map(qs.map((q) => [q.id, q]))
+          const ordered = (ids ?? qs.map((q) => q.id)).map((id) => byId.get(id)).filter(Boolean)
+          setQuestions(ordered.map((q) => shownQuestion(q, orders[q.id] ?? null)))
+          setOptionOrders(orders)
+        }
         if (data.team_mode) {
           const { data: teamRows } = await supabase.from('quiz_teams').select('*').eq('session_id', sessionId).order('position')
           if (!cancelled && teamRows) setTeams(teamRows)
@@ -1001,7 +1016,8 @@ export default function HostQuiz() {
         .select('player_id, chosen_index, points_awarded, answered_at, answer_text, correct')
         .eq('session_id', sessionId)
         .eq('question_id', questionId)
-      if (!cancelled && data) setAnswerSet({ questionId, rows: data })
+      const order = optionOrders[questionId] ?? null
+      if (!cancelled && data) setAnswerSet({ questionId, rows: data.map((a) => shownAnswer(a, order)) })
     }
     loadAnswers()
     if (state !== 'question') return () => { cancelled = true }
@@ -1010,7 +1026,7 @@ export default function HostQuiz() {
       cancelled = true
       clearInterval(timer)
     }
-  }, [sessionId, questionId, state])
+  }, [sessionId, questionId, state, optionOrders])
 
   // A bracket game's matches. They change when a round is settled (as the game leaves a reveal), so the board is read
   // again a moment after every step, in case the settling finished just after the screen changed.

@@ -1,9 +1,11 @@
 // Pure rules for battle mode (challenge a friend and live duel): picking the questions, timing, winners and the
 // head-to-head summary. Spec: docs/superpowers/specs/2026-10-01-quiz-battle-mode.md. No database or network in here.
 import { scoreAnswer, ANSWER_GRACE_MS } from './quiz.js'
-import { seeded } from './quizBots.js'
+import { buildQuestionSet } from './quizDraw.js'
 
-export const BATTLE_MAX_QUESTIONS = 10
+// A battle is two people answering at their own pace, so it stays much shorter than a hosted game. The admin can set it to
+// anything up to here; the schema's own ceiling is kept in step in supabase/migrations/20261007120000_quiz_question_draw.sql.
+export const BATTLE_MAX_QUESTIONS = 50
 export const BATTLE_CHALLENGE_DAYS = 7
 export const DUEL_START_DELAY_MS = 4000 // the 3-2-1 before the first question
 export const DUEL_NEXT_DELAY_MS = 1500 // a breath between the reveal and the next question
@@ -24,13 +26,42 @@ export function isBattleCode(value) {
   return typeof value === 'string' && /^[A-Z0-9]{6}$/.test(value.toUpperCase())
 }
 
-// A random subset of the quiz's playable questions (no polls), the same for both sides. `seedText` makes it repeatable
-// for a given battle while a rematch (a new seed) gets a different mix.
-export function pickBattleQuestions(questions, seedText, max = BATTLE_MAX_QUESTIONS) {
-  const playable = questions.filter((q) => (q.type ?? 'multiple') !== 'poll')
-  if (playable.length <= max) return playable.sort((a, b) => a.position - b.position)
-  const chosen = [...playable].sort((a, b) => seeded(`${seedText}:${a.id}`) - seeded(`${seedText}:${b.id}`)).slice(0, max)
-  return chosen.sort((a, b) => a.position - b.position)
+// How many questions a battle of this quiz will ask, once the admin's own length and the size of the bank are both taken
+// into account. The one place that decides it, so the quiz picker and the battle itself can never disagree.
+export function battleQuestionCount(battleCount, playableCount) {
+  const size = Math.max(1, playableCount || 1)
+  const wanted = battleCount == null || battleCount === '' ? BATTLE_MAX_QUESTIONS : Number(battleCount)
+  if (!Number.isFinite(wanted)) return Math.min(size, BATTLE_MAX_QUESTIONS)
+  return Math.min(size, BATTLE_MAX_QUESTIONS, Math.max(1, Math.round(wanted)))
+}
+
+// The questions one battle asks, and the order each one's answers are shown in. The random source is seeded from the battle,
+// so the same battle always gets the same mix (both sides get it, and a phone that reloads sees it again) while a rematch,
+// with a new seed, gets a different one.
+export function pickBattleQuestions(questions, seedText, settings = {}) {
+  const playable = questions.filter((q) => (q.type ?? 'multiple') !== 'poll') // a poll cannot be answered head to head
+  const rand = seededRandom(seedText)
+  const draw = battleQuestionCount(settings.battleCount, playable.length)
+  const { questionIds, optionOrders } = buildQuestionSet(playable, {
+    drawCount: draw,
+    shuffleQuestions: settings.shuffleQuestions === true,
+    shuffleOptions: settings.shuffleOptions === true,
+  }, rand)
+  return { questionIds, optionOrders }
+}
+
+// A small repeatable random source built from the battle's seed (xorshift32). quizBots' seeded() answers one number for a
+// given string; a draw needs a whole stream of them, so this is its own thing.
+export function seededRandom(seedText) {
+  let state = 0
+  for (let i = 0; i < seedText.length; i++) state = (state * 31 + seedText.charCodeAt(i)) >>> 0
+  return () => {
+    // xorshift32: cheap, and identical every time for the same seed.
+    state ^= state << 13; state >>>= 0
+    state ^= state >>> 17
+    state ^= state << 5; state >>>= 0
+    return state / 4294967296
+  }
 }
 
 // What a right answer is worth after `elapsedMs` (same speed rule as live games and practice; double rounds count twice).
@@ -92,11 +123,41 @@ export function presence(lastSeenIso, nowMs) {
 // ---- Rankings ----
 export const RATING_START = 1000
 export const RATING_K = 32
+// The length a battle used to have, and therefore the length at which a result counts for a full RATING_K. A battle the
+// admin has shortened counts for less, and one they have lengthened counts for more.
+export const RATING_REFERENCE_QUESTIONS = 10
+// How much of a battle's weight is left when the result was exactly what the ratings predicted. Below 1 so a battle nobody
+// learned anything from is never worth a full step.
+export const RATING_MIN_WEIGHT = 0.25
+// Damping on the margin, so a blowout counts for more than a close game but not without limit.
+export const RATING_MARGIN_EXPONENT = 0.5
 
-// Standard Elo: both ratings move by the same amount, more when the result was a surprise. `winner` is 'a', 'b' or null (a draw).
-export function eloUpdate(ratingA, ratingB, winner) {
+// How much one battle is worth as evidence, between 0 and a little over 1.
+//
+// `trust` grows with the square root of the number of questions asked: a two-question result is mostly luck, and a
+// fifty-question one is a real test. `decisive` grows with how lopsided the score was, as a share of the points that were
+// actually on the table, damped so that winning by a mile does not count for infinitely more than winning narrowly.
+//
+// This is a judgement call, not a derivation: a strict Bayesian would *shrink* a confident player's step as evidence grows.
+// Growing it instead matches how FIDE treats blitz, and it is what makes a longer battle mean more.
+export function battleWeight({ questionCount, winnerPoints = 0, loserPoints = 0, pointsAvailable = 0 }) {
+  const trust = Math.sqrt(Math.max(1, questionCount) / RATING_REFERENCE_QUESTIONS)
+  const gap = pointsAvailable > 0 ? Math.abs(winnerPoints - loserPoints) / pointsAvailable : 0
+  const decisive = Math.min(1, gap) ** RATING_MARGIN_EXPONENT
+  return trust * (RATING_MIN_WEIGHT + (1 - RATING_MIN_WEIGHT) * decisive)
+}
+
+// The most points a battle's questions could have awarded between them, so a margin can be measured as a share of what was
+// on the table rather than as a raw score gap. A win on every question at full speed is worth 1.
+export function pointsOnOffer(questions) {
+  return (questions ?? []).reduce((sum, q) => sum + battleQuestionPoints(q, 0), 0)
+}
+
+// Standard Elo: both ratings move by the same amount, more when the result was a surprise. `winner` is 'a', 'b' or null (a
+// draw). `weight` scales the step, and defaults to 1 so a caller with nothing to say about the battle gets today's numbers.
+export function eloUpdate(ratingA, ratingB, winner, weight = 1) {
   const expectedA = 1 / (1 + 10 ** ((ratingB - ratingA) / 400))
   const scoreA = winner === 'a' ? 1 : winner === 'b' ? 0 : 0.5
-  const change = Math.round(RATING_K * (scoreA - expectedA))
+  const change = Math.round(RATING_K * weight * (scoreA - expectedA))
   return { a: ratingA + change, b: ratingB - change, change }
 }

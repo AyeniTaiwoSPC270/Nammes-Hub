@@ -3,6 +3,8 @@ import {
   hashToken, scoreAnswer, createRateLimiter, ANSWER_GRACE_MS, effectiveElapsedMs, questionLimitMs,
   gradeAnswer, computeAward, isComeback, sanitizeGameOptions, fiftyFiftyHidden,
 } from '../quiz.js'
+import { currentQuestion, optionOrderFor } from '../quizSessionQuestions.js'
+import { originalIndex } from '../quizDraw.js'
 
 // A player submits an answer. Points come from the server's own clock and the reply never says whether the
 // answer was right: correctness is only revealed once the host moves the game to the reveal step.
@@ -56,17 +58,16 @@ export function createQuizAnswerHandler(getClient, { now = () => Date.now(), all
       return
     }
 
-    const { data: question } = await supabaseAdmin
-      .from('quiz_questions')
-      .select('*')
-      .eq('quiz_id', session.quiz_id)
-      .eq('position', session.current_question_index)
-      .maybeSingle()
+    const question = await currentQuestion(supabaseAdmin, session)
     if (!question) {
       res.status(400).json({ error: 'That is not one of the options' })
       return
     }
-    const graded = gradeAnswer(question, { chosenIndex, answerText })
+    // A player answers the option they were shown, so a shuffled question has to be turned back into the stored position
+    // before grading. Refused here rather than graded against whatever happened to land there.
+    const optionOrder = optionOrderFor(session, question.id)
+    const sentIndex = originalIndex(optionOrder, chosenIndex, (question.options ?? []).length)
+    const graded = gradeAnswer(question, { chosenIndex: sentIndex ?? chosenIndex, answerText })
     if (!graded.ok) {
       res.status(400).json({ error: graded.error })
       return
@@ -88,7 +89,9 @@ export function createQuizAnswerHandler(getClient, { now = () => Date.now(), all
       .maybeSingle()
     const powerup = use?.kind ?? null
     if (powerup === 'fifty') {
-      const hidden = fiftyFiftyHidden({ playerId: player.id, questionId: question.id, optionCount: question.options.length, correctIndex: question.correct_index })
+      // Also in stored positions, the same space the answer was just graded in, so the option refused here is exactly the
+      // one the phone removed.
+      const hidden = fiftyFiftyHidden({ playerId: player.id, questionId: question.id, optionCount: (question.options ?? []).length, correctIndex: question.correct_index })
       if (hidden.includes(graded.chosenIndex)) {
         res.status(400).json({ error: 'That option was removed by your 50/50' })
         return

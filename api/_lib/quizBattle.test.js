@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import {
   generateBattleCode, isBattleCode, pickBattleQuestions, battleQuestionPoints, decideWinner, speedOf, headToHead, duelNextStep,
-  presence, DUEL_REVEAL_MS, DUEL_FORFEIT_MS, DUEL_AWAY_MS,
+  presence, DUEL_REVEAL_MS, DUEL_FORFEIT_MS, DUEL_AWAY_MS, BATTLE_MAX_QUESTIONS,
 } from './quizBattle.js'
 
 const START = Date.parse('2026-10-01T10:00:00.000Z')
 const iso = (ms) => new Date(ms).toISOString()
-const qs = Array.from({ length: 15 }, (_, i) => ({ id: `q${i}`, position: i, type: i === 3 ? 'poll' : 'multiple', points: 1000, time_limit_seconds: 20 }))
+const qs = Array.from({ length: 15 }, (_, i) => ({
+  id: `q${i}`, position: i, type: i === 3 ? 'poll' : 'multiple',
+  options: i === 3 ? [] : ['a', 'b', 'c', 'd'], correct_index: i === 3 ? null : 1,
+  points: 1000, time_limit_seconds: 20,
+}))
 
 describe('battle codes', () => {
   it('are 6 readable characters', () => {
@@ -21,18 +25,62 @@ describe('battle codes', () => {
   })
 })
 
+const mc = (n) => ({ id: `q${n}`, position: n, type: 'multiple', options: ['a', 'b', 'c', 'd'], correct_index: 1, points: 1000, time_limit_seconds: 20 })
+
 describe('pickBattleQuestions', () => {
+  const idsOf = (qs, seed, settings) => pickBattleQuestions(qs, seed, settings).questionIds
+  const byId = new Map(qs.map((q) => [q.id, q]))
+
   it('drops polls and keeps everything when the quiz is small', () => {
-    const small = pickBattleQuestions(qs.slice(0, 5), 'x')
-    expect(small.map((q) => q.id)).toEqual(['q0', 'q1', 'q2', 'q4'])
+    const small = idsOf(qs.slice(0, 5), 'x')
+    expect(small).toEqual(['q0', 'q1', 'q2', 'q4'])
   })
-  it('takes a repeatable random subset of at most 10, in quiz order', () => {
-    const a = pickBattleQuestions(qs, 'seed-1')
-    expect(a).toHaveLength(10)
-    expect(a.every((q) => q.type !== 'poll')).toBe(true)
-    expect(a.map((q) => q.position)).toEqual([...a.map((q) => q.position)].sort((x, y) => x - y))
-    expect(pickBattleQuestions(qs, 'seed-1').map((q) => q.id)).toEqual(a.map((q) => q.id))
-    expect(pickBattleQuestions(qs, 'seed-2').map((q) => q.id)).not.toEqual(a.map((q) => q.id))
+
+  it('asks for the whole bank when it is shorter than the ceiling', () => {
+    // 15 questions, one a poll, so 14 can be asked at all and the 50 ceiling never bites.
+    const a = idsOf(qs, 'seed-1')
+    expect(a).toHaveLength(14)
+    expect(a.every((id) => byId.get(id).type !== 'poll')).toBe(true)
+    expect(a).toEqual([...a].sort((x, y) => byId.get(x).position - byId.get(y).position))
+  })
+
+  it('draws a subset, not the whole bank, once the bank is bigger than the number asked for', () => {
+    const big = Array.from({ length: 80 }, (_, i) => ({ ...mc(i), id: `b${i}` }))
+    const a = idsOf(big, 'seed-1')
+    expect(a).toHaveLength(BATTLE_MAX_QUESTIONS)
+    expect(new Set(a).size).toBe(BATTLE_MAX_QUESTIONS)
+    // Repeatable for one seed, and a rematch gets a different mix.
+    expect(idsOf(big, 'seed-1')).toEqual(a)
+    expect(idsOf(big, 'seed-2')).not.toEqual(a)
+  })
+
+  it('asks for the number the admin set, and never more than the bank holds', () => {
+    expect(idsOf(qs, 'seed-1', { battleCount: 5 })).toHaveLength(5)
+    expect(idsOf(qs, 'seed-1', { battleCount: 5 })).toEqual(idsOf(qs, 'seed-1', { battleCount: 5 }))
+    expect(idsOf(qs, 'seed-1', { battleCount: 999 })).toHaveLength(14)
+    expect(idsOf(qs, 'seed-1', { battleCount: 0 })).toHaveLength(1)
+  })
+
+  it('leaves the answers alone by default, as every quiz did before question banks', () => {
+    const { optionOrders } = pickBattleQuestions(qs, 'seed-1')
+    for (const order of Object.values(optionOrders)) expect(order).toEqual([0, 1, 2, 3])
+  })
+
+  it('shuffles the questions and the answers when the quiz says to', () => {
+    const settings = { battleCount: 14, shuffleQuestions: true, shuffleOptions: true }
+    const { questionIds, optionOrders } = pickBattleQuestions(qs, 'seed-1', settings)
+    // A different set every time would break both sides agreeing, so it is still the same seed, same questions.
+    expect(questionIds).toEqual(idsOf(qs, 'seed-1', settings))
+    // Playing in quiz order is what makes it not a shuffle.
+    const positions = questionIds.map((id) => byId.get(id).position)
+    expect(positions).not.toEqual([...positions].sort((x, y) => x - y))
+    const shuffledAnswers = Object.values(optionOrders).filter((o) => o.join() !== '0,1,2,3')
+    expect(shuffledAnswers.length).toBeGreaterThan(0)
+  })
+
+  it('never repeats a question within one battle', () => {
+    const ids = idsOf(qs, 'seed-3', { battleCount: 14, shuffleQuestions: true })
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })
 

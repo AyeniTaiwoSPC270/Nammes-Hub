@@ -11,7 +11,9 @@ import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } fro
 import {
   generateBattleCode, isBattleCode, pickBattleQuestions, battleQuestionPoints, decideWinner, speedOf, headToHead, duelNextStep, presence,
   BATTLE_CHALLENGE_DAYS, DUEL_START_DELAY_MS, DUEL_NEXT_DELAY_MS, DUEL_OPEN_TTL_MS, eloUpdate, RATING_START,
+  battleQuestionCount, battleWeight, pointsOnOffer,
 } from '../quizBattle.js'
+import { shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
 
 // Battle mode. Spec: docs/superpowers/specs/2026-10-01-quiz-battle-mode.md
 //
@@ -60,9 +62,23 @@ export function createQuizBattleHandler(
     // ---- loading ----
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, battle_enabled, theme, expires_at').eq('id', id).maybeSingle()
+      const { data } = await supabaseAdmin
+        .from('quizzes')
+        .select('id, title, battle_enabled, theme, expires_at, draw_settings, battle_question_count')
+        .eq('id', id)
+        .maybeSingle()
       const expired = data?.expires_at && new Date(data.expires_at).getTime() < now()
       return data && data.battle_enabled && !expired ? data : null
+    }
+    // A battle draws from the same bank as a hosted game, with its own length when the admin set one. Falls back to the
+    // quiz's own draw count, and to "ask everything up to the ceiling" when the quiz predates question banks.
+    function battleSettings(quizRow) {
+      const s = quizRow?.draw_settings ?? {}
+      return {
+        battleCount: quizRow?.battle_question_count ?? s.draw_count ?? null,
+        shuffleQuestions: s.shuffle_questions === true,
+        shuffleOptions: s.shuffle_options === true,
+      }
     }
     async function quizQuestionsFor(id) {
       const { data } = await supabaseAdmin.from('quiz_questions').select('*').eq('quiz_id', id)
@@ -73,6 +89,7 @@ export function createQuizBattleHandler(
       const byId = new Map((data ?? []).map((q) => [q.id, q]))
       return battle.question_ids.map((id) => byId.get(id)).filter(Boolean)
     }
+    const battleOptionOrder = (battle, questionId) => battle.option_orders?.[questionId] ?? null
     async function sidesOf(battleId) {
       const { data } = await supabaseAdmin.from('quiz_battle_sides').select('*').eq('battle_id', battleId)
       return data ?? []
@@ -87,26 +104,30 @@ export function createQuizBattleHandler(
     }
     const theme = async (quizRow, id) => sanitizeTheme(quizRow?.theme, { quizId: id })
 
-    function questionView(q) {
+    // What a side is shown, and what the result screen reports, both in the order the answers were drawn in. Stored answers keep
+    // their own positions, so only the two maps are needed.
+    function questionView(q, optionOrder = null) {
       const type = q.type ?? 'multiple'
+      const count = (q.options ?? []).length
       return {
         type,
         text: q.text,
-        options: isChoiceType(type) ? q.options : [],
+        options: shownOptions(q, optionOrder),
         timeLimitSeconds: q.time_limit_seconds,
         multiplier: q.points_multiplier ?? 1,
         imageUrl: publicImageUrl(baseUrl, q.image_path, q.quiz_id),
         imageAlt: q.image_alt ?? '',
       }
     }
-    function resultFor(q, answer) {
+    function resultFor(q, answer, optionOrder = null) {
       const type = q.type ?? 'multiple'
+      const count = (q.options ?? []).length
       return {
         correct: answer.correct === true,
         pointsAwarded: answer.points_awarded ?? 0,
-        chosenIndex: answer.chosen_index ?? null,
+        chosenIndex: answer.chosen_index == null ? null : shownIndex(optionOrder, answer.chosen_index, count),
         answerText: answer.answer_text ?? null,
-        correctIndex: isChoiceType(type) ? q.correct_index : null,
+        correctIndex: isChoiceType(type) ? shownIndex(optionOrder, q.correct_index, count) : null,
         correctText: correctText(q),
         timedOut: answer.chosen_index == null && answer.answer_text == null,
       }
@@ -143,12 +164,12 @@ export function createQuizBattleHandler(
         .in('state', ['open', 'question', 'reveal'])
         .select('*')
         .maybeSingle()
-      if (data) await rateBattle(data, sides)
+      if (data) await rateBattle(data, sides, await battleQuestions(data))
       return data ?? (await battleById(battle.id))
     }
 
     // A finished battle between two real players changes both ratings, once. Bots never count.
-    async function rateBattle(finished, sides) {
+    async function rateBattle(finished, sides, questions = []) {
       const a = sides.find((s) => s.slot === 'a')
       const b = sides.find((s) => s.slot === 'b')
       if (!a || !b || a.bot_skill || b.bot_skill || !a.tag_hash || !b.tag_hash || a.tag_hash === b.tag_hash) return
@@ -159,7 +180,21 @@ export function createQuizBattleHandler(
       if (!claimed) return
       const { data: rows } = await supabaseAdmin.from('quiz_battle_ratings').select('*').in('tag_hash', [a.tag_hash, b.tag_hash])
       const mine = (hash) => (rows ?? []).find((r) => r.tag_hash === hash)
-      const next = eloUpdate(mine(a.tag_hash)?.rating ?? RATING_START, mine(b.tag_hash)?.rating ?? RATING_START, finished.winner_slot)
+      // How much this battle is worth as evidence. A battle the admin made short counts for less than a long one, and a
+      // battle that was decided narrowly counts for less than a rout, so a lucky escape from a two-question quiz cannot
+      // climb the ladder the way a real performance does. See battleWeight.
+      const weight = battleWeight({
+        questionCount: questions.length,
+        winnerPoints: finished.winner_slot === 'b' ? b.total_score : a.total_score,
+        loserPoints: finished.winner_slot === 'b' ? a.total_score : b.total_score,
+        pointsAvailable: pointsOnOffer(questions),
+      })
+      const next = eloUpdate(
+        mine(a.tag_hash)?.rating ?? RATING_START,
+        mine(b.tag_hash)?.rating ?? RATING_START,
+        finished.winner_slot,
+        weight,
+      )
       const outcome = (slot) => (finished.winner_slot === null ? 'draws' : finished.winner_slot === slot ? 'wins' : 'losses')
       for (const [side, rating] of [[a, next.a], [b, next.b]]) {
         const existing = mine(side.tag_hash)
@@ -289,9 +324,9 @@ export function createQuizBattleHandler(
           me: { ...base.me, score: me.total_score },
           index: me.current_index,
           startedAt: me.question_started_at,
-          question: questionView(q),
+          question: questionView(q, battleOptionOrder(battle, q.id)),
         }
-        if (answer) out.result = resultFor(q, answer)
+        if (answer) out.result = resultFor(q, answer, battleOptionOrder(battle, q.id))
         return out
       }
 
@@ -309,15 +344,16 @@ export function createQuizBattleHandler(
         opponent: { ...base.opponent, score: settled(theirAnswers), presence: other && !other.bot_skill ? presence(other.last_seen_at, now()) : 'here' },
         index: battle.current_index,
         startsAt: battle.question_started_at,
-        question: questionView(q),
+        question: questionView(q, battleOptionOrder(battle, q.id)),
         myAnswered: myAnswers.some((x) => x.question_id === q.id),
         opponentAnswered: theirAnswers.some((x) => x.question_id === q.id),
       }
       if (reveal) {
         const mine = myAnswers.find((x) => x.question_id === q.id)
         const theirs = theirAnswers.find((x) => x.question_id === q.id)
+        const order = battleOptionOrder(battle, q.id)
         out.reveal = {
-          mine: mine ? resultFor(q, mine) : { correct: false, pointsAwarded: 0, chosenIndex: null, answerText: null, correctIndex: isChoiceType(q.type ?? 'multiple') ? q.correct_index : null, correctText: correctText(q), timedOut: true },
+          mine: mine ? resultFor(q, mine, order) : { correct: false, pointsAwarded: 0, chosenIndex: null, answerText: null, correctIndex: isChoiceType(q.type ?? 'multiple') ? shownIndex(order, q.correct_index, (q.options ?? []).length) : null, correctText: correctText(q), timedOut: true },
           theirs: { correct: theirs?.correct === true, pointsAwarded: theirs?.points_awarded ?? 0, answered: Boolean(theirs) },
         }
       }
@@ -359,13 +395,21 @@ export function createQuizBattleHandler(
 
     // ---- list: quizzes open for battles ----
     if (op === 'list') {
-      const { data: all } = await supabaseAdmin.from('quizzes').select('id, title, theme, is_custom, expires_at').eq('battle_enabled', true)
+      const { data: all } = await supabaseAdmin
+        .from('quizzes')
+        .select('id, title, theme, is_custom, expires_at, draw_settings, battle_question_count')
+        .eq('battle_enabled', true)
       // A community set is only listed when asked for by its id (the link someone shared), never to everyone.
       const quizzes = (all ?? []).filter((q) => (!q.is_custom || (q.id === quizId && !(q.expires_at && new Date(q.expires_at).getTime() < now()))))
       const out = []
       for (const q of quizzes) {
         const playable = (await quizQuestionsFor(q.id)).filter((x) => (x.type ?? 'multiple') !== 'poll')
-        if (playable.length > 0) out.push({ id: q.id, title: q.title, questionCount: Math.min(playable.length, 10) })
+        if (playable.length === 0) continue
+        // The real number a battle will ask, from the one place that decides it. This used to be a literal 10 that had
+        // nothing to do with the constant the draw used, so the picker could disagree with the game.
+        const wanted = battleSettings(q).battleCount
+        const count = battleQuestionCount(wanted, playable.length)
+        out.push({ id: q.id, title: q.title, questionCount: count })
       }
       res.status(200).json({ quizzes: out })
       return
@@ -472,8 +516,10 @@ export function createQuizBattleHandler(
         return
       }
       const all = await quizQuestionsFor(quiz.id)
-      const picked = pickBattleQuestions(all, `${quiz.id}:${now()}:${random()}`)
-      if (picked.length === 0) {
+      // The draw and the answer orders are frozen onto the battle here, so both sides get the same set in the same order and
+      // a rematch (a new seed) gets a different one.
+      const picked = pickBattleQuestions(all, `${quiz.id}:${now()}:${random()}`, battleSettings(quiz))
+      if (picked.questionIds.length === 0) {
         res.status(404).json({ error: 'This quiz has no questions for a battle yet' })
         return
       }
@@ -486,7 +532,8 @@ export function createQuizBattleHandler(
             quiz_id: quiz.id,
             mode,
             code: generateBattleCode(random),
-            question_ids: picked.map((q) => q.id),
+            question_ids: picked.questionIds,
+            option_orders: picked.optionOrders,
             state: 'open',
             current_index: 0,
             forfeit: false,
@@ -727,7 +774,11 @@ export function createQuizBattleHandler(
         res.status(409).json({ error: 'You already answered this question' })
         return
       }
-      const graded = gradeAnswer(question, { chosenIndex, answerText })
+      // A player answers the option they were shown, so a shuffled question is turned back into its stored position before
+      // grading, and refused rather than graded against whatever happens to be there.
+      const order = battleOptionOrder(battle, question.id)
+      const storedIndex = originalIndex(order, chosenIndex, (question.options ?? []).length)
+      const graded = gradeAnswer(question, { chosenIndex: storedIndex ?? chosenIndex, answerText })
       if (!graded.ok) {
         res.status(400).json({ error: graded.error })
         return
@@ -744,7 +795,7 @@ export function createQuizBattleHandler(
       }
       const answer = { chosen_index: graded.chosenIndex, answer_text: graded.answerText, correct: out.correct, points_awarded: out.points }
       const { data: fresh } = await supabaseAdmin.from('quiz_battle_sides').select('total_score').eq('battle_id', battle.id).eq('slot', me.slot).maybeSingle()
-      res.status(200).json({ result: resultFor(question, answer), score: fresh?.total_score ?? me.total_score + out.points })
+      res.status(200).json({ result: resultFor(question, answer, order), score: fresh?.total_score ?? me.total_score + out.points })
       return
     }
 

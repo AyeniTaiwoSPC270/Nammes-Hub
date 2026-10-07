@@ -1,4 +1,5 @@
 import { bracketRounds, pairPlayers, matchRows, matchWinner, botRoundScore, winnerId } from './quizBracket.js'
+import { sessionQuestionIds } from './quizSessionQuestions.js'
 
 // The database side of a hosted-game bracket: pairing everyone when the game starts, and settling a round once its
 // last question has been revealed. Both are safe to run twice (they do nothing the second time).
@@ -8,11 +9,12 @@ export async function startBracket(db, session) {
   if (!session.bracket_mode) return { started: false }
   const { data: existing } = await db.from('quiz_bracket_matches').select('id').eq('session_id', session.id).eq('round', 0)
   if ((existing ?? []).length > 0) return { started: false }
-  const [{ data: players }, { count }] = await Promise.all([
+  const [{ data: players }, questionIds] = await Promise.all([
     db.from('quiz_players').select('id, nickname, avatar_id').eq('session_id', session.id),
-    db.from('quiz_questions').select('id', { count: 'exact', head: true }).eq('quiz_id', session.quiz_id),
+    sessionQuestionIds(db, session),
   ])
-  const rounds = bracketRounds((players ?? []).length, count ?? 0, session.bracket_length)
+  // The game's own drawn list, so a bracket can never promise more rounds than the questions it will actually ask.
+  const rounds = bracketRounds((players ?? []).length, questionIds.length, session.bracket_length)
   if (rounds < 1 || (players ?? []).length === 0) {
     await db.from('quiz_sessions').update({ bracket_rounds: 0, bracket_done: true }).eq('id', session.id)
     return { started: false }
@@ -32,10 +34,13 @@ export async function settleRound(db, session, round, nowIso) {
   const open = (matches ?? []).filter((m) => !m.settled_at)
   if ((matches ?? []).length === 0 || open.length === 0) return { settled: 0 }
 
-  const from = round * session.bracket_length
-  const positions = Array.from({ length: session.bracket_length }, (_, i) => from + i)
-  const { data: questions } = await db.from('quiz_questions').select('*').eq('quiz_id', session.quiz_id).in('position', positions)
-  const ids = (questions ?? []).map((q) => q.id)
+  // The round's questions are the next slice of the game's own drawn list, not the quiz's positions.
+  const ids = (await sessionQuestionIds(db, session)).slice(round * session.bracket_length, (round + 1) * session.bracket_length)
+  const { data: rows } = ids.length > 0
+    ? await db.from('quiz_questions').select('*').in('id', ids)
+    : { data: [] }
+  const rowById = new Map((rows ?? []).map((q) => [q.id, q]))
+  const questions = ids.map((id) => rowById.get(id)).filter(Boolean) // a bot is scored on the same questions players saw
   const { data: answers } = ids.length > 0
     ? await db.from('quiz_answers').select('player_id, question_id, points_awarded, correct, elapsed_ms').eq('session_id', session.id).in('question_id', ids)
     : { data: [] }
@@ -52,7 +57,7 @@ export async function settleRound(db, session, round, nowIso) {
   for (const match of open) {
     const a = match.player_a ? earned(match.player_a) : { score: 0, speedMs: 0, present: false }
     let b
-    if (match.bot_b) b = { ...botRoundScore({ botId: `${session.id}:${match.round}:${match.slot}`, skill: match.bot_skill ?? 'average', questions: questions ?? [] }), present: true }
+    if (match.bot_b) b = { ...botRoundScore({ botId: `${session.id}:${match.round}:${match.slot}`, skill: match.bot_skill ?? 'average', questions: questions }), present: true }
     else b = match.player_b ? earned(match.player_b) : { score: 0, speedMs: 0, present: false }
     const winner = matchWinner({ a, b, seedText: match.id })
     const patch = { score_a: a.score, score_b: b.score, winner, settled_at: nowIso }

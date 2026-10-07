@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { hashToken, createRateLimiter, sanitizeGameOptions, fiftyFiftyHidden, POWERUPS } from '../quiz.js'
+import { currentQuestion } from '../quizSessionQuestions.js'
 
 // A player spends a power-up on the question that is open. Each can be used once per game, one per question.
 //   double: a right answer earns double (not on a double-points question, not on polls)
@@ -50,12 +51,7 @@ export function createQuizPowerupHandler(getClient, { allow = createRateLimiter(
       return
     }
 
-    const { data: question } = await supabaseAdmin
-      .from('quiz_questions')
-      .select('id, type, options, correct_index, points_multiplier')
-      .eq('quiz_id', session.quiz_id)
-      .eq('position', session.current_question_index)
-      .maybeSingle()
+    const question = await currentQuestion(supabaseAdmin, session)
     if (!question) {
       res.status(404).json({ error: 'Question not found' })
       return

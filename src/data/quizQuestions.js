@@ -53,6 +53,8 @@ export function blankQuestion(type = 'multiple') {
     accepted_text: '',
     image_path: null,
     image_alt: '',
+    // Only set on a multiple choice question, and only ever by the admin: the answers to this one keep their order.
+    no_shuffle: false,
   }
 }
 
@@ -73,13 +75,16 @@ export function questionFromRow(q) {
     accepted_text: (q.accepted_answers ?? []).join('\n'),
     image_path: q.image_path ?? null,
     image_alt: q.image_alt ?? '',
+    no_shuffle: q.no_shuffle === true,
   }
 }
 
 // Turns the editor's form into what gets saved. Empty option boxes are dropped, so a choice question can have 2 to 4 answers.
 export function cleanQuestion(q) {
   const type = q.type ?? 'multiple'
-  const base = { ...q, type, text: q.text.trim(), points_multiplier: q.points_multiplier === 2 ? 2 : 1, difficulty: DIFFICULTIES.includes(q.difficulty) ? q.difficulty : null }
+  // no_shuffle only means anything for a multiple choice question: the others have either one order that is correct or no
+  // options at all, and keepsOptionOrder already refuses to shuffle them.
+  const base = { ...q, type, text: q.text.trim(), points_multiplier: q.points_multiplier === 2 ? 2 : 1, difficulty: DIFFICULTIES.includes(q.difficulty) ? q.difficulty : null, no_shuffle: type === 'multiple' && q.no_shuffle === true }
   if (type === 'truefalse') {
     return { ...base, options: ['True', 'False'], correct_index: q.correct_index === 1 ? 1 : 0, numeric_answer: null, numeric_tolerance: 0, accepted_answers: [] }
   }

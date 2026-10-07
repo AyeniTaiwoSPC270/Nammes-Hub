@@ -1,6 +1,6 @@
 import { Avatar } from './QuizParts'
 import { formatScore } from '../../data/quiz'
-import { winnerId, podium, bracketRounds, BRACKET_LENGTHS } from '../../../api/_lib/quizBracketMath.js'
+import { winnerId, podium, bracketRounds, bracketLengthsThatFit, BRACKET_LENGTHS } from '../../../api/_lib/quizBracketMath.js'
 
 // Pieces of the knockout bracket (battle mode, phase C): the host's bracket board and podium for the projector, and a
 // small card for each player's phone. The rules live in api/_lib/quizBracketMath.js.
@@ -146,7 +146,11 @@ const BOT_LEVELS = [
 // faces a player left without an opponent.
 export function BracketPanel({ session, playerCount, questionCount, busy, onChange }) {
   const on = Boolean(session.bracket_mode)
-  const length = session.bracket_length ?? 3
+  // Only offer match lengths that can actually knock everyone down to one. A length that runs the bracket out of
+  // questions first would crown the highest scorer overall instead of a winner by elimination, so it is not offered.
+  const fitting = bracketLengthsThatFit(playerCount, questionCount)
+  const canBracket = fitting.length > 0
+  const length = fitting.includes(session.bracket_length) ? session.bracket_length : (fitting[0] ?? 3)
   const rounds = bracketRounds(playerCount, questionCount, length)
   const fieldClass = 'min-h-11 rounded-lg border border-hairline bg-paper px-3 text-lg font-semibold text-ink-900'
   return (
@@ -155,7 +159,7 @@ export function BracketPanel({ session, playerCount, questionCount, busy, onChan
         <span className="material-symbols-outlined text-orange-500" aria-hidden="true">account_tree</span>
         <h2 className="text-xl font-bold">Battle bracket</h2>
         <label className="ml-auto flex min-h-11 cursor-pointer items-center gap-2 font-semibold">
-          <input type="checkbox" className="h-5 w-5" checked={on} disabled={busy} onChange={(e) => onChange({ enabled: e.target.checked })} />
+          <input type="checkbox" className="h-5 w-5" checked={on} disabled={busy || !canBracket} onChange={(e) => onChange({ enabled: e.target.checked })} />
           Knockout on
         </label>
       </div>
@@ -166,22 +170,25 @@ export function BracketPanel({ session, playerCount, questionCount, busy, onChan
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm font-semibold">
           Match length
-          <select className={fieldClass} value={length} disabled={busy} onChange={(e) => onChange({ length: Number(e.target.value) })}>
-            {BRACKET_LENGTHS.map((n) => <option key={n} value={n}>{n === 1 ? '1 question' : `Best of ${n} questions`}</option>)}
+          <select className={fieldClass} value={length} disabled={busy || !canBracket} onChange={(e) => onChange({ length: Number(e.target.value) })}>
+            {BRACKET_LENGTHS.map((n) => <option key={n} value={n} disabled={!fitting.includes(n)}>{n === 1 ? '1 question' : `Best of ${n} questions`}</option>)}
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm font-semibold">
           Bot strength
-          <select className={fieldClass} value={session.bracket_bot_skill ?? 'average'} disabled={busy} onChange={(e) => onChange({ botSkill: e.target.value })}>
+          <select className={fieldClass} value={session.bracket_bot_skill ?? 'average'} disabled={busy || !canBracket} onChange={(e) => onChange({ botSkill: e.target.value })}>
             {BOT_LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
           </select>
         </label>
       </div>
-      {on && (
+      {on && canBracket && (
         <p className="mt-3 text-sm font-semibold text-orange-500">
-          {rounds === 0
-            ? `This quiz has too few questions for matches of ${length}.`
-            : `${playerCount} player${playerCount === 1 ? '' : 's'} now: ${rounds} round${rounds === 1 ? '' : 's'} (${rounds * length} of the quiz's ${questionCount} questions).`}
+          {playerCount} player{playerCount === 1 ? '' : 's'} now: {rounds} round{rounds === 1 ? '' : 's'} of {length} question{length === 1 ? '' : 's'}, then a champion. Uses {rounds * length} of this game's {questionCount} questions.
+        </p>
+      )}
+      {!canBracket && (
+        <p className="mt-3 text-sm font-semibold text-orange-500">
+          A knockout needs enough questions to knock everyone down to one player, and this game only draws {questionCount}. Ask the admin for more questions, or lower the number it asks for, to use one.
         </p>
       )}
     </section>
