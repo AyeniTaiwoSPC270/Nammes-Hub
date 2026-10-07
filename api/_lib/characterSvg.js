@@ -10,9 +10,12 @@ import Character from '../../src/components/quiz/Character.jsx'
 // awardCardRender.js does: it is server-only, and nothing in src/ imports it. Character.jsx's CSS import moved to
 // QuizParts.jsx for the same reason — Node cannot parse CSS.
 
-// @napi-rs/canvas parses a standalone SVG, and xmlns is what makes the string standalone. The animation classes
-// (qz-i-*, qz-w-*, qz-h-*) mean nothing without characters.css attached, which is exactly right for a still card.
+// @napi-rs/canvas parses a standalone SVG, and xmlns is what makes the string standalone. The move classes
+// (qz-i-*, qz-w-*, qz-h-*) mean nothing without characters.css attached, which is what a still card wants. One
+// non-animation rule is lost with it, .qz-char { overflow: visible }, which matters only for shapes drawn just
+// outside the viewBox and costs about a pixel here.
 export function characterSvg(id, { mood = 'happy', size = 100 } = {}) {
   const markup = renderToStaticMarkup(createElement(Character, { id, mood }))
-  return markup.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"`)
+  const px = Number(size) > 0 ? Math.round(Number(size)) : 100
+  return markup.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg" width="${px}" height="${px}"`)
 }

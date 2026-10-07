@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { AVATAR_COUNT, avatarInfo } from '../../../data/quizCharacters'
 import Character from '../../quiz/Character'
+// This page exists to show how each character moves, so it needs the moves. The import lives in QuizParts.jsx
+// because the result card renders Character on the server, where Node cannot parse a stylesheet.
+import '../../quiz/characters.css'
 
 // All 50 characters in one place, so an admin can see who players can pick and how each one moves.
 
