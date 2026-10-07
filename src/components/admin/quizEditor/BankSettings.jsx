@@ -18,21 +18,24 @@ function blankToSettings(row) {
   }
 }
 
-// The settings a quiz saved with, as the server should store them. `bankSize` is how many questions the quiz holds, so the
-// count can be clamped to what actually exists rather than trusting the number box.
+// The bank settings to save, shaped for saveQuiz. `bankSize` is how many questions the quiz holds, so the count can be
+// clamped to what actually exists rather than trusting the number box.
+//
+// Deliberately camelCase, matching every other argument saveQuiz takes: saveQuiz owns the mapping to the column names,
+// alongside every other column it writes.
 export function saveBankSettings(settings, bankSize) {
   const clean = cleanDrawSettings(
     { draw_count: settings.drawCount === '' ? null : settings.drawCount, shuffle_questions: settings.shuffleQuestions, shuffle_options: settings.shuffleOptions },
     bankSize,
   )
   return {
-    draw_settings: {
+    drawSettings: {
       draw_count: clean.drawCount,
       shuffle_questions: clean.shuffleQuestions,
       shuffle_options: clean.shuffleOptions,
     },
     // Blank means "a battle uses the same number as the game", which the server reads as null.
-    battle_question_count: settings.battleQuestionCount === '' || settings.battleQuestionCount == null
+    battleQuestionCount: settings.battleQuestionCount === '' || settings.battleQuestionCount == null
       ? null
       : Math.min(BATTLE_DRAW_MAX, Math.max(1, Math.round(Number(settings.battleQuestionCount) || 0) || 1)),
   }
