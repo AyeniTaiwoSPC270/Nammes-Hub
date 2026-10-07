@@ -5,6 +5,8 @@ import { useTheme } from '../lib/ThemeContext'
 import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
+import { useBodyScrollLock } from '../lib/useBodyScrollLock'
+import { useMediaQuery } from '../lib/useMediaQuery'
 import UserMenu from './UserMenu'
 import Badge from './ui/Badge'
 
@@ -189,20 +191,18 @@ export default function Navbar() {
     setOpen(wantsMobileNavOpen)
   }, [wantsMobileNavOpen])
 
-  // While the mobile menu is open: lock page scroll behind it and let Escape close it.
+  // The panel only exists below `lg`, so that is the only width where the page behind it needs freezing.
+  const menuIsVisible = useMediaQuery('(max-width: 1023px)')
+  useBodyScrollLock(open && menuIsVisible)
+
+  // While the mobile menu is open, Escape closes it.
   useEffect(() => {
-    // The tour also sets open on desktop, where the mobile menu is hidden; only lock on small screens.
-    if (!open || !window.matchMedia('(max-width: 1023px)').matches) return undefined
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    if (!open) return undefined
     function handleKey(event) {
       if (event.key === 'Escape') setOpen(false)
     }
     document.addEventListener('keydown', handleKey)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', handleKey)
-    }
+    return () => document.removeEventListener('keydown', handleKey)
   }, [open])
 
   async function handleSignOut() {
