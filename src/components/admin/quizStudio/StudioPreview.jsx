@@ -58,7 +58,9 @@ function ProjectorLobby({ theme, title }) {
     <div className="grid grid-cols-[1fr_280px] gap-5 p-6">
       <section className="qz-deep flex flex-col justify-between rounded-3xl p-8 text-white shadow-xl" style={{ minHeight: 380 }}>
         <div>
-          {theme.headline && <h2 className="mb-3 text-4xl font-bold leading-tight">{theme.headline}</h2>}
+          {/* White on the h2 itself, not left to the panel: index.css sets text-ink-900 on every h1/h2/h3, and a rule that
+            lands on the element beats one merely inherited from the panel behind it. HostQuiz does the same. */}
+        {theme.headline && <h2 className="mb-3 text-4xl font-bold leading-tight text-white">{theme.headline}</h2>}
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-orange-100/80">Join the game</p>
           <p className="mt-1 text-xl font-semibold">
             Go to <span className="text-orange-100">nammeshub.com.ng/play</span> and enter
