@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { cleanDrawSettings, DRAW_MAX_QUESTIONS } from '../../../../api/_lib/quizDraw.js'
 
 // How many questions a battle may hold. A battle is two people answering at their own pace, so it stays much shorter than
@@ -71,7 +70,9 @@ const ROWS = [
 ]
 
 export default function BankSettings({ settings, onChange, questionCount }) {
-  const save = useMemo(() => saveBankSettings(settings, questionCount), [settings, questionCount])
+  // Shown as the placeholder on the battle box: what a battle would ask if this box were left alone.
+  const gameCount = saveBankSettings({ ...settings, battleQuestionCount: '' }, questionCount).drawSettings.draw_count
+  const battlePlaceholder = gameCount == null ? 'Same as above' : String(gameCount)
   const set = (patch) => onChange({ ...settings, ...patch })
   const wantsDraw = settings.drawCount !== ''
 
@@ -110,7 +111,7 @@ export default function BankSettings({ settings, onChange, questionCount }) {
               step={1}
               value={settings.battleQuestionCount}
               onChange={(e) => set({ battleQuestionCount: e.target.value })}
-              placeholder={String(save.battle_question_count ?? '') || String(save.draw_settings.draw_count ?? '') || 'Same as above'}
+              placeholder={battlePlaceholder}
               className="min-h-11 rounded-md border border-hairline bg-paper px-3 py-2 text-base font-normal"
             />
             <span className="text-sm font-normal text-ink-muted">
