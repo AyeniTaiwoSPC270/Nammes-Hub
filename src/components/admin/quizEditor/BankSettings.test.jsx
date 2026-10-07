@@ -8,8 +8,8 @@ describe('a new quiz', () => {
   it('starts with both shuffles on and every question asked', () => {
     expect(NEW_BANK_SETTINGS).toEqual({ drawCount: '', shuffleQuestions: true, shuffleOptions: true })
     expect(saveBankSettings(NEW_BANK_SETTINGS, 12)).toEqual({
-      draw_settings: { draw_count: null, shuffle_questions: true, shuffle_options: true },
-      battle_question_count: null,
+      drawSettings: { draw_count: null, shuffle_questions: true, shuffle_options: true },
+      battleQuestionCount: null,
     })
   })
 })
@@ -20,41 +20,54 @@ describe('an existing quiz', () => {
     const loaded = bankSettingsFromRow({ id: 'q1' })
     expect(loaded).toEqual({ drawCount: '', shuffleQuestions: false, shuffleOptions: false })
     expect(saveBankSettings({ ...loaded, battleQuestionCount: '' }, 20)).toEqual({
-      draw_settings: { draw_count: null, shuffle_questions: false, shuffle_options: false },
-      battle_question_count: null,
+      drawSettings: { draw_count: null, shuffle_questions: false, shuffle_options: false },
+      battleQuestionCount: null,
     })
   })
 
   it('reads back what it was saved with', () => {
+    // The row the database hands back is snake_case; the form is camelCase. This is the other half of the trip saveBank
+    // Settings covers, and getting it wrong is how a saved quiz looks unsaved when you come back to it.
     const row = { draw_settings: { draw_count: 8, shuffle_questions: true, shuffle_options: false } }
     expect(bankSettingsFromRow(row)).toEqual({ drawCount: '8', shuffleQuestions: true, shuffleOptions: false })
     expect(bankSettingsFromRow({ draw_settings: { draw_count: null } })).toEqual({ drawCount: '', shuffleQuestions: false, shuffleOptions: false })
     expect(bankSettingsFromRow({ draw_settings: null })).toEqual({ drawCount: '', shuffleQuestions: false, shuffleOptions: false })
   })
+
+  it('round trips: what saveBankSettings builds, bankSettingsFromRow reads back', () => {
+    for (const input of [
+      { drawCount: '', shuffleQuestions: true, shuffleOptions: true },
+      { drawCount: '8', shuffleQuestions: false, shuffleOptions: true },
+      { drawCount: '15', shuffleQuestions: true, shuffleOptions: false },
+    ]) {
+      const saved = saveBankSettings(input, 30)
+      expect(bankSettingsFromRow({ draw_settings: saved.drawSettings })).toEqual(input)
+    }
+  })
 })
 
 describe('saveBankSettings', () => {
   it('clamps the count to the questions the quiz actually has', () => {
-    expect(saveBankSettings(settings({ drawCount: '999' }), 20).draw_settings.draw_count).toBe(20)
-    expect(saveBankSettings(settings({ drawCount: '10' }), 20).draw_settings.draw_count).toBe(10)
+    expect(saveBankSettings(settings({ drawCount: '999' }), 20).drawSettings.draw_count).toBe(20)
+    expect(saveBankSettings(settings({ drawCount: '10' }), 20).drawSettings.draw_count).toBe(10)
   })
 
   it('treats a blank box as every question', () => {
-    expect(saveBankSettings(settings({ drawCount: '' }), 20).draw_settings.draw_count).toBeNull()
+    expect(saveBankSettings(settings({ drawCount: '' }), 20).drawSettings.draw_count).toBeNull()
   })
 
   it('does not lose a shuffle when the count is left blank', () => {
-    expect(saveBankSettings(settings({ drawCount: '', shuffleOptions: true }), 20).draw_settings.shuffle_options).toBe(true)
+    expect(saveBankSettings(settings({ drawCount: '', shuffleOptions: true }), 20).drawSettings.shuffle_options).toBe(true)
   })
 
   it('lets a battle be a different length, and clamps it too', () => {
-    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '8' }), 30).battle_question_count).toBe(8)
-    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '999' }), 30).battle_question_count).toBe(BATTLE_DRAW_MAX)
-    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '0' }), 30).battle_question_count).toBe(1)
+    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '8' }), 30).battleQuestionCount).toBe(8)
+    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '999' }), 30).battleQuestionCount).toBe(BATTLE_DRAW_MAX)
+    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '0' }), 30).battleQuestionCount).toBe(1)
   })
 
   it('leaves the battle count null when the box is blank, so it follows the game', () => {
-    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '' }), 30).battle_question_count).toBeNull()
+    expect(saveBankSettings(settings({ drawCount: '15', battleQuestionCount: '' }), 30).battleQuestionCount).toBeNull()
   })
 })
 
