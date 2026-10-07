@@ -3,7 +3,7 @@ import { isUuid } from '../validate.js'
 import { logError } from '../logError.js'
 import {
   validateNickname, isAvatarId, newPlayerToken, hashToken, createRateLimiter, clientIp, scoreAnswer, ANSWER_GRACE_MS,
-  gradeAnswer, isChoiceType, correctText,
+  gradeAnswer, isChoiceType, correctText, generatePracticeShareCode,
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { sanitizeCard } from '../quizCard.js'
@@ -140,7 +140,10 @@ export function createQuizPracticeHandler(
     // What the player sees for their run right now.
     async function view(run, questions, quiz) {
       const total = questions.length
-      const base = { serverNow: now(), total, score: run.total_score, nickname: run.nickname, avatarId: run.avatar_id, theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }), card: sanitizeCard(quiz?.card, { quizId: run.quiz_id }) }
+      const base = { serverNow: now(), total, score: run.total_score, nickname: run.nickname, avatarId: run.avatar_id, theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }), card: sanitizeCard(quiz?.card, { quizId: run.quiz_id }),
+      // The public half of the finished run's card link. Null until the run finishes, so a card button rendered
+      // mid-run does not point at a code that does not exist yet.
+      shareCode: run.share_code ?? null }
       if (run.finished_at || run.current_index >= total) {
         const { data: answers } = await supabaseAdmin.from('quiz_practice_answers').select('correct').eq('run_id', run.id)
         const correct = (answers ?? []).filter((a) => a.correct === true).length
@@ -405,7 +408,12 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
     }
     const last = run.current_index + 1 >= questions.length
     const patch = last
-      ? { finished_at: new Date(now()).toISOString(), current_index: run.current_index + 1 }
+      ? {
+          finished_at: new Date(now()).toISOString(),
+          current_index: run.current_index + 1,
+          // Minted once and kept: a reload that finishes again must not orphan the card link already handed out.
+          share_code: run.share_code ?? generatePracticeShareCode(),
+        }
       : { current_index: run.current_index + 1, question_started_at: new Date(now()).toISOString() }
     const { data: updated, error } = await supabaseAdmin
       .from('quiz_practice_runs')
