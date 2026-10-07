@@ -397,6 +397,57 @@ describe('battle: rankings', () => {
     expect((await w.call({ op: 'ranking', period: 'week' })).body.top).toEqual([])
     expect((await w.call({ op: 'ranking', period: 'all' })).body.you).toBeNull()
   })
+
+  it('marks which row on the champions list is the person asking', async () => {
+    // A player who cannot remember which name they typed needs to see their own row called out. Matching on the nickname
+    // would be wrong: two players are free to pick the same one.
+    const w = world()
+    await playDuel(w)
+    const asB = (await w.call({ op: 'ranking', period: 'all', tag: TAG_B })).body
+    expect(asB.top.map((r) => r.isYou)).toEqual([false, true])
+    expect(asB.top.find((r) => r.isYou).nickname).toBe('Bayo')
+
+    const asA = (await w.call({ op: 'ranking', period: 'all', tag: TAG_A })).body
+    expect(asA.top.map((r) => r.isYou)).toEqual([true, false])
+
+    // The week view is ordered by wins this week, not by rating, so "you" has to be marked rather than inferred from a
+    // position. Here it happens to be the same row; the flag is what the page relies on, not the number.
+    const week = (await w.call({ op: 'ranking', period: 'week', tag: TAG_A })).body
+    expect(week.top.filter((r) => r.isYou)).toHaveLength(1)
+    expect(week.top.find((r) => r.isYou).nickname).toBe('Ada')
+  })
+
+  it('tells two players apart when they have chosen the same nickname', async () => {
+    const w = world()
+    await playDuel(w)
+    // Both players now have a record; force the same display name on both.
+    for (const row of w.db.tables.quiz_battle_ratings) row.nickname = 'Same Name'
+    const asA = (await w.call({ op: 'ranking', period: 'all', tag: TAG_A })).body
+    const asB = (await w.call({ op: 'ranking', period: 'all', tag: TAG_B })).body
+    // Same nickname on both rows, but only one of them is each player.
+    expect(asA.top.filter((r) => r.nickname === 'Same Name')).toHaveLength(2)
+    expect(asA.top.filter((r) => r.isYou)).toHaveLength(1)
+    expect(asB.top.filter((r) => r.isYou)).toHaveLength(1)
+    expect(asA.top.find((r) => r.isYou).rank).not.toBe(asB.top.find((r) => r.isYou).rank)
+  })
+
+  it('marks nobody when the asker has no record or sends no tag', async () => {
+    const w = world()
+    await playDuel(w)
+    // No tag at all: nothing can be identified, and nothing is guessed.
+    expect((await w.call({ op: 'ranking', period: 'all' })).body.top.every((r) => r.isYou === false)).toBe(true)
+    // A tag that has never played.
+    expect((await w.call({ op: 'ranking', period: 'all', tag: 'tag-cccccccccccccccc' })).body).toMatchObject({ you: null })
+    expect((await w.call({ op: 'ranking', period: 'all', tag: 'tag-cccccccccccccccc' })).body.top.every((r) => r.isYou === false)).toBe(true)
+  })
+
+  it('never sends the tag hash out, even on the row that is marked as you', async () => {
+    const w = world()
+    await playDuel(w)
+    const body = (await w.call({ op: 'ranking', period: 'all', tag: TAG_A })).body
+    expect(JSON.stringify(body)).not.toMatch(/tag_hash/)
+    expect(body.top.some((r) => r.isYou)).toBe(true)
+  })
 })
 
 describe('battle: leaving', () => {

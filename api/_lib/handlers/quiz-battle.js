@@ -417,7 +417,18 @@ export function createQuizBattleHandler(
 
     // ---- ranking: the champions list ----
     if (op === 'ranking') {
-      const entry = (r, i) => ({ rank: i + 1, nickname: r.nickname, avatarId: r.avatar_id, rating: r.rating, wins: r.wins, losses: r.losses, draws: r.draws })
+      // Which of these rows is the person asking. Matched on the device tag rather than the nickname, because two players
+      // are free to pick the same one, and only the server can tell them apart. The hash itself is never sent out.
+      const entry = (r, i) => ({
+        rank: i + 1,
+        nickname: r.nickname,
+        avatarId: r.avatar_id,
+        rating: r.rating,
+        wins: r.wins,
+        losses: r.losses,
+        draws: r.draws,
+        isYou: tagHash != null && r.tag_hash === tagHash,
+      })
       let top
       if (period === 'week') {
         const since = iso(now() - 7 * 86_400_000)
