@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
+import { sanitizeCard } from '../../api/_lib/quizCard.js'
 import { quizImagePath, IMAGE_BUCKET, IMAGE_ALT_MAX } from '../../api/_lib/quizImage.js'
 import { sanitizeGameOptions } from '../../api/_lib/quizGrading.js'
 import { BRANDING_BUCKET } from './quizBranding'
@@ -367,6 +368,18 @@ export async function fetchQuestionBank({ limit = 600 } = {}) {
 export async function saveQuizTheme(id, theme) {
   const clean = sanitizeTheme(theme, { quizId: id })
   const { data, error } = await supabase.from('quizzes').update({ theme: clean }).eq('id', id).select('id')
+  if (error) throw error
+  if (!data || data.length === 0) {
+    throw new Error('No changes were saved — your account may not have admin access to make this change.')
+  }
+  return clean
+}
+
+// Saves the result card design from the studio's Card tab. Cleaned on the client too, so the studio cannot save a
+// value the renderer would reject.
+export async function saveQuizCard(id, card) {
+  const clean = sanitizeCard(card, { quizId: id })
+  const { data, error } = await supabase.from('quizzes').update({ card: clean }).eq('id', id).select('id')
   if (error) throw error
   if (!data || data.length === 0) {
     throw new Error('No changes were saved — your account may not have admin access to make this change.')

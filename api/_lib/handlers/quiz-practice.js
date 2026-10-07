@@ -6,6 +6,7 @@ import {
   gradeAnswer, isChoiceType, correctText,
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
+import { sanitizeCard } from '../quizCard.js'
 import { publicImageUrl } from '../quizImage.js'
 import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
 import { cleanDrawSettings, buildQuestionSet, shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
@@ -139,7 +140,7 @@ export function createQuizPracticeHandler(
     // What the player sees for their run right now.
     async function view(run, questions, quiz) {
       const total = questions.length
-      const base = { serverNow: now(), total, score: run.total_score, nickname: run.nickname, avatarId: run.avatar_id, theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }) }
+      const base = { serverNow: now(), total, score: run.total_score, nickname: run.nickname, avatarId: run.avatar_id, theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }), card: sanitizeCard(quiz?.card, { quizId: run.quiz_id }) }
       if (run.finished_at || run.current_index >= total) {
         const { data: answers } = await supabaseAdmin.from('quiz_practice_answers').select('correct').eq('run_id', run.id)
         const correct = (answers ?? []).filter((a) => a.correct === true).length
