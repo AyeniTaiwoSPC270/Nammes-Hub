@@ -90,8 +90,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     }
     const limit = maxPlayers ?? quiz?.max_players ?? DEFAULT_MAX_PLAYERS
     const theme = sanitizeTheme(quiz?.theme, { quizId })
-    // The result card settings are frozen onto the game for the same reason the look is: a card shared after the
-    // game must show the design the host designed, not whatever the studio says months later.
+    // The result card settings are frozen onto the game for the same reason the look is.
     const card = sanitizeCard(quiz?.card, { quizId })
     const useTeams = teamMode ?? quiz?.team_mode ?? false
     const scoring = teamScoring ?? quiz?.team_scoring ?? 'average'

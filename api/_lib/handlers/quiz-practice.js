@@ -64,7 +64,7 @@ export function createQuizPracticeHandler(
 
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, expires_at, draw_settings').eq('id', id).maybeSingle()
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, card, expires_at, draw_settings').eq('id', id).maybeSingle()
       const expired = data?.expires_at && new Date(data.expires_at).getTime() < now()
       return data && data.practice_enabled && !expired ? data : null
     }
@@ -337,7 +337,7 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
     // ---- state / answer / next need a run ----
     const run = await runFromToken()
     if (!run) return
-    const { data: quiz } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme, expires_at').eq('id', run.quiz_id).maybeSingle()
+    const { data: quiz } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme, card, expires_at').eq('id', run.quiz_id).maybeSingle()
     if (!quiz || !quiz.practice_enabled || (quiz.expires_at && new Date(quiz.expires_at).getTime() < now())) {
       res.status(404).json({ error: 'This quiz is not open for practice any more' })
       return
