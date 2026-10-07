@@ -12,7 +12,7 @@ import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
 import { useNewsQuery, getNews } from '../data/news'
 import { useExcosQuery } from '../data/excos'
-import { useEventsQuery } from '../data/events'
+import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { useSiteContentQuery } from '../data/siteContent'
 import { linkifyText } from '../lib/linkify'
 
@@ -33,7 +33,7 @@ export default function Home() {
   const heroImageY = useTransform(scrollYProgress, [0, 1], reducedMotion ? [0, 0] : [0, 60])
 
   const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
-  const previewEvents = (eventsQuery.data ?? []).slice(0, 3)
+  const previewEvents = groupEventsByTime(eventsQuery.data ?? []).upcoming.slice(0, 3)
 
   return (
     <div>
@@ -188,8 +188,8 @@ export default function Home() {
           ) : previewEvents.length === 0 ? (
             <EmptyState
               icon="event_busy"
-              title="No events yet"
-              description="Check back soon. Upcoming workshops, seminars, and gatherings will show up here."
+              title="No upcoming events"
+              description="Nothing on the calendar right now. Past events are still on the events page."
             />
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
