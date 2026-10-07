@@ -42,7 +42,7 @@ export default function UserMenu({ email, pendingCount = 0, onSignOut, align = '
             align === 'right' ? 'right-0' : 'left-0',
           ].join(' ')}
         >
-          <div className="truncate px-4 py-2 text-sm text-ink-muted" title={email}>
+          <div className="truncate px-4 py-2 text-sm font-semibold text-ink-900" title={email}>
             {email}
           </div>
           <div className="my-1 border-t border-hairline" />

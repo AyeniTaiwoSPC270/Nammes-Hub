@@ -8,10 +8,17 @@ import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import UserMenu from './UserMenu'
 import Badge from './ui/Badge'
 
-const navItems = [
-  { to: '/about', label: 'About' },
+// Every entry is a group, so each link in the mobile panel sits under a visible heading.
+// Links used to be a mix of groups and loose links, which left About/Forms/Contact looking
+// like they belonged to whichever group happened to render above them.
+const navGroups = [
+  {
+    label: 'General',
+    children: [{ to: '/about', label: 'About' }],
+  },
   {
     label: 'Academics',
+    icon: 'menu_book',
     dataTour: 'nav-academics',
     children: [
       { to: '/outlines', label: 'Outlines' },
@@ -23,6 +30,7 @@ const navItems = [
   },
   {
     label: 'Community',
+    icon: 'groups',
     dataTour: 'nav-community',
     children: [
       { to: '/events', label: 'Events' },
@@ -33,13 +41,20 @@ const navItems = [
   },
   {
     label: 'Practice',
+    icon: 'quiz',
     children: [
       { to: '/quiz', label: 'Quizzes and battles' },
       { to: '/cbt', label: 'CBT practice' },
     ],
   },
-  { to: '/forms', label: 'Forms' },
-  { to: '/contact', label: 'Contact' },
+  {
+    label: 'Support',
+    icon: 'support_agent',
+    children: [
+      { to: '/forms', label: 'Forms' },
+      { to: '/contact', label: 'Contact' },
+    ],
+  },
 ]
 
 function navLinkClass({ isActive }) {
@@ -49,6 +64,47 @@ function navLinkClass({ isActive }) {
       ? 'text-ink-900 font-bold border-b-2 border-ink-900'
       : 'text-ink-muted hover:text-ink-900 hover:bg-surface-low',
   ].join(' ')
+}
+
+// Mobile rows sit on a surface-low card, where the muted grey above reads as disabled and the
+// horizontal underline reads as a stray rule inside a rounded panel. The filled pill matches
+// what NavDropdown and UserMenu already use for the current page.
+function mobileNavLinkClass({ isActive }) {
+  return [
+    'block rounded-sm px-3 py-3 text-sm font-semibold no-underline transition-colors',
+    isActive ? 'bg-surface text-brand-orange font-bold' : 'text-ink hover:bg-surface hover:text-ink-900',
+  ].join(' ')
+}
+
+function MobileNavGroup({ label, icon, dataTour, children }) {
+  return (
+    <div className="rounded-lg bg-surface-low p-1.5" data-tour={dataTour}>
+      <span className="flex items-center gap-1.5 px-3 pt-1.5 pb-1 text-xs font-bold uppercase tracking-[.06em] text-brand-orange">
+        {icon && <span className="material-symbols-outlined text-base leading-none">{icon}</span>}
+        {label}
+      </span>
+      <div className="flex flex-col">{children}</div>
+    </div>
+  )
+}
+
+// min-w-0 on the flex child is what actually lets truncate shrink; without it the email
+// overflows the panel instead of ellipsising.
+function IdentityChip({ email }) {
+  const initial = (email || '?').charAt(0).toUpperCase()
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-hairline bg-surface-low px-3 py-2">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-bold text-white">
+        {initial}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-ink-900" title={email}>
+          {email}
+        </span>
+        <span className="block text-xs text-ink-muted">Signed in</span>
+      </span>
+    </div>
+  )
 }
 
 function NavDropdown({ item }) {
@@ -76,12 +132,7 @@ function NavDropdown({ item }) {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         data-tour={item.dataTour}
-        className={[
-          'flex items-center gap-0.5 rounded-sm px-3 py-2 text-sm font-semibold transition-colors',
-          isActive
-            ? 'text-ink-900 font-bold border-b-2 border-ink-900'
-            : 'text-ink-muted hover:text-ink-900 hover:bg-surface-low',
-        ].join(' ')}
+        className={[navLinkClass({ isActive }), 'flex items-center gap-0.5'].join(' ')}
       >
         {item.label}
         <span className="material-symbols-outlined text-lg">{open ? 'expand_less' : 'expand_more'}</span>
@@ -169,15 +220,9 @@ export default function Navbar() {
         </NavLink>
 
         <nav className="hidden lg:flex items-center gap-1">
-          {navItems.map((item) =>
-            item.children ? (
-              <NavDropdown key={item.label} item={item} />
-            ) : (
-              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={navLinkClass}>
-                {item.label}
-              </NavLink>
-            ),
-          )}
+          {navGroups.map((group) => (
+            <NavDropdown key={group.label} item={group} />
+          ))}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -210,46 +255,29 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <nav className="absolute inset-x-0 top-full flex max-h-[calc(100dvh-4rem)] flex-col gap-0.5 overflow-y-auto overscroll-contain border-b border-hairline bg-surface px-4 py-2 shadow-md lg:hidden">
-          {navItems.map((item) =>
-            item.children ? (
-              <div key={item.label} className="flex flex-col" data-tour={item.dataTour}>
-                <span className="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-[.05em] text-ink-muted">
-                  {item.label}
-                </span>
-                {item.children.map((child) => (
-                  <NavLink
-                    key={child.to}
-                    to={child.to}
-                    onClick={() => setOpen(false)}
-                    className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
-                  >
-                    {child.label}
-                  </NavLink>
-                ))}
-              </div>
-            ) : (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/'}
-                onClick={() => setOpen(false)}
-                className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
-              >
-                {item.label}
-              </NavLink>
-            ),
-          )}
+        <nav className="absolute inset-x-0 top-full flex max-h-[calc(100dvh-4rem)] flex-col gap-2 overflow-y-auto overscroll-contain border-b border-hairline bg-surface px-3 pt-2 pb-4 shadow-md lg:hidden">
+          {!loading && user && <IdentityChip email={user.email} />}
+          {navGroups.map((group) => (
+            <MobileNavGroup key={group.label} label={group.label} icon={group.icon} dataTour={group.dataTour}>
+              {group.children.map((child) => (
+                <NavLink
+                  key={child.to}
+                  to={child.to}
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) => mobileNavLinkClass({ isActive })}
+                >
+                  {child.label}
+                </NavLink>
+              ))}
+            </MobileNavGroup>
+          ))}
           {!loading &&
             (user ? (
-              <>
-                <span className="truncate px-4 py-2 text-sm text-ink-muted" title={user.email}>
-                  {user.email}
-                </span>
+              <MobileNavGroup label="Account" icon="person">
                 <NavLink
                   to="/account"
                   onClick={() => setOpen(false)}
-                  className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
+                  className={({ isActive }) => mobileNavLinkClass({ isActive })}
                   data-tour="nav-account"
                 >
                   Account
@@ -258,7 +286,7 @@ export default function Navbar() {
                   to="/admin"
                   onClick={() => setOpen(false)}
                   className={({ isActive }) =>
-                    [navLinkClass({ isActive }), 'px-4 py-3 inline-flex items-center gap-1.5'].join(' ')
+                    [mobileNavLinkClass({ isActive }), 'flex items-center gap-1.5'].join(' ')
                   }
                 >
                   Admin
@@ -267,19 +295,21 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className={[navLinkClass({ isActive: false }), 'px-4 py-3 text-left'].join(' ')}
+                  className={[mobileNavLinkClass({ isActive: false }), 'text-left'].join(' ')}
                 >
                   Sign out
                 </button>
-              </>
+              </MobileNavGroup>
             ) : (
-              <NavLink
-                to="/login"
-                onClick={() => setOpen(false)}
-                className={({ isActive }) => [navLinkClass({ isActive }), 'px-4 py-3'].join(' ')}
-              >
-                Sign in
-              </NavLink>
+              <MobileNavGroup label="Account" icon="person">
+                <NavLink
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) => mobileNavLinkClass({ isActive })}
+                >
+                  Sign in
+                </NavLink>
+              </MobileNavGroup>
             ))}
         </nav>
       )}
