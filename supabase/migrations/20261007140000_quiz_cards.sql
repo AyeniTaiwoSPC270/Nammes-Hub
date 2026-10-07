@@ -12,9 +12,7 @@ alter table public.quiz_sessions
   add column card jsonb not null default '{}'::jsonb
   check (jsonb_typeof(card) = 'object' and pg_column_size(card) < 4000);
 
+-- `unique` already builds the btree index a share_code lookup needs, so there is no second index to add here.
 alter table public.quiz_practice_runs
   add column share_code text unique
   check (share_code is null or share_code ~ '^[A-Z0-9]{8}$');
-
-create index quiz_practice_runs_share_code_idx
-  on public.quiz_practice_runs (share_code) where share_code is not null;

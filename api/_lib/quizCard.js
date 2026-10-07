@@ -19,6 +19,7 @@ function flag(value) {
   return value !== false
 }
 
+// Anything goes in, a complete valid card comes out (bad or missing values fall back to the defaults).
 export function sanitizeCard(input, { quizId } = {}) {
   const c = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
   return {
