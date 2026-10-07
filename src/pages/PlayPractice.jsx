@@ -82,6 +82,33 @@ function RaceBoard({ name, avatarId, score, race, onDark = false }) {
   )
 }
 
+// Leaving a run throws it away, so it asks twice: a stray tap mid-question should not cost someone their practice. A run
+// you quit is never finished, so it does not reach the leaderboard and never becomes a ghost for anyone else to race.
+function QuitButton({ onQuit, onDark = false }) {
+  const [sure, setSure] = useState(false)
+  useEffect(() => {
+    if (!sure) return undefined
+    const timer = setTimeout(() => setSure(false), 4000)
+    return () => clearTimeout(timer)
+  }, [sure])
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (sure) {
+          setSure(false)
+          onQuit()
+        } else setSure(true)
+      }}
+      className={`mt-1 w-full rounded-2xl px-4 py-3 text-sm font-semibold underline ${
+        sure ? 'bg-red-600 text-white' : onDark ? 'text-white/85' : 'text-ink-muted'
+      }`}
+    >
+      {sure ? 'Tap again to quit. This run will not be saved.' : 'Quit practice'}
+    </button>
+  )
+}
+
 function Intro({ info, onStart, busy, error }) {
   const [nickname, setNickname] = useState('')
   const [race, setRace] = useState('none')
@@ -277,7 +304,8 @@ export default function PlayPractice() {
     })
   }
 
-  function restart() {
+  // Stops the run and drops back to the intro. Used both by "Try again" at the end and by quitting part way through.
+  function stopRun() {
     saveSaved(null)
     setSaved(null)
     setRun(null)
@@ -339,7 +367,7 @@ export default function PlayPractice() {
         {info.battleEnabled && (
           <Link to={`/battle?quiz=${quizId}`} className="flex min-h-14 items-center justify-center rounded-2xl border-2 border-orange-500 px-6 text-xl font-bold text-orange-500">Challenge a friend</Link>
         )}
-        <button type="button" onClick={restart} className="min-h-14 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md">Try again</button>
+        <button type="button" onClick={stopRun} className="min-h-14 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md">Try again</button>
       </Shell>
     )
   } else if (run.result) {
@@ -370,6 +398,7 @@ export default function PlayPractice() {
           >
             {last ? 'See my results' : 'Next question'}
           </button>
+          <QuitButton onQuit={stopRun} onDark />
         </div>
       </Shell>
     )
@@ -427,6 +456,7 @@ export default function PlayPractice() {
           </form>
         )}
         {error && <p role="alert" className="text-center text-sm text-ink-muted">{error}</p>}
+        <QuitButton onQuit={stopRun} />
       </Shell>
     )
   }
