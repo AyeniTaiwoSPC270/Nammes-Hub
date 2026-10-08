@@ -4,11 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../lib/AuthContext'
 import { useToast } from '../lib/ToastContext'
-import { useFormQuery, isFormOpen, validateAnswers } from '../data/forms'
+import { useFormQuery, isFormOpen, isFocusFill, validateAnswers } from '../data/forms'
 import { useMyResponseQuery, formatAnswerForDisplay } from '../data/formResponses'
 import QuestionField from '../components/forms/QuestionField'
 import FormThemeShell, { FormHeaderCard, questionCardStyle } from '../components/forms/FormThemeShell'
 import { cardGap, hasTheme, normalizeTheme } from '../lib/formTheme'
+import { useSiteChrome } from '../lib/ChromeContext'
 import Button from '../components/ui/Button'
 import ErrorState from '../components/ui/ErrorState'
 import EmptyState from '../components/ui/EmptyState'
@@ -22,6 +23,19 @@ const MAX_STAGGER_DELAY = 0.3
 
 function isAnswered(value) {
   return value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0)
+}
+
+/** The only way out of a form that has no navbar: the form list. */
+function BackToForms() {
+  return (
+    <Link
+      to="/forms"
+      className="inline-flex items-center gap-1 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
+    >
+      <span className="material-symbols-outlined text-base">arrow_back</span>
+      Back to Forms
+    </Link>
+  )
 }
 
 export default function FormDetail() {
@@ -38,6 +52,17 @@ export default function FormDetail() {
   const captcha = useTurnstile()
 
   const form = formQuery.data
+  const existingResponse = myResponseQuery.data
+
+  // Only a focus-mode form's fill-in screen drops the navbar and footer, and the back link goes with
+  // it. Every other screen keeps the chrome so a respondent can always get back into the site.
+  const focusFill = isFocusFill(form, {
+    open: Boolean(form && isFormOpen(form)),
+    signedIn: Boolean(user),
+    hasResponse: Boolean(existingResponse),
+    editing,
+  })
+  useSiteChrome({ hidden: focusFill })
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -106,7 +131,6 @@ export default function FormDetail() {
     )
   }
 
-  const existingResponse = myResponseQuery.data
   if (form.one_response_per_person && existingResponse && !editing) {
     return (
       <FormThemeShell theme={form.theme}>
@@ -150,7 +174,7 @@ export default function FormDetail() {
 
   return (
     <FormThemeShell theme={form.theme}>
-      <FormHeaderCard form={form} theme={form.theme} />
+      <FormHeaderCard form={form} theme={form.theme} backLink={focusFill ? <BackToForms /> : null} />
 
       {totalCount > 0 && showProgress && (
         <div className="mt-6">

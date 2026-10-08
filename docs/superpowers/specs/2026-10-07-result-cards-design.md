@@ -401,4 +401,27 @@ All three pass at the time of writing (106 files, 1210 tests, lint exit 0, build
 
 1. **A real game.** Host one with a Supabase login, join from two phones, finish it, open the card.
 2. **The projector modal.** `useProjectorFit` zooms `Stage`'s `<main>`; the modal is now a sibling of `Stage`, which is why. That reasoning is static, not observed.
+
+---
+
+## 13. Open decision: which card design ships
+
+The live card is the original layout. It works, but it was not chosen — it was the first thing drawn, and it is not a design anybody signed off on.
+
+Five alternative directions were rendered to `card-mockups/` by `scripts/cardMockups.mjs` (`node scripts/cardMockups.mjs`), all 1080×1920, all with the same player data so only the layout differs:
+
+| File | Direction |
+|---|---|
+| `1-bold-celebratory.png` | Gold rank rosette, confetti, huge orange score. Loudest. |
+| `2-clean-minimal.png` | Off-white, one giant serif number, character as a small avatar. |
+| `3-poster-character.png` | Character fills the frame under a spotlight, name overlaid like a poster. |
+| `4-scorecard.png` | Green header, stats as label/value rows, plus a call to action. The only one that advertises. |
+| `5-nammes-branded.png` | White panel on brand green with an orange cap rule. Closest to what is live. |
+
+**Decided by the site owner, not yet made.** Two questions were still open when this section was written:
+
+1. Which direction replaces the current layout, or whether any of them do at all.
+2. Whether the card keeps following the quiz's studio theme — the accent colour, the backdrop pattern and the logo — or becomes a fixed NAMMES design with the theme only affecting the accent.
+
+**How to apply it.** The five mockups are a standalone renderer, not the production renderer: `api/_lib/quizCardRender.js` is untouched, so nothing here is live. Whichever direction wins is ported into `renderPersonalCard`, keeping the studio's stat toggles (`sanitizeCard`) working — a design change must not change which lines an admin can switch off. Re-render the winner through `scripts/cardMockups.mjs` and *look at it* before merging: three of the layout bugs found during this work were invisible to tests and visible only in the output.
 5. **The studio preview.** The `key`/url hash forces a redraw per edit. Untested in a browser.

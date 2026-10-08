@@ -5,6 +5,7 @@ import {
   validateQuestions,
   validateAnswers,
   isFormOpen,
+  isFocusFill,
 } from './forms'
 
 describe('validateFormDraft', () => {
@@ -88,5 +89,37 @@ describe('isFormOpen', () => {
   })
   it('is true when closes_at is not set', () => {
     expect(isFormOpen({ is_accepting_responses: true, closes_at: null }, now)).toBe(true)
+  })
+})
+
+describe('isFocusFill', () => {
+  const focusForm = { focus_mode: true, require_signin: false, one_response_per_person: false }
+  const open = { open: true }
+
+  it('is true for an open focus-mode form being answered', () => {
+    expect(isFocusFill(focusForm, open)).toBe(true)
+  })
+  it('is false without focus_mode, so the default form keeps the navbar', () => {
+    expect(isFocusFill({ ...focusForm, focus_mode: false }, open)).toBe(false)
+  })
+  it('is false before the form has loaded', () => {
+    expect(isFocusFill(undefined, open)).toBe(false)
+  })
+  it('is false on the closed screen, which keeps a way back into the site', () => {
+    expect(isFocusFill(focusForm, { open: false })).toBe(false)
+  })
+  it('is false on the sign-in screen', () => {
+    const form = { ...focusForm, require_signin: true }
+    expect(isFocusFill(form, { ...open, signedIn: false })).toBe(false)
+    expect(isFocusFill(form, { ...open, signedIn: true })).toBe(true)
+  })
+  it('is false when a one-response form has already been answered, but true while editing it', () => {
+    const form = { ...focusForm, one_response_per_person: true }
+    expect(isFocusFill(form, { ...open, hasResponse: true, editing: false })).toBe(false)
+    expect(isFocusFill(form, { ...open, hasResponse: true, editing: true })).toBe(true)
+  })
+  it('is true for a one-response form with no response yet', () => {
+    const form = { ...focusForm, one_response_per_person: true }
+    expect(isFocusFill(form, { ...open, hasResponse: false })).toBe(true)
   })
 })

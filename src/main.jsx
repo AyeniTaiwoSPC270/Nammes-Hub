@@ -8,6 +8,7 @@ import { AuthProvider } from './lib/AuthContext.jsx'
 import { ThemeProvider } from './lib/ThemeContext.jsx'
 import { ToastProvider } from './lib/ToastContext.jsx'
 import { TourProvider } from './lib/TourContext.jsx'
+import { ChromeProvider } from './lib/ChromeContext.jsx'
 import { queryClient } from './lib/queryClient.js'
 import { notifyIfNewDeploy } from './lib/appUpdate.js'
 import { initErrorTracking } from './lib/errorTracking.js'
@@ -27,7 +28,9 @@ createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <ToastProvider>
               <TourProvider>
-                <App />
+                <ChromeProvider>
+                  <App />
+                </ChromeProvider>
               </TourProvider>
             </ToastProvider>
           </AuthProvider>

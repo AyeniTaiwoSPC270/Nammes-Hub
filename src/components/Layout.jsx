@@ -5,6 +5,7 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import WelcomeCarousel from './tour/WelcomeCarousel'
 import SpotlightOverlay from './tour/SpotlightOverlay'
+import { useChrome, isChromeFreePath } from '../lib/ChromeContext'
 
 function RouteSkeleton() {
   return (
@@ -26,10 +27,35 @@ function RouteSkeleton() {
   )
 }
 
+// A form is one narrow column of questions with no banner, so it gets its own skeleton: the page
+// layout above would be the wrong shape for it.
+function FormRouteSkeleton() {
+  return (
+    <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
+      <div className="h-8 w-2/3 animate-pulse rounded-sm bg-hairline" />
+      <div className="mt-3 h-4 w-full animate-pulse rounded-sm bg-hairline" />
+      <div className="mt-6 flex flex-col gap-4">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+            <div className="h-4 w-1/2 animate-pulse rounded-sm bg-hairline" />
+            <div className="mt-3 h-10 w-full animate-pulse rounded-sm bg-hairline" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Layout() {
   const location = useLocation()
   const reducedMotion = useReducedMotion()
   const outlet = useOutlet()
+  const { hidden } = useChrome()
+  const chromeFree = isChromeFreePath(location.pathname)
+
+  // A route that hides its own chrome starts out bare, so the navbar never paints and then vanishes
+  // while the page decides. Every other route follows the page's own answer.
+  const bare = hidden || chromeFree
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -37,7 +63,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-svh flex flex-col bg-paper">
-      <Navbar />
+      {!bare && <Navbar />}
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <motion.div
@@ -46,11 +72,11 @@ export default function Layout() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
           >
-            <Suspense fallback={<RouteSkeleton />}>{outlet}</Suspense>
+            <Suspense fallback={chromeFree ? <FormRouteSkeleton /> : <RouteSkeleton />}>{outlet}</Suspense>
           </motion.div>
         </AnimatePresence>
       </main>
-      <Footer />
+      {!bare && <Footer />}
       <WelcomeCarousel />
       <SpotlightOverlay />
     </div>
