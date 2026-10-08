@@ -389,6 +389,12 @@ npm run lint
 npm run build
 ```
 
-Then, and this cannot be faked: apply the migration, host a real game with a Supabase login, finish it, open the card and look at it.
+All three pass at the time of writing (105 files, 1208 tests, lint exit 0, build succeeds).
 
-**As of writing, the card output has not been seen in a real game, the character on canvas has not been verified, and the studio preview has not been checked.**
+### Still to do, and none of it can be faked
+
+1. **Apply the migration.** `supabase/migrations/20261007140000_quiz_cards.sql` has never run against a real database. Every card read fails until it does.
+2. **A real game.** Host one with a Supabase login, join from two phones, finish it, open the card. The character on a canvas was verified by rendering and looking, never in a game.
+3. **The Vercel question.** `api/_lib/characterSvg.js` imports a `.jsx` file from `src/`. No `api/` file has ever done that here. The code is proven correct under a real bundler (Rolldown via Vite's SSR build), but whether `@vercel/node` transpiles it is **unconfirmed**. A preview deploy is the only way to know. If it fails, the fallback is extracting `Character.jsx`'s shapes into `src/data/quizCharacterShapes.js`.
+4. **The projector modal.** `useProjectorFit` zooms `Stage`'s `<main>`; the modal is now a sibling of `Stage`, which is why. That reasoning is static, not observed.
+5. **The studio preview.** The `key`/url hash forces a redraw per edit. Untested in a browser.
