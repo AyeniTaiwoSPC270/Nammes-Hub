@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createQuizCardHandler } from './quiz-card.js'
-import { buildPracticeMe } from '../quizCardData.js'
-import { hashToken } from '../quiz.js'
+import { buildPracticeMe, toBoardRow } from '../quizCardData.js'
+import { hashToken, rankPlayers } from '../quiz.js'
 import { QUIZ, SESSION, fakeDb, fakeRes } from '../quizTestKit.js'
 
 const TOKEN = 'player-token'
@@ -72,25 +72,52 @@ describe('quiz card endpoint', () => {
     expect(isPng(res.body)).toBe(true)
   })
 
-  it('serves a board card to an admin and caches it briefly', async () => {
+  it('serves a board card to an admin, cached privately so no shared cache can hold it', async () => {
     const res = await run(finishedGame(), { session: SESSION, view: 'board' }, {
       headers: { authorization: 'Bearer good' },
     })
     expect(res.statusCode).toBe(200)
-    expect(res.headers['Cache-Control']).toBe('public, s-maxage=300')
+    expect(res.headers['Cache-Control']).toBe('private, max-age=300')
     expect(isPng(res.body)).toBe(true)
   })
 
   it('refuses a board card to a signed-in non-admin', async () => {
+    // Not a bad token, which would 401 at the JWT check: this is a real session that is simply not an admin.
+    const res = await run(finishedGame(), { session: SESSION, view: 'board' }, {
+      headers: { authorization: 'Bearer good' },
+      caller: async () => ({ user: {}, isAdmin: false }),
+    })
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('Admin access required')
+  })
+
+  it('refuses a board card with an invalid session token', async () => {
     const res = await run(finishedGame(), { session: SESSION, view: 'board' }, {
       headers: { authorization: 'Bearer bad' },
     })
     expect(res.statusCode).toBe(401)
   })
 
+  it('throttles the board by address, before spending an auth round trip', async () => {
+    let asked = 0
+    const res = await run(finishedGame(), { session: SESSION, view: 'board' }, {
+      headers: { authorization: 'Bearer good' },
+      allow: () => false,
+      caller: async () => { asked++; return { isAdmin: true } },
+    })
+    expect(res.statusCode).toBe(429)
+    expect(asked).toBe(0)
+  })
+
   it('refuses a board card with no session at all', async () => {
     const res = await run(finishedGame(), { session: SESSION, view: 'board' })
     expect(res.statusCode).toBe(401)
+  })
+
+  it('caches nothing on the error paths, so a shared cache cannot replay a 401 or a gone run', async () => {
+    const res = await run(finishedGame(), { session: SESSION, token: 'nope' })
+    expect(res.statusCode).toBe(401)
+    expect(res.headers['Cache-Control']).toBe('no-store')
   })
 
   it('never sends a player card to a viewer asking for the whole board', async () => {
@@ -192,6 +219,31 @@ describe('the studio preview', () => {
   it('rejects a malformed quiz id', async () => {
     const res = await run(fakeDb(), { preview: 'nope' })
     expect(res.statusCode).toBe(400)
+  })
+
+  it('is rate limited even though it needs no token, because it is the most expensive branch', async () => {
+    const res = await run(fakeDb({ quizzes: [{ id: QUIZ, title: 'Naming Origins', theme: {}, card: {} }] }), { preview: QUIZ }, { allow: () => false })
+    expect(res.statusCode).toBe(429)
+  })
+})
+
+// The renderer reads avatarId and score; the database and rankPlayers both say avatar_id and total_score. Passing a
+// row straight through drew "undefined" for every score, which a PNG-magic-number assertion cannot see.
+describe('the shape the renderer is given', () => {
+  const ranked = () => rankPlayers([{ id: 'p1', nickname: 'Ada', total_score: 14200, avatar_id: 13 }])
+
+  it('renames a ranked player to what the board card reads', () => {
+    expect(toBoardRow(ranked()[0])).toEqual({ rank: 1, nickname: 'Ada', avatarId: 13, score: 14200 })
+  })
+
+  it('leaves a player with no character on the first one rather than undefined', () => {
+    const [row] = rankPlayers([{ id: 'p1', nickname: 'Ada', total_score: 10 }])
+    expect(toBoardRow(row).avatarId).toBe(0)
+  })
+
+  it('defaults a missing score to zero rather than undefined', () => {
+    const [row] = rankPlayers([{ id: 'p1', nickname: 'Ada', avatar_id: 2 }])
+    expect(toBoardRow(row).score).toBe(0)
   })
 })
 

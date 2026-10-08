@@ -210,7 +210,8 @@ export async function renderPersonalCard({ card, theme, quiz, me, loadBackground
   const lines = []
   if (hasRank && me.playerCount) lines.push(`Placed ${me.rank} of ${me.playerCount}`)
   if (c.showTeam && me.teamName) lines.push(me.teamName)
-  if (c.showAccuracy && me.correctCount !== null && me.correctCount !== undefined) {
+  // Both numbers or neither: "3 of null correct" is worse than no line.
+  if (c.showAccuracy && Number.isInteger(me.correctCount) && Number.isInteger(me.totalQuestions)) {
     lines.push(`${me.correctCount} of ${me.totalQuestions} correct`)
   }
   if (c.showStreak && me.bestStreak) lines.push(`Best streak ${me.bestStreak}`)

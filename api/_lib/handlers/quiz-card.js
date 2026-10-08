@@ -3,11 +3,13 @@ import { isUuid, isAllowedImageUrl } from '../validate.js'
 import { hashToken, createRateLimiter, clientIp, rankPlayers } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { sanitizeCard } from '../quizCard.js'
-import { buildPracticeMe } from '../quizCardData.js'
+import { buildPracticeMe, toBoardRow } from '../quizCardData.js'
 import { renderBoardCard, renderDuelCard, renderPersonalCard } from '../quizCardRender.js'
 import { sessionQuestionIds } from '../quizSessionQuestions.js'
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+
 
 // Every fetch draws the card again; nothing is stored. A generous limit stops one phone hammering the function
 // while the cache headers on the board variant stop everyone else having to.
@@ -63,6 +65,8 @@ export function createQuizCardHandler(
       return
     }
     const { data: quiz } = await db.from('quizzes').select('id, title, theme, card').eq('id', session.quiz_id).maybeSingle()
+    // Read with the service role on purpose: quiz_player_stats is granted to `authenticated` only, and this route has
+    // already proved the player through quiz_player_tokens, so the view's own gate would only get in the way.
     const { data: stats } = await db
       .from('quiz_player_stats')
       .select('correct_count')
@@ -122,11 +126,13 @@ export function createQuizCardHandler(
       card: sanitizeCard(session.card, { quizId: session.quiz_id }),
       theme: sanitizeTheme(session.theme, { quizId: session.quiz_id }),
       quiz,
-      ranked: rankPlayers(players ?? []),
+      ranked: rankPlayers(players ?? []).map(toBoardRow),
       teams: (teams ?? []).map((t) => ({ name: t.name, color: t.color, score: perTeam.get(t.id) ?? 0 })),
       loadBackground: loadBackground(),
     })
-    sendPng(res, buffer, 'public, s-maxage=300')
+    // Browser-only: a shared cache would serve every player's nickname and score to anyone who knew the session id,
+    // which is exactly the gate the admin check above exists to enforce.
+    sendPng(res, buffer, 'private, max-age=300')
   }
 
   async function servePractice(res, db, shareCode) {
@@ -196,7 +202,7 @@ export function createQuizCardHandler(
       card: sanitizeCard(quiz?.card, { quizId: battle.quiz_id }),
       theme: sanitizeTheme(quiz?.theme, { quizId: battle.quiz_id }),
       quiz,
-      sides: sides ?? [],
+      sides: (sides ?? []).map((s) => ({ ...s, avatarId: s.avatar_id ?? 0, score: s.total_score ?? 0 })),
       winnerSlot: battle.winner_slot ?? null,
       forfeit: Boolean(battle.forfeit),
       questionCount: battle.question_ids?.length ?? 0,
@@ -227,6 +233,10 @@ export function createQuizCardHandler(
   }
 
   return async function handler(req, res) {
+    // Set first, so every early error (400/401/403/405/409/410/429) goes out uncached too. The board variant is the
+    // only one that overrides it, since a finished game's standings never change. A shared cache storing the
+    // 401 or the "practice run is gone" body would replay it long after the fact.
+    res.setHeader('Cache-Control', 'no-store')
     if (req.method !== 'GET') {
       res.status(405).json({ error: 'Method not allowed' })
       return
@@ -237,6 +247,12 @@ export function createQuizCardHandler(
     if (preview) {
       if (!isUuid(preview)) {
         res.status(400).json({ error: 'Invalid quiz id' })
+        return
+      }
+      // The one branch anyone can reach, and the most expensive per call (fonts, a React render, a 1080x1920
+      // encode), so it is limited even though it needs no token.
+      if (!allow(clientIp(req))) {
+        res.status(429).json({ error: 'Slow down' })
         return
       }
       await servePreview(res, getClient(), preview)
@@ -263,6 +279,12 @@ export function createQuizCardHandler(
     // board never widens what a player token can reach: view=board goes down the admin path or not at all.
     if (view === 'board') {
       const db = getClient()
+      // Throttled on the address rather than the token, so a flood of forged JWTs cannot spend an auth round trip
+      // each. getCaller verifies with Supabase, which is the expensive part.
+      if (!allow(clientIp(req))) {
+        res.status(429).json({ error: 'Slow down' })
+        return
+      }
       const who = await caller(db, bearerToken(req))
       if (who.error) {
         res.status(who.error[0]).json({ error: who.error[1] })
@@ -270,10 +292,6 @@ export function createQuizCardHandler(
       }
       if (!who.isAdmin) {
         res.status(403).json({ error: 'Admin access required' })
-        return
-      }
-      if (!allow(clientIp(req))) {
-        res.status(429).json({ error: 'Slow down' })
         return
       }
       await serveBoard(res, db, session)
