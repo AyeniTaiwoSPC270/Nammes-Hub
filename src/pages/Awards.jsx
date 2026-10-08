@@ -11,16 +11,20 @@ import { useMyVotesQuery, useSeasonTallyQuery, useBallotCountQuery, submitBallot
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
+import PageBanner from '../components/PageBanner'
 import Reveal from '../components/ui/Reveal'
 import NominationCategoryField from '../components/awards/NominationCategoryField'
 import NomineeOption from '../components/awards/NomineeOption'
 import ResultsSummary from '../components/awards/ResultsSummary'
+import { usePageBanner } from '../data/pageBanners'
 import { shareOrDownloadCard } from '../lib/shareCard'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
 
-export default function Awards() {
+// The banner is owned by the wrapper below so that every phase keeps its own early return.
+// Season state stays the subheading: the banner says what the page is, the heading says which season.
+function AwardsBody() {
   const { user, loading: authLoading } = useAuth()
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -138,7 +142,7 @@ export default function Awards() {
             <span className="inline-flex items-center rounded-full bg-green-900 px-3 py-1 text-xs font-semibold uppercase tracking-[.05em] text-white">
               Results revealed
             </span>
-            <h1 className="text-3xl font-bold text-ink-900">{season.title} — Results</h1>
+            <h2 className="text-2xl font-bold text-ink-900">{season.title} — Results</h2>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3 rounded-lg bg-surface-low p-4 shadow-sm sm:grid-cols-2">
@@ -174,7 +178,7 @@ export default function Awards() {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
         <Reveal>
-          <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+          <h2 className="text-2xl font-bold text-ink-900">{season.title}</h2>
           <p className="mt-4 text-ink-muted">Sign in with your department account to take part.</p>
           <Link to="/login" state={{ from: { pathname: '/awards' } }}>
             <Button variant="primary" className="mt-4">Sign in</Button>
@@ -188,7 +192,7 @@ export default function Awards() {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
         <Reveal>
-          <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+          <h2 className="text-2xl font-bold text-ink-900">{season.title}</h2>
           <p className="mt-4 text-ink-muted">
             Your account doesn&rsquo;t have a matric number on file, so it can&rsquo;t take part in this award. Contact
             an exco member to get this fixed.
@@ -206,12 +210,9 @@ export default function Awards() {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
         <Reveal>
-          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-            <span>NAMMES Hub</span>
-            <span className="text-hairline">/</span>
-            <span className="text-ink-muted">Annual Awards</span>
-          </div>
-          <h1 className="mt-2 text-3xl font-bold text-ink-900">{season.title}</h1>
+          {/* The breadcrumb that used to sit here repeated the banner's own title, and an admin who
+              retitles the banner would leave it contradicting itself. */}
+          <h2 className="text-2xl font-bold text-ink-900">{season.title}</h2>
           <p className="mt-2 text-ink-muted">Nominate someone for each category. You can change your nominee until nominations close.</p>
 
           <div className="mt-5 rounded-lg bg-surface-low p-4 shadow-sm">
@@ -256,7 +257,7 @@ export default function Awards() {
   if (season.phase === 'curating') {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
-        <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+        <h2 className="text-2xl font-bold text-ink-900">{season.title}</h2>
         <EmptyState icon="hourglass_top" title="Nominations closed" description="The shortlist is being finalized — voting opens soon." />
       </div>
     )
@@ -265,7 +266,7 @@ export default function Awards() {
   if (season.phase === 'closed') {
     return (
       <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
-        <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+        <h2 className="text-2xl font-bold text-ink-900">{season.title}</h2>
         <EmptyState icon="how_to_vote" title="Voting closed" description="Results will be announced soon." />
       </div>
     )
@@ -277,7 +278,7 @@ export default function Awards() {
     if (myVotesQuery.data.length > 0) {
       return (
         <div className="mx-auto max-w-[700px] px-5 py-12 sm:px-6">
-          <h1 className="text-3xl font-bold text-ink-900">{season.title}</h1>
+          <h2 className="text-2xl font-bold text-ink-900">{season.title}</h2>
           <EmptyState icon="check_circle" title="You've already voted" description="Thanks for taking part — results will be announced soon." />
         </div>
       )
@@ -297,7 +298,7 @@ export default function Awards() {
             <span className="material-symbols-outlined text-base">how_to_vote</span>
             Annual departmental poll
           </span>
-          <h1 className="mt-2 text-3xl font-bold text-ink-900">{season.title}</h1>
+          <h2 className="mt-2 text-2xl font-bold text-ink-900">{season.title}</h2>
           <p className="mt-2 text-ink-muted">Pick one nominee per category, then submit your whole ballot.</p>
 
           <div className="mt-5 flex flex-col gap-3 rounded-lg bg-surface-low p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -349,7 +350,7 @@ export default function Awards() {
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-900 text-xs font-bold text-white">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <h2 className="text-lg font-bold text-ink-900">{c.title}</h2>
+                  <h3 className="text-lg font-bold text-ink-900">{c.title}</h3>
                 </div>
                 <span
                   className={[
@@ -410,4 +411,21 @@ export default function Awards() {
   }
 
   return null
+}
+
+export default function Awards() {
+  const banner = usePageBanner('awards')
+
+  return (
+    <div>
+      <PageBanner
+        images={banner?.image_urls}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
+        title={banner?.title ?? 'Annual Awards'}
+        subtitle={banner?.subtitle ?? 'Nominate, vote, and celebrate the outstanding members of the department.'}
+      />
+      <AwardsBody />
+    </div>
+  )
 }
