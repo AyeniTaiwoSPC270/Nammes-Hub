@@ -78,12 +78,14 @@ export default function FormThemeShell({ theme, contained = false, children }) {
  * Title card: optional banner image, then the title and description in the theme's text styles.
  * `interactive` ({ selected, onSelect, onResize }) is used by the design preview to make the card
  * selectable and resizable; it always draws as a card there so the handles have edges to sit on.
+ * `backLink` is a node drawn above the title, for the way out of a form that hides the site chrome.
  */
-export function FormHeaderCard({ form, theme, interactive }) {
+export function FormHeaderCard({ form, theme, interactive, backLink }) {
   const custom = hasTheme(theme)
   if (!custom && !interactive) {
     return (
       <>
+        {backLink}
         <h1 className="text-3xl font-bold text-ink-900">{form.title || 'Untitled form'}</h1>
         {form.description && <p className="mt-2 text-ink-muted">{linkifyText(form.description)}</p>}
       </>
@@ -97,6 +99,7 @@ export function FormHeaderCard({ form, theme, interactive }) {
     <div className="overflow-hidden" style={{ borderRadius: 'inherit', flex: layoutStyle.minHeight ? 1 : undefined }}>
       {t.header && <AdjustableImage image={{ ...t.header, aspect: t.header.aspect === 'free' ? '3:1' : t.header.aspect }} fill />}
       <div style={{ padding: cardPadding(t) }}>
+        {backLink && <div className="mb-3">{backLink}</div>}
         <h1 style={{ ...textStyle(t.title, 'var(--color-ink-900)'), fontFamily: 'var(--font-display)', lineHeight: 1.2 }}>
           {form.title || 'Untitled form'}
         </h1>

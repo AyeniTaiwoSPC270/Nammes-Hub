@@ -73,6 +73,23 @@ export function isFormOpen(form, now = new Date()) {
   return true
 }
 
+/**
+ * Whether the page is the live fill-in screen of a focus-mode form — the one screen a respondent
+ * answers with no site navbar and footer. The closed, sign-in and already-responded screens keep the
+ * chrome so there is always a way back into the site, and a form without focus_mode is never
+ * affected. Editing a response counts as filling, because it is the same screen.
+ */
+export function isFocusFill(
+  form,
+  { open = false, signedIn = false, hasResponse = false, editing = false } = {}
+) {
+  if (!form?.focus_mode) return false
+  if (!open) return false
+  if (form.require_signin && !signedIn) return false
+  if (form.one_response_per_person && hasResponse && !editing) return false
+  return true
+}
+
 export async function fetchOpenForms() {
   const { data, error } = await supabase
     .from('forms')

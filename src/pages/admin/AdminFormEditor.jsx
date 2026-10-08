@@ -101,6 +101,7 @@ export default function AdminFormEditor() {
   const [requireSignin, setRequireSignin] = useState(false)
   const [oneResponsePerPerson, setOneResponsePerPerson] = useState(false)
   const [allowEditAfterSubmit, setAllowEditAfterSubmit] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
   const [questions, setQuestions] = useState([newQuestion()])
   const [formError, setFormError] = useState('')
   const [sharing, setSharing] = useState(false)
@@ -123,6 +124,8 @@ export default function AdminFormEditor() {
     setRequireSignin(form.require_signin)
     setOneResponsePerPerson(form.one_response_per_person)
     setAllowEditAfterSubmit(form.allow_edit_after_submit)
+    // Boolean() because a form saved before the focus_mode migration reads back without the column.
+    setFocusMode(Boolean(form.focus_mode))
     setTheme(form.theme ?? null)
     setQuestions(form.questions.length > 0 ? form.questions : [newQuestion()])
     setHydrated(true)
@@ -144,6 +147,7 @@ export default function AdminFormEditor() {
         require_signin: requireSignin,
         one_response_per_person: requireSignin ? oneResponsePerPerson : false,
         allow_edit_after_submit: allowEditAfterSubmit,
+        focus_mode: focusMode,
         theme: themeToSave(theme),
       }
 
@@ -250,6 +254,12 @@ export default function AdminFormEditor() {
             />
           </div>
           <Toggle checked={allowEditAfterSubmit} onChange={setAllowEditAfterSubmit} label="Allow editing a response after submit" />
+          <Toggle
+            checked={focusMode}
+            onChange={setFocusMode}
+            label="Hide the navbar while filling"
+            description="Respondents see only the form, with a back link in the header. The closed and already-answered screens keep the navbar."
+          />
         </div>
 
         <FormField
