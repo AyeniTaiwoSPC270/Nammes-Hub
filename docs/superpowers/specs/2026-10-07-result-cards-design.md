@@ -121,28 +121,25 @@ Any flag that is not literal `false` stays on, so a hand-edited row can only eve
 
 **`isQuizImagePath(path, undefined)` returns `true` for any string** (`api/_lib/quizImage.js:17`). Every caller must pass `quizId`, or a hand-edited row could point the renderer at an arbitrary path.
 
-### 4.2 `api/_lib/characterSvg.js` — the character, server-only
+### 4.2 The character on the server
 
-Turns the browser component into a static SVG string:
+The card shows the player's real cartoon character. `Character.jsx` is 635 lines of inline JSX, and the result cards are drawn by a Node function.
 
-```js
-import { renderToStaticMarkup } from 'react-dom/server'
-import { createElement } from 'react'
-import Character from '../../src/components/quiz/Character.jsx'
+**A Node function cannot load a `.jsx` file.** Vercel's Node runtime resolves the route's import graph but does not transpile JSX, so `api/quiz-card.js` failed to import at all:
 
-export function characterSvg(id, { mood = 'happy', size = 100 } = {}) {
-  const markup = renderToStaticMarkup(createElement(Character, { id, mood }))
-  return markup.replace('<svg', `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"`)
-}
+```
+FUNCTION_INVOCATION_FAILED
 ```
 
-One change to `src/components/quiz/Character.jsx`: move `import './characters.css'` (line 2) to `src/components/quiz/QuizParts.jsx`. Node cannot parse CSS, and every browser consumer of `Character` (`src/pages/PlayQuiz.jsx:9`, `PlayPractice.jsx:6`, `PlayBattle.jsx:6`, `CharacterGallery.jsx:3`) already loads `QuizParts`, so the stylesheet still arrives everywhere it did before.
+Not a render error and not a 500 from a guard — the module never loaded, so even a request that should have returned 400 failed the same way. Confirmed with a control: `api/award-card.js`, which uses the same `@napi-rs/canvas` and `node:path`, imports fine and returns 400 on a bad request. The only difference is the `.jsx` import.
 
-`@napi-rs/canvas` parses a standalone SVG, and `xmlns` is what makes the string standalone. The animation classes (`qz-i-*`, `qz-w-*`, `qz-h-*`) mean nothing without `characters.css` attached, which is exactly right for a still card.
+So the characters' markup is **generated** into a plain module the server can load:
 
-This module breaks the `api/_lib` purity rule on purpose — it imports React and `src/` — the same way `awardCardRender.js` does: server-only, and nothing in `src/` imports it.
+- `api/_lib/quizCharacterMarkup.js` — generated, 250 entries (50 characters × 5 moods), class attributes stripped since the browser's animation classes mean nothing to the renderer.
+- `scripts/quizCharacterMarkup.test.js` — renders all 250 from `Character.jsx` and fails if the generated module disagrees, so changing a character without regenerating is a build failure, not a silent drift.
+- `npm run cards:characters` — regenerates.
 
-**Known risk.** No existing file in `api/` imports from `src/`. `react-dom/server` inside a Vercel serverless function is supported but is new ground for this repo. If bundling fails, the fallback is extracting the shapes from `Character.jsx` into a plain `src/data/quizCharacterShapes.js` module that both sides import — roughly 636 lines moved, and the only option that restores the purity rule. Decide at build time, not in advance.
+`Character.jsx` stays the single source of truth and is not modified. The alternative, converting 635 lines of JSX to `createElement` calls by hand, put a working, heavily-used component at risk for no gain.
 
 ### 4.3 `api/_lib/quizCardRender.js` — the PNG
 
@@ -334,6 +331,7 @@ Saved by `saveQuizCard(id, card)` in `src/data/quiz.js`, beside `saveQuizTheme` 
 |---|---|
 | `api/_lib/quizCard.test.js` | `sanitizeCard` falls back on bad hex / bad flags / a path from another quiz; idempotent; every `DEFAULT_CARD` key survives a `{}` input |
 | `api/_lib/characterSvg.test.js` | All 50 ids produce a complete SVG; out-of-range ids fall back to 0; mood changes the output; size is honoured |
+| `scripts/quizCharacterMarkup.test.js` | The generated markup still matches `Character.jsx`, character by character and mood by mood |
 | `api/_lib/quizCardRender.test.js` | PNG magic number on every variant; every-stat-hidden still renders; no theme still renders; long nickname does not throw; missing streak changes the output; empty board renders; `rowsThatFit` keeps rows and their summary line clear of the footer with and without teams; every look stays legible |
 | `api/_lib/handlers/quiz-card.test.js` | 405/400/401/403/409/410/429 paths, admin gate on board, cache headers, the shape the renderer is given |
 | `src/lib/quizCard.test.js` | each URL variant matches the query its endpoint branch reads; tokens are encoded; filenames stay safe; the server's own error message and status survive |
@@ -345,7 +343,7 @@ Canvas tests run in Node and need no browser guard, but they are slow (~200ms ea
 
 ## 9. Constraints from `AGENTS.md` this work must not break
 
-- **`api/_lib` purity.** `quizCard.js` and `quizCardData.js` obey it. `characterSvg.js` and `quizCardRender.js` do not, exactly as `awardCardRender.js` does not. Nothing in `src/` may import either.
+- **`api/_lib` purity.** `quizCard.js`, `quizCardData.js` and `quizCharacterMarkup.js` obey it — the last is what makes the server side work at all. `quizCardRender.js` does not, exactly as `awardCardRender.js` does not, because it reads the font files and `node:path`. Nothing in `src/` may import it.
 - **Icons.** Any new `material-symbols-outlined` name must be added to `icon_names=` in `index.html`, alphabetically, or `src/lib/iconFont.test.js` fails. `share`, `download`, `image`, `close`, `trophy`, `palette`, `star` are all present already.
 - **Comments explain why.** The rate limiter, the `no-store` choice, the CSS import move and the public preview endpoint all need a why-not-what line.
 - **No `console.log`, no commented-out code.**
@@ -389,12 +387,18 @@ npm run lint
 npm run build
 ```
 
-All three pass at the time of writing (105 files, 1208 tests, lint exit 0, build succeeds).
+All three pass at the time of writing (106 files, 1210 tests, lint exit 0, build succeeds).
+
+### Verified against the live deployment
+
+`/api/quiz-card` returned `FUNCTION_INVOCATION_FAILED` on production: the route could not be imported, because it reached a `.jsx` file. Fixed by generating the character markup into a plain module (section 4.2). Since then, checked against the real database through the same path Vercel uses — plain Node, no bundler:
+
+- `node -e "import('./api/quiz-card.js')"` → imports cleanly
+- the handler returns `200 image/png`, a 235 KB valid PNG, and `400` for a malformed id
+- a contact sheet of all 50 characters renders correctly from the generated markup
 
 ### Still to do, and none of it can be faked
 
-1. **Apply the migration.** `supabase/migrations/20261007140000_quiz_cards.sql` has never run against a real database. Every card read fails until it does.
-2. **A real game.** Host one with a Supabase login, join from two phones, finish it, open the card. The character on a canvas was verified by rendering and looking, never in a game.
-3. **The Vercel question.** `api/_lib/characterSvg.js` imports a `.jsx` file from `src/`. No `api/` file has ever done that here. The code is proven correct under a real bundler (Rolldown via Vite's SSR build), but whether `@vercel/node` transpiles it is **unconfirmed**. A preview deploy is the only way to know. If it fails, the fallback is extracting `Character.jsx`'s shapes into `src/data/quizCharacterShapes.js`.
-4. **The projector modal.** `useProjectorFit` zooms `Stage`'s `<main>`; the modal is now a sibling of `Stage`, which is why. That reasoning is static, not observed.
+1. **A real game.** Host one with a Supabase login, join from two phones, finish it, open the card.
+2. **The projector modal.** `useProjectorFit` zooms `Stage`'s `<main>`; the modal is now a sibling of `Stage`, which is why. That reasoning is static, not observed.
 5. **The studio preview.** The `key`/url hash forces a redraw per edit. Untested in a browser.
