@@ -29,6 +29,8 @@ export function fakeDb(seed = {}) {
     quiz_host_log: [],
     quiz_powerup_uses: [],
     quiz_teams: [],
+    // The report views exist in the database; the card endpoint reads one for a player's correct count.
+    quiz_player_stats: [],
     quiz_practice_runs: [],
     quiz_practice_answers: [],
     quiz_bracket_matches: [],

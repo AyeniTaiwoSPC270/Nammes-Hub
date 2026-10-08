@@ -25,6 +25,17 @@ export function generateJoinCode(rand = randomInt) {
   return String(rand(0, 1_000_000)).padStart(6, '0')
 }
 
+// No I, O, 0 or 1: these get read aloud across a room and typed by hand off a screen.
+const SHARE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+// The public half of a finished practice run's result-card link. Longer than a join code on purpose, so the two are
+// never mistaken for each other in a URL or in a screenshot, and a code here reveals no player.
+export function generatePracticeShareCode(rand = randomInt) {
+  let out = ''
+  for (let i = 0; i < 8; i++) out += SHARE_ALPHABET[rand(0, SHARE_ALPHABET.length)]
+  return out
+}
+
 export function newPlayerToken() {
   return randomBytes(24).toString('base64url')
 }

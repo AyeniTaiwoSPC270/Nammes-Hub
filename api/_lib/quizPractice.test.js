@@ -137,6 +137,49 @@ describe('practice: one question at a time', () => {
   })
 })
 
+describe('practice: the card link', () => {
+  async function finishARun() {
+    const w = world()
+    const { token } = await w.start()
+    await w.call({ op: 'answer', token, chosenIndex: 1 })
+    await w.call({ op: 'next', token })
+    w.at(START + 1)
+    await w.call({ op: 'answer', token, answerText: '3.145' })
+    await w.call({ op: 'next', token })
+    await w.call({ op: 'answer', token, answerText: 'Ada Lovelace' })
+    const res = await w.call({ op: 'next', token })
+    return { ...w, finished: res.body }
+  }
+
+  it('mints a share code only once the run is finished', async () => {
+    const { finished, db } = await finishARun()
+    expect(finished.finished).toBe(true)
+    expect(finished.shareCode).toMatch(/^[A-HJ-NP-Z2-9]{8}$/)
+    expect(db.tables.quiz_practice_runs[0].share_code).toBe(finished.shareCode)
+  })
+
+  it('has no share code mid-run, so a card button never points at nothing', async () => {
+    const { call, start } = world()
+    const { token } = await start()
+    expect((await call({ op: 'state', token })).body.shareCode).toBeNull()
+  })
+
+  it('never mints a share code for a run that has not finished', async () => {
+    const { call, start, db } = world()
+    const { token } = await start()
+    await call({ op: 'answer', token, chosenIndex: 1 })
+    await call({ op: 'next', token })
+    expect(db.tables.quiz_practice_runs[0].finished_at).toBeNull()
+    expect(db.tables.quiz_practice_runs[0].share_code ?? null).toBeNull()
+  })
+
+  it('hands the phone the card design but never a token', async () => {
+    const { finished } = await finishARun()
+    expect(Object.keys(finished)).not.toContain('token')
+    expect(finished.card).toMatchObject({ showStreak: true })
+  })
+})
+
 describe('practice: the leaderboard', () => {
   it('lists only finished runs, best first, with nickname, character and score', async () => {
     const { call, db } = world()

@@ -12,6 +12,8 @@ import { quizSound, buzz } from '../lib/quizSound'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
 import { teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
+import ResultCardModal from '../components/quiz/ResultCardModal'
+import { personalCardUrl, cardFilename } from '../lib/quizCard'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
@@ -319,6 +321,7 @@ function PlayQuizGame({ onTheme }) {
   }, [theme.sound.effects, theme.sound.off])
   const [sending, setSending] = useState(false)
   const [message, setMessage] = useState('')
+  const [cardOpen, setCardOpen] = useState(false)
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
 
   const token = saved?.token
@@ -782,8 +785,10 @@ function PlayQuizGame({ onTheme }) {
 
   if (session.state === 'finished') {
     const podium = me.rank && me.rank <= 3
+    // The modal sits outside <Phone>, which is a fixed-width phone frame: it has to cover the whole screen.
     return (
-      <Phone me={me}>
+      <>
+        <Phone me={me}>
         {podium && <Confetti count={30} />}
         <section className="qz-pop mt-2 rounded-3xl qz-deep p-8 text-center text-white shadow-xl">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">{podium ? 'You made the podium!' : 'Final result'}</p>
@@ -806,6 +811,14 @@ function PlayQuizGame({ onTheme }) {
         </ol>
         <button
           type="button"
+          onClick={() => setCardOpen(true)}
+          className="mt-2 flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-green-900 px-6 text-xl font-bold text-white shadow-md active:scale-[0.98]"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">share</span>
+          Share my result
+        </button>
+        <button
+          type="button"
           onClick={leave}
           className="mt-2 flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md active:scale-[0.98]"
         >
@@ -813,6 +826,15 @@ function PlayQuizGame({ onTheme }) {
           Play again
         </button>
       </Phone>
+        {cardOpen && token && sessionId && (
+          <ResultCardModal
+            url={personalCardUrl({ sessionId, token })}
+            filename={cardFilename(me.nickname)}
+            shareTitle={`I placed ${me.rank} in this quiz`}
+            onClose={() => setCardOpen(false)}
+          />
+        )}
+      </>
     )
   }
 

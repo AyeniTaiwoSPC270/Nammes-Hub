@@ -6,6 +6,8 @@ import { createQuizAnswerHandler } from './handlers/quiz-answer.js'
 import { createQuizStateHandler } from './handlers/quiz-state.js'
 import quizRouter from '../quiz.js'
 import { DEFAULT_THEME } from './quizTheme.js'
+import { DEFAULT_CARD } from './quizCard.js'
+import { readFileSync } from 'node:fs'
 
 import { QUIZ, SESSION, fakeRes, fakeDb, admin, anon } from './quizTestKit.js'
 
@@ -52,6 +54,24 @@ describe('quiz-create', () => {
     const db = fakeDb()
     await createQuizCreateHandler(() => db, { makeCode: () => '444444' })(admin({ quizId: QUIZ }), fakeRes())
     expect(db.tables.quiz_sessions.at(-1).theme).toMatchObject({ look: 'classic', accent: null, pattern: 'math' })
+  })
+  it("copies the quiz's card settings into the game for the same reason as the look", async () => {
+    const db = fakeDb({ quizzes: [{ id: QUIZ, max_players: 40, card: { accent: '#ABCDEF', showStreak: false, background: `/${QUIZ}/nope.jpg` } }] })
+    await createQuizCreateHandler(() => db, { makeCode: () => '555555' })(admin({ quizId: QUIZ }), fakeRes())
+    expect(db.tables.quiz_sessions.at(-1).card).toEqual({ ...DEFAULT_CARD, accent: '#abcdef', showStreak: false, background: null })
+  })
+  it('asks the quizzes table for the card column everywhere it reads a card', () => {
+    // Supabase returns only the columns a select names, so leaving `card` off a select makes `quiz.card` undefined and
+    // sanitizeCard quietly falls back to the defaults. The fake db above discards the column list, so that failure is
+    // invisible to it: the card feature would look wired up and quietly ignore the studio's design. Read the source.
+    const sources = ['api/_lib/handlers/quiz-create.js', 'api/_lib/handlers/quiz-practice.js', 'api/_lib/handlers/quiz-battle.js']
+    for (const file of sources) {
+      const usesCard = readFileSync(file, 'utf8').includes('card')
+      if (!usesCard) continue
+      for (const [, cols] of readFileSync(file, 'utf8').matchAll(/\.select\('([^']*theme[^']*)'\)/g)) {
+        expect(cols.split(',').map((c) => c.trim()), `${file} selects theme but not card`).toContain('card')
+      }
+    }
   })
   it('creates a lobby with a six-digit code and retries a code clash', async () => {
     const db = fakeDb({ quiz_sessions: [{ id: 'old', quiz_id: QUIZ, join_code: '111111', state: 'lobby' }] })

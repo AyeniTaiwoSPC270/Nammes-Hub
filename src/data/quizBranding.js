@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabaseClient'
 import { processQuizImage } from '../lib/quizImage'
 import { quizImagePath } from '../../api/_lib/quizImage.js'
+import { sanitizeCard } from '../../api/_lib/quizCard.js'
 
 // Logo and sponsor pictures live in the public quiz-branding bucket (admins upload, everyone can see).
 
@@ -30,8 +31,19 @@ export async function removeBrandingFiles(paths) {
   if (paths.length > 0) await supabase.storage.from(BRANDING_BUCKET).remove(paths) // best effort
 }
 
-// Every picture a theme uses. The backdrop is listed here too, or saving a look would leave an orphan in the bucket
-// whenever the admin swaps one backdrop picture for another.
-export function brandingPaths(theme) {
-  return [theme?.logo, theme?.image, ...(theme?.sponsors ?? []).map((s) => s.path)].filter(Boolean)
+// Every picture a design uses. The backdrop is listed here too, or saving a look would leave an orphan in the bucket
+// whenever the admin swaps one backdrop picture for another. The card background is passed separately because it
+// lives on its own column and is saved on its own.
+
+export function brandingPaths(theme, card) {
+  return [theme?.logo, theme?.image, ...(theme?.sponsors ?? []).map((s) => s.path), card?.background].filter(Boolean)
+}
+
+// A short token that changes whenever the card design does. The studio puts it on the preview's url so the browser
+// redraws, since /api/quiz-card renders the saved card rather than the draft.
+export function cardPreviewVersion(card, quizId) {
+  const clean = sanitizeCard(card, { quizId })
+  let hash = 0
+  for (const ch of JSON.stringify(clean)) hash = (hash * 31 + ch.charCodeAt(0)) | 0
+  return (hash >>> 0).toString(36)
 }

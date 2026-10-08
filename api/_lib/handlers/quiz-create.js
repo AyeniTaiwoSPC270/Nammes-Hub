@@ -4,6 +4,7 @@ import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
 import { generateJoinCode, isMaxPlayers, DEFAULT_MAX_PLAYERS, sanitizeGameOptions } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
+import { sanitizeCard } from '../quizCard.js'
 import { cleanTeams, TEAM_SCORING } from '../quizTeams.js'
 import { cleanDrawSettings, buildQuestionSet } from '../quizDraw.js'
 
@@ -58,7 +59,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     // so later edits never change a running game.
     const { data: quiz, error: quizError } = await supabaseAdmin
       .from('quizzes')
-      .select('max_players, theme, game_options, team_mode, team_scoring, team_presets, draw_settings')
+      .select('max_players, theme, card, game_options, team_mode, team_scoring, team_presets, draw_settings')
       .eq('id', quizId)
       .maybeSingle()
     if (quizError) {
@@ -89,6 +90,8 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     }
     const limit = maxPlayers ?? quiz?.max_players ?? DEFAULT_MAX_PLAYERS
     const theme = sanitizeTheme(quiz?.theme, { quizId })
+    // The result card settings are frozen onto the game for the same reason the look is.
+    const card = sanitizeCard(quiz?.card, { quizId })
     const useTeams = teamMode ?? quiz?.team_mode ?? false
     const scoring = teamScoring ?? quiz?.team_scoring ?? 'average'
     let teams = []
@@ -111,6 +114,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
             join_code: makeCode(),
             max_players: limit,
             theme,
+            card,
             game_options: gameOptions,
             team_mode: useTeams,
             team_scoring: scoring,

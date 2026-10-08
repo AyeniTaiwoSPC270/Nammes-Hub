@@ -9,6 +9,8 @@ import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
 import { Avatar } from '../../components/quiz/QuizParts'
+import ResultCardModal from '../../components/quiz/ResultCardModal'
+import { boardCardUrl, cardFilename } from '../../lib/quizCard'
 import { teamStyle } from '../../data/quizTeams'
 
 // How a finished game went: headline numbers, every question's accuracy and answers, the hardest and easiest
@@ -96,6 +98,7 @@ export default function AdminQuizReport() {
   const queryClient = useQueryClient()
   const query = useQuery({ queryKey: ['quiz_report', sessionId], queryFn: () => fetchGameReport(sessionId) })
   const [sort, setSort] = useState({ key: 'rank', direction: 'asc' })
+  const [cardOpen, setCardOpen] = useState(false)
 
   useEffect(() => {
     document.body.classList.add('qz-report')
@@ -148,6 +151,7 @@ export default function AdminQuizReport() {
         </div>
         <div className="qz-no-print flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => downloadTextFile(`${fileSlug(title)}-report.csv`, reportToCsv(report))}>Export CSV</Button>
+          <Button variant="secondary" onClick={() => setCardOpen(true)}>Result card</Button>
           <Button variant="secondary" onClick={() => window.print()}>Print / Save as PDF</Button>
           <Button
             variant="destructive"
@@ -160,6 +164,16 @@ export default function AdminQuizReport() {
           </Button>
         </div>
       </div>
+
+      {cardOpen && (
+        <ResultCardModal
+          url={boardCardUrl(session.id)}
+          admin
+          filename={cardFilename(title, 'quiz-results')}
+          shareTitle={title}
+          onClose={() => setCardOpen(false)}
+        />
+      )}
 
       {unfinished && (
         <p role="status" className="mt-4 rounded-lg bg-orange-500/10 p-3 text-sm text-ink-900">

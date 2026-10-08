@@ -3,9 +3,10 @@ import { isUuid } from '../validate.js'
 import { logError } from '../logError.js'
 import {
   validateNickname, isAvatarId, newPlayerToken, hashToken, createRateLimiter, clientIp, scoreAnswer, ANSWER_GRACE_MS,
-  gradeAnswer, isChoiceType, correctText,
+  gradeAnswer, isChoiceType, correctText, generatePracticeShareCode,
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
+import { sanitizeCard } from '../quizCard.js'
 import { publicImageUrl } from '../quizImage.js'
 import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
 import { cleanDrawSettings, buildQuestionSet, shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
@@ -63,7 +64,7 @@ export function createQuizPracticeHandler(
 
     async function enabledQuiz(id) {
       if (!isUuid(id)) return null
-      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, expires_at, draw_settings').eq('id', id).maybeSingle()
+      const { data } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, battle_enabled, theme, card, expires_at, draw_settings').eq('id', id).maybeSingle()
       const expired = data?.expires_at && new Date(data.expires_at).getTime() < now()
       return data && data.practice_enabled && !expired ? data : null
     }
@@ -139,7 +140,10 @@ export function createQuizPracticeHandler(
     // What the player sees for their run right now.
     async function view(run, questions, quiz) {
       const total = questions.length
-      const base = { serverNow: now(), total, score: run.total_score, nickname: run.nickname, avatarId: run.avatar_id, theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }) }
+      const base = { serverNow: now(), total, score: run.total_score, nickname: run.nickname, avatarId: run.avatar_id, theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }), card: sanitizeCard(quiz?.card, { quizId: run.quiz_id }),
+      // The public half of the finished run's card link. Null until the run finishes, so a card button rendered
+      // mid-run does not point at a code that does not exist yet.
+      shareCode: run.share_code ?? null }
       if (run.finished_at || run.current_index >= total) {
         const { data: answers } = await supabaseAdmin.from('quiz_practice_answers').select('correct').eq('run_id', run.id)
         const correct = (answers ?? []).filter((a) => a.correct === true).length
@@ -336,7 +340,7 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
     // ---- state / answer / next need a run ----
     const run = await runFromToken()
     if (!run) return
-    const { data: quiz } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme, expires_at').eq('id', run.quiz_id).maybeSingle()
+    const { data: quiz } = await supabaseAdmin.from('quizzes').select('id, title, practice_enabled, theme, card, expires_at').eq('id', run.quiz_id).maybeSingle()
     if (!quiz || !quiz.practice_enabled || (quiz.expires_at && new Date(quiz.expires_at).getTime() < now())) {
       res.status(404).json({ error: 'This quiz is not open for practice any more' })
       return
@@ -404,7 +408,12 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
     }
     const last = run.current_index + 1 >= questions.length
     const patch = last
-      ? { finished_at: new Date(now()).toISOString(), current_index: run.current_index + 1 }
+      ? {
+          finished_at: new Date(now()).toISOString(),
+          current_index: run.current_index + 1,
+          // Minted once and kept: a reload that finishes again must not orphan the card link already handed out.
+          share_code: run.share_code ?? generatePracticeShareCode(),
+        }
       : { current_index: run.current_index + 1, question_started_at: new Date(now()).toISOString() }
     const { data: updated, error } = await supabaseAdmin
       .from('quiz_practice_runs')

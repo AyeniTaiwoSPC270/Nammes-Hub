@@ -18,6 +18,8 @@ import { BracketBoard, BracketPodium, BracketPanel } from '../components/quiz/Br
 import { isRoundEnd, roundOfQuestion } from '../../api/_lib/quizBracketMath.js'
 import BotPanel from '../components/quiz/BotPanel'
 import { HostMenu, HostMenuProvider } from '../components/quiz/HostMenu'
+import ResultCardModal from '../components/quiz/ResultCardModal'
+import { boardCardUrl, cardFilename } from '../lib/quizCard'
 
 // Projector screen for a live quiz. The host's browser only ever asks the server to move the game on
 // (/api/quiz?action=advance); everything else here is reading. Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -816,16 +818,22 @@ const PODIUM = [
   { place: 3, height: 'h-32 sm:h-40', block: 'border border-hairline bg-surface text-ink-900', delay: 200 },
 ]
 
-function FinishedScreen({ title, players, teams, scoring, bracket }) {
+function FinishedScreen({ title, sessionId, players, teams, scoring, bracket }) {
   const ranked = useMemo(() => rankPlayers(players), [players])
   const byPlace = (place) => ranked[place - 1]
+  const [cardOpen, setCardOpen] = useState(false)
+  // A fragment wraps <Stage> so the modal renders outside it. useProjectorFit zooms Stage's <main> when the
+  // standings overflow, and a position-fixed overlay inside a zoomed element is anchored to that element, not the
+  // screen — which is exactly what happens on a busy finished screen, the one that wants a board card.
   return (
-    <Stage
-      title={title}
-      chip={<Chip tone="accent">Final results</Chip>}
+    <>
+      <Stage
+        title={title}
+        chip={<Chip tone="accent">Final results</Chip>}
       footer={
         <>
           <ActionButton onClick={() => downloadCsv(ranked, title)} tone="muted" icon="download">Download results (CSV)</ActionButton>
+          <ActionButton onClick={() => setCardOpen(true)} tone="muted" icon="share">Result card</ActionButton>
           <Link to="/admin/quizzes" className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-8 py-4 text-xl font-bold text-white no-underline shadow-md hover:bg-orange-600 hover:text-white">
             Back to admin
           </Link>
@@ -876,7 +884,17 @@ function FinishedScreen({ title, players, teams, scoring, bracket }) {
           ))}
         </ol>
       )}
-    </Stage>
+      </Stage>
+      {cardOpen && sessionId && (
+        <ResultCardModal
+          url={boardCardUrl(sessionId)}
+          admin
+          filename={cardFilename(title, 'quiz-results')}
+          shareTitle={title}
+          onClose={() => setCardOpen(false)}
+        />
+      )}
+    </>
   )
 }
 
@@ -1399,7 +1417,7 @@ rightShareRef.current = rightShare
   } else if (session.state === 'leaderboard') {
     screen = <LeaderboardScreen {...shared} players={players} gains={gains} question={question} onNext={advance} isLast={isLast} auto={auto} teams={teams} scoring={session.team_scoring} effectsOn={effectsOn} bracket={session.bracket_mode ? { length: session.bracket_length, rounds: session.bracket_rounds, matches: bracketMatches } : null} />
   } else {
-    screen = <FinishedScreen title={quizTitle} players={players} teams={teams} scoring={session.team_scoring} bracket={session.bracket_mode ? { champion: session.bracket_champion, matches: bracketMatches } : null} />
+    screen = <FinishedScreen title={quizTitle} sessionId={sessionId} players={players} teams={teams} scoring={session.team_scoring} bracket={session.bracket_mode ? { champion: session.bracket_champion, matches: bracketMatches } : null} />
   }
 
   return (

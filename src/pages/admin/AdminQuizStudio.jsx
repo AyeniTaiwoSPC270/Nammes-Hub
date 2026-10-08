@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
 import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl, BACKDROP_MAX_EDGE, BACKDROP_MAX_BYTES } from '../../data/quizBranding'
-import { useQuizQuery, saveQuizTheme } from '../../data/quiz'
+import { useQuizQuery, saveQuizTheme, saveQuizCard } from '../../data/quiz'
+import { cardPreviewVersion } from '../../data/quizBranding'
+import { sanitizeCard, DEFAULT_CARD } from '../../../api/_lib/quizCard.js'
 import {
   DEFAULT_THEME,
   THEME_LOOKS,
@@ -86,6 +88,7 @@ export default function AdminQuizStudio() {
   const quizQuery = useQuizQuery(id)
   const [tab, setTab] = useState('look')
   const [draft, setDraft] = useState(null)
+  const [cardDraft, setCardDraft] = useState(null)
   const [surface, setSurface] = useState('projector')
   const [screens, setScreens] = useState({ projector: 'lobby', phone: 'lobby' })
   const [brandBusy, setBrandBusy] = useState(false)
@@ -98,6 +101,14 @@ export default function AdminQuizStudio() {
   const accent = themeAccent(theme)
   const contrast = contrastWithWhite(accent)
 
+  // The card has its own column, its own draft and its own save, so the look's dirty state never drags it along.
+  const savedCard = sanitizeCard(quiz?.card, { quizId: id })
+  const card = cardDraft ?? savedCard
+  const cardDirty = cardDraft !== null && JSON.stringify(sanitizeCard(cardDraft, { quizId: id })) !== JSON.stringify(savedCard)
+  function changeCard(patch) {
+    setCardDraft({ ...card, ...patch })
+  }
+
   // The draft keeps what was typed (so a space at the end of a headline survives); it is cleaned when previewed and saved.
   function change(patch) {
     setDraft({ ...theme, ...patch })
@@ -108,6 +119,8 @@ export default function AdminQuizStudio() {
       const clean = await saveQuizTheme(id, theme)
       // Pictures the saved look no longer uses are deleted from storage — but only ones that belong to this quiz, so a
       // hand-edited row pointing at some other quiz's file cannot take that file down with it.
+      // Only the look's own pictures: the card background is left alone here, because it is saved on its own and a card
+      // draft that has dropped it says nothing about what is still in the database.
       const keep = new Set(brandingPaths(clean))
       await removeBrandingFiles(brandingPaths(saved).filter((p) => !keep.has(p) && isQuizImagePath(p, id)))
       return clean
@@ -116,6 +129,21 @@ export default function AdminQuizStudio() {
       await queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       setDraft(null)
       toast.success('Look saved. New games of this quiz will use it.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  const cardMutation = useMutation({
+    mutationFn: async () => {
+      const clean = await saveQuizCard(id, card)
+      const keep = new Set(brandingPaths(theme, clean))
+      await removeBrandingFiles(brandingPaths(theme, savedCard).filter((p) => !keep.has(p) && isQuizImagePath(p, id)))
+      return clean
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['quizzes'] })
+      setCardDraft(null)
+      toast.success('Card saved. New games of this quiz will use it.')
     },
     onError: (error) => toast.error(error.message),
   })
@@ -156,7 +184,8 @@ export default function AdminQuizStudio() {
             {quiz ? <>How <span className="font-semibold text-ink-900">{quiz.title}</span> looks on the projector and on phones.</> : 'Loading…'}
           </p>
         </div>
-        {tab !== 'characters' && (
+        {/* The card tab saves itself, so the look's own Save and Reset stay off it. */}
+        {tab !== 'characters' && tab !== 'card' && (
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => setDraft(sanitizeTheme(DEFAULT_THEME))} disabled={!quiz}>
               Reset to default
@@ -172,12 +201,130 @@ export default function AdminQuizStudio() {
         <TabButton active={tab === 'look'} onClick={() => setTab('look')}>Look &amp; feel</TabButton>
         <TabButton active={tab === 'sound'} onClick={() => setTab('sound')}>Sound</TabButton>
         <TabButton active={tab === 'characters'} onClick={() => setTab('characters')}>Characters (50)</TabButton>
+        <TabButton active={tab === 'card'} onClick={() => setTab('card')}>Result card</TabButton>
         <Link to="/admin/quizzes" className="ml-auto self-center text-sm text-ink-muted underline">Back to quizzes</Link>
       </div>
 
       {tab === 'characters' ? (
         <div className="mt-6">
           <CharacterGallery />
+        </div>
+      ) : tab === 'card' ? (
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
+          <div className="flex flex-col gap-4">
+            <Section title="Card accent" hint="Overrides the look's accent on the result card only. Leave it on the look's own and the card follows whatever the game uses.">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant={card.accent === null ? 'accent' : 'secondary'} onClick={() => changeCard({ accent: null })}>
+                  Use the look&rsquo;s accent
+                </Button>
+                <label className="flex cursor-pointer items-center gap-2 rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                  Custom
+                  <input
+                    type="color"
+                    aria-label="Card accent colour"
+                    value={card.accent ?? accent}
+                    onChange={(e) => changeCard({ accent: e.target.value })}
+                    className="h-7 w-12 cursor-pointer rounded-md border border-hairline"
+                  />
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-ink-muted">
+                {card.accent === null
+                  ? `Following the look, which is ${accent}.`
+                  : 'The card uses this colour instead.'}
+              </p>
+            </Section>
+
+            <Section title="Card background" hint="A picture behind the card. Without one, the card uses the maths pattern like the screens do.">
+              {card.background ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-hairline bg-surface-low">
+                    <img src={brandingUrl(card.background)} alt="" className="h-full w-full object-cover" />
+                  </span>
+                  <label className="cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                    Replace picture
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={brandBusy}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        e.target.value = ''
+                        if (f) addPicture(f, (path) => changeCard({ background: path }), { maxEdge: BACKDROP_MAX_EDGE, maxBytes: BACKDROP_MAX_BYTES })
+                      }}
+                    />
+                  </label>
+                  <Button variant="ghost" size="sm" onClick={() => changeCard({ background: null })}>Remove picture</Button>
+                </div>
+              ) : (
+                <label className="cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                  Upload a picture
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="sr-only"
+                    disabled={brandBusy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      e.target.value = ''
+                      if (f) addPicture(f, (path) => changeCard({ background: path }), { maxEdge: BACKDROP_MAX_EDGE, maxBytes: BACKDROP_MAX_BYTES })
+                    }}
+                  />
+                </label>
+              )}
+            </Section>
+
+            <Section title="What the card shows" hint="Hide anything you would rather not post. The rank band only appears for a hosted game; a practice run has no rank.">
+              <div className="flex flex-col gap-2">
+                {[
+                  ['showCharacter', 'The cartoon character'],
+                  ['showTitle', 'The quiz title'],
+                  ['showPlacement', 'Rank and “placed 3 of 42”'],
+                  ['showAccuracy', 'Correct answers'],
+                  ['showStreak', 'Best streak'],
+                  ['showTeam', 'Team name'],
+                ].map(([key, label]) => (
+                  <label key={key} className="flex cursor-pointer items-center gap-3 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-orange-500"
+                      checked={card[key]}
+                      onChange={(e) => changeCard({ [key]: e.target.checked })}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </Section>
+
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setCardDraft(sanitizeCard(DEFAULT_CARD, { quizId: id }))} disabled={!quiz}>
+                Reset card
+              </Button>
+              <Button variant="accent" onClick={() => cardMutation.mutate()} loading={cardMutation.isPending} disabled={!cardDirty}>
+                {cardDirty ? 'Save card' : 'Saved'}
+              </Button>
+            </div>
+            {brandError && <p role="alert" className="text-sm text-ink-muted">{brandError}</p>}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-ink-muted">
+              A preview with made-up numbers, drawn by the same server that draws the real card. A real game uses each
+              player&rsquo;s own result.
+            </p>
+            {/* The endpoint renders the saved card, so the draft is hashed into the url to force a redraw whenever
+                anything changes. Without it the preview would sit on the old design until a full reload. */}
+            {quiz && (
+              <img
+                key={cardPreviewVersion(card, id)}
+                src={`/api/quiz-card?preview=${id}&v=${cardPreviewVersion(card, id)}`}
+                alt="Result card preview"
+                className="w-full max-w-xs rounded-2xl shadow-md"
+              />
+            )}
+          </div>
         </div>
       ) : tab === 'sound' ? (
         <div className="mt-6">
