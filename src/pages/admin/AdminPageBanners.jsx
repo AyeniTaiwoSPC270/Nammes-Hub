@@ -10,14 +10,17 @@ import { useToast } from '../../lib/ToastContext'
 
 const PAGES = [
   { key: 'about', label: 'About' },
+  { key: 'awards', label: 'Awards' },
   { key: 'cgpa', label: 'CGPA Calculator', imagesOnly: true },
   { key: 'contact', label: 'Contact' },
   { key: 'curriculum', label: 'Curriculum' },
   { key: 'events', label: 'Events' },
   { key: 'excos', label: 'Meet the Excos' },
+  { key: 'forms', label: 'Forms' },
   { key: 'news', label: 'News' },
   { key: 'opportunities', label: 'Opportunities' },
   { key: 'outlines', label: 'Outlines' },
+  { key: 'quizzes', label: 'Quizzes' },
   { key: 'resources', label: 'Resources' },
   { key: 'timetable', label: 'Timetable' },
 ]

@@ -19,7 +19,7 @@ export default function NominationCategoryField({ category, index, value, onChan
           {filled ? 'Nominated' : 'Pending'}
         </span>
       </div>
-      <h2 className="text-lg font-bold text-ink-900">{category.title}</h2>
+      <h3 className="text-lg font-bold text-ink-900">{category.title}</h3>
       {category.description && <p className="mt-1 text-sm text-ink-muted">{category.description}</p>}
       <div className="relative mt-3 flex items-center">
         <span className="material-symbols-outlined pointer-events-none absolute left-3 text-ink-muted">person</span>

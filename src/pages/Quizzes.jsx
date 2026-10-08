@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import PageBanner from '../components/PageBanner'
+import { usePageBanner } from '../data/pageBanners'
 
 // One front door for everything quiz: join a live game, practise, battle, or make a quiz from your own questions.
 // Each card goes to a full-screen page that needs no account.
@@ -43,31 +45,37 @@ const WAYS = [
 ]
 
 export default function Quizzes() {
-  return (
-    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-      <div className="flex flex-col gap-1">
-        <span className="font-mono text-xs font-semibold uppercase tracking-[.04em] text-ink-muted">Quizzes</span>
-        <h1 className="text-3xl font-bold text-ink-900 sm:text-4xl">Quizzes and battles</h1>
-        <p className="max-w-2xl text-ink-muted">Play, practise or challenge a friend. No account needed.</p>
-      </div>
+  const banner = usePageBanner('quizzes')
 
-      <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-        {WAYS.map((way) => (
-          <li key={way.to} className={way.wide ? 'sm:col-span-2' : undefined}>
-            <Link
-              to={way.to}
-              className="group flex h-full flex-col gap-3 rounded-lg border border-hairline bg-surface p-6 shadow-md no-underline transition-transform hover:-translate-y-0.5"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/15 text-orange-500">
-                <span className="material-symbols-outlined" aria-hidden="true">{way.icon}</span>
-              </span>
-              <h2 className="text-xl font-bold text-ink-900">{way.title}</h2>
-              <p className="flex-1 text-ink-muted">{way.text}</p>
-              <span className="font-semibold text-orange-600 group-hover:underline">{way.action} →</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+  return (
+    <div>
+      <PageBanner
+        images={banner?.image_urls}
+        transition={banner?.transition}
+        intervalSeconds={banner?.interval_seconds}
+        title={banner?.title ?? 'Quizzes and battles'}
+        subtitle={banner?.subtitle ?? 'Play, practise or challenge a friend. No account needed.'}
+      />
+
+      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {WAYS.map((way) => (
+            <li key={way.to} className={way.wide ? 'sm:col-span-2' : undefined}>
+              <Link
+                to={way.to}
+                className="group flex h-full flex-col gap-3 rounded-lg border border-hairline bg-surface p-6 shadow-md no-underline transition-transform hover:-translate-y-0.5"
+              >
+                <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-500/15 text-orange-500">
+                  <span className="material-symbols-outlined" aria-hidden="true">{way.icon}</span>
+                </span>
+                <h2 className="text-xl font-bold text-ink-900">{way.title}</h2>
+                <p className="flex-1 text-ink-muted">{way.text}</p>
+                <span className="font-semibold text-orange-600 group-hover:underline">{way.action} →</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
