@@ -5,7 +5,7 @@ import Navbar from './Navbar'
 import Footer from './Footer'
 import WelcomeCarousel from './tour/WelcomeCarousel'
 import SpotlightOverlay from './tour/SpotlightOverlay'
-import { useChrome, isChromeFreePath } from '../lib/ChromeContext'
+import { useChrome, isChromeFreePath, resolveChrome } from '../lib/ChromeContext'
 
 function RouteSkeleton() {
   return (
@@ -50,12 +50,12 @@ export default function Layout() {
   const location = useLocation()
   const reducedMotion = useReducedMotion()
   const outlet = useOutlet()
-  const { hidden } = useChrome()
+  const { decision } = useChrome()
   const chromeFree = isChromeFreePath(location.pathname)
 
-  // A route that hides its own chrome starts out bare, so the navbar never paints and then vanishes
-  // while the page decides. Every other route follows the page's own answer.
-  const bare = hidden || chromeFree
+  // The page answers for itself where it can; until it has, a route that may go bare starts bare so
+  // the navbar never paints and then vanishes while the page decides.
+  const bare = resolveChrome({ pathname: location.pathname, decision })
 
   useEffect(() => {
     window.scrollTo(0, 0)
