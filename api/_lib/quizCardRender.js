@@ -351,7 +351,7 @@ export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, for
   ctx.fillText(forfeit ? 'Forfeit' : winnerSlot ? 'Winner' : 'A draw', CARD_WIDTH / 2, 320)
 
   // Slot a is always the left column, so the same battle always draws the same way for both players.
-  const ordered = [...(sides ?? [])].sort((x, y) => (x.slot === 'a' ? -1 : 1))
+  const ordered = [...(sides ?? [])].sort((x, y) => (x.slot === 'a' ? -1 : 1) - (y.slot === 'a' ? -1 : 1))
   for (let i = 0; i < Math.min(ordered.length, 2); i++) {
     const s = ordered[i]
     const cx = i === 0 ? 290 : 790

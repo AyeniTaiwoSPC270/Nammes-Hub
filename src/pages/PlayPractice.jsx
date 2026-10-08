@@ -5,6 +5,8 @@ import { AnswerShape, Avatar, BrandMark, CountdownRing, QuizBackdrop, QuizTopBar
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
 import MathText from '../components/quiz/MathText'
+import ResultCardModal from '../components/quiz/ResultCardModal'
+import { practiceCardUrl, cardFilename } from '../lib/quizCard'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
 
 // Solo practice for a quiz an admin has opened for it: no host, no code, your own pace. Questions arrive one at a time
@@ -215,6 +217,7 @@ export default function PlayPractice() {
   const [error, setError] = useState('')
   const [typed, setTyped] = useState('')
   const [top, setTop] = useState([])
+  const [cardOpen, setCardOpen] = useState(false)
   const timedOutFor = useRef(-1)
 
   const token = saved?.token
@@ -367,6 +370,13 @@ export default function PlayPractice() {
         {info.battleEnabled && (
           <Link to={`/battle?quiz=${quizId}`} className="flex min-h-14 items-center justify-center rounded-2xl border-2 border-orange-500 px-6 text-xl font-bold text-orange-500">Challenge a friend</Link>
         )}
+        {/* A run finished before share codes existed has none, so the button only appears when it would work. */}
+        {run.shareCode && (
+          <button type="button" onClick={() => setCardOpen(true)} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-green-900 px-6 text-xl font-bold text-white shadow-md">
+            <span className="material-symbols-outlined" aria-hidden="true">share</span>
+            Share my result
+          </button>
+        )}
         <button type="button" onClick={stopRun} className="min-h-14 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md">Try again</button>
       </Shell>
     )
@@ -461,5 +471,17 @@ export default function PlayPractice() {
     )
   }
 
-  return <QuizThemeScope theme={theme}>{body}</QuizThemeScope>
+  return (
+    <QuizThemeScope theme={theme}>
+      {body}
+      {cardOpen && run?.shareCode && (
+        <ResultCardModal
+          url={practiceCardUrl(run.shareCode)}
+          filename={cardFilename(run.nickname)}
+          shareTitle={`I got ${formatScore(run.score)} on a practice run`}
+          onClose={() => setCardOpen(false)}
+        />
+      )}
+    </QuizThemeScope>
+  )
 }

@@ -5,6 +5,8 @@ import { AnswerShape, Avatar, BrandMark, CountdownRing, QuizBackdrop, QuizTopBar
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
 import MathText from '../components/quiz/MathText'
+import ResultCardModal from '../components/quiz/ResultCardModal'
+import { duelCardUrl, cardFilename } from '../lib/quizCard'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
 
 // Battle mode for players, no account needed. Routes: /battle (start or join one) and /battle/:code (a shared link).
@@ -390,8 +392,11 @@ function VersusBar({ me, opponent }) {
 function FinalBoard({ view, onRematch, onBack, busy }) {
   const { final, me, opponent } = view
   const banner = final.winner === 'me' ? 'You won!' : final.winner === 'them' ? `${opponent.nickname} won` : 'A draw'
+  const [cardOpen, setCardOpen] = useState(false)
+  // The fragment wraps <Shell> so the card modal can cover the screen rather than sit inside the phone frame.
   return (
-    <Shell>
+    <>
+      <Shell>
       <section className="qz-pop rounded-3xl qz-deep p-6 text-center text-white shadow-xl">
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">{view.mode === 'duel' ? 'Duel over' : 'Challenge complete'}{final.forfeit ? ' · left early' : ''}</p>
         <p className="mt-1 text-4xl font-bold">{banner}</p>
@@ -426,10 +431,25 @@ function FinalBoard({ view, onRematch, onBack, busy }) {
           ))}
         </ol>
       </section>
+      {view.code && (
+        <button type="button" onClick={() => setCardOpen(true)} className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-green-900 px-6 text-xl font-bold text-white shadow-md">
+          <span className="material-symbols-outlined" aria-hidden="true">share</span>
+          Share this duel
+        </button>
+      )}
       <button type="button" disabled={busy} onClick={onRematch} className={`${bigButton} bg-orange-500 text-white`}>{view.mode === 'duel' && opponent.isBot ? 'Rematch' : 'New battle'}</button>
       <button type="button" disabled={busy} onClick={onBack} className="mx-auto min-h-11 px-4 text-sm font-semibold text-orange-500 underline">Back to battles</button>
       <Link to="/" className="text-center text-sm font-semibold text-ink-muted">Back to NAMMES Hub</Link>
-    </Shell>
+      </Shell>
+      {cardOpen && view.code && (
+        <ResultCardModal
+          url={duelCardUrl(view.code)}
+          filename={cardFilename(me.nickname)}
+          shareTitle={banner}
+          onClose={() => setCardOpen(false)}
+        />
+      )}
+    </>
   )
 }
 
