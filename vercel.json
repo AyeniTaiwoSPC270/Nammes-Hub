@@ -29,6 +29,10 @@
       "destination": "/api/system?action=handbook-build"
     },
     {
+      "source": "/api/calendar-reminders",
+      "destination": "/api/system?action=calendar-reminders"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

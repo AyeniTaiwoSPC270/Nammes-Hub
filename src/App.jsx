@@ -27,6 +27,7 @@ const Timetable = lazyRetry(() => import('./pages/Timetable'))
 const TimetableLevel = lazyRetry(() => import('./pages/timetable/TimetableLevel'))
 const Events = lazyRetry(() => import('./pages/Events'))
 const EventDetail = lazyRetry(() => import('./pages/EventDetail'))
+const Calendar = lazyRetry(() => import('./pages/Calendar'))
 const Resources = lazyRetry(() => import('./pages/Resources'))
 const ResourceLevel = lazyRetry(() => import('./pages/resources/ResourceLevel'))
 const ResourceList = lazyRetry(() => import('./pages/resources/ResourceList'))
@@ -64,6 +65,10 @@ const AdminEmailTemplates = lazyRetry(() => import('./pages/admin/AdminEmailTemp
 const AdminOutlines = lazyRetry(() => import('./pages/admin/AdminOutlines'))
 const AdminSubmissions = lazyRetry(() => import('./pages/admin/AdminSubmissions'))
 const AdminTimetables = lazyRetry(() => import('./pages/admin/AdminTimetables'))
+const AdminCalendar = lazyRetry(() => import('./pages/admin/AdminCalendar'))
+const AdminCalendarPaste = lazyRetry(() => import('./pages/admin/AdminCalendarPaste'))
+const AdminCalendarDesign = lazyRetry(() => import('./pages/admin/AdminCalendarDesign'))
+const AdminCalendarSession = lazyRetry(() => import('./pages/admin/AdminCalendarSession'))
 const AdminForms = lazyRetry(() => import('./pages/admin/AdminForms'))
 const AdminFormEditor = lazyRetry(() => import('./pages/admin/AdminFormEditor'))
 const AdminFormResponses = lazyRetry(() => import('./pages/admin/AdminFormResponses'))
@@ -243,6 +248,7 @@ export default function App() {
             <Route path="cgpa" element={<Cgpa />} />
             <Route path="events" element={<Events />} />
             <Route path="events/:id" element={<EventDetail />} />
+            <Route path="calendar" element={<Calendar />} />
             <Route path="resources" element={<Resources />} />
             <Route path="resources/:level" element={<ResourceLevel />} />
             <Route path="resources/:level/:semester" element={<ResourceList />} />
@@ -281,6 +287,10 @@ export default function App() {
                 <Route path="admin/outlines" element={<AdminOutlines />} />
                 <Route path="admin/submissions" element={<AdminSubmissions />} />
                 <Route path="admin/timetables" element={<AdminTimetables />} />
+                <Route path="admin/calendar" element={<AdminCalendar />} />
+                <Route path="admin/calendar/paste" element={<AdminCalendarPaste />} />
+                <Route path="admin/calendar/design" element={<AdminCalendarDesign />} />
+                <Route path="admin/calendar/session" element={<AdminCalendarSession />} />
                 <Route path="admin/forms" element={<AdminForms />} />
                 <Route path="admin/forms/new" element={<AdminFormEditor />} />
                 <Route path="admin/forms/:id/edit" element={<AdminFormEditor />} />

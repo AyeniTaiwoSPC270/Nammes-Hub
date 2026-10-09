@@ -10,6 +10,7 @@ import {
 } from '../../../api/_lib/emailTemplateHtml.js'
 import {
   SYSTEM_EMAILS,
+  academicReminderContent,
   legacyToBlocks,
   newContentEmailContent,
   normalizeDesign,
@@ -41,6 +42,18 @@ const ALL_TEMPLATES = [
 function sampleContent(id, system) {
   if (!system) return { subject: SAMPLE.subject, blocks: legacyToBlocks(SAMPLE) }
   if (id === 'welcome') return welcomeContent({ fullName: 'Ada' })
+  // Every system email needs its own sample. Falling through to the new-content shape here would show whoever is
+  // restyling the reminder a news alert and call it a preview.
+  if (id === 'academic_reminder') {
+    return academicReminderContent({
+      title: 'Undergraduate Examinations in All Faculties',
+      kind: 'exams',
+      startsAt: '2027-01-25',
+      endsAt: '2027-02-12',
+      note: 'Three weeks across every faculty.',
+      daysAway: 7,
+    })
+  }
   return newContentEmailContent({ eyebrow: 'News Update', title: 'A sample headline for a new post', url: 'https://www.nammeshub.com.ng/news/sample', imageUrl: SAMPLE.imageUrl })
 }
 
@@ -149,7 +162,7 @@ export default function AdminEmailTemplates() {
       <h1 className="text-3xl font-bold text-ink-900">Email Templates</h1>
       <p className="mt-1 max-w-2xl text-ink-muted">
         Design how each email looks — colors, fonts, header, button, footer — or, for broadcast templates, edit the raw HTML
-        behind it. Automatic emails (welcome, new content alerts) can be designed too.
+        behind it. Automatic emails (welcome, new content alerts, academic reminders) can be designed too.
       </p>
 
       {templatesQuery.isLoading ? (

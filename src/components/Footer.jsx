@@ -1,6 +1,8 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import SocialIcons from './SocialIcons'
 import { useSiteContentQuery } from '../data/siteContent'
+import { useCalendarFlag } from '../data/calendar'
 import { HANDBOOK_DOWNLOAD_NAME, useHandbookPdfUrl } from '../data/handbook'
 
 const linkGroups = [
@@ -10,6 +12,9 @@ const linkGroups = [
       { label: 'Home', to: '/' },
       { label: 'Outlines', to: '/outlines' },
       { label: 'Events', to: '/events' },
+      // Hidden with the rest of the feature when the calendar kill switch is off, so a footer link is
+      // never the one dead end left on the site.
+      { label: 'Calendar', to: '/calendar', requires: 'calendar' },
       { label: 'Quizzes & battles', to: '/quiz' },
       { label: 'CBT practice', to: '/cbt' },
       { label: 'Meet the Excos', to: '/excos' },
@@ -39,6 +44,16 @@ export default function Footer() {
   const contentQuery = useSiteContentQuery()
   const substackUrl = contentQuery.data?.substack_url
   const handbookUrl = useHandbookPdfUrl()
+  const calendarEnabled = useCalendarFlag()
+
+  const groups = useMemo(
+    () =>
+      linkGroups.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => item.requires !== 'calendar' || calendarEnabled),
+      })),
+    [calendarEnabled],
+  )
 
   return (
     <footer className="mt-auto bg-green-900 text-white/72">
@@ -88,7 +103,7 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-1 flex-wrap justify-between gap-8">
-          {linkGroups.map((group) => (
+          {groups.map((group) => (
             <div key={group.heading}>
               <div className="mb-3 text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
                 {group.heading}
