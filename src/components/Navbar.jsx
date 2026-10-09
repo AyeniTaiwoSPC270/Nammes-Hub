@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/AuthContext'
 import { useTheme } from '../lib/ThemeContext'
 import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
+import { useCalendarFlag } from '../data/calendar'
 import { useBodyScrollLock } from '../lib/useBodyScrollLock'
 import { useMediaQuery } from '../lib/useMediaQuery'
 import UserMenu from './UserMenu'
@@ -23,6 +24,10 @@ const navGroups = [
     icon: 'menu_book',
     dataTour: 'nav-academics',
     children: [
+      // Above Outlines: the calendar's main payload is now senate dates, so a student looking for "when
+      // do lectures end" should not have to know that it lives under a different name in the same menu.
+      // `requires` is a feature-flag key, resolved once below rather than by branching at each render site.
+      { to: '/calendar', label: 'Calendar', requires: 'calendar' },
       { to: '/outlines', label: 'Outlines' },
       { to: '/curriculum', label: 'Curriculum' },
       { to: '/timetable', label: 'Timetable' },
@@ -186,6 +191,18 @@ export default function Navbar() {
   const navigate = useNavigate()
   const pendingCountQuery = usePendingSubmissionsCountQuery(Boolean(user))
   const pendingCount = pendingCountQuery.data ?? 0
+  // The kill switch behind the /calendar nav item. Fails open, so the item is there while the query is in
+  // flight and only disappears if the flag row actually says the feature is off.
+  const calendarEnabled = useCalendarFlag()
+
+  const groups = useMemo(
+    () =>
+      navGroups.map((group) => ({
+        ...group,
+        children: group.children.filter((child) => child.requires !== 'calendar' || calendarEnabled),
+      })),
+    [calendarEnabled],
+  )
 
   useEffect(() => {
     setOpen(wantsMobileNavOpen)
@@ -220,7 +237,7 @@ export default function Navbar() {
         </NavLink>
 
         <nav className="hidden lg:flex items-center gap-1">
-          {navGroups.map((group) => (
+          {groups.map((group) => (
             <NavDropdown key={group.label} item={group} />
           ))}
         </nav>
@@ -257,7 +274,7 @@ export default function Navbar() {
       {open && (
         <nav className="absolute inset-x-0 top-full flex max-h-[calc(100dvh-4rem)] flex-col gap-2 overflow-y-auto overscroll-contain border-b border-hairline bg-surface px-3 pt-2 pb-4 shadow-md lg:hidden">
           {!loading && user && <IdentityChip email={user.email} />}
-          {navGroups.map((group) => (
+          {groups.map((group) => (
             <MobileNavGroup key={group.label} label={group.label} icon={group.icon} dataTour={group.dataTour}>
               {group.children.map((child) => (
                 <NavLink

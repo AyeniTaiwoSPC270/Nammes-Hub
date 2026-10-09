@@ -33,6 +33,8 @@ export default function Home() {
   const heroImageY = useTransform(scrollYProgress, [0, 1], reducedMotion ? [0, 0] : [0, 60])
 
   const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
+  // Only the upcoming bucket: undated events have their own bucket now and belong to the calendar's TBA panel,
+  // not on Home (spec §10).
   const previewEvents = groupEventsByTime(eventsQuery.data ?? []).upcoming.slice(0, 3)
 
   return (
@@ -189,7 +191,10 @@ export default function Home() {
             <EmptyState
               icon="event_busy"
               title="No upcoming events"
-              description="Nothing on the calendar right now. Past events are still on the events page."
+              // Scoped to what Home knows. Home queries only `events`, so the old sentence claimed a calendar
+              // was empty -- which stopped being true the moment /calendar shipped. The next lecture is not
+              // printed here either; that is NextUpStrip, and surfacing it on Home is deferred (spec §10).
+              description="Lectures, exams and registration dates are on the calendar."
             />
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">

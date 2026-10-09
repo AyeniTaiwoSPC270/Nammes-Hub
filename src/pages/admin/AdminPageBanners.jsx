@@ -11,6 +11,7 @@ import { useToast } from '../../lib/ToastContext'
 const PAGES = [
   { key: 'about', label: 'About' },
   { key: 'awards', label: 'Awards' },
+  { key: 'calendar', label: 'Calendar' },
   { key: 'cgpa', label: 'CGPA Calculator', imagesOnly: true },
   { key: 'contact', label: 'Contact' },
   { key: 'curriculum', label: 'Curriculum' },

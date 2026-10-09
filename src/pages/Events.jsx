@@ -54,7 +54,7 @@ function EventSection({ heading, events }) {
 export default function Events() {
   const { data, isLoading, isError, refetch } = useEventsQuery()
   const rows = data ?? []
-  const { upcoming, past } = groupEventsByTime(rows)
+  const { upcoming, past, tba } = groupEventsByTime(rows)
   const banner = usePageBanner('events')
 
   return (
@@ -84,6 +84,10 @@ export default function Events() {
         ) : (
           <div className="flex flex-col gap-14">
             <EventSection heading="Upcoming Events" events={upcoming} />
+            {/* Undated events left the upcoming bucket so they stop sitting at the top of the list forever
+                (spec §10.1). They are still events, so /events still shows them -- under a heading that says why
+                they are not in the list above. */}
+            <EventSection heading="Dates to be confirmed" events={tba} />
             <EventSection heading="Past Events" events={past} />
           </div>
         )}

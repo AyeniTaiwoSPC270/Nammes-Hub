@@ -9,7 +9,7 @@ import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
 
-const TABLE_BY_ENTITY = { news: 'news', events: 'events', award_season: 'award_seasons' }
+const TABLE_BY_ENTITY = { news: 'news', events: 'events', award_season: 'award_seasons', academic_calendar: 'academic_calendar' }
 
 async function fetchLiveRow(entityType, recordId) {
   if (!recordId) return null

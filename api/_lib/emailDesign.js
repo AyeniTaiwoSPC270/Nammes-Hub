@@ -367,6 +367,21 @@ export const SYSTEM_EMAILS = [
       sizes: { title: 22 },
     },
   },
+  {
+    id: 'academic_reminder',
+    label: 'Academic reminder',
+    description: 'Sent on the day an academic calendar date is its lead time away.',
+    design: {
+      header: { tag: '', eyebrow: '', style: 'plain', rule: true },
+      colors: { headerText: '#0b2417' },
+      footer: {
+        text: 'An automated reminder from the NAMMES Hub academic calendar.\nYou received this because a date on your academic calendar is coming up, and your notification preferences allow it.',
+        showPrefs: true,
+      },
+      button: { show: true, text: 'See the calendar →', url: 'site:/calendar' },
+      sizes: { title: 22 },
+    },
+  },
 ]
 
 export function systemDesign(id) {
@@ -792,4 +807,43 @@ export function newContentEmailContent({ eyebrow, title, url, imageUrl }) {
   blocks.push({ ...newBlock('text'), text: 'A new update was just posted on NAMMES Hub.' })
   if (url) blocks.push({ ...newBlock('button'), text: 'Read more →', url })
   return { subject: title, preheader: eyebrow, blocks, eyebrow }
+}
+
+/**
+ * A senate date formatted as a day, for the reminder email.
+ *
+ * `starts_at` is a `date` column: no clock, no zone, and nothing that should be moved by anybody's offset. So it
+ * is put through UTC -- the one zone under which a y/m/d tuple is that same y/m/d -- and read back in UTC. Going
+ * through fromDayKey instead would materialise the day at the host's local midnight and hand it to a Lagos
+ * formatter, which prints yesterday for every host east of Greenwich; going through the raw string would print
+ * an ISO literal a student has to decode. Same hazard, opposite direction, as calendarDates.js:15.
+ */
+export function formatCalendarDay(dayKey) {
+  const parts = String(dayKey).split('-').map(Number)
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))
+  if (Number.isNaN(date.getTime())) return String(dayKey)
+  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'full', timeZone: 'UTC' }).format(date)
+}
+
+// The reminder body. Every field is clamped here rather than at the call site: the handler passes database
+// columns a dashboard can be used to edit by hand.
+export function academicReminderContent({ title, kind, startsAt, endsAt, note, daysAway }) {
+  const heading = text(title, 300).trim() || 'A date on the academic calendar'
+  const days = Number.isInteger(Number(daysAway)) && Number(daysAway) >= 0 ? Number(daysAway) : null
+  const lead = days === 0 ? 'today' : days === 1 ? 'tomorrow' : days === null ? 'soon' : `in ${days} days`
+  // An examination block is three weeks long and the reminder goes out a week before it opens, so the span is
+  // the part a student actually needs. A stored end before the start cannot reach here (the schema rejects it),
+  // but a hand-edited one would otherwise read backwards.
+  const start = formatCalendarDay(startsAt)
+  const end = formatCalendarDay(endsAt)
+  const when = typeof endsAt === 'string' && endsAt > startsAt ? `runs ${start} to ${end}.` : `is on ${start}.`
+  const blocks = [{ ...newBlock('text'), text: `**${heading}** ${when}` }]
+  const detail = text(note, 300).trim()
+  if (detail) blocks.push({ ...newBlock('text'), text: detail })
+  blocks.push({ ...newBlock('button'), text: 'See the calendar →', url: 'site:/calendar' })
+  return {
+    subject: `${heading} — ${lead}`,
+    eyebrow: kind ? `Academic calendar · ${text(kind, 40)}` : 'Academic calendar reminder',
+    blocks,
+  }
 }
