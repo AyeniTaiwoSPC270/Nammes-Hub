@@ -85,6 +85,11 @@ clean a value the same way. Anything that needs I/O goes in `api/_lib/handlers/`
   number, its raw text and a reason. 28 rows imported where the admin believed they imported 30 is worse than a
   refusal, so if you touch `calendarPaste.js`, keep the reverse test: mangle one date in a known-good fixture and
   assert exactly one warning and no data loss.
+- **The four calendar admin screens are four tabs on one route, not four routes.** `/admin/calendar?tab=`
+  (`dates` | `paste` | `design` | `session`) is the only route, behind one Admin → Calendar tile. The tab list is
+  data in `src/lib/adminCalendarTabs.js` so the shell and the tests read the same source, and the three non-default
+  bodies are `React.lazy` — the Design Studio pulls the whole control set plus a live grid, and an admin who only
+  edits dates should not pay for it. Adding a fifth screen means a new tab there and a new body, not a new route.
 - **`calendar-reminders` has no Vercel function of its own.** It is registered in the `ACTIONS` map at
   `api/system.js` and reached through the `/api/system?action=calendar-reminders` rewrite in `vercel.json`. That is a
   deliberate function budget, not an oversight — do not promote it to its own `api/*.js` entry point.

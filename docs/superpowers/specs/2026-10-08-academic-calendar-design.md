@@ -235,10 +235,16 @@ When `feature_flags.calendar` is off, both the nav item and the route disappear.
 
 | Route | Purpose |
 |---|---|
-| `/admin/calendar` | Entries. Grouped by semester. Add/edit/delete. `reviewGated` like `eventsAdminConfig.js:16` |
-| `/admin/calendar/paste` | Paste, parse, preview, correct the kind and reminder lead time per row, commit |
-| `/admin/calendar/design` | Design Studio |
-| `/admin/calendar/session` | Active session, archive the previous one |
+| `/admin/calendar?tab=dates` | Entries. Grouped by semester. Add/edit/delete. `reviewGated` like `eventsAdminConfig.js:16` |
+| `/admin/calendar?tab=paste` | Paste, parse, preview, correct the kind and reminder lead time per row, commit |
+| `/admin/calendar?tab=design` | Design Studio |
+| `/admin/calendar?tab=session` | Active session, archive the previous one |
+
+**Amended 2026-10-09.** These were four separate routes and are now four tabs on one route behind one Admin →
+Calendar tile. The tab is in the URL so it survives a refresh and can be bookmarked; an unrecognised `?tab=` falls
+back to `dates`. The list is `CALENDAR_TABS` in `src/lib/adminCalendarTabs.js`, and the three non-default bodies
+are `React.lazy` — the Design Studio pulls the whole control set plus a live grid, and an admin who only edits
+dates should not pay for it.
 
 The entries screen reuses `AdminResourceManager` unchanged. Its config uses only field types `src/lib/adminFields.js:46` already handles.
 

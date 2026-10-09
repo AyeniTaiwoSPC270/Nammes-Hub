@@ -8,7 +8,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import Breadcrumbs from '../../components/Breadcrumbs'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import FormField from '../../components/ui/FormField'
@@ -117,7 +116,7 @@ function mintIds(rows, taken) {
   })
 }
 
-export default function AdminCalendarPaste() {
+export function CalendarPasteBody() {
   const toast = useToast()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -261,23 +260,12 @@ export default function AdminCalendarPaste() {
   const canCommit =
     selected.length > 0 && session !== '' && badReminders.length === 0 && !overCap && !tooLong && !commit.isPending
 
+  // The heading, the description and the page padding belong to the tab shell
+  // (AdminCalendar.jsx), which owns them for all four screens — otherwise switching tabs
+  // re-announces a different h1 and the tab strip is the only thing saying where you are.
   return (
-    <div className="mx-auto max-w-[1100px] px-5 py-12 sm:px-6">
-      <Breadcrumbs
-        items={[
-          { label: 'Admin', to: '/admin' },
-          { label: 'Academic Calendar', to: '/admin/calendar' },
-          { label: 'Paste a calendar' },
-        ]}
-      />
-      <h1 className="text-3xl font-bold text-ink-900">Paste a calendar</h1>
-      <p className="mt-1 max-w-2xl text-ink-muted">
-        Paste the plain text of a senate calendar. Every line is read into a row below, and every line that
-        cannot be read is listed with its number and its text so you can fix it. Nothing is saved until you press
-        the button at the bottom.
-      </p>
-
-      <section className="mt-6 rounded-lg border border-hairline bg-surface p-5 shadow-sm" aria-label="Calendar text">
+    <>
+      <section className="rounded-lg border border-hairline bg-surface p-5 shadow-sm" aria-label="Calendar text">
         <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
           <FormField
             label="Pasted calendar"
@@ -596,6 +584,7 @@ export default function AdminCalendarPaste() {
           )}
         </section>
       )}
-    </div>
+    </>
   )
 }
+

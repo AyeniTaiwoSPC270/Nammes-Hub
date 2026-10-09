@@ -47,15 +47,18 @@ what makes it useful — a student opening the app mid-lecture sees "Lectures en
 
 ### Admin screens
 
-Four separate routes rather than one tabbed page. Each is visible to every admin; creating and editing entries go
-through the owner's review queue exactly as they do for events.
+One route with four tabs, reached from a single Admin → Calendar tile. Each tab is visible to every admin; creating
+and editing entries go through the owner's review queue exactly as they do for events. The tab lives in the URL
+(`?tab=`), so a tab survives a refresh and can be bookmarked or shared.
 
-| Route | What it does |
+| Tab | What it does |
 |---|---|
-| `/admin/calendar` | Add, edit and delete senate dates, grouped by semester. Review-gated; delete is owner-only. |
-| `/admin/calendar/paste` | Paste a whole published calendar as plain text, review the parsed rows, set each row's kind and reminder lead time, then commit. **Nothing is written until you commit**, and a line the parser cannot read comes back as a warning rather than being silently dropped. |
-| `/admin/calendar/design` | The Design Studio: per-kind accents, grid behaviour, landing defaults, page accent and radius, saved looks, with a live preview against a real month. |
-| `/admin/calendar/session` | Choose which academic session the public calendar shows, and see how many dates an archive would take off the page. |
+| `?tab=dates` (default) | Add, edit and delete senate dates, grouped by semester. Review-gated; delete is owner-only. |
+| `?tab=paste` | Paste a whole published calendar as plain text, review the parsed rows, set each row's kind and reminder lead time, then commit. **Nothing is written until you commit**, and a line the parser cannot read comes back as a warning rather than being silently dropped. |
+| `?tab=design` | The Design Studio: per-kind accents, grid behaviour, landing defaults, page accent and radius, saved looks, with a live preview against a real month. |
+| `?tab=session` | Choose which academic session the public calendar shows, and see how many dates an archive would take off the page. |
+
+An unrecognised `?tab=` falls back to **Dates** rather than rendering nothing.
 
 The reminder template (`academic_reminder`) is designable in the **existing** email studio under Admin → Email
 templates — there is no parallel calendar email surface.

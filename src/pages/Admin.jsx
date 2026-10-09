@@ -47,39 +47,20 @@ export const ADMIN_SECTIONS = [
     category: 'Logistics',
     description: 'Schedule and update upcoming events.',
   },
-  // Four calendar screens rather than one tabbed page (spec §2, §7). Each is visible to every admin:
-  // creating and editing entries go through the owner's review queue (academicCalendarConfig.js
-  // reviewGated), and a read of the public page is a read of a public table. The two screens that write
-  // calendar_settings or delete a date are owner-only at the database, not hidden here -- a non-owner who
-  // tries gets the same "no changes were saved" message they get everywhere else, rather than a screen
-  // that silently does nothing.
+  // One tile, not four. The four calendar screens were separate routes and are now tabs on one
+  // page (/admin/calendar?tab=dates|paste|design|session), so four tiles pointing at one place would
+  // read as four features. Every screen is still visible to every admin: creating and editing
+  // entries go through the owner's review queue (academicCalendarConfig.js reviewGated), and a read
+  // of the public page is a read of a public table. The screens that write calendar_settings or
+  // delete a date are owner-only at the database, not hidden here -- a non-owner who tries gets the
+  // same "no changes were saved" message they get everywhere else, rather than a screen that
+  // silently does nothing.
   {
     path: '/admin/calendar',
-    label: 'Calendar Dates',
+    label: 'Calendar',
     icon: 'calendar_month',
     category: 'Academics',
-    description: 'Add, edit and remove the senate’s lecture, exam and registration dates.',
-  },
-  {
-    path: '/admin/calendar/paste',
-    label: 'Calendar Paste',
-    icon: 'content_copy',
-    category: 'Academics',
-    description: 'Paste a whole published calendar, check it, and commit it in one go.',
-  },
-  {
-    path: '/admin/calendar/design',
-    label: 'Calendar Design',
-    icon: 'palette',
-    category: 'Academics',
-    description: 'Set the colours, icons, grid and page look of the calendar.',
-  },
-  {
-    path: '/admin/calendar/session',
-    label: 'Calendar Session',
-    icon: 'tune',
-    category: 'Academics',
-    description: 'Choose which academic session the public calendar shows.',
+    description: 'Manage the academic calendar: dates, paste import, page design and session.',
   },
   {
     path: '/admin/resources',
