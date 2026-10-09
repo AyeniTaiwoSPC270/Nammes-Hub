@@ -37,7 +37,7 @@ function useSessionCounts() {
   return { counts, isLoading: entriesQuery.isLoading, isError: entriesQuery.isError, refetch: entriesQuery.refetch }
 }
 
-export default function AdminCalendarSession() {
+export function CalendarSessionBody() {
   const toast = useToast()
   const { user } = useAuth()
   const adminRowQuery = useOwnAdminRowQuery(user?.id)
@@ -81,12 +81,7 @@ export default function AdminCalendarSession() {
   const pending = saveMutation.isPending
 
   return (
-    <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-ink-900">Calendar Session</h1>
-      <p className="mt-1 text-ink-muted">
-        The public calendar shows one session at a time. Change which one, and the previous session's dates
-        come off the public page.
-      </p>
+    <div className="max-w-[900px]">
 
       {settingsQuery.isLoading ? (
         <div className="mt-6">
@@ -127,7 +122,7 @@ export default function AdminCalendarSession() {
               There is no archived flag on a calendar date, so nothing is hidden or deleted when you archive.
               Setting a new active session simply moves the public calendar to it. Every date in the previous
               session stays in the table and stays editable on the{' '}
-              <Link to="/admin/calendar" className="font-semibold text-brand hover:underline">
+              <Link to="/admin/calendar?tab=dates" className="font-semibold text-brand hover:underline">
                 calendar entries
               </Link>{' '}
               screen — the same session can be made active again later, with no data to restore.

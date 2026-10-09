@@ -42,7 +42,7 @@ const NEXT_UP_COUNT = 4
 // is comparing against, so the preview stops at the grid rather than faking the sheet's markup.
 const ignoreDaySelect = () => {}
 
-export default function AdminCalendarDesign() {
+export function CalendarDesignBody() {
   const toast = useToast()
   const { theme: siteTheme } = useTheme()
   const { user } = useAuth()
@@ -223,7 +223,7 @@ export default function AdminCalendarDesign() {
 
   if (looksQuery.isError && !looks) {
     return (
-      <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+      <div className="max-w-[1400px]">
         <ErrorState message="Couldn't load the saved calendar designs right now." onRetry={looksQuery.refetch} />
       </div>
     )
@@ -232,12 +232,7 @@ export default function AdminCalendarDesign() {
   const pending = saveMutation.isPending || deleteMutation.isPending || settingsMutation.isPending
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 py-12 sm:px-6">
-      <h1 className="text-3xl font-bold text-ink-900">Calendar Design</h1>
-      <p className="mt-1 max-w-3xl text-ink-muted">
-        Choose the colours, icons, grid and defaults of the public calendar. Save the result as a named design and make
-        it the one /calendar uses.
-      </p>
+    <div className="max-w-[1400px]">
 
       {/* `calendar_looks` and `calendar_settings` are owner-write at the database
           (20261009090000_calendar.sql:127,150). Every admin can see the calendar, so the screen is not hidden from
