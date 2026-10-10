@@ -132,7 +132,11 @@ export function createQuizCardHandler(
     })
     // Browser-only: a shared cache would serve every player's nickname and score to anyone who knew the session id,
     // which is exactly the gate the admin check above exists to enforce.
-    sendPng(res, buffer, 'private, max-age=300')
+    // no-cache rather than max-age=300. Both keep the image out of a shared cache, but max-age also lets the browser
+    // reuse the stored PNG without asking the server, so a fix to the card's drawing reached nobody for five minutes
+    // and the host's modal showed the old card. There is no ETag here, so this costs a full re-render on every open -
+    // a fair price for a host opening one modal now and then, and the rate limiter above still caps it.
+    sendPng(res, buffer, 'private, no-cache')
   }
 
   async function servePractice(res, db, shareCode) {

@@ -78,8 +78,17 @@ describe('quiz card endpoint', () => {
       headers: { authorization: 'Bearer good' },
     })
     expect(res.statusCode).toBe(200)
-    expect(res.headers['Cache-Control']).toBe('private, max-age=300')
+    expect(res.headers['Cache-Control']).toContain('private')
     expect(isPng(res.body)).toBe(true)
+  })
+
+  // The board card was the one variant sent with max-age=300, so the browser reused the stored PNG without asking and
+  // a fix to the card's drawing did not reach the host's own modal for five minutes.
+  it('never lets the browser reuse a board card without asking the server', async () => {
+    const res = await run(finishedGame(), { session: SESSION, view: 'board' }, {
+      headers: { authorization: 'Bearer good' },
+    })
+    expect(res.headers['Cache-Control']).toBe('private, no-cache')
   })
 
   it('refuses a board card to a signed-in non-admin', async () => {
