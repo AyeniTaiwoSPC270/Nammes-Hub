@@ -153,7 +153,7 @@ ${warn('A submitted ballot is final. Take a moment to check every choice before 
 <h2 class="first">The Forms page</h2>
 ${glance([['Address', 'nammeshub.com.ng/forms'], ['Sign-in needed?', 'Depends on the form'], ['Who it is for', 'Everyone invited to respond'], ['Best for', 'RSVPs, surveys, applications']])}
 <p>The Forms page lists every form that is <strong>currently accepting responses</strong>. Across the top are three numbers: how many forms are <em>open now</em>, the <em>responses so far</em>, and the <em>next deadline</em>. Each form appears as a card with a <strong>category badge</strong> (<span class="pill">Event</span>, <span class="pill o">Application</span>, Survey or Other), a title, a short description, and a <span class="btn">Fill form</span> button.</p>
-${shot('forms', 'The Forms page, with the open-form counts across the top.', { url: '/forms', crop: 44 })}
+${shot('forms', 'The Forms page, with the open-form counts across the top.', { url: '/forms' })}
 <p>The page says <em>"No open forms right now"</em> when nothing is open. Check back later.</p>
 ${note('The Forms page also has a banner of its own, which the executives can reword or replace with pictures without touching the page below it.')}
 

@@ -248,7 +248,7 @@ const ADMIN_PAGES = [
 
 // Pages whose page banner is tall enough to push the content the chapter is describing below the fold. Shot at the
 // default height they come back as a picture of a green banner and nothing else.
-const TALLER_VIEWPORT = new Set(['calendar', 'quiz-hub'])
+const TALLER_VIEWPORT = new Set(['calendar', 'quiz-hub', 'awards', 'forms'])
 
 try {
   const p = await open()
