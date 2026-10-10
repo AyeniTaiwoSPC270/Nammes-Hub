@@ -10,7 +10,9 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const rawDir = process.argv[2]
 if (!rawDir) throw new Error('Pass the folder with the raw screenshots.')
 const outDir = path.join(here, 'screens')
-const NO_CROP = new Set(['home', 'm-home', 'm-menu'])
+// Pages that have no site footer to trim, or whose own background is the same dark green the probe looks for and
+// would therefore be trimmed away to nothing: the offline screen and the result card are both full-bleed brand green.
+const NO_CROP = new Set(['home', 'm-home', 'm-menu', 'offline', 'result-card'])
 const OUT_WIDTH = 1280
 
 function isFooterGreen(data, width, y) {
