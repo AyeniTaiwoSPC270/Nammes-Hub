@@ -30,8 +30,15 @@
   --danger-bg: #ffdad6;
 }
 
-@page { size: 170mm 240mm; margin: 22mm 16mm 24mm 22mm; }
-@page :left { margin-left: 16mm; margin-right: 22mm; }
+/* Every page must offer the same content width. Chrome lays the whole print job out at ONE width and
+   scales the lot to fit, so a full-bleed cover (170mm wide, via `margin: 0`) sitting in the same file as
+   body pages with horizontal margins (132mm) forced a 0.794 scale on all 144 pages: the covers gained a
+   white edge and every word in the book shrank by a fifth. Horizontal insets therefore live in the
+   content (`.chapter` etc. below), not in @page, so the text block stays the same 132mm and the line
+   breaks do not move. Vertical insets stay in @page because padding only lands on a section's first and
+   last fragment, and every page needs breathing room at top and bottom. The cost is the mirrored
+   left/right margins of a duplex book: one layout width cannot be both 170mm and 132mm. */
+@page { size: 170mm 240mm; margin: 22mm 0 24mm 0; }
 @page cover { margin: 0; }
 @page opener { margin: 0; }
 
@@ -78,8 +85,13 @@ code, .path {
   color: var(--green-800);
   padding: .3mm 1.6mm;
   border-radius: 1mm;
-  white-space: nowrap;
 }
+/* A long run of code must be allowed to wrap. One unbreakable span — a CSV header row of column names —
+   once pushed the document past the page box, and Chrome responded by scaling all 154 pages down to
+   90%, which is what left a white edge on the covers. `build.mjs` now fails the build if anything
+   overflows, but the fix belongs here. */
+code { overflow-wrap: anywhere; }
+.path { white-space: nowrap; }
 .btn {
   display: inline-block;
   font-weight: 700;
@@ -363,6 +375,10 @@ figure.mock { margin: 3.4mm 0 4.6mm; break-inside: avoid; }
 
 .mark { position: absolute; left: 1mm; top: 1mm; font-size: 2px; line-height: 2px; color: #fff; opacity: .02; }
 .chapter { position: relative; }
+
+/* The horizontal inset that @page used to provide. See the note on @page above. `.cover` and `.opener`
+   are deliberately absent: they are meant to run to the trim. */
+.plain, .title-page, .copyright, .foreword, .toc, .chapter { padding-left: 22mm; padding-right: 16mm; }
 
 body { counter-reset: fig; }
 .appendix td { padding: 1.15mm 2.2mm; font-size: 8.3pt; }

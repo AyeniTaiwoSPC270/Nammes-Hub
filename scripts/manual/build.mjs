@@ -48,6 +48,48 @@ function printPdf(browser) {
   )
 }
 
+// Chrome lays a print job out at one width and scales every page to fit the widest thing in it, so a
+// single element past the page box silently shrinks the whole book. That is how the covers ended up
+// with a white edge and the body text 10% smaller than the design. Catch it before printing, not after.
+async function assertFitsPage(browser) {
+  const puppeteer = (await import('puppeteer-core')).default
+  const pageWidthPx = Math.round(170 * (96 / 25.4))
+  const b = await puppeteer.launch({ executablePath: browser, headless: 'new', args: ['--allow-file-access-from-files'] })
+  try {
+    const p = await b.newPage()
+    await p.emulateMediaType('print')
+    await p.setViewport({ width: pageWidthPx, height: 900 })
+    await p.goto(pathToFileURL(htmlPath).href, { waitUntil: 'networkidle0', timeout: 120000 })
+    const over = await p.evaluate((limit) => {
+      const out = []
+      const clipped = (el) => {
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          if (getComputedStyle(a).overflow !== 'visible') return true
+        }
+        return false
+      }
+      for (const el of document.querySelectorAll('body *')) {
+        const r = el.getBoundingClientRect()
+        if (r.right <= limit + 1 || r.width <= limit + 1) continue
+        if (getComputedStyle(el).position !== 'static') continue
+        if (clipped(el)) continue
+        out.push(`${el.tagName.toLowerCase()}.${(el.getAttribute('class') ?? '?').split(' ')[0]} is ${Math.round(r.width)}px wide, "${(el.textContent ?? '').trim().slice(0, 60)}"`)
+        if (out.length === 5) break
+      }
+      return { scrollWidth: document.documentElement.scrollWidth, offenders: out }
+    }, pageWidthPx)
+    if (over.scrollWidth > pageWidthPx + 1) {
+      throw new Error(
+        `The book is ${over.scrollWidth}px wide but the page is ${pageWidthPx}px. Chrome would print every page at `
+        + `${Math.round((pageWidthPx / over.scrollWidth) * 100)}% to fit it, leaving the covers short of full bleed.\n  `
+        + `${over.offenders.join('\n  ')}\n  Usually a long unbreakable run of code or a wide table: let it wrap.`,
+      )
+    }
+  } finally {
+    await b.close()
+  }
+}
+
 async function pageTexts() {
   return pdfPageTexts(await fs.readFile(pdfPath), norm)
 }
@@ -60,6 +102,7 @@ async function main() {
 
   // Pass 1: placeholder page numbers, to measure where everything lands.
   await fs.writeFile(htmlPath, await buildBookHtml(ctx, () => '00'))
+  await assertFitsPage(browser)
   printPdf(browser)
   let { map, total } = locate(ctx, await pageTexts())
 
