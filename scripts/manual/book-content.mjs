@@ -8,13 +8,14 @@ import { AUTHORS } from './data/authors.mjs'
 import { SITE } from './helpers.mjs'
 
 export const TITLE = 'The NAMMES Hub Handbook'
-export const DEFAULT_EDITION = 'First Edition · September 2026'
-export const DEFAULT_AS_OF = '30 September 2026'
+export const DEFAULT_EDITION = 'Second Edition · October 2026'
+export const DEFAULT_AS_OF = '10 October 2026'
 export const DEFAULT_FOREWORD = `
   <p class="lead">Every session, hundreds of students ask the same questions: <em>Where is the outline? When is the exam? What happened to that link?</em></p>
   <p>NAMMES Hub was built so the answer is always one address away. It gathers everything the association publishes (outlines, timetables, resources, events, news and opportunities) and adds tools that make student life easier, like the CGPA calculator, the awards, the forms and live quiz games.</p>
   <p>But a tool is only useful if you know it is there. That is why this handbook exists. It walks you through every page, in plain language, from creating your account to nominating a classmate for an award. If you are an executive or admin, the final part shows you how to keep the Hub accurate, safe and alive.</p>
   <blockquote>Read it front to back once, then keep it on your phone. When you forget how to do something, open the contents page and jump straight to it.</blockquote>
+  <p>This second edition adds the academic calendar, timed practice exams and the sharing of quiz results, all of which arrived after the first edition went to print.</p>
   <p>We wrote this book together, ten executives with ten roles and one goal: that no member of the department ever feels lost on their own website.</p>
   <div class="signoff"><div class="who">The Executive Council</div><div class="small">{{team}} {{session}} · NAMMES, University of Lagos Chapter</div></div>
 `
@@ -85,7 +86,7 @@ export const TEXT_FIELDS = [
     multiline: true,
     rows: 8,
     value: [
-      'NAMMES Hub is the home of the National Association of Metallurgical and Materials Engineering Students, University of Lagos Chapter: your outlines, timetable, CGPA calculator, resources, events, news, opportunities, awards, forms and live quizzes, all in one place.',
+      'NAMMES Hub is the home of the National Association of Metallurgical and Materials Engineering Students, University of Lagos Chapter: your academic calendar, outlines, timetable, CGPA calculator, resources, events, news, opportunities, awards, forms, live quizzes and practice exams, all in one place.',
       'This handbook walks a complete beginner through every page and shows the executives how to run it.',
     ].join('\n\n'),
   },
@@ -94,8 +95,8 @@ export const TEXT_FIELDS = [
     panel: 'back',
     label: 'What is inside (one item per line)',
     multiline: true,
-    rows: 7,
-    value: ['Every page of the Hub, explained', 'Sign-up, sign-in and your account', 'Outlines, timetable and CGPA', 'Events, news and opportunities', 'Awards and forms, step by step', 'Live quizzes and battles', 'A complete guide for admins'].join('\n'),
+    rows: 8,
+    value: ['Every page of the Hub, explained', 'Sign-up, sign-in and your account', 'The academic calendar, outlines, timetable and CGPA', 'Events, news and opportunities', 'Awards and forms, step by step', 'Live quizzes, battles and practice exams', 'A complete guide for admins'].join('\n'),
   },
   { key: 'back_scan', panel: 'back', label: 'Text next to the QR code', value: 'Scan to open NAMMES Hub on your phone.' },
   { key: 'back_fine', panel: 'back', label: 'Small print at the bottom', value: 'National Association of Metallurgical and Materials Engineering Students · UNILAG Chapter' },
@@ -115,6 +116,7 @@ export const FIND_DEFAULTS = [
   ['I forgot my password', 'account'],
   ['I want to know what a course covers', 'outlines'],
   ['I need my class or exam timetable', 'timetable'],
+  ['I want to know when exams or lectures start', 'calendar'],
   ['I want to work out my CGPA', 'cgpa'],
   ['I am looking for past questions or notes', 'outlines'],
   ['I am looking for slides and shared folders', 'resources'],
@@ -123,14 +125,20 @@ export const FIND_DEFAULTS = [
   ['I want to vote in the awards', 'awards'],
   ['I need to register for something', 'forms'],
   ['I want to reach an executive', 'association'],
+  ['I want to join a quiz or challenge a friend', 'quizzes'],
+  ['I want to practise a timed exam paper', 'practice-exams'],
+  ['I want to build a quiz or exam from my own questions', 'practice-exams'],
+  ['I want to share my result from a game', 'quizzes'],
+  ['The page will not load', 'navigating'],
   ['I want to publish news or an event', 'admin-content'],
+  ['I want to add senate dates or change the calendar', 'admin-calendar'],
   ['I want to build a registration form', 'admin-forms'],
+  ['I want to publish a practice exam paper', 'admin-quizzes'],
+  ['I want to run a live quiz at an event', 'admin-quizzes'],
   ['I want to run the awards', 'admin-awards'],
   ['I want to email every member', 'admin-comms'],
   ['I want to make someone an admin', 'admin-people'],
   ['Something has gone wrong', 'faq'],
-  ['I want to join a quiz or challenge a friend', 'quizzes'],
-  ['I want to run a live quiz at an event', 'admin-quizzes'],
 ]
 
 export const CHAPTERS = [...startChapters, ...academicChapters, ...communityChapters, ...adminChapters]

@@ -3,44 +3,19 @@ import { SITE, tip, note, warn, adminBox, glance, steps, bullets, table, pills, 
 
 export const PART_5 = 'Part Five · Admin Guide'
 
-const DASH = [
-  ['Content', 'Home Page', 'Hero banner and the president\'s welcome message.'],
-  ['Content', 'Site Links', 'Newsletter, social links, contact email, maintenance mode.'],
-  ['Content', 'Page Banners', 'Title, subtitle and pictures at the top of each page.'],
-  ['Content', 'Handbook', 'Edit this handbook and rebuild its PDF.'],
-  ['Content', 'News', 'Publish articles and updates.'],
-  ['Logistics', 'Events', 'Schedule events and manage their galleries.'],
-  ['Library', 'Resources', 'Organise shared academic resources.'],
-  ['Careers', 'Opportunities', 'Share scholarships and internships.'],
-  ['Directory', 'Excos', 'The executive team directory.'],
-  ['Directory', 'Users', 'Every account and admin access.'],
-  ['Directory', 'Security', 'Two-factor login for your account.'],
-  ['Directory', 'System', 'Switches, email queue, logs (owner).'],
-  ['Engagement', 'Messages', 'Contact-form messages.'],
-  ['Academics', 'Outlines', 'Course outlines by level and semester.'],
-  ['Academics', 'Submissions', 'Approve student contributions.'],
-  ['Academics', 'Timetable', 'Class and exam timetables.'],
-  ['Engagement', 'Forms', 'Build forms and read responses.'],
-  ['Engagement', 'Awards', 'Nominate, curate, vote, reveal.'],
-  ['Engagement', 'Live Quiz', 'Build, host and review live quiz games.'],
-  ['Engagement', 'Broadcasts', 'Email every opted-in member.'],
-  ['Engagement', 'Email Templates', 'Edit broadcast email designs.'],
-  ['Governance', 'Reviews', 'Approve pending edits (owner).'],
-]
-
 export const chapters = [
-  /* ------------------------------------------------------------------ 17 */
+  /* ------------------------------------------------------------------ 19 */
   {
     id: 'admin-start',
     part: PART_5,
     admin: true,
-    num: 17,
+    num: 19,
     title: 'Before You Begin',
     intro: 'Who admins are, how to open the Admin area, and the one editing pattern you will use everywhere.',
     inThis: ['Owner and admin: who can do what', 'Signing in to the Admin area', 'The dashboard', 'Add, edit and delete: the common pattern', 'Golden rules for admins'],
     html: `
 <h2 class="first">Owner and admin: who can do what</h2>
-<p>The Hub has two levels of executive power. Every <strong>admin</strong> can run the site's content. The <strong>owner</strong> is a single trusted admin who can additionally approve changes and manage people. When the leadership changes, ownership can be handed over (Chapter 24).</p>
+<p>The Hub has two levels of executive power. Every <strong>admin</strong> can run the site's content. The <strong>owner</strong> is a single trusted admin who can additionally approve changes and manage people. When the leadership changes, ownership can be handed over (Chapter 27).</p>
 ${table(['Power', 'Admin', 'Owner'], [
   ['Open the Admin dashboard and all content sections', 'Yes', 'Yes'],
   ['Publish Resources, Opportunities, Excos, Outlines, Timetables, Banners, Links, Home page', 'Immediately', 'Immediately'],
@@ -63,10 +38,19 @@ ${steps([
 ${note('Anyone can sign up for an account, but only people who have been made admins can open <span class="path">/admin</span>. Everyone else is sent back to the home page.')}
 
 <h2>The dashboard</h2>
-<p>The dashboard is a grid of tiles, one per job, labelled by category. Choose a tile to open that section. The <strong>Submissions</strong> tile shows a badge with the number of student contributions waiting for you. The owner also sees the <strong>Reviews</strong> tile.</p>
-<figure class="mock"><div class="panel"><div class="dash">
-${DASH.map(([c, n, d]) => `<div class="tile${n === 'Reviews' || n === 'System' ? ' owner' : ''}"><div class="cat">${c}</div><div class="nm">Manage ${n}</div><div class="ds">${d}</div></div>`).join('')}
-</div></div><figcaption>The twenty-two dashboard tiles, redrawn for clarity. Gold-edged tiles are for the owner.</figcaption></figure>
+<p>The dashboard is a grid of tiles, one per job, labelled by category. Choose a tile to open that section. The <strong>Submissions</strong> tile shows a badge with the number of student contributions waiting for you. The owner also sees the <strong>Reviews</strong> and <strong>System</strong> tiles, which are marked as theirs.</p>
+${shot('admin-dashboard', 'The Admin Dashboard. Tiles are grouped by category; the Submissions tile carries a badge.', { url: '/admin' })}
+<p>What each tile opens:</p>
+${table(['Category', 'Tiles'], [
+  ['<strong>Content</strong>', 'Home Page, Site Links, Page Banners, Handbook, News.'],
+  ['<strong>Academics</strong>', 'Outlines, Submissions, Timetable, Calendar.'],
+  ['<strong>Logistics</strong>', 'Events, including the photo galleries.'],
+  ['<strong>Library</strong>', 'Resources.'],
+  ['<strong>Careers</strong>', 'Opportunities.'],
+  ['<strong>Directory</strong>', 'Excos, Users, Security, System (owner).'],
+  ['<strong>Engagement</strong>', 'Messages, Forms, Awards, Live Quiz, Broadcasts, Email Templates, CBT Exams.'],
+  ['<strong>Governance</strong>', 'Reviews (owner).'],
+])}
 
 <h2>Add, edit and delete: the common pattern</h2>
 <p>Most sections (News, Events, Resources, Opportunities, Excos, Outlines, Timetable) share the same screen, so you learn it once:</p>
@@ -94,17 +78,18 @@ ${warn('The red <strong>Delete All</strong> button at the top of a section remov
 `,
   },
 
-  /* ------------------------------------------------------------------ 18 */
+  /* ------------------------------------------------------------------ 20 */
   {
     id: 'admin-content',
     part: PART_5,
     admin: true,
-    num: 18,
+    num: 20,
     title: 'Managing the Site\'s Content',
     intro: 'The home page, links, banners, news, events, resources, opportunities and the excos: everything members see first.',
     inThis: ['Home page', 'Site links and maintenance mode', 'Page banners', 'News', 'Events and event galleries', 'Resources, Opportunities and Excos', 'The Handbook: edit this book'],
     html: `
 <h2 class="first">Home page</h2>
+${shot('admin-home', 'The Home Page editor: the hero banner above, the president\'s message below.', { url: '/admin/home' })}
 <p><span class="path">Admin → Home Page</span> edits the two big things on the front page.</p>
 ${table(['Block', 'Fields'], [
   ['Hero banner', '<strong>Title</strong> and <strong>Subtitle</strong> (both required) and a <strong>Background image</strong> (a dark green overlay is added so the white text stays readable).'],
@@ -114,6 +99,7 @@ ${table(['Block', 'Fields'], [
 ${tip('Refresh the president\'s message at the start of every session, and use a landscape, high-resolution hero picture for the best result on big screens.')}
 
 <h2>Site links and maintenance mode</h2>
+${shot('admin-links', 'Site Links. Everything that appears across the whole site, in one screen.', { url: '/admin/links' })}
 <p><span class="path">Admin → Site Links</span> holds settings that appear across the whole site.</p>
 ${table(['Setting', 'Where it appears'], [
   ['Contact email', 'Shown on the maintenance page.'],
@@ -124,10 +110,14 @@ ${table(['Setting', 'Where it appears'], [
 ${warn('Maintenance mode takes effect the moment you flip the switch. Members cannot use the Hub until you switch it off again, so flip it back when you are finished.')}
 
 <h2>Page banners</h2>
-<p><span class="path">Admin → Page Banners</span> controls the title, subtitle and pictures at the top of eleven pages: <strong>About, CGPA Calculator, Contact, Curriculum, Events, Meet the Excos, News, Opportunities, Outlines, Resources</strong> and <strong>Timetable</strong>.</p>
-${bullets(['<strong>Title</strong> and <strong>Subtitle</strong>: the words on the banner (the CGPA banner is pictures only).', '<strong>Images</strong>: add one for a still banner, or several for a slideshow.', '<strong>Transition</strong>: <em>Fade</em> or <em>Slide</em> between pictures.', '<strong>Seconds per slide</strong>: how long each picture stays (default 5).'])}
+${shot('admin-banners', 'Page Banners. Each page gets its own fieldset of title, subtitle and pictures.', { url: '/admin/banners' })}
+<p><span class="path">Admin → Page Banners</span> controls the title, subtitle and pictures at the top of <strong>fifteen</strong> pages: <strong>About, Awards, Calendar, CGPA Calculator, Contact, Curriculum, Events, Forms, Meet the Excos, News, Opportunities, Outlines, Quizzes, Resources</strong> and <strong>Timetable</strong>.</p>
+${bullets(['<strong>Title</strong> and <strong>Subtitle</strong>: the words on the banner (the CGPA banner is pictures only).', '<strong>Banner images</strong>: add one for a still banner, or several for a slideshow.', '<strong>Transition</strong>: <em>Fade</em>, <em>Slide</em> or <em>Zoom</em> between pictures.', '<strong>Seconds per slide</strong>: how long each picture stays (default 5).'])}
+${note('The transition and timing controls only appear once a page has two or more pictures. One picture is just a banner.')}
+${adminBox('<p>New pages need a banner row added before their title and subtitle can be edited. If a banner title you have typed never appears on the page, the row is probably missing &mdash; ask the owner rather than typing it again.</p>')}
 
 <h2>News</h2>
+${shot('admin-news', 'News. The list, the filters, and Add news across the top.', { url: '/admin/news' })}
 <p><span class="path">Admin → News</span>. Add an article with these fields:</p>
 ${table(['Field', 'Notes'], [
   ['Title', 'A clear headline. It also identifies the article in the list.'],
@@ -142,6 +132,7 @@ ${table(['Field', 'Notes'], [
 ${adminBox('<p>Admins\' new articles and edits show as <strong>Pending review</strong> and go live only after the owner approves them. You will see them listed under <em>Awaiting the owner\'s approval</em>. The owner\'s own edits publish immediately.</p>', 'Review gate')}
 
 <h2>Events and event galleries</h2>
+${shot('admin-events', 'Events. Each row carries the card colour, date label and a gallery link.', { url: '/admin/events' })}
 <p><span class="path">Admin → Events</span>. Fields: <strong>Title</strong>, <strong>Date label</strong>, <strong>Card color</strong> (green or orange), <strong>Location / time</strong> (optional), <strong>Description</strong> and <strong>Photo</strong> (the flyer or cover picture).</p>
 ${warn('Type the date in a way people <em>and</em> the Hub can read, such as <code>3rd October 2026</code> or <code>3 October 2026</code>. The Hub uses it to move the event from Upcoming to Past automatically. A date it cannot understand leaves the event in Upcoming.')}
 <p>Each event row also has a <strong>Gallery</strong> icon. Choose it to open that event's gallery page:</p>
@@ -149,6 +140,7 @@ ${steps(['Choose the upload area, or drag pictures in. You can <strong>select ma
 <p>The photos appear on the event's public <em>Gallery</em> tab straight away. Events, like News, go through the owner's review when created or edited by an admin.</p>
 
 <h2>Resources, Opportunities and Excos</h2>
+${shot('admin-resources', 'Resources. Opportunities and Excos use the same screen with different fields.', { url: '/admin/resources' })}
 ${table(['Section', 'Fields to fill in', 'Tips'], [
   ['Resources', 'Level (100-500), Semester (1 or 2), Category, Title, Updated date, Drive link', 'Paste a Drive share link set to <em>Anyone with the link can view</em>, or members will be blocked.'],
   ['Opportunities', 'Title, Organization, Type (Scholarship or Internship), Deadline, Apply link', 'Members see the list sorted by soonest deadline. Remove entries once their deadline has passed.'],
@@ -157,23 +149,25 @@ ${table(['Section', 'Fields to fill in', 'Tips'], [
 ${tip('When a new executive council takes over, edit the existing Exco rows (name, photo, contact) instead of deleting them, and update the session label in the Page Banners for Meet the Excos.')}
 
 <h2>The Handbook: edit this book</h2>
+${shot('admin-handbook', 'Admin → Handbook. Every section of this book is an editable panel, and the PDF rebuilds from here.', { url: '/admin/handbook' })}
 <p><span class="path">Admin &rarr; Handbook</span> lets you change the wording of this very handbook. The list on the left starts with the covers and front pages (front cover, title page, copyright, foreword, contents, <em>Meet the authors</em>, back cover), then every chapter and appendix. A small <strong>Edited</strong> tag marks pages you have changed.</p>
 ${steps(['Choose a page and click into the text. Use the toolbar for bold, italic, headings, lists, links and <strong>Add box</strong> (Tip, Careful and so on). Screenshots are fixed; captions can be edited.', 'Choose <strong>Save changes</strong>. The download has not changed yet, and <strong>Restore original text</strong> undoes your edits to a page.', 'When you have finished, choose <strong>Rebuild PDF</strong> at the top and wait a minute or two. The footer and About page then serve the new version, with the contents renumbered.'])}
 ${tip('<strong>New executive council?</strong> Open <em>Meet the authors</em>, change the team name and session, then choose <em>Load from Meet the Excos</em> or edit each name, role and photo by hand. Save and rebuild: the covers, title page, foreword and contents pick up the new names and session by themselves.')}
 `,
   },
 
-  /* ------------------------------------------------------------------ 19 */
+  /* ------------------------------------------------------------------ 21 */
   {
     id: 'admin-academics',
     part: PART_5,
     admin: true,
-    num: 19,
+    num: 21,
     title: 'Managing Academics',
     intro: 'Outlines, timetables and the approval queue for student contributions.',
-    inThis: ['Outlines', 'Submissions: the approval queue', 'Timetables'],
+    inThis: ['Outlines', 'Submissions: the approval queue', 'Timetables', 'Where the calendar lives'],
     html: `
 <h2 class="first">Outlines</h2>
+${shot('admin-outlines', 'Outlines, grouped by level with filter chips above the list.', { url: '/admin/outlines' })}
 <p><span class="path">Admin → Outlines</span> holds one entry per course. Use the <strong>level filter chips</strong> to work on one level at a time.</p>
 ${table(['Field', 'Notes'], [
   ['Level, Semester', 'Level 100-500 and semester 1 or 2. These place the course in the right list.'],
@@ -200,6 +194,7 @@ ${steps([
 ${warn('Open every file or link before approving it. Make sure it is the right course, readable, and does not contain personal information or unsafe links.')}
 
 <h2>Timetables</h2>
+${shot('admin-timetables', 'Timetable. Class and exam entries use the same rows; the filter chips switch level.', { url: '/admin/timetables' })}
 <p><span class="path">Admin → Timetable</span> uses one row per lecture or exam, with level filter chips. Set <strong>Type</strong> first, because it decides which of two fields you need.</p>
 ${table(['Field', 'Class entries', 'Exam entries'], [
   ['Level, Semester, Type', 'Required', 'Required'],
@@ -210,20 +205,109 @@ ${table(['Field', 'Class entries', 'Exam entries'], [
   ['Lecturer, Notes', 'Optional (notes such as <em>Practical Lab</em> or <em>Tutorial</em>)', 'Optional'],
 ])}
 <p>The public page sorts rows for you: class entries by day and time, exams by date. Members can then download a PDF or an image straight from the page.</p>
+
+<h2>Where the calendar lives</h2>
+<p>The dates themselves are not part of this chapter. Senate dates, the calendar's design and its reminder emails all sit behind one Admin tile, <strong>Calendar</strong>, covered in full in the next chapter.</p>
+${note('Outlines, timetables and the calendar answer three different questions. An outline says what a course covers, a timetable says when a class or paper happens, and the calendar says when the session&rsquo;s lectures, examinations and registration run. They are edited separately, so a correction to one does not disturb the others.')}
 `,
   },
 
-  /* ------------------------------------------------------------------ 20 */
+  /* ------------------------------------------------------------------ 22 */
+  {
+    id: 'admin-calendar',
+    part: PART_5,
+    admin: true,
+    num: 22,
+    title: 'Managing the Calendar',
+    intro: 'The four screens behind Admin → Calendar: senate dates one at a time or pasted in bulk, the page design, the active session, and the reminder emails.',
+    inThis: ['One route, four tabs', 'Dates, row by row', 'Pasting a whole calendar', 'Designing the calendar page', 'The active session', 'Email reminders'],
+    html: `
+<h2 class="first">One tile, four screens</h2>
+${shot('admin-calendar-dates', 'Admin → Calendar, on the Dates tab. The four tabs are the whole calendar admin area.', { url: '/admin/calendar?tab=dates' })}
+<p><span class="path">Admin → Calendar</span> is a single page with four tabs, rather than four separate pages. That matters because they all describe the same thing &mdash; one calendar &mdash; and you rarely need more than one at a time.</p>
+${table(['Tab', 'What you do there'], [
+  ['<strong>Dates</strong>', 'Add, edit and delete senate dates, one row at a time.'],
+  ['<strong>Paste</strong>', 'Import a whole printed calendar at once, review it, then commit it.'],
+  ['<strong>Design</strong>', 'Choose the colours, icons and layout the public calendar page uses.'],
+  ['<strong>Session</strong>', 'See and change which academic session is current, and archive the last one.'],
+])}
+${adminBox('<p>Every tab can be reached from the one Calendar tile on the dashboard. The tab stays in the address bar, so <span class="path">/admin/calendar?tab=paste</span> is a shareable link to a particular screen &mdash; handy when you are telling a colleague exactly where to look.</p>')}
+${note('Admins other than the owner can use all four tabs, but their changes to dates queue for the owner to approve, exactly like news and events. Design and session settings are owner-only.')}
+
+<h2>Dates, row by row</h2>
+${shot('admin-calendar-dates', 'The Dates tab. Rows are grouped by semester.', { url: '/admin/calendar?tab=dates' })}
+<p>The <strong>Dates</strong> tab is an ordinary resource list. Each row is one item on the calendar.</p>
+${table(['Field', 'Notes'], [
+  ['<strong>Title</strong>', 'What students will read, such as <em>Second semester examinations begin</em>.'],
+  ['<strong>Kind</strong>', 'Lectures, exams, registration, break, convocation, orientation or other. The kind decides the colour and icon students see.'],
+  ['<strong>Session</strong> and <strong>Semester</strong>', 'Which session and which semester this belongs to. This is how last year&rsquo;s dates stay separate from this year&rsquo;s.'],
+  ['<strong>Remind (days before)</strong>', 'How many days ahead to email a reminder. Leave it empty for no reminder; zero means remind on the day itself.'],
+  ['<strong>Starts</strong> and <strong>Ends</strong>', 'Leave <em>Ends</em> empty for a single day. Fill it in for a period such as a week of examinations.'],
+  ['<strong>Note</strong>', 'Optional extra line shown under the title.'],
+])}
+${note('A date with nothing in it is a real state, not an unfinished record. An item with no start date is collected in the <em>Dates to be announced</em> panel on the public page rather than sitting on the grid pretending to be a date you do not have.')}
+${warn('Leave <em>Remind (days before)</em> <strong>empty</strong> when you do not want an email. Zero is not the same as blank: zero sends a reminder on the day.')}
+
+<h2>Pasting a whole calendar</h2>
+${shot('admin-calendar-paste', 'The Paste tab. Text goes in, a preview comes out, nothing is saved until you confirm.', { url: '/admin/calendar?tab=paste' })}
+<p>Senate calendars arrive as a wall of text, usually in a PDF or a WhatsApp forward. The <strong>Paste</strong> tab takes that text directly.</p>
+${steps([
+  'Paste the calendar into the <strong>Pasted calendar</strong> box, or press <strong>Paste from clipboard</strong>. Set the <strong>Session</strong> and <strong>Semester</strong> they belong to.',
+  'A live count reads <em>N dates read</em>, and a <strong>Preview</strong> appears with one row per date. Each row has a tick box, a <em>kind</em> selector and a <em>remind</em> box.',
+  'Choose a <strong>kind</strong> for every row. The reader never guesses one, because guessing &ldquo;registration&rdquo; as &ldquo;orientation&rdquo; puts the wrong colour on the wrong week.',
+  'Rows that look like repeats are flagged and start <strong>unchecked</strong>, so a line the senate printed twice is not added twice. Tick it only if it really is two separate items.',
+  'Any line that could not be read is listed as <em>N lines could not be read</em>, with its line number, its original text and the reason. Those lines are <strong>never</strong> added.',
+  'Press <strong>Review N dates</strong>, then <strong>Yes, add N</strong>. As a non-owner admin it reads <strong>Yes, queue them for review</strong> instead.',
+])}
+${warn('Read the list of unreadable lines before you commit. Twenty-eight dates importing when you believed you had thirty is worse than a refusal, so the parser hands you every line it could not read rather than skipping it quietly.')}
+${note('<strong>Clear</strong> empties the box without touching anything already saved.')}
+
+<h2>Designing the calendar page</h2>
+${shot('admin-calendar-design', 'The Design tab: saved designs, the control panel and a live preview.', { url: '/admin/calendar?tab=design' })}
+<p>The <strong>Design</strong> tab is in three columns: your <strong>Saved designs</strong> on the left, the <strong>control panel</strong> in the middle, and a <strong>Live preview</strong> on the right with a dark mode toggle.</p>
+${table(['Group', 'What it controls'], [
+  ['<strong>Accents</strong>', 'Per kind: its label, its colour, an advanced colour if the swatch is not quite right, and its icon.'],
+  ['<strong>Grid</strong>', '<em>Week starts on</em> Monday or Sunday, <em>Show Saturdays and Sundays</em>, <em>Density</em> comfortable or compact, how many items a day holds before <em>more</em>, and <em>Ring today&rsquo;s date</em>.'],
+  ['<strong>Defaults</strong>', 'Whether the page opens on <em>Month</em> or <em>Agenda</em>, which <em>kinds</em> and which <em>sources</em> are switched on, and whether the <em>Next up</em> strip appears.'],
+  ['<strong>Page</strong>', 'The page accent colour and the corner roundness.'],
+])}
+${bullets([
+  'Colours come from eight swatches: <em>Brand, Forest, Flame, Ember, Sand, Green, Amber, Red</em>. An off-list colour falls back to the nearest swatch rather than shipping something unreadable.',
+  '<strong>Make live</strong> applies a saved design to the public page immediately. <strong>Rename</strong>, <strong>Delete</strong> and <strong>Save as new design</strong> manage the list.',
+  'Non-owners see every control and the preview, but the save buttons are disabled.',
+])}
+${note('Phones ignore the <em>opens on Month</em> default and always start in agenda view. A month grid on a small screen is mostly empty space, so that one decision is not worth a setting.')}
+
+<h2>The active session</h2>
+${shot('admin-calendar-session', 'The Session tab. Changing the active session is owner-only.', { url: '/admin/calendar?tab=session' })}
+<p>The <strong>Session</strong> tab shows the <strong>Active session</strong>, and under it a <em>Sessions with dates</em> list where any row can be made active with one click and a confirmation.</p>
+${note('<strong>Archiving is not a flag and nothing is deleted.</strong> Switching the active session simply changes which session the calendar page is showing. Last year&rsquo;s dates stay exactly where they are, fully editable under <em>Dates</em>. That is why the screen explains archiving in its own panel rather than hiding it behind a button.')}
+${adminBox('<p>Starting a new session is <strong>owner-only</strong>. A non-owner sees the button greyed out rather than an error, because there is no review path for it. Do this once a year, after the senate publishes the next calendar.</p>')}
+
+<h2>Email reminders</h2>
+<p>Each date with a <strong>Remind (days before)</strong> value sends an email to every member who has notifications on, that many days ahead. Members who have opted out are not included, and an address that has already had this reminder is not sent it twice.</p>
+${bullets([
+  'Reminders go out on the day the countdown reaches zero, not at a fixed hour, and &ldquo;today&rdquo; is read in <strong>Africa/Lagos</strong> rather than on the server clock. The server runs UTC, and the two disagree for five hours a day &mdash; which would send every exam reminder hours early or hours late.',
+  'A reminder is tied to the date <em>and</em> the address. That pairing is what stops one student receiving the reminder and everyone else silently receiving nothing.',
+  'Nothing is sent for a date with no start date, or with the reminder field left empty.',
+  'If the <em>calendar</em> feature switch is off, no reminders go out either.',
+])}
+${adminBox('<p>Reminders go through the same email queue as everything else, so a failing mail provider is retried and shows up on the <strong>System</strong> page rather than losing the message. See Chapter 27.</p>')}
+`,
+  },
+
+  /* ------------------------------------------------------------------ 23 */
   {
     id: 'admin-forms',
     part: PART_5,
     admin: true,
-    num: 20,
+    num: 23,
     title: 'Building Forms',
     intro: 'Create registrations, surveys and applications, style them to match your event, share them by link or QR code, and read the answers.',
     inThis: ['The Forms list', 'Creating a form', 'Question types', 'Designing how it looks', 'Sharing a form', 'Reading responses and exporting'],
     html: `
 <h2 class="first">The Forms list</h2>
+${shot('admin-forms', 'The Forms list, with the share, edit, responses and delete buttons on each row.', { url: '/admin/forms' })}
 <p><span class="path">Admin → Forms</span> lists every form with a status label: <strong>Accepting</strong> or <strong>Closed</strong>. Each form has buttons to <strong>Share</strong>, <strong>Edit</strong>, view <strong>Responses</strong> and <strong>Delete</strong>. Choose <span class="btn">New form</span> to start.</p>
 ${warn('Deleting a form permanently removes <strong>all its questions and all its responses</strong>. Export the responses first if you might need them.')}
 
@@ -237,8 +321,11 @@ ${table(['Setting', 'What it does'], [
   ['Require sign-in to respond', 'Only signed-in members can answer. Leave off for public sign-ups; anonymous answers are protected by the human check.'],
   ['Limit to one response per person', 'Available when sign-in is required. Stops duplicate answers.'],
   ['Allow editing a response after submit', 'Lets members correct their answers later.'],
+  ['Hide the navbar while filling', 'Respondents see only the form, with a back link in the header. The closed and already-answered screens keep the navbar.'],
   ['Closes at', 'Optional date and time when the form closes by itself.'],
 ])}
+${shot('admin-form-editor', 'The form editor. The settings grid, including the focus-mode switch, sits near the top.', { url: '/admin/forms/…/edit' })}
+${note('<strong>Hide the navbar while filling</strong> strips the menu bar and footer from the filling-in screen only. A closed form, a form that needs sign-in, and the page showing someone their submitted answers all keep the navbar, so there is always a way back. Editing a response is the same plain screen as filling it in. Off by default, per form.')}
 <h3>Step 2: add questions</h3>
 <p>Choose to add a question, then type it (<em>Question</em>), add optional <em>Helper text</em>, pick a type, and set the <strong>Required</strong> switch. Drag the handle (⋮⋮) on the left of any question to <strong>reorder</strong> them; use the arrow to expand or collapse a question, and the bin to remove it. Every question needs a label, and questions with options need at least one option.</p>
 
@@ -279,17 +366,20 @@ ${adminBox('<p>Responses may contain names, matric numbers and contact details. 
 `,
   },
 
-  /* ------------------------------------------------------------------ 21 */
+  adminQuizChapter,
+
+  /* ------------------------------------------------------------------ 25 */
   {
     id: 'admin-awards',
     part: PART_5,
     admin: true,
-    num: 21,
+    num: 25,
     title: 'Running the Awards',
     intro: 'Create a season, move it through five stages, curate the shortlist and reveal the winners.',
     inThis: ['Creating a season', 'Moving through the stages', 'Curating the shortlist', 'Results and the reveal'],
     html: `
 <h2 class="first">Creating a season</h2>
+${shot('admin-awards', 'Awards. Every season with its current stage, and the buttons to move it along.', { url: '/admin/awards' })}
 <p><span class="path">Admin → Awards</span> lists every season with its current stage. Choose <span class="btn">New season</span>.</p>
 ${steps(['Give the season a <strong>Title</strong>, for example <em>Materials Horizon Awards 2026</em>.', 'Add <strong>categories</strong>. Each has a title (such as "Most Innovative Student") and an optional description. Add as many as you need.', 'Save. The season begins in the <strong>nominating</strong> stage.'])}
 ${note('You can only change a season\'s categories while it is in the <strong>nominating</strong> stage. After that they are locked so nobody\'s nominations are disturbed. Admins\' edits go through the owner\'s review.')}
@@ -321,14 +411,12 @@ ${adminBox('<p>Deleting a season removes <strong>all its categories, nominations
 `,
   },
 
-  adminQuizChapter,
-
-  /* ------------------------------------------------------------------ 23 */
+  /* ------------------------------------------------------------------ 26 */
   {
     id: 'admin-comms',
     part: PART_5,
     admin: true,
-    num: 23,
+    num: 26,
     title: 'Talking to Members',
     intro: 'Read what members send you, and send announcements to everyone who wants them.',
     inThis: ['Messages', 'Broadcasts: email everyone', 'Email templates'],
@@ -337,6 +425,7 @@ ${adminBox('<p>Deleting a season removes <strong>all its categories, nominations
 <p><span class="path">Admin → Messages</span> lists everything sent through the Contact page, newest first, with the <strong>time received</strong>, <strong>name</strong>, <strong>email</strong> and the full <strong>message</strong>. Reply from your own email using the address shown. Delete a message once it has been dealt with.</p>
 
 <h2>Broadcasts: email everyone</h2>
+${shot('admin-templates', 'Email Templates: the saved looks a broadcast can be built from.', { url: '/admin/email-templates' })}
 <p><span class="path">Admin → Broadcasts</span> is an email designer and sender in one. You build an announcement, see it exactly as members will, and send it to <strong>every member who has left email notifications on</strong>. Use it for exam changes, event invitations and important notices. The screen has the editor on the left and a <strong>live preview</strong> on the right.</p>
 ${steps([
   'Under <strong>Look</strong>, pick one of the seven templates. Hover over a template to read what it is for.',
@@ -387,12 +476,12 @@ ${warn('If you edit the raw HTML, leave the <code>{{body}}</code> token in place
 `,
   },
 
-  /* ------------------------------------------------------------------ 24 */
+  /* ------------------------------------------------------------------ 27 */
   {
     id: 'admin-people',
     part: PART_5,
     admin: true,
-    num: 24,
+    num: 27,
     title: 'People, Security and the System',
     intro: 'Managing accounts and admins, protecting your own login, approving changes, and keeping the site healthy.',
     inThis: ['Users and admin access', 'Security: two-factor login', 'Reviews: approving changes', 'The System page', 'Fixing a member\'s details', 'When something goes wrong'],
@@ -413,6 +502,7 @@ ${steps(['Ask the person to <strong>sign up</strong> for an ordinary account fir
 ${warn('Prefer <strong>Disable</strong> or <strong>Anonymise</strong> to <strong>Delete</strong>. Deleting a member removes their account entirely, and it cannot be brought back.')}
 
 <h2>Security: two-factor login</h2>
+${shot('admin-security', 'Security. One switch, and the button that sets it up.', { url: '/admin/security' })}
 <p><span class="path">Admin → Security</span> lets you add a second step to your admin sign-in, so a stolen password alone is not enough. Everyone with admin powers is strongly encouraged to do this.</p>
 ${steps(['Open <strong>Security</strong> and choose to turn on two-factor login.', 'Open an authenticator app (Google Authenticator, Microsoft Authenticator or Authy).', 'Scan the QR code, or choose "enter a setup key" and type the key shown under it.', 'Type the 6-digit code the app shows and confirm. You will see "Two-factor login is now on."'], 'orange')}
 ${tip('Copy the <strong>setup key</strong> into a password manager. If you lose your phone, it lets you set the app up again on a new one.')}
@@ -425,12 +515,13 @@ ${steps(['Read the changes carefully, including the text and pictures.', 'Choose
 <h2>The System page</h2>
 <p><span class="path">Admin → System</span> is for the owner. It has five tabs:</p>
 ${table(['Tab', 'What it shows'], [
-  ['Switches', 'Master on/off switches for <strong>award voting</strong>, <strong>award nominations</strong>, <strong>member file uploads</strong>, <strong>email broadcasts</strong>, the <strong>contact form and public form responses</strong>, and <strong>required two-factor login for admin powers</strong>. Each asks you to confirm.'],
+  ['Switches', 'Master on/off switches for <strong>award voting</strong>, <strong>award nominations</strong>, <strong>member file uploads</strong>, <strong>email broadcasts</strong>, the <strong>contact form and public form responses</strong>, the <strong>academic calendar</strong>, and <strong>required two-factor login for admin powers</strong>. Each asks you to confirm.'],
   ['Email queue', 'Emails waiting to be delivered and their status.'],
   ['Activity', 'A log of who did what in the admin area.'],
   ['Server errors', 'Problems recorded by the site\'s back end.'],
   ['App errors', 'Problems members\' browsers ran into.'],
 ])}
+${note('The <strong>calendar</strong> switch is the one to know about. Turning it off hides the calendar from the menu, the footer and the banner list, sends <span class="path">/calendar</span> back to Events, and stops the reminder emails &mdash; all without a deploy. If the senate republishes dates mid-session and the grid looks wrong, this is the quickest way to take it out of circulation while you check.')}
 <p>A <strong>System test</strong> button in the same area checks that the site can write to, and read back from, its error log.</p>
 ${adminBox('<p>The switches are an emergency brake. If a vote is being abused, a form is being flooded with spam, or a broadcast went wrong, flip the matching switch to stop it instantly, then investigate.</p>', 'Emergency brake')}
 
@@ -466,6 +557,7 @@ ${table(['Page', 'Address', 'Sign in?', 'One-line purpose'], [
   ['About', '/about', 'No', 'History, mission, vision and values.'],
   ['Meet the Excos', '/excos', 'No', 'The Executive Council, with contact details.'],
   ['Contact', '/contact', 'No', 'Message the executives.'],
+  ['Calendar', '/calendar', 'No', 'Lecture, exam and registration dates plus events.'],
   ['Outlines', '/outlines', 'No*', 'Course-by-course outlines. *Sign in to contribute.'],
   ['Curriculum', '/curriculum', 'No', 'The official CCMAS document.'],
   ['Timetable', '/timetable', 'No', 'Class and exam schedules.'],
@@ -476,9 +568,15 @@ ${table(['Page', 'Address', 'Sign in?', 'One-line purpose'], [
   ['Opportunities', '/opportunities', 'No', 'Scholarships and internships.'],
   ['Awards', '/awards', 'Yes', 'Nominate and vote.'],
   ['Forms', '/forms', 'Varies', 'Registrations, surveys, applications.'],
+  ['Quizzes and battles', '/quiz', 'No', 'The practice hub: join, practise or battle.'],
   ['Live quiz', '/play', 'No', 'Join a hosted quiz game with a code.'],
   ['Quiz battles', '/battle', 'No', 'Challenge a friend, duel, see the champions.'],
-  ['Quiz practice', '/practice/…', 'No', 'Solo revision run of one quiz (link from the executives).'],
+  ['Pick a quiz to practise', '/practice', 'No', 'Every quiz open for practice.'],
+  ['Quiz practice', '/practice/…', 'No', 'Solo revision run of one quiz.'],
+  ['CBT practice', '/cbt', 'No', 'Timed practice papers with a pass mark.'],
+  ['Make your own exam', '/cbt/make', 'No', 'Build a timed paper from your questions.'],
+  ['Make your own quiz', '/make', 'No', 'Build a quiz, exam or battle set.'],
+  ['A quiz you made', '/set/…', 'No', 'The page for a quiz or exam you built.'],
   ['Sign In', '/login', '-', 'Enter your account.'],
   ['Sign Up', '/signup', '-', 'Create an account.'],
   ['Forgot password', '/forgot-password', '-', 'Get a reset link by email.'],
@@ -495,12 +593,15 @@ ${table(['Section', 'Address', 'Purpose'], [
   ['Handbook', '/admin/handbook', 'Edit this handbook and rebuild its PDF.'],
   ['Event Gallery', '/admin/events/…/gallery', 'Photos for one event.'],
   ['Outlines · Submissions · Timetable', '/admin/outlines …', 'Academics management.'],
+  ['Calendar', '/admin/calendar', 'Dates, paste, design and session, in four tabs.'],
   ['Forms', '/admin/forms', 'List, new, edit, responses.'],
   ['Awards', '/admin/awards', 'Seasons, curate, results.'],
   ['Live Quiz', '/admin/quizzes', 'Quizzes, games, reports, battles and rankings.'],
+  ['CBT Exams', '/admin/cbt', 'Courses, papers and question banks.'],
   ['Messages · Broadcasts · Email Templates', '/admin/messages …', 'Communications.'],
   ['Users · Security · Reviews · System', '/admin/users …', 'People and safety.'],
 ])}
+${adminBox('<p>Four admin pages are deliberately never pictured in this handbook, because they hold members&rsquo; personal information: <strong>Users</strong>, <strong>Messages</strong>, <strong>Reviews</strong> and <strong>System</strong>, together with <strong>Submissions</strong> and any form&rsquo;s <strong>Responses</strong>. Treat exports from them with the same care as an attendance list.</p>')}
 `,
   },
   {
@@ -516,20 +617,29 @@ ${table(['Term', 'Meaning'], [
   ['{{team}} {{session}}', 'The name of the current Executive Council, for the {{session_long}} session.'],
   ['Breadcrumbs', 'The clickable trail (Outlines › 100 Level › …) that shows where you are.'],
   ['Broadcast', 'One announcement email sent to every member who has notifications on.'],
+  ['CBT exam', 'A timed practice paper with a pass mark, drawn from a question bank and answered only at the end.'],
   ['CCMAS', 'Core Curriculum and Minimum Academic Standards, the NUC\'s official degree blueprint.'],
   ['CGPA / GPA', 'Cumulative Grade Point Average across all your semesters, and the Grade Point Average of a single semester.'],
   ['Bracket', 'A knockout format for a live quiz: players are paired, winners move on, one champion remains.'],
+  ['Community quiz', 'A quiz or exam a member has built from their own questions. It lives on its own private link, is deleted after 30 days by default, and appears nowhere public.'],
   ['Curating', 'The awards stage where admins turn raw nominations into a shortlist.'],
   ['Duel', 'A live quiz battle between two players at the same moment.'],
   ['Excos', 'The Executive Council: the students elected to run NAMMES.'],
+  ['Feature flag', 'A master switch on the System page that turns a whole feature off without a deploy &mdash; voting, uploads, broadcasts, the contact form, or the calendar.'],
   ['Matric number', 'Your department student number, in the form YY0406XXX.'],
   ['Maintenance mode', 'A switch that shows visitors a "be right back" page while admins work.'],
   ['NAMMES', 'National Association of Metallurgical and Materials Engineering Students, UNILAG Chapter.'],
   ['Lobby', 'The waiting screen of a quiz game, where players gather before it starts.'],
   ['Outline', 'A one-page summary of a course: topics, units, texts and links.'],
+  ['Pass mark', 'The percentage a CBT exam needs before it is recorded as passed.'],
   ['Practice mode', 'Solo replay of a quiz, one question at a time, with instant feedback.'],
+  ['Question bank', 'For a quiz, the pool of questions a game draws from. For a CBT exam, the pool each attempt draws its paper from.'],
+  ['Result card', 'The tall, phone-shaped picture a player can share after a game, a practice run or a duel.'],
   ['Review queue', 'The list of admin edits waiting for the owner to approve.'],
+  ['Senate date', 'A date the department\'s senate has approved, such as the start of examinations. Stored as a plain calendar date because every senate item is an all-day entry.'],
+  ['Session', 'The academic year a page or a calendar belongs to, such as 2026/2027. The calendar shows one session at a time.'],
   ['SIWES', 'Students Industrial Work Experience Scheme: industrial training built into the degree.'],
+  ['Study mode', 'A CBT session with no clock, where each answer is revealed straight away.'],
   ['Two-factor login', 'Signing in with your password plus a 6-digit code from an app on your phone.'],
 ])}
 `,
@@ -548,6 +658,12 @@ ${qa('Why can\'t I vote or nominate?', 'The awards are for members with a depart
 ${qa('A page says "Nothing published yet".', 'The executives have not added anything there yet. Come back later, or ask through the Contact page.')}
 ${qa('How do I stop the emails?', 'Open Account and switch Email notifications off. You can turn them on again at any time.')}
 ${qa('A file will not upload.', 'Check its size and type: student contributions accept PDF, JPG or PNG up to 10 MB; photos accept JPEG or PNG up to 5 MB.')}
+${qa('The page says I am offline but my wifi is on.', 'The Hub checks whether the site is really reachable, not whether your device thinks it has a connection, so this screen is usually correct. It re-checks every few seconds and brings your page back by itself. If it persists, switch to mobile data and back, or close and reopen the tab.')}
+${qa('My CBT timer did not stop when I closed the app.', 'That is deliberate. The clock belongs to the server, so it cannot be paused by closing the tab, losing signal or switching apps. A refresh brings you back to the same paper with the time that is left.')}
+${qa('I built a quiz but it is not in the list.', 'A quiz you make is private to its link and appears in no public list, by design. Only its code or link finds it. Check the code, or ask whoever shared it.')}
+${qa('There is no Share my result button on my results.', 'Either the game finished before result cards existed, in which case the button is hidden rather than broken, or you are on a screen that has no card.')}
+${qa('An exam date is missing from the calendar.', 'Check the Dates to be announced panel first. Items the senate has approved but not dated are collected there rather than left off the calendar silently. If it is not there either, the executives have not published it yet.')}
+${qa('The calendar is not in my menu.', 'It can be switched off without a deploy by the calendar feature switch on the owner&rsquo;s System page. Ask an executive if it is missing.')}
 ${qa('Who do I contact about a mistake on the site?', 'Use the Contact page, or open Meet the Excos and reach the right executive directly.')}
 <div class="callout"><div class="ct"><span>Still stuck?</span></div><p>Open <span class="path">${SITE.replace('https://', '')}/contact</span>, describe what you were doing and what you saw, and one of the executives will help.</p></div>
 `,
