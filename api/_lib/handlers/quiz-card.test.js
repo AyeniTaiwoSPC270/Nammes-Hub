@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createQuizCardHandler } from './quiz-card.js'
 import { buildPracticeMe, toBoardRow } from '../quizCardData.js'
+import { DEFAULT_CARD, encodeCardPreview } from '../quizCard.js'
 import { hashToken, rankPlayers } from '../quiz.js'
 import { QUIZ, SESSION, fakeDb, fakeRes } from '../quizTestKit.js'
 
@@ -224,6 +225,47 @@ describe('the studio preview', () => {
   it('is rate limited even though it needs no token, because it is the most expensive branch', async () => {
     const res = await run(fakeDb({ quizzes: [{ id: QUIZ, title: 'Naming Origins', theme: {}, card: {} }] }), { preview: QUIZ }, { allow: () => false })
     expect(res.statusCode).toBe(429)
+  })
+
+  it('renders the draft carried on the url, so an unsaved accent or unticked box shows up', async () => {
+    const db = fakeDb({ quizzes: [{ id: QUIZ, title: 'Naming Origins', theme: {}, card: { accent: '#ff5a1f' } }] })
+    const res = await run(db, { preview: QUIZ, d: encodeCardPreview({ ...DEFAULT_CARD, accent: '#00ff00' }, { quizId: QUIZ }) })
+    expect(res.statusCode).toBe(200)
+    expect(isPng(res.body)).toBe(true)
+  })
+
+  // Byte comparison, not the png magic number: "still a png" cannot tell an unchanged render from a changed one,
+  // which is precisely the bug. A passing isPng on its own would have hidden it.
+  const SAVED_CARD_ROW = { quizzes: [{ id: QUIZ, title: 'Naming Origins', theme: {}, card: { accent: '#ff5a1f' } }] }
+
+  async function renderPreview(d) {
+    const res = await run(fakeDb(SAVED_CARD_ROW), { preview: QUIZ, ...(d ? { d } : {}) })
+    expect(res.statusCode).toBe(200)
+    return res.body
+  }
+
+  it('changes the bytes when the draft sets a different accent', async () => {
+    const draft = await renderPreview(encodeCardPreview({ ...DEFAULT_CARD, accent: '#00ff00' }, { quizId: QUIZ }))
+    expect(draft.equals(await renderPreview())).toBe(false)
+  })
+
+  it('changes the bytes when the draft unticks a box', async () => {
+    const draft = await renderPreview(encodeCardPreview({ ...DEFAULT_CARD, accent: '#ff5a1f', showStreak: false, showTeam: false }, { quizId: QUIZ }))
+    expect(draft.equals(await renderPreview())).toBe(false)
+  })
+
+  it('falls back to the saved card when the draft is junk', async () => {
+    expect((await renderPreview('not-a-draft')).equals(await renderPreview())).toBe(true)
+  })
+
+  it('falls back to the saved card when the draft names a background in another quiz', async () => {
+    const hostile = encodeCardPreview({ ...DEFAULT_CARD, background: '22222222-2222-4222-8222-222222222222/33333333-3333-4333-8333-333333333333-1.jpg' }, { quizId: QUIZ })
+    expect((await renderPreview(hostile)).equals(await renderPreview())).toBe(true)
+  })
+
+  it('falls back to the saved card when the draft is absent entirely, which is every plain link to this url', async () => {
+    const res = await run(fakeDb(SAVED_CARD_ROW), { preview: QUIZ })
+    expect(isPng(res.body)).toBe(true)
   })
 })
 

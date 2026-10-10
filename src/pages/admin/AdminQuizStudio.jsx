@@ -5,7 +5,7 @@ import { useToast } from '../../lib/ToastContext'
 import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl, BACKDROP_MAX_EDGE, BACKDROP_MAX_BYTES } from '../../data/quizBranding'
 import { useQuizQuery, saveQuizTheme, saveQuizCard } from '../../data/quiz'
 import { cardPreviewVersion } from '../../data/quizBranding'
-import { sanitizeCard, DEFAULT_CARD } from '../../../api/_lib/quizCard.js'
+import { sanitizeCard, encodeCardPreview, DEFAULT_CARD } from '../../../api/_lib/quizCard.js'
 import {
   DEFAULT_THEME,
   THEME_LOOKS,
@@ -314,12 +314,13 @@ export default function AdminQuizStudio() {
               A preview with made-up numbers, drawn by the same server that draws the real card. A real game uses each
               player&rsquo;s own result.
             </p>
-            {/* The endpoint renders the saved card, so the draft is hashed into the url to force a redraw whenever
-                anything changes. Without it the preview would sit on the old design until a full reload. */}
+            {/* The endpoint renders the saved card, so the draft goes on the url as well as the version hash: the
+                hash alone busts the browser cache but still asks the server for the saved design, which is why
+                changing an accent or unticking a box used to leave the preview exactly as it was. */}
             {quiz && (
               <img
                 key={cardPreviewVersion(card, id)}
-                src={`/api/quiz-card?preview=${id}&v=${cardPreviewVersion(card, id)}`}
+                src={`/api/quiz-card?preview=${id}&v=${cardPreviewVersion(card, id)}&d=${encodeCardPreview(card, { quizId: id })}`}
                 alt="Result card preview"
                 className="w-full max-w-xs rounded-2xl shadow-md"
               />

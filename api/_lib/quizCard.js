@@ -33,3 +33,38 @@ export function sanitizeCard(input, { quizId } = {}) {
     showTeam: flag(c.showTeam),
   }
 }
+
+// The studio's preview renders the *saved* card, so an unsaved draft has to travel on the url for the preview to
+// follow the controls. Only the card is sent, never the theme: the card is the tab being edited, and a theme is
+// large enough (sponsors, sound, pictures) to make the url unusable.
+const PREVIEW_MAX_CHARS = 700
+
+function toBase64Url(text) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(text, 'utf8').toString('base64url')
+  return btoa(unescape(encodeURIComponent(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function fromBase64Url(value) {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/')
+  if (typeof Buffer !== 'undefined') return Buffer.from(padded, 'base64').toString('utf8')
+  return decodeURIComponent(escape(atob(padded)))
+}
+
+// A draft card, url-safe and capped. Sanitised on the way out so the payload is already the shape the server wants.
+export function encodeCardPreview(card, { quizId } = {}) {
+  return toBase64Url(JSON.stringify(sanitizeCard(card, { quizId })))
+}
+
+// The draft the url carried, or null when there is not a usable one — in which case the caller keeps the saved card.
+// Anything unparseable is null rather than an exception: this is an unauthenticated url parameter.
+export function decodeCardPreview(payload, { quizId } = {}) {
+  if (typeof payload !== 'string' || !payload || payload.length > PREVIEW_MAX_CHARS) return null
+  let parsed
+  try {
+    parsed = JSON.parse(fromBase64Url(payload))
+  } catch {
+    return null
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+  return sanitizeCard(parsed, { quizId })
+}
