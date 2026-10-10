@@ -2,7 +2,7 @@ import { getCaller, bearerToken } from '../authz.js'
 import { isUuid, isAllowedImageUrl } from '../validate.js'
 import { hashToken, createRateLimiter, clientIp, rankPlayers } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
-import { sanitizeCard } from '../quizCard.js'
+import { sanitizeCard, decodeCardPreview } from '../quizCard.js'
 import { buildPracticeMe, toBoardRow } from '../quizCardData.js'
 import { renderBoardCard, renderDuelCard, renderPersonalCard } from '../quizCardRender.js'
 import { sessionQuestionIds } from '../quizSessionQuestions.js'
@@ -213,14 +213,17 @@ export function createQuizCardHandler(
 
   // An <img> cannot send an Authorization header and the preview url is just the quiz id, so this is reachable by
   // anyone who knows one. It renders invented numbers only, never a real player, so nothing leaks.
-  async function servePreview(res, db, quizId) {
+  // A `d` parameter carries the studio's unsaved draft, so the preview follows the controls before they are saved.
+  // It is sanitised against this quiz on the way in, exactly as the saved column is: a hand-made url cannot point the
+  // render at another quiz's picture, and an unreadable one is ignored rather than thrown on.
+  async function servePreview(res, db, quizId, draft) {
     const { data: quiz } = await db.from('quizzes').select('id, title, theme, card').eq('id', quizId).maybeSingle()
     if (!quiz) {
       res.status(404).json({ error: 'Quiz not found' })
       return
     }
     const buffer = await renderPersonalCard({
-      card: sanitizeCard(quiz.card, { quizId }),
+      card: draft ?? sanitizeCard(quiz.card, { quizId }),
       theme: sanitizeTheme(quiz.theme, { quizId }),
       quiz,
       me: {
@@ -242,7 +245,7 @@ export function createQuizCardHandler(
       return
     }
 
-    const { session, token, view, practice, battle, preview } = req.query ?? {}
+    const { session, token, view, practice, battle, preview, d } = req.query ?? {}
 
     if (preview) {
       if (!isUuid(preview)) {
@@ -255,7 +258,7 @@ export function createQuizCardHandler(
         res.status(429).json({ error: 'Slow down' })
         return
       }
-      await servePreview(res, getClient(), preview)
+      await servePreview(res, getClient(), preview, decodeCardPreview(d, { quizId: preview }))
       return
     }
 
