@@ -221,11 +221,13 @@ const cssText = (t) => String(t).replace(/["\\\r\n]/g, ' ')
 function pageCss(ctx) {
   const box = 'font-family:"Public Sans",sans-serif;font-size:7.2pt;letter-spacing:.14em;text-transform:uppercase;color:#424843;'
   const num = 'font-family:"Playfair Display",serif;font-size:10pt;color:#ae3200;'
+  // Pages carry no horizontal margin any more (see the note on @page in book.css), so these boxes have to
+  // inset themselves to sit level with the text block, which starts 22mm in and ends 16mm in.
   const one = (name, label) => `
-@page ${name}:left { @top-left { content: "${cssText(ctx.title)}"; ${box} } @bottom-left { content: counter(page); ${num} } }
-@page ${name}:right { @top-right { content: "${label.replace(/"/g, '')}"; ${box} } @bottom-right { content: counter(page); ${num} } }`
+@page ${name}:left { @top-left { content: "${cssText(ctx.title)}"; padding-left: 22mm; ${box} } @bottom-left { content: counter(page); padding-left: 22mm; ${num} } }
+@page ${name}:right { @top-right { content: "${label.replace(/"/g, '')}"; padding-right: 16mm; ${box} } @bottom-right { content: counter(page); padding-right: 16mm; ${num} } }`
   const parts = [
-    `@page plain { margin: 22mm 16mm 24mm 22mm; }`,
+    `@page plain { margin: 22mm 0 24mm 0; }`,
     one('front', 'Contents'),
   ]
   for (const c of ctx.chapters) parts.push(one(`ch-${c.id}`, chapterLabel(c)))
