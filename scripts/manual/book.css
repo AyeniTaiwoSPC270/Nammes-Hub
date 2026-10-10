@@ -386,9 +386,3 @@ body { counter-reset: fig; }
 .cover.back .fine span:first-child { max-width: 100mm; }
 .cover.back .fine span:last-child { white-space: nowrap; }
 
-/* Above roughly 122 pages the headless print path shrink-to-fits the whole document, and the covers and chapter
-   openers are the only pages that show it: their colour stops short of the paper edge and a white band appears.
-   Painting the colour past the page box hides it either way. box-shadow rather than a pseudo-element because
-   .opener sets overflow:hidden, which would clip one. The page box clips the overspill, so nothing spills onto
-   a neighbouring page. */
-.cover, .opener { box-shadow: 0 0 0 90mm var(--green-900); /* 90mm, not 40: the print path clips the overspill some way short of the paper edge */ }
