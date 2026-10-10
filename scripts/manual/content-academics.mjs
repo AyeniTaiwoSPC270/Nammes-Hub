@@ -5,9 +5,61 @@ export const PART_2 = 'Part Two · Academics'
 export const chapters = [
   /* ------------------------------------------------------------------ 5 */
   {
-    id: 'outlines',
+    id: 'calendar',
     part: PART_2,
     num: 5,
+    title: 'The Academic Calendar',
+    intro: 'Lecture, examination and registration dates from the senate, in the same grid as departmental events, so you can see the whole term at a glance.',
+    inThis: ['Month and agenda views', 'Switching academic dates and events on and off', 'What is coming up next', 'Dates that have not been announced yet'],
+    html: `
+<h2 class="first">Why it exists</h2>
+${glance([['Address', 'nammeshub.com.ng/calendar'], ['Sign-in needed?', 'No'], ['Who it is for', 'Every student'], ['Best for', 'Planning a term around exams, registration and events']])}
+<p>The academic calendar is the one page that answers <em>"when is everything?"</em>. It brings together the dates the department's senate has approved &mdash; lectures, examinations, registration, breaks, convocation &mdash; and the <strong>departmental events</strong> the association publishes, in a single grid you can browse by month or read as a list.</p>
+<p>You will find it at <strong>Academics &rarr; Calendar</strong>, at the top of the Academics menu, and under <em>Explore</em> in the footer.</p>
+${shot('calendar', 'The calendar in Month view. The session label above the grid tells you which one you are looking at.', { url: '/calendar' })}
+
+<h2>Month and agenda</h2>
+<p>Two ways to read the same dates, switched by the <strong>Month</strong> and <strong>Agenda</strong> buttons at the top of the page.</p>
+${table(['View', 'What it is for'], [
+  ['<strong>Month</strong>', 'The whole month as a grid, so you can see how an exam week clusters and when a break falls. Use the arrows to move between months, or <strong>Today</strong> to jump back.'],
+  ['<strong>Agenda</strong>', 'A plain list, soonest first. Better for reading on a phone, and better when you only care about what is next.'],
+])}
+${shot('calendar-agenda', 'Agenda view: a list rather than a grid.', { url: '/calendar' })}
+${note('On a phone the calendar always opens in <strong>agenda</strong>, whatever the executives have set as the default for computers. A month grid on a small screen is mostly empty space.')}
+
+<h2>Academic dates or events, or both</h2>
+<p>Two filter pills sit above the grid: <strong>Academic</strong> for the senate's dates and <strong>Events</strong> for departmental programmes, seminars and socials. Both are on by default, and you can switch either off to concentrate on one.</p>
+<p>Each kind of item has its own colour and icon, so a three-week exam period reads at a glance rather than as a wall of text.</p>
+${note('If you switch both off the page says <em>No sources selected</em> rather than showing an empty calendar, so an empty month always means something: either nothing is scheduled, or you have filtered it out.')}
+
+<h2>What is coming up</h2>
+<p>A <strong>Next up</strong> strip above the grid lists the next few items so you do not have to hunt for them. Each is labelled <em>Happening now</em>, <em>Today</em>, or with its date, and an item that runs for more than one day also says <strong>Ends</strong> with its final day. Departmental events in the strip link to their own page.</p>
+
+<h2>Dates that have not been announced</h2>
+<p>The senate approves some items well after the session begins, and the Hub never invents a date it has not been given. Anything without a date is collected in a <strong>Dates to be announced</strong> panel instead of the grid, with a line explaining that no date has been set yet. When the executives publish the date, the item moves onto the calendar on its own.</p>
+${note('An item with no date is not missing and not cancelled. It is simply not on the grid yet.')}
+
+<h2>Reading the grid</h2>
+${bullets([
+  'The <strong>session label</strong> above the grid, such as <em>2026/2027 session</em>, tells you which academic session the dates belong to.',
+  'A day with more items than fit shows <strong>+N more</strong>. Tap it to see the rest.',
+  '<strong>Ring today&rsquo;s date</strong> draws a ring around the current day so you cannot lose your place.',
+  'An empty month says <em>Nothing scheduled in [month]</em>. A month hidden by your filters says <em>This month is filtered out</em> &mdash; two different sentences for two different reasons.',
+])}
+${shot('m-calendar', 'The calendar on a phone, in agenda view.', { url: '/calendar', phone: true, crop: 40 })}
+
+<h2>Email reminders</h2>
+<p>Executives can set a reminder for each date &mdash; seven days before an exam, one day before registration reopens, and so on. If you have <strong>email notifications</strong> switched on in your Account settings, the Hub emails you that many days beforehand. Nothing is sent for an item with no date set, and every reminder is sent once per date.</p>
+${tip('The calendar is the fastest way to answer "when is the next thing?" &mdash; it replaces the screenshots of the senate calendar that used to circulate in group chats. If you still have one, the Hub has the same dates and the executives can update them in seconds rather than by reposting a flyer.')}
+${note('Senate dates are stored as plain calendar dates, not times. Every senate item is an all-day entry, so an exam week never shifts to the wrong day because of a time zone. Departmental events, which can genuinely start at 3pm, do carry a time.')}
+`,
+  },
+
+  /* ------------------------------------------------------------------ 6 */
+  {
+    id: 'outlines',
+    part: PART_2,
+    num: 6,
     title: 'Course Outlines',
     intro: 'A one-page briefing for every course in the department: what it covers, how many units it carries, who teaches it and where to find past questions.',
     inThis: ['Finding a course: level, semester, course', 'Reading a course outline', 'Downloading outlines as PDF', 'Contributing past questions and notes'],
@@ -15,6 +67,7 @@ export const chapters = [
 <h2 class="first">What outlines are for</h2>
 ${glance([['Address', 'nammeshub.com.ng/outlines'], ['Sign-in needed?', 'No (only to contribute)'], ['Who it is for', 'Every student, 100 to 500 Level'], ['Best for', 'Planning your semester before lectures begin']])}
 <p>A course outline answers the question <em>"what am I actually going to study in this course?"</em> in one page. Instead of hunting through old chats for a photo of a handout, you open the Hub, pick your level and semester, and read the outline for each course.</p>
+${note('An outline tells you what a course covers. To find out <em>when</em> the examinations are, see <strong>Chapter 5, The Academic Calendar</strong>.')}
 
 <h2>Finding a course</h2>
 <p>Outlines are organised as a three-step drill-down: <strong>level</strong>, then <strong>semester</strong>, then <strong>course</strong>.</p>
@@ -57,11 +110,11 @@ ${note('Contributions start as <strong>pending</strong>. An admin reviews each o
 `,
   },
 
-  /* ------------------------------------------------------------------ 6 */
+  /* ------------------------------------------------------------------ 7 */
   {
     id: 'curriculum',
     part: PART_2,
-    num: 6,
+    num: 7,
     title: 'The Programme Curriculum',
     intro: 'The official national blueprint for your degree: the CCMAS document, with unit totals for every level.',
     inThis: ['What CCMAS is', 'Units per level', 'Viewing and downloading the full document'],
@@ -83,11 +136,11 @@ ${tip('Curriculum answers "what does the whole degree look like?". Outlines answ
 `,
   },
 
-  /* ------------------------------------------------------------------ 7 */
+  /* ------------------------------------------------------------------ 8 */
   {
     id: 'timetable',
     part: PART_2,
-    num: 7,
+    num: 8,
     title: 'The Timetable',
     intro: 'Your class schedule and exam schedule for every level, filterable by day, and downloadable.',
     inThis: ['Choosing your level', 'Class or exam? First or second semester?', 'Filtering by day', 'Downloading a PDF or image'],
@@ -105,6 +158,7 @@ ${table(['Control', 'Options', 'What it does'], [
 ])}
 <p>The schedule is a table. Each row shows the <strong>time</strong> (start to end), the <strong>course code and title</strong>, the <strong>venue</strong>, and, where it applies, the <strong>lecturer</strong> and a short note such as <em>Practical Lab</em> or <em>Tutorial</em>. Class rows are sorted by day and time; the exam timetable is sorted by exam date.</p>
 ${note('If you see <em>"No timetable published yet"</em>, the executives simply have not added it. Check back soon. If a day has no lectures you will see <em>"No entries for this day"</em>.')}
+${note('The timetable tells you the <em>time</em> of each exam. The <strong>academic calendar</strong> tells you the <em>days</em> the examination period runs, alongside registration and lectures. See <strong>Chapter 5</strong>.')}
 
 <h2>Taking your timetable with you</h2>
 <p>Once a timetable has entries, two download buttons appear beside the page title:</p>
@@ -116,11 +170,11 @@ ${tip('Download the <strong>image</strong> version and set it as your lock-scree
 `,
   },
 
-  /* ------------------------------------------------------------------ 8 */
+  /* ------------------------------------------------------------------ 9 */
   {
     id: 'cgpa',
     part: PART_2,
-    num: 8,
+    num: 9,
     title: 'The CGPA Calculator',
     intro: 'A private grade book that works out every semester\'s GPA and your cumulative CGPA, shows the trend, and tells you what you need next.',
     inThis: ['How CGPA is worked out', 'Adding semesters and courses', 'Your CGPA card and trend chart', 'Repeated courses', '"What grade do I need?"', 'Downloading your report'],
@@ -156,11 +210,11 @@ ${warn('The calculator is a planning tool. Your official result is always the on
 `,
   },
 
-  /* ------------------------------------------------------------------ 9 */
+  /* ------------------------------------------------------------------ 10 */
   {
     id: 'resources',
     part: PART_2,
-    num: 9,
+    num: 10,
     title: 'Resources',
     intro: 'A shelf of shared study materials, organised by level and semester, opening straight into the executives\' Drive folders.',
     inThis: ['Browsing resources', 'What you will find', 'Using Drive links politely'],

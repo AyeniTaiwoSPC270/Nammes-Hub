@@ -3,7 +3,8 @@
 //
 //   node scripts/manual/build.mjs
 //
-// Needs: Edge or Chrome installed, and `pdftotext` on PATH (used once to find which page each chapter lands on).
+// Needs: Edge or Chrome installed. Page text is read with pdf.js (already a dependency, and the same reader the
+// serverless builder uses), so unlike the old pdftotext call there is no external binary to install.
 // Output: public/documents/NAMMES-Hub-Handbook.pdf  (the fallback download; once an admin rebuilds the handbook from
 // Admin > Handbook, the site serves that newer copy instead).
 // The book text and design live in book-content.mjs / content-*.mjs / book.css and are shared with the site's builder.
@@ -14,6 +15,8 @@ import { execFileSync } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { buildBookHtml, locate, norm } from './book-lib.mjs'
 import { makeContext } from './book-content.mjs'
+// The serverless builder already measures page text the same way; sharing it keeps the two builds from drifting.
+import { pdfPageTexts } from '../../api/_lib/handbookBuild.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '../..')
@@ -45,11 +48,8 @@ function printPdf(browser) {
   )
 }
 
-function pageTexts() {
-  const text = execFileSync('pdftotext', ['-enc', 'UTF-8', pdfPath, '-'], { maxBuffer: 64 * 1024 * 1024 }).toString('utf8')
-  const pages = text.split('\f')
-  if (pages[pages.length - 1].trim() === '') pages.pop()
-  return pages.map(norm)
+async function pageTexts() {
+  return pdfPageTexts(await fs.readFile(pdfPath), norm)
 }
 
 async function main() {
@@ -61,13 +61,13 @@ async function main() {
   // Pass 1: placeholder page numbers, to measure where everything lands.
   await fs.writeFile(htmlPath, await buildBookHtml(ctx, () => '00'))
   printPdf(browser)
-  let { map, total } = locate(ctx, pageTexts())
+  let { map, total } = locate(ctx, await pageTexts())
 
   // A printed book has an even page count: add a spare notes page if the back cover would land on an odd page.
   const extraNotes = total % 2 === 1
   await fs.writeFile(htmlPath, await buildBookHtml(ctx, (id) => String(map[id] ?? 0), { extraNotes }))
   printPdf(browser)
-  const second = locate(ctx, pageTexts())
+  const second = locate(ctx, await pageTexts())
   const changed = Object.keys(map).some((k) => map[k] !== second.map[k])
   if (changed) {
     // Numbers moved between passes (rare): rebuild once more with the settled values.
