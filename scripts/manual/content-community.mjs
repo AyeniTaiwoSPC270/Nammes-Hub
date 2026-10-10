@@ -1,9 +1,9 @@
-import { quizChapter } from './content-quiz.mjs'
+﻿import { quizChapter } from './content-quiz.mjs'
 import { tip, note, warn, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
 import { AUTHORS } from './data/authors.mjs'
 
-export const PART_3 = 'Part Three · Community'
-export const PART_4 = 'Part Four · The Association'
+export const PART_3 = 'Part Three Â· Community'
+export const PART_4 = 'Part Four Â· The Association'
 
 export const chapters = [
   /* ------------------------------------------------------------------ 11 */
@@ -72,7 +72,7 @@ ${table(['Category', 'Typical stories'], [
 
 <h2>Getting news by email</h2>
 <p>You do not have to keep checking the page. There are two ways to have news come to you:</p>
-${bullets(['<strong>Email notifications</strong>: with the switch on in your Account page, new News and Events alerts land in your inbox (Chapter 4).', '<strong>The newsletter</strong>: type your email into the <em>Stay Connected With Us</em> box in the footer to subscribe to the NAMMES Communiqué on Substack.'])}
+${bullets(['<strong>Email notifications</strong>: with the switch on in your Account page, new News and Events alerts land in your inbox (Chapter 4).', '<strong>The newsletter</strong>: type your email into the <em>Stay Connected With Us</em> box in the footer to subscribe to the NAMMES CommuniquÃ© on Substack.'])}
 `,
   },
 
@@ -113,11 +113,11 @@ ${warn('NAMMES lists opportunities to help you find them. It does not run the ap
 ${glance([['Address', 'nammeshub.com.ng/awards'], ['Sign-in needed?', 'Yes, to take part'], ['Who it is for', 'Members with a department matric number'], ['Best for', 'Celebrating your peers']])}
 <p>The Awards page always shows the <strong>current stage</strong> of the season, and every stage looks different. A season moves through five stages, in order, controlled by the executives:</p>
 <div class="phases">
-  <div class="ph">1 · Nominating<small>You suggest names</small></div>
-  <div class="ph">2 · Curating<small>Shortlist built</small></div>
-  <div class="ph">3 · Voting<small>You vote once</small></div>
-  <div class="ph">4 · Closed<small>Votes counted</small></div>
-  <div class="ph">5 · Revealed<small>Winners shown</small></div>
+  <div class="ph">1 Â· Nominating<small>You suggest names</small></div>
+  <div class="ph">2 Â· Curating<small>Shortlist built</small></div>
+  <div class="ph">3 Â· Voting<small>You vote once</small></div>
+  <div class="ph">4 Â· Closed<small>Votes counted</small></div>
+  <div class="ph">5 Â· Revealed<small>Winners shown</small></div>
 </div>
 ${shot('awards', 'When no season is running, the page says so. The screen changes at every stage.', { url: '/awards', narrow: true })}
 
@@ -158,13 +158,13 @@ ${shot('forms', 'The Forms page, with the open-form counts across the top.', { u
 ${note('The Forms page also has a banner of its own, which the executives can reword or replace with pictures without touching the page below it.')}
 
 <h2>Filling in a form</h2>
-${shot('form-detail', 'An example form. The executives choose its colours, background and layout, so every form can look different.', { url: '/forms/…', crop: 96 })}
+${shot('form-detail', 'An example form. The executives choose its colours, background and layout, so every form can look different.', { url: '/forms/â€¦', crop: 96 })}
 ${steps(['Choose <strong>Fill form</strong> on the card you want.', 'Answer the questions. A <strong>progress bar</strong> near the top shows how many you have answered (for example <em>0 of 9 answered</em>). Questions marked with an asterisk (<strong>*</strong>) are required.', 'Choose the submit button at the bottom. You will see "Response submitted, thank you!"'])}
 <p>Forms can ask for many kinds of answers:</p>
 ${pills(['Short answer', 'Paragraph', 'Multiple choice', 'Checkboxes', 'Dropdown', 'Linear scale', 'File upload', 'Date', 'Time'])}
 
 <h2>Closed forms, sign-in and editing</h2>
-${table(['You see…', 'It means'], [
+${table(['You seeâ€¦', 'It means'], [
   ['<em>Sign in to respond to this form</em>', 'The executives required sign-in for this form. Sign in, then open it again.'],
   ['<em>This form is closed</em>', 'It stopped accepting responses, either manually or because its closing time passed.'],
   ['Your previous answers with an <strong>Edit response</strong> button', 'The form allows one response per person, and lets you edit yours after submitting.'],
@@ -196,7 +196,7 @@ ${note('Only the filling-in screen goes bare. A closed form, a form that needs y
 ${glance([['Address', 'nammeshub.com.ng/cbt'], ['Sign-in needed?', 'No'], ['Who it is for', 'Everyone'], ['Best for', 'Timing yourself before the real thing']])}
 <p>A <strong>CBT practice exam</strong> is a timed paper that behaves like the real thing: one paper, a countdown, and answers revealed only at the end. It is open to everyone and needs no account.</p>
 ${shot('cbt', 'The CBT practice list. Each row shows how long the paper is and what you need to pass.', { url: '/cbt' })}
-${shot('m-cbt', 'The same list on a phone, where the exam code box sits above it.', { url: '/cbt', phone: true, crop: 40 })}
+${shot('m-cbt', 'The same list on a phone, where the exam code box sits above it.', { url: '/cbt', phone: true })}
 
 <h2>Finding an exam</h2>
 ${steps([
@@ -218,7 +218,7 @@ ${bullets([
 ])}
 
 <h2>Sitting the paper</h2>
-${shot('cbt-exam', 'An exam in progress: the countdown, the question navigator on the right, and the flag button.', { url: '/cbt/…/exam' })}
+${shot('cbt-exam', 'An exam in progress: the countdown, the question navigator on the right, and the flag button.', { url: '/cbt/â€¦/exam' })}
 ${bullets([
   'The <strong>countdown</strong> is at the top. When it reaches zero the paper is submitted for you.',
   '<strong>Flag for review</strong> marks a question you want to come back to. The button then reads <em>Flagged</em>.',
@@ -293,7 +293,7 @@ ${steps(['Enter your <strong>name</strong> and <strong>email</strong>.', 'Write 
 ${shot('contact', 'The Contact page: a simple form on the left, direct routes and social links on the right.', { url: '/contact', crop: 84 })}
 
 <h2>Social media and the newsletter</h2>
-<p>The association's channels are shown as icons on the Contact page and in the footer of every page. Depending on what the executives have connected, these can include the <strong>WhatsApp community</strong>, <strong>X</strong>, <strong>Instagram</strong>, <strong>LinkedIn</strong> and <strong>YouTube</strong>. The <em>Stay Connected With Us</em> box in the footer lets you subscribe to the <strong>NAMMES Communiqué</strong> newsletter.</p>
+<p>The association's channels are shown as icons on the Contact page and in the footer of every page. Depending on what the executives have connected, these can include the <strong>WhatsApp community</strong>, <strong>X</strong>, <strong>Instagram</strong>, <strong>LinkedIn</strong> and <strong>YouTube</strong>. The <em>Stay Connected With Us</em> box in the footer lets you subscribe to the <strong>NAMMES CommuniquÃ©</strong> newsletter.</p>
 `,
   },
 ]
