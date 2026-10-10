@@ -46,6 +46,31 @@ const TEAM_ROW = 72
 const TEAMS_GAP = 12
 const MAX_TEAMS = 6
 
+const PODIUM_BASE = 700
+const PODIUM_WIDTH = 260
+const PODIUM_GAP = 24
+// A nickname is drawn centred on its own block, so its budget has to stay under the centre-to-centre distance
+// (PODIUM_WIDTH + PODIUM_GAP) or two names overlap. It used to be 190 against a 180 spacing.
+const PODIUM_NAME_WIDTH = 240
+
+// Where the three podium blocks sit, left to right, derived from the card width rather than written out by hand.
+// The hand-written version put them at 120/300/480: the group then spanned 120..680 on a 1080 card, so it sat
+// 140px left of centre, and the 180px spacing was narrower than the 190px a nickname could occupy, which is why
+// "Bisi_PrimeMide_DeltaMusa_Root" ran together. The renderer and its test both call this, so the geometry cannot
+// drift from the layout the way a constant duplicated in a test can.
+export function podiumLayout() {
+  const step = PODIUM_WIDTH + PODIUM_GAP
+  const left = (CARD_WIDTH - (3 * PODIUM_WIDTH + 2 * PODIUM_GAP)) / 2
+  return [
+    { place: 2, x: left, height: 150 },
+    { place: 1, x: left + step, height: 190 },
+    { place: 3, x: left + 2 * step, height: 130 },
+  ].map(({ place, x, height }) => ({ place, x, width: PODIUM_WIDTH, height, centre: x + PODIUM_WIDTH / 2, top: PODIUM_BASE - height }))
+}
+
+// The widest a podium nickname may be drawn before it can reach into the next block.
+export const PODIUM_TEXT_WIDTH = PODIUM_NAME_WIDTH
+
 // How many rows fit above the footer from this starting point. The renderer and its test both call this, so the cap
 // cannot drift from the layout the way a constant duplicated in a test can.
 export function rowsThatFit(from) {
@@ -248,24 +273,23 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams, loadBa
   ctx.fillText('Final results', CARD_WIDTH / 2, 230)
 
   // Podium three, tallest in the middle, matching the projector's FinishedScreen ordering.
-  const podium = [[1, 300, 190], [2, 120, 150], [3, 480, 130]]
-  for (const [place, x, height] of podium) {
+  for (const { place, x, width, height, centre, top } of podiumLayout()) {
     const p = rows[place - 1]
     ctx.fillStyle = place === 1 ? colors.accent : 'rgba(255,255,255,0.14)'
-    roundRect(ctx, x, 700 - height, 200, height, 16)
+    roundRect(ctx, x, top, width, height, 16)
     ctx.fill()
     ctx.fillStyle = place === 1 ? '#ffffff' : 'rgba(255,255,255,0.8)'
     ctx.font = 'bold 72px "Public Sans Bold"'
     ctx.textAlign = 'center'
-    ctx.fillText(String(place), x + 100, 700 - 24)
+    ctx.fillText(String(place), centre, PODIUM_BASE - 24)
     if (!p) continue
-    await drawCharacter(ctx, p.avatarId, x + 100, 700 - height - 100, 160, place === 1 ? 'dance' : 'happy')
+    await drawCharacter(ctx, p.avatarId, centre, top - 100, 160, place === 1 ? 'dance' : 'happy')
     ctx.fillStyle = '#ffffff'
-    fitFont(ctx, p.nickname, 190, 34)
-    ctx.fillText(p.nickname, x + 100, 740)
+    fitFont(ctx, p.nickname, PODIUM_TEXT_WIDTH, 34)
+    ctx.fillText(p.nickname, centre, 740)
     ctx.font = 'bold 30px "Public Sans Bold"'
     ctx.fillStyle = 'rgba(255,255,255,0.85)'
-    ctx.fillText(String(p.score), x + 100, 782)
+    ctx.fillText(String(p.score), centre, 782)
   }
 
   const shownTeams = (teams ?? []).slice(0, MAX_TEAMS)

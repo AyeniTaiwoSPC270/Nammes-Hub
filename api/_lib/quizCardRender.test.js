@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CARD } from './quizCard.js'
-import { renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit } from './quizCardRender.js'
+import { renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit, podiumLayout, PODIUM_TEXT_WIDTH, CARD_WIDTH } from './quizCardRender.js'
 import { contrastRatio, THEME_LOOKS } from './quizTheme.js'
 
 const QUIZ = { title: 'Naming Origins' }
@@ -103,6 +103,49 @@ describe('the board card layout', () => {
     const png = await renderBoardCard({ card: DEFAULT_CARD, theme: THEME, quiz: QUIZ, ranked: many, teams: [] })
     expect(isPng(png)).toBe(true)
     expect(many.length).toBeGreaterThan(rowsThatFit(850) + 3)
+  })
+})
+
+// The podium was drawn at hardcoded x values (120/300/480, every block 200 wide). On a 1080 card that put the
+// group at 120..680 — 140px left of centre — and left 180px between block centres while a nickname could be drawn
+// 190px wide, so neighbouring names overlapped into one unreadable run. Nothing in the returned buffer shows
+// either, so the geometry is checked through the same helper the renderer uses.
+describe('the podium layout', () => {
+  const blocks = podiumLayout()
+
+  it('centres the whole group on the card', () => {
+    const left = Math.min(...blocks.map((b) => b.x))
+    const right = Math.max(...blocks.map((b) => b.x + b.width))
+    expect((left + right) / 2).toBeCloseTo(CARD_WIDTH / 2, 5)
+  })
+
+  it('puts the winner in the middle block, tallest', () => {
+    const middle = blocks[1]
+    expect(middle.place).toBe(1)
+    expect(middle.height).toBe(Math.max(...blocks.map((b) => b.height)))
+    expect(blocks.map((b) => b.place)).toEqual([2, 1, 3])
+  })
+
+  it('leaves a real gap between blocks rather than butting them together', () => {
+    for (let i = 1; i < blocks.length; i += 1) {
+      expect(blocks[i].x - (blocks[i - 1].x + blocks[i - 1].width)).toBeGreaterThan(0)
+    }
+  })
+
+  it('gives a nickname less room than the distance to the next centre, so two names cannot overlap', () => {
+    const spacing = blocks[1].centre - blocks[0].centre
+    expect(PODIUM_TEXT_WIDTH).toBeLessThan(spacing)
+  })
+
+  it('keeps every block on the card', () => {
+    for (const b of blocks) {
+      expect(b.x).toBeGreaterThanOrEqual(0)
+      expect(b.x + b.width).toBeLessThanOrEqual(CARD_WIDTH)
+    }
+  })
+
+  it('stands every block on the same baseline, which is what makes it a podium', () => {
+    for (const b of blocks) expect(b.top + b.height).toBe(blocks[0].top + blocks[0].height)
   })
 })
 
