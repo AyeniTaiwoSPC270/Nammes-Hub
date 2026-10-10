@@ -1,6 +1,6 @@
-import { tip, note, warn, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
+﻿import { tip, note, warn, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
 
-export const PART_2 = 'Part Two · Academics'
+export const PART_2 = 'Part Two Â· Academics'
 
 export const chapters = [
   /* ------------------------------------------------------------------ 5 */
@@ -46,7 +46,7 @@ ${bullets([
   '<strong>Ring today&rsquo;s date</strong> draws a ring around the current day so you cannot lose your place.',
   'An empty month says <em>Nothing scheduled in [month]</em>. A month hidden by your filters says <em>This month is filtered out</em> &mdash; two different sentences for two different reasons.',
 ])}
-${shot('m-calendar', 'The calendar on a phone, in agenda view.', { url: '/calendar', phone: true, crop: 40 })}
+${shot('m-calendar', 'The calendar on a phone, in agenda view.', { url: '/calendar', phone: true })}
 
 <h2>Email reminders</h2>
 <p>Executives can set a reminder for each date &mdash; seven days before an exam, one day before registration reopens, and so on. If you have <strong>email notifications</strong> switched on in your Account settings, the Hub emails you that many days beforehand. Nothing is sent for an item with no date set, and every reminder is sent once per date.</p>
@@ -71,9 +71,9 @@ ${note('An outline tells you what a course covers. To find out <em>when</em> the
 
 <h2>Finding a course</h2>
 <p>Outlines are organised as a three-step drill-down: <strong>level</strong>, then <strong>semester</strong>, then <strong>course</strong>.</p>
-<div class="flow"><span class="node">Pick a level (100–500)</span><span class="arrow">›</span><span class="node">Pick a semester</span><span class="arrow">›</span><span class="node">Pick a course</span><span class="arrow">›</span><span class="node o">Read the outline</span></div>
+<div class="flow"><span class="node">Pick a level (100â€“500)</span><span class="arrow">â€º</span><span class="node">Pick a semester</span><span class="arrow">â€º</span><span class="node">Pick a course</span><span class="arrow">â€º</span><span class="node o">Read the outline</span></div>
 ${steps([
-  'Open <strong>Academics → Outlines</strong> and choose your level under <em>Select Level</em>.',
+  'Open <strong>Academics â†’ Outlines</strong> and choose your level under <em>Select Level</em>.',
   'Choose <strong>First Semester</strong> or <strong>Second Semester</strong>.',
   'A table lists every course with its <strong>code</strong>, <strong>title</strong>, <strong>units</strong> and a <strong>status</strong>: <strong>C</strong> means compulsory and <strong>E</strong> means elective, so you can tell which courses you must take. Type in the <em>search box</em> to filter by code or title.',
   'Choose <strong>View outline</strong> next to the course you want.',
@@ -147,14 +147,14 @@ ${tip('Curriculum answers "what does the whole degree look like?". Outlines answ
     html: `
 <h2 class="first">Open your timetable</h2>
 ${glance([['Address', 'nammeshub.com.ng/timetable'], ['Sign-in needed?', 'No'], ['Who it is for', 'Every student'], ['Best for', 'Planning your week and exam period']])}
-<p>Open <strong>Academics → Timetable</strong> and pick your level. The page for that level always follows the same simple controls.</p>
+<p>Open <strong>Academics â†’ Timetable</strong> and pick your level. The page for that level always follows the same simple controls.</p>
 ${shot('timetable-level', 'The timetable controls: semester, class or exam, and a day filter. This example is a level with nothing published yet.', { url: '/timetable/100' })}
 
 <h2>The three controls</h2>
 ${table(['Control', 'Options', 'What it does'], [
-  ['Semester', 'First Semester · Second Semester', 'Switches between the two semesters of the session.'],
-  ['Type', 'Class Timetable · Exam Timetable', 'Shows weekly lectures, or the dated exam schedule.'],
-  ['Day', 'All · Mon · Tue · Wed · Thu · Fri', 'Narrows the <em>class</em> timetable to a single day of the week. It is hidden on the exam timetable.'],
+  ['Semester', 'First Semester Â· Second Semester', 'Switches between the two semesters of the session.'],
+  ['Type', 'Class Timetable Â· Exam Timetable', 'Shows weekly lectures, or the dated exam schedule.'],
+  ['Day', 'All Â· Mon Â· Tue Â· Wed Â· Thu Â· Fri', 'Narrows the <em>class</em> timetable to a single day of the week. It is hidden on the exam timetable.'],
 ])}
 <p>The schedule is a table. Each row shows the <strong>time</strong> (start to end), the <strong>course code and title</strong>, the <strong>venue</strong>, and, where it applies, the <strong>lecturer</strong> and a short note such as <em>Practical Lab</em> or <em>Tutorial</em>. Class rows are sorted by day and time; the exam timetable is sorted by exam date.</p>
 ${note('If you see <em>"No timetable published yet"</em>, the executives simply have not added it. Check back soon. If a day has no lectures you will see <em>"No entries for this day"</em>.')}
@@ -183,8 +183,8 @@ ${tip('Download the <strong>image</strong> version and set it as your lock-scree
 ${glance([['Address', 'nammeshub.com.ng/cgpa'], ['Sign-in needed?', 'Yes, so your grades follow you across devices'], ['Who it is for', 'Every student'], ['Best for', 'Tracking progress and setting targets']])}
 <p>Your grades are saved to your account, so they are there whichever phone or computer you sign in on. The calculator uses the standard <strong>5-point scale</strong>:</p>
 ${table(['Grade', 'A', 'B', 'C', 'D', 'E', 'F'], [['Points', '5', '4', '3', '2', '1', '0']])}
-<p><strong>GPA</strong> for a semester = total points ÷ total units, where each course's points are its grade points × its units. <strong>CGPA</strong> is the same calculation across every semester together. Your CGPA is then matched to a class of degree:</p>
-${table(['CGPA', 'Classification'], [['4.50 – 5.00', 'First Class'], ['3.50 – 4.49', 'Second Class Upper'], ['2.40 – 3.49', 'Second Class Lower'], ['1.50 – 2.39', 'Third Class'], ['1.00 – 1.49', 'Pass'], ['Below 1.00', 'Below Pass']])}
+<p><strong>GPA</strong> for a semester = total points Ã· total units, where each course's points are its grade points Ã— its units. <strong>CGPA</strong> is the same calculation across every semester together. Your CGPA is then matched to a class of degree:</p>
+${table(['CGPA', 'Classification'], [['4.50 â€“ 5.00', 'First Class'], ['3.50 â€“ 4.49', 'Second Class Upper'], ['2.40 â€“ 3.49', 'Second Class Lower'], ['1.50 â€“ 2.39', 'Third Class'], ['1.00 â€“ 1.49', 'Pass'], ['Below 1.00', 'Below Pass']])}
 
 <h2>Adding semesters and courses</h2>
 ${shot('cgpa', 'Signed-out visitors see this. Sign in to open your academic record.', { url: '/cgpa', narrow: true })}
@@ -226,7 +226,7 @@ ${shot('resources', 'Choose your level to begin.', { url: '/resources', narrow: 
 ${shot('resources-list', 'Each row shows a category, a title, when it was updated, and an Open link.', { url: '/resources/100/1' })}
 
 <h2>What you will find</h2>
-${table(['Column', 'Meaning'], [['Category', 'The kind of material, for example <em>Slides &amp; Notes</em>.'], ['Title', 'A clear name, such as "100L First Semester – Slides &amp; Notes".'], ['Updated', 'When the executives last refreshed the link.'], ['Action', '<strong>Open</strong> takes you to the shared Google Drive folder or file.']])}
+${table(['Column', 'Meaning'], [['Category', 'The kind of material, for example <em>Slides &amp; Notes</em>.'], ['Title', 'A clear name, such as "100L First Semester â€“ Slides &amp; Notes".'], ['Updated', 'When the executives last refreshed the link.'], ['Action', '<strong>Open</strong> takes you to the shared Google Drive folder or file.']])}
 <p>If a level and semester show <em>"No resources published yet"</em>, nothing has been added for it so far.</p>
 
 <h2>Using Drive links politely</h2>

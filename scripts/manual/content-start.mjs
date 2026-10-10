@@ -1,6 +1,6 @@
-import { SITE, tip, note, warn, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
+﻿import { SITE, tip, note, warn, glance, steps, bullets, table, pills, shot, path, qa } from './helpers.mjs'
 
-export const PART_1 = 'Part One · Getting Started'
+export const PART_1 = 'Part One Â· Getting Started'
 
 export const chapters = [
   /* ------------------------------------------------------------------ 1 */
@@ -65,7 +65,7 @@ ${tip('On a phone, use your browser\'s <strong>Add to Home screen</strong> optio
 
 <h2>What works without an account</h2>
 <p>Most of the Hub is open to everyone. You only need an account for things that are personal to you or need to be fair (one vote each, your own grades).</p>
-${table(['You can…', 'Without an account', 'With an account'], [
+${table(['You canâ€¦', 'Without an account', 'With an account'], [
   ['Read outlines, timetables, resources, events, news and opportunities', 'Yes', 'Yes'],
   ['Meet the excos and send a contact message', 'Yes', 'Yes'],
   ['Fill in a form', 'Only forms that do not ask for sign-in', 'Every open form'],
@@ -129,7 +129,7 @@ ${note('When you are signed in, the account button becomes your <strong>account 
 <div class="side">
   ${shot('m-menu', 'The phone menu: one card per menu, each with its pages listed inside.', { phone: true })}
   <div>
-    <p>On a narrow screen the menus collapse into the <strong>☰ menu button</strong> at the top right. Tap it and the whole map appears as a stack of <strong>cards</strong>, one for each menu, with an icon and every page listed underneath: <em>General</em>, <em>Academics</em>, <em>Community</em>, <em>Practice</em> and <em>Support</em>.</p>
+    <p>On a narrow screen the menus collapse into the <strong>â˜° menu button</strong> at the top right. Tap it and the whole map appears as a stack of <strong>cards</strong>, one for each menu, with an icon and every page listed underneath: <em>General</em>, <em>Academics</em>, <em>Community</em>, <em>Practice</em> and <em>Support</em>.</p>
     <p>Below the cards is an <strong>Account</strong> card with your <em>Sign in</em> button, and once you are signed in, links to your Account page, the Admin area (if you are an admin) and <em>Sign out</em>.</p>
     <p>Tap a page to go there; the menu closes by itself. You can also press <strong>Esc</strong> or tap the button again to close it.</p>
     ${tip('The sun/moon button sits right next to the menu button, so you can switch to dark mode at night without opening the menu.')}
@@ -141,9 +141,9 @@ ${note('When you are signed in, the account button becomes your <strong>account 
 
 <h2>Breadcrumbs, footer and the welcome tour</h2>
 <h3>Breadcrumbs</h3>
-<p>On pages that go several levels deep (Outlines, Resources, Timetable, Events, News) a trail such as <span class="path">Outlines › 100 Level › First Semester</span> appears above the title. Every part of the trail is clickable, so you can step back up one level at a time.</p>
+<p>On pages that go several levels deep (Outlines, Resources, Timetable, Events, News) a trail such as <span class="path">Outlines â€º 100 Level â€º First Semester</span> appears above the title. Every part of the trail is clickable, so you can step back up one level at a time.</p>
 <h3>The footer</h3>
-<p>The dark green strip at the bottom of every page has, from top to bottom: a <em>Reach an Exco</em> link, the <strong>newsletter sign-up</strong> (the NAMMES Communiqué on Substack), the association's <strong>social media icons</strong>, a short list of quick links, and the handbook download.</p>
+<p>The dark green strip at the bottom of every page has, from top to bottom: a <em>Reach an Exco</em> link, the <strong>newsletter sign-up</strong> (the NAMMES CommuniquÃ© on Substack), the association's <strong>social media icons</strong>, a short list of quick links, and the handbook download.</p>
 <p>The footer's <strong>Explore</strong> column lists the same pages as the menus, so you can reach the <strong>Calendar</strong>, <strong>Quizzes &amp; battles</strong> and <strong>CBT practice</strong> from the bottom of any page. The footer names them slightly differently from the menus: it says <em>Quizzes &amp; battles</em> where the menu says <em>Quizzes and battles</em>.</p>
 <h3>The welcome tour</h3>
 <p>The first time you sign in, a short tour introduces the <strong>Academics</strong> menu, the <strong>Community</strong> menu and your <strong>Account</strong> in three quick steps. It only appears once per account on each device, and <em>Skip</em> dismisses it for good.</p>
@@ -153,7 +153,7 @@ ${note('If a small message says a new version of the site is available, choose <
 <p>Three screens stand between you and a page you were trying to read. None of them means you have done anything wrong.</p>
 <h3>No connection</h3>
 <p>If your device cannot reach the Hub, a full-screen green page says <em>You&rsquo;re offline</em> and <em>We can&rsquo;t reach NAMMES Hub</em>, with a <span class="btn">Try again</span> button. Nothing you have saved is lost.</p>
-${shot('offline', 'The offline screen. The Hub checks your connection every few seconds and brings the page back by itself.', { url: 'nammeshub.com.ng/offline', crop: 42 })}
+${shot('offline', 'The offline screen. The Hub checks your connection every few seconds and brings the page back by itself.', { url: 'nammeshub.com.ng/offline' })}
 ${note('The Hub checks whether the site is really reachable rather than trusting your device\'s own signal, so a dead router or a captive wifi portal is caught too. A page that is merely slow is left alone rather than replaced by this screen.')}
 <h3>Maintenance</h3>
 <p>Occasionally the executives switch the Hub into <strong>maintenance mode</strong> while they make big changes. Visitors then see a green <em>We&rsquo;ll be right back</em> page with a contact email; admins can still sign in and work.</p>
@@ -194,7 +194,7 @@ ${steps([
   'Open the email, click the link, and choose a <strong>new password</strong> of at least 8 characters.',
   'You are sent back to Sign In with a confirmation. Sign in with the new password.',
 ])}
-${shot('forgot', 'The Forgot password page. You need only the email you signed up with.', { url: '/forgot-password', crop: 40 })}
+${shot('forgot', 'The Forgot password page. You need only the email you signed up with.', { url: '/forgot-password' })}
 ${note('The reset link works once and expires. If it has gone stale, ask for another from the same page rather than searching your inbox for the old one.')}
 ${note('Admins who have switched on two-factor login are also asked for a 6-digit code from their authenticator app after their password. See Chapter 27.')}
 
