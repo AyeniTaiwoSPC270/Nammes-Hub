@@ -850,12 +850,15 @@ function FinishedScreen({ title, sessionId, players, teams, scoring, bracket }) 
         {PODIUM.map(({ place, height, block, delay }) => {
           const p = byPlace(place)
           return (
-            <div key={place} className="flex flex-1 flex-col items-center">
+            // min-w-0 is load-bearing: a flex item defaults to min-width auto, so one long nickname would
+            // otherwise set a min-content floor, the columns would refuse to shrink, and the row would
+            // overflow its max-w-3xl box — names colliding and the podium sliding off-centre.
+            <div key={place} className="flex min-w-0 flex-1 flex-col items-center">
               {p && (
-                <div className="qz-rise mb-3 flex flex-col items-center gap-2 text-center" style={{ animationDelay: `${delay + 500}ms` }}>
+                <div className="qz-rise mb-3 flex w-full min-w-0 flex-col items-center gap-2 text-center" style={{ animationDelay: `${delay + 500}ms` }}>
                   {place === 1 && <span className="qz-float text-5xl" aria-hidden="true">👑</span>}
                   <Avatar name={p.nickname} avatarId={p.avatar_id} mood={place === 1 ? 'dance' : 'happy'} className={place === 1 ? 'h-28 w-28' : 'h-20 w-20'} />
-                  <span className={`max-w-full truncate font-bold ${place === 1 ? 'text-3xl' : 'text-xl'}`}>{p.nickname}</span>
+                  <span className={`w-full truncate font-bold ${place === 1 ? 'text-3xl' : 'text-xl'}`}>{p.nickname}</span>
                 </div>
               )}
               <div
