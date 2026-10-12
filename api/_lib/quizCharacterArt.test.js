@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { h, toSvg } from './quizCharacterArt.js'
+import {
+  h, toSvg,
+  BUILTIN_COUNT, avatarInfo, normalizeAvatarId, BODIES, TOPPERS, EYES, MOUTHS, ACCESSORIES, PROPS,
+  IDLE_MOVES, WIN_MOVES, SAD_MOVES, HELLO_MOVES,
+} from './quizCharacterArt.js'
+
+const all = Array.from({ length: BUILTIN_COUNT }, (_, id) => avatarInfo(id))
+const HATS = ['cap', 'chef', 'beanie', 'gradcap', 'partyhat', 'crown']
+const TALL_TOPPERS = ['bunny', 'horns', 'antenna', 'bugs', 'sprout', 'spikes', 'tuft', 'halo', 'cat']
 
 describe('h and toSvg', () => {
   it('writes a tag, its attributes and its closing tag', () => {
@@ -30,5 +38,62 @@ describe('h and toSvg', () => {
       .toBe('<text font-family="Georgia, &#x27;Times New Roman&#x27;, serif"></text>')
     expect(toSvg(h('text', { title: 'a & b < c > d " e' })))
       .toBe('<text title="a &amp; b &lt; c &gt; d &quot; e"></text>')
+  })
+})
+
+describe('the 50 characters', () => {
+  it('has exactly 50', () => {
+    expect(BUILTIN_COUNT).toBe(50)
+  })
+
+  it('gives every character its own name', () => {
+    expect(new Set(all.map((c) => c.name)).size).toBe(50)
+  })
+
+  it('gives every character its own colour', () => {
+    expect(new Set(all.map((c) => c.color.main)).size).toBe(50)
+  })
+
+  it('never repeats a body with the same headpiece', () => {
+    expect(new Set(all.map((c) => `${c.body}/${c.topper}`)).size).toBe(50)
+  })
+
+  it('never repeats a full look (body, headpiece, face, outfit, prop and colour)', () => {
+    const looks = new Set(all.map((c) => [c.body, c.topper, c.eyes, c.mouth, c.accessory, c.prop, c.color.main].join('|')))
+    expect(looks.size).toBe(50)
+  })
+
+  it('never repeats how a character idles and celebrates', () => {
+    expect(new Set(all.map((c) => `${c.idle}/${c.win}`)).size).toBe(50)
+  })
+
+  it('gives every character its own set of moves (idle, win and hello together with its sad move)', () => {
+    expect(new Set(all.map((c) => `${c.idle}/${c.win}/${c.hello}/${c.sad}`)).size).toBe(50)
+  })
+
+  // One direction only. The original test also asserted that every part in every list is used by one of the 50, which
+  // stopped a part being added to a list and never drawn. The drawer is now bigger than the roster — a quiz's own
+  // characters use parts the 50 never touch — so that direction no longer holds. The other half of it, "every part in a
+  // list draws", lives in the drawer tests above and below, which is where a new part can actually be forgotten.
+  it('uses only parts that are in the lists', () => {
+    const lists = { body: BODIES, topper: TOPPERS, eyes: EYES, mouth: MOUTHS, accessory: ACCESSORIES, prop: PROPS, idle: IDLE_MOVES, win: WIN_MOVES, sad: SAD_MOVES, hello: HELLO_MOVES }
+    for (const [key, list] of Object.entries(lists)) {
+      for (const value of new Set(all.map((c) => c[key]))) expect(list, `${key}: ${value}`).toContain(value)
+    }
+  })
+
+  it('keeps hats off characters with a tall headpiece', () => {
+    for (const c of all) {
+      if (HATS.includes(c.accessory)) expect(TALL_TOPPERS, `${c.name} wears a hat over ${c.topper}`).not.toContain(c.topper)
+    }
+  })
+
+  it('describes the moves in words', () => {
+    for (const c of all) for (const text of Object.values(c.moves)) expect(text.length).toBeGreaterThan(2)
+  })
+
+  it('falls back to the first character for a bad id', () => {
+    for (const bad of [-1, 50, 2.5, null, undefined, '7']) expect(normalizeAvatarId(bad)).toBe(0)
+    expect(avatarInfo(99).name).toBe(avatarInfo(0).name)
   })
 })
