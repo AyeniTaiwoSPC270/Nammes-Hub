@@ -1,8 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CARD, encodeCardPreview, decodeCardPreview, sanitizeCard } from './quizCard.js'
+import { DEFAULT_CARD, encodeCardPreview, decodeCardPreview, sanitizeCard, encodeThemePreview, decodeThemePreview, PREVIEW_THEME_KEYS } from './quizCard.js'
+import { THEME_PATTERNS, PATTERN_GLYPHS, PATTERN_GEOMETRY, PATTERN_UNDRAWN } from './quizTheme.js'
 
 const QUIZ = '11111111-1111-4111-8111-111111111111'
 const OTHER = '22222222-2222-4222-8222-222222222222'
+
+describe('the card backdrop', () => {
+  it('follows the game unless told otherwise, and null has to survive as null', () => {
+    // The one place in the card where null is a real value rather than a missing one: "same as the game" is the default,
+    // so a pattern with nothing set must not be handed a name it did not ask for.
+    expect(sanitizeCard({}).pattern).toBeNull()
+    expect(sanitizeCard({ pattern: 'stars' }).pattern).toBe('stars')
+    for (const bad of ['', 'nope', '__proto__', 'constructor', 5, [], {}]) {
+      expect(sanitizeCard({ pattern: bad }).pattern, String(bad)).toBeNull()
+    }
+  })
+  it('only offers a pattern the renderer knows how to draw', () => {
+    // A card naming a pattern no renderer draws would be a blank card rather than a wrong one, and nothing else would
+    // say so: the image still renders, just without a backdrop.
+    for (const key of Object.keys(THEME_PATTERNS)) {
+      expect(sanitizeCard({ pattern: key }).pattern, key).toBe(key)
+      // 'image' and 'none' have nothing to draw by design — one paints a photograph, the other nothing.
+      if (PATTERN_UNDRAWN.includes(key)) continue
+      expect(PATTERN_GLYPHS[key] ?? PATTERN_GEOMETRY[key], `${key} has nothing to draw`).toBeTruthy()
+    }
+  })
+  it('takes a background colour by the same rule as the accent', () => {
+    expect(DEFAULT_CARD.backgroundColor).toBeNull()
+    expect(sanitizeCard({ backgroundColor: '#3B0764' }).backgroundColor).toBe('#3b0764')
+    for (const bad of ['red', '#fff', 'rgb(0,0,0)', '#000000;}', 12, null]) {
+      expect(sanitizeCard({ backgroundColor: bad }).backgroundColor, String(bad)).toBeNull()
+    }
+  })
+  it('carries the backdrop theme fragment on the preview url, and only six fields of it', () => {
+    // Six fields because the preview endpoint renders a card, not a screen: sponsors, sound and picture paths would make
+    // the url unusable, and the cap is shared with the card draft beside it.
+    expect(PREVIEW_THEME_KEYS).toEqual(['look', 'accent', 'page', 'pattern', 'backdropOpacity', 'backdropScale'])
+    const back = decodeThemePreview(encodeThemePreview({ look: 'ocean', accent: '#123456', pattern: 'rings', headline: 'x'.repeat(60), sponsor: 'nope' }))
+    expect(back).toMatchObject({ look: 'ocean', accent: '#123456', pattern: 'rings', headline: '' })
+  })
+  it('refuses a theme fragment that is junk, hostile or oversized rather than throwing on it', () => {
+    for (const bad of [null, undefined, 5, '', 'not base64 $$', 'x'.repeat(800)]) {
+      expect(decodeThemePreview(bad), String(bad)).toBeNull()
+    }
+    expect(decodeThemePreview(encodeThemePreview({ accent: 'red;background:url(x)', pattern: 'nope' }))).toMatchObject({ accent: null, pattern: 'math' })
+  })
+  it('keeps the whole preview url inside its cap with both payloads on it', () => {
+    const theme = encodeThemePreview({ look: 'ocean', accent: '#123456', page: '#3b0764', pattern: 'rings', backdropOpacity: 80, backdropScale: 150 })
+    const card = encodeCardPreview({ ...DEFAULT_CARD, accent: '#abcdef', pattern: 'hexagons', backgroundColor: '#3b0764' }, { quizId: QUIZ })
+    expect(theme.length + card.length).toBeLessThanOrEqual(700)
+  })
+})
 
 describe('sanitizeCard', () => {
   it('fills in every default from an empty object', () => {

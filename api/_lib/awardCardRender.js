@@ -1,17 +1,5 @@
-import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-let fontsRegistered = false
-function ensureFonts() {
-  if (fontsRegistered) return
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/PlayfairDisplay-Bold.ttf'), 'Playfair Display')
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/PublicSans-Regular.ttf'), 'Public Sans')
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/PublicSans-Bold.ttf'), 'Public Sans Bold')
-  fontsRegistered = true
-}
+import { createCanvas, loadImage } from '@napi-rs/canvas'
+import { ensureFonts } from './fonts.js'
 
 const WIDTH = 1080
 const HEIGHT = 1350

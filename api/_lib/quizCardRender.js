@@ -1,9 +1,8 @@
-import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createCanvas, loadImage, Path2D } from '@napi-rs/canvas'
 import { characterSvg } from './characterSvg.js'
 import { sanitizeCard } from './quizCard.js'
-import { sanitizeTheme, contrastRatio, THEME_LOOKS } from './quizTheme.js'
+import { sanitizeTheme, contrastRatio, THEME_LOOKS, PATTERN_GLYPHS, PATTERN_GEOMETRY } from './quizTheme.js'
+import { ensureFonts } from './fonts.js'
 
 // The result cards: one shared 1080x1920 story layout per variant, drawn with @napi-rs/canvas exactly the way
 // api/_lib/awardCardRender.js draws the award cards. Like that file, this is server-only: it reads node:path and
@@ -13,25 +12,10 @@ import { sanitizeTheme, contrastRatio, THEME_LOOKS } from './quizTheme.js'
 export const CARD_WIDTH = 1080
 export const CARD_HEIGHT = 1920
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-let fontsRegistered = false
-function ensureFonts() {
-  if (fontsRegistered) return
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/PlayfairDisplay-Bold.ttf'), 'Playfair Display')
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/PublicSans-Regular.ttf'), 'Public Sans')
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/PublicSans-Bold.ttf'), 'Public Sans Bold')
-  // The maths backdrop needs glyphs the two Public Sans faces do not carry (pi, sigma, root, infinity).
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/DejaVuSans.ttf'), 'DejaVu Sans')
-  GlobalFonts.registerFromPath(path.join(__dirname, 'fonts/DejaVuSans-Bold.ttf'), 'DejaVu Sans Bold')
-  fontsRegistered = true
-}
-
 const GOLD = '#e9b64f'
 const GOLD_LIGHT = '#f7dfa0'
 const SILVER = '#c7ccd1'
 const BRONZE = '#b07a3c'
-const QUIZ_GLYPHS = ['π', 'Σ', '∫', '√', 'Δ', 'λ', 'θ', '∞', '≈', '±']
 
 export const FOOTER_TOP = CARD_HEIGHT - 110
 const ROW_TOP = 850
@@ -102,15 +86,22 @@ function fitFont(ctx, text, maxWidth, startSize, family = 'Public Sans Bold') {
 
 // The card's palette: the studio's own choice first, then the theme's accent, then the look's own accent. The same
 // precedence themeAccent uses, so a card never disagrees with the screens it was shared from.
+//
+// A colour of the admin's own replaces both ends of the scheme's gradient, which flattens the fill. The contrast check
+// then runs against *that* colour rather than the scheme's, so an accent that would be muddy on it still falls back to
+// white instead of printing an unreadable score.
 function palette(card, theme) {
   const t = sanitizeTheme(theme)
   const look = THEME_LOOKS[t.look]
   const accent = card.accent ?? t.accent ?? look.accent
+  const flat = card.backgroundColor ?? null
+  const deepA = flat ?? look.deep[0]
+  const deepB = flat ?? look.deep[1]
   // Several looks are close in tone to their own background (mono grey on near-black, forest green on dark green),
   // and the live screens never notice because they put white text *on* an accent. The card does the opposite, so it
   // has to check: an accent too close to the background falls back to white rather than rendering a muddy score.
-  const onBackground = contrastRatio(accent, look.deep[1]) >= 3 ? accent : '#ffffff'
-  return { accent, onBackground, deepA: look.deep[0], deepB: look.deep[1] }
+  const onBackground = contrastRatio(accent, deepB) >= 3 ? accent : '#ffffff'
+  return { accent, onBackground, deepA, deepB }
 }
 
 // Passed in rather than held in module state: a serverless instance is reused across requests, so a module-level
@@ -118,12 +109,34 @@ function palette(card, theme) {
 // their own and never do.
 const NO_BACKGROUND = async () => null
 
-async function drawBackdrop(ctx, card, theme, colors, loadBackground) {
+// The card is 1080x1920 and the screens are a browser window, so a pattern's measurements are scaled rather than copied:
+// the shared table holds the proportions in the browser's reference pixels, and this is the factor that turns them into
+// card pixels. Derived from the width so a pattern added later needs no second constant here.
+const CARD_UNIT = CARD_WIDTH / 1080
+
+function scatter(count, cell, unit) {
+  return Array.from({ length: count }, (_, i) => ({
+    left: ((i * cell + 8) % 92) / 100,
+    top: ((i * cell * 1.4 + 5) % 90) / 100,
+    size: 28 + ((i * 17) % 44),
+    rotate: ((i * 41) % 50) - 25,
+  })).map((p) => ({ ...p, x: p.left * CARD_WIDTH, y: p.top * CARD_HEIGHT, size: p.size * unit }))
+}
+
+// Exported so a test can paint the backdrop on its own canvas. Rendering a whole card to check that a pattern draws
+// something means rendering a React character tree thirty times over, which is minutes of suite time for a question that
+// is only about the bottom layer.
+export async function drawBackdrop(ctx, card, theme, colors = palette(card, theme), loadBackground = NO_BACKGROUND) {
   const t = sanitizeTheme(theme)
-  const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT)
-  bg.addColorStop(0, colors.deepA)
-  bg.addColorStop(1, colors.deepB)
-  ctx.fillStyle = bg
+  const flat = card.backgroundColor ?? null
+  if (flat) {
+    ctx.fillStyle = flat
+  } else {
+    const bg = ctx.createLinearGradient(0, 0, CARD_WIDTH, CARD_HEIGHT)
+    bg.addColorStop(0, colors.deepA)
+    bg.addColorStop(1, colors.deepB)
+    ctx.fillStyle = bg
+  }
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT)
 
   // A background picture replaces the pattern rather than sitting under it: two busy layers read as noise.
@@ -131,10 +144,32 @@ async function drawBackdrop(ctx, card, theme, colors, loadBackground) {
   if (buffer) {
     try {
       const image = await loadImage(buffer)
-      const scale = Math.max(CARD_WIDTH / image.width, CARD_HEIGHT / image.height)
       ctx.save()
-      ctx.globalAlpha = 0.45
-      ctx.drawImage(image, (CARD_WIDTH - image.width * scale) / 2, (CARD_HEIGHT - image.height * scale) / 2, image.width * scale, image.height * scale)
+      ctx.globalAlpha = 0.45 * (1 - t.backdropDim / 100)
+      // BackdropFit scales the picture to meet the card's edges: "cover" fills and crops, "contain" shows the whole
+      // picture and leaves the background in the gaps, "stretch" fills and distorts. The default, "cover", matches the
+      // browser (CSS object-cover) and keeps the admin's crop choice from changing between device and card.
+      const w = image.width
+      const h = image.height
+      const fit = t.backdropFit ?? 'cover'
+      let sx = w, sy = h, dx = 0, dy = 0
+      if (fit === 'stretch') {
+        sx = CARD_WIDTH
+        sy = CARD_HEIGHT
+      } else if (fit === 'contain') {
+        const scale = Math.min(CARD_WIDTH / w, CARD_HEIGHT / h)
+        sx = w * scale
+        sy = h * scale
+        dx = (CARD_WIDTH - sx) / 2
+        dy = (CARD_HEIGHT - sy) / 2
+      } else {
+        const scale = Math.max(CARD_WIDTH / w, CARD_HEIGHT / h)
+        sx = w * scale
+        sy = h * scale
+        dx = (CARD_WIDTH - sx) / 2
+        dy = (CARD_HEIGHT - sy) / 2
+      }
+      ctx.drawImage(image, dx, dy, sx, sy)
       ctx.restore()
       return
     } catch {
@@ -142,17 +177,165 @@ async function drawBackdrop(ctx, card, theme, colors, loadBackground) {
     }
   }
 
-  // The pattern is drawn faint, the way QuizBackdrop draws it behind the live screens.
+  drawPattern(ctx, card, t, colors)
+}
+
+// The card's own pattern wins, then whatever the game is using, then maths. Drawn faint, the way QuizBackdrop draws it
+// behind the live screens, and through a canvas filter so blur and dim — which were dead server-side until now — apply
+// here too rather than only on the screens.
+function drawPattern(ctx, card, t, colors) {
+  const chosen = card.pattern ?? t.pattern ?? 'math'
+  const unit = CARD_UNIT * (t.backdropScale / 100)
+
+  // Drawn on their own layer and composited once, rather than filtering every mark as it is made. Setting ctx.filter and
+  // then issuing a few thousand draw calls pushes each one through the filter pipeline: measured at over two minutes for
+  // one card. Blurring the finished layer is a single filtered drawImage and costs about 13ms.
+  const layer = createCanvas(CARD_WIDTH, CARD_HEIGHT)
+  const pen = layer.getContext('2d')
+  pen.globalAlpha = Math.max(0.04, t.backdropOpacity / 100)
+  pen.strokeStyle = colors.accent
+  pen.fillStyle = colors.accent
+  pen.lineWidth = Math.max(1, 1.5 * unit)
+
+  if (PATTERN_GLYPHS[chosen]) {
+    // Glyph patterns tile by row rather than scatter: on a fixed grid every one of them reads as wallpaper, which is what
+    // a backdrop is for, and the maths backdrop has always been drawn this way.
+    const glyphs = PATTERN_GLYPHS[chosen]
+    pen.font = `bold ${Math.round(64 * unit)}px "DejaVu Sans"`
+    const pitch = 130 * unit
+    for (let row = 0; row * pitch < CARD_HEIGHT + pitch; row++) {
+      for (let col = 0; col * pitch < CARD_WIDTH + pitch; col++) {
+        pen.fillText(glyphs[(row * 7 + col * 3) % glyphs.length], col * pitch + (row % 2 ? pitch / 2 : 0) - 20 * unit, row * pitch + 40 * unit)
+      }
+    }
+    composite(ctx, layer, t)
+    return
+  }
+
+  const shape = PATTERN_GEOMETRY[chosen]
+  if (!shape) return
+
+  if (chosen === 'dots') {
+    const pitch = shape.cell * unit
+    for (let y = 0; y * pitch < CARD_HEIGHT + pitch; y++) {
+      for (let x = 0; x * pitch < CARD_WIDTH + pitch; x++) {
+        pen.beginPath()
+        pen.arc(x * pitch, y * pitch, shape.dot * unit, 0, Math.PI * 2)
+        pen.fill()
+      }
+    }
+  } else if (chosen === 'grid' || chosen === 'stripes') {
+    const width = (chosen === 'grid' ? shape.stroke : shape.width) * unit
+    const step = (chosen === 'grid' ? shape.cell : shape.width + shape.gap) * unit
+    pen.save()
+    if (chosen === 'stripes') {
+      // Rotating about the centre is cheaper than working out which diagonal stripes cross each edge.
+      pen.translate(CARD_WIDTH / 2, CARD_HEIGHT / 2)
+      pen.rotate((shape.angle * Math.PI) / 180)
+      const reach = Math.hypot(CARD_WIDTH, CARD_HEIGHT)
+      for (let x = -reach; x < reach; x += step) pen.fillRect(x, -reach, width, reach * 2)
+    } else {
+      const pitch = shape.cell * unit
+      for (let x = 0; x < CARD_WIDTH + pitch; x += pitch) pen.fillRect(x, 0, width, CARD_HEIGHT)
+      for (let y = 0; y < CARD_HEIGHT + pitch; y += pitch) pen.fillRect(0, y, CARD_WIDTH, width)
+    }
+    pen.restore()
+  } else if (chosen === 'waves') {
+    // The same path the screens draw, repeated up the card instead of sitting in a band along the bottom edge.
+    const band = shape.band * unit * 8
+    const wave = new Path2D(shape.path)
+    for (let y = CARD_HEIGHT - band; y > -band; y -= band) {
+      pen.save()
+      pen.translate(0, y)
+      pen.scale(CARD_WIDTH / 720, 1)
+      pen.fill(wave)
+      pen.restore()
+    }
+  } else if (chosen === 'hexagons') {
+    for (const [i, p] of scatter(shape.count, shape.cell, unit).entries()) {
+      const r = shape.radius * unit
+      const cx = p.x + (i % 2 ? shape.stagger * shape.cell * unit : 0)
+      pen.beginPath()
+      for (let k = 0; k < 6; k++) {
+        const a = (Math.PI / 3) * k
+        const px = cx + r * Math.cos(a)
+        const py = p.y + r * Math.sin(a)
+        if (k === 0) pen.moveTo(px, py)
+        else pen.lineTo(px, py)
+      }
+      pen.closePath()
+      pen.stroke()
+    }
+  } else if (chosen === 'rings') {
+    for (const p of scatter(shape.count, shape.cell, unit)) {
+      for (let r = 0; r < shape.rings; r++) {
+        pen.beginPath()
+        pen.arc(p.x, p.y, (shape.radius + r * shape.step) * unit, 0, Math.PI * 2)
+        pen.stroke()
+      }
+    }
+  } else if (chosen === 'party') {
+    drawParty(pen, shape, unit)
+  }
+
+  composite(ctx, layer, t)
+}
+
+// The blur is the whole reason the pattern gets a layer of its own; see the note in drawPattern.
+function composite(ctx, layer, t) {
+  if (t.backdropBlur <= 0) {
+    ctx.drawImage(layer, 0, 0)
+    return
+  }
   ctx.save()
-  ctx.globalAlpha = Math.max(0.04, t.backdropOpacity / 100)
-  ctx.fillStyle = colors.accent
-  ctx.font = 'bold 64px "DejaVu Sans"'
-  for (let row = 0; row < 16; row++) {
-    for (let col = 0; col < 10; col++) {
-      ctx.fillText(QUIZ_GLYPHS[(row * 7 + col * 3) % QUIZ_GLYPHS.length], col * 130 + (row % 2 ? 65 : 0) - 20, row * 130 + 40)
+  ctx.filter = `blur(${t.backdropBlur * CARD_UNIT}px)`
+  ctx.drawImage(layer, 0, 0)
+  ctx.restore()
+}
+
+// Balloons, hats, streamers and loose confetti, in the same four-way cycle as the browser, built from the same numbers so
+// the card and the screens are recognisably the same backdrop. Drawn rather than typed for the reason on
+// PATTERN_GEOMETRY.party: there is no emoji font on the server.
+function drawParty(ctx, shape, unit) {
+  for (const [i, p] of scatter(shape.count, shape.cell, unit).entries()) {
+    ctx.lineWidth = Math.max(1, shape.stroke * unit)
+    if (i % 4 === 0) {
+      const r = (shape.balloon + (p.size % 14)) * unit
+      ctx.beginPath()
+      ctx.ellipse(p.x, p.y, r, r * 1.2, 0, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(p.x, p.y + r * 1.2)
+      ctx.bezierCurveTo(p.x + r * 0.5, p.y + r * 1.2 + shape.streamer * unit, p.x - r * 0.5, p.y + r * 1.2 + shape.streamer * unit, p.x, p.y + r * 1.2 + shape.streamer * 2 * unit)
+      ctx.stroke()
+    } else if (i % 4 === 1) {
+      const h = shape.hat * unit
+      ctx.save()
+      ctx.translate(p.x, p.y)
+      ctx.rotate((p.rotate * Math.PI) / 180)
+      ctx.beginPath()
+      ctx.moveTo(-h, h)
+      ctx.lineTo(0, -h)
+      ctx.lineTo(h, h)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.restore()
+    } else if (i % 4 === 2) {
+      const w = (shape.streamer * 1.6 + p.size) * unit
+      ctx.beginPath()
+      ctx.moveTo(p.x - w / 2, p.y)
+      ctx.bezierCurveTo(p.x - w / 4, p.y - w / 2, p.x + w / 4, p.y + w / 2, p.x, p.y + w / 2)
+      ctx.bezierCurveTo(p.x - w / 4, p.y + w / 2, p.x + w / 4, p.y + w / 2, p.x - w / 2, p.y + w * 2)
+      ctx.stroke()
+    } else {
+      const c = shape.confetti * unit
+      ctx.save()
+      ctx.translate(p.x, p.y)
+      ctx.rotate((p.rotate * Math.PI) / 180)
+      ctx.fillRect(-c / 2, -c / 2, c, c * 1.6)
+      ctx.restore()
     }
   }
-  ctx.restore()
 }
 
 async function drawCharacter(ctx, avatarId, cx, cy, size, mood = 'happy') {

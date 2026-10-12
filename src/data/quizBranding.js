@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabaseClient'
 import { processQuizImage } from '../lib/quizImage'
 import { quizImagePath } from '../../api/_lib/quizImage.js'
-import { sanitizeCard } from '../../api/_lib/quizCard.js'
+import { sanitizeCard, encodeThemePreview } from '../../api/_lib/quizCard.js'
 
 // Logo and sponsor pictures live in the public quiz-branding bucket (admins upload, everyone can see).
 
@@ -41,9 +41,14 @@ export function brandingPaths(theme, card) {
 
 // A short token that changes whenever the card design does. The studio puts it on the preview's url so the browser
 // redraws, since /api/quiz-card renders the saved card rather than the draft.
-export function cardPreviewVersion(card, quizId) {
+//
+// The theme rides along in the hash because the card's "same as the game" pattern has nothing else to follow: the
+// endpoint renders the *saved* theme, so a backdrop the admin has just changed would otherwise not show until they saved
+// it. Only the fragment the preview endpoint accepts counts, so a headline typed on another tab cannot redraw the card.
+export function cardPreviewVersion(card, quizId, theme) {
   const clean = sanitizeCard(card, { quizId })
+  const fragment = theme ? encodeThemePreview(theme) : ''
   let hash = 0
-  for (const ch of JSON.stringify(clean)) hash = (hash * 31 + ch.charCodeAt(0)) | 0
+  for (const ch of JSON.stringify(clean) + fragment) hash = (hash * 31 + ch.charCodeAt(0)) | 0
   return (hash >>> 0).toString(36)
 }

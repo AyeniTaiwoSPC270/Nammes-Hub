@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
 import {
   sanitizeTheme, DEFAULT_THEME, THEME_LOOKS, THEME_PATTERNS, THEME_CONFETTI, THEME_HEADLINE_MAX, THEME_TAGLINE_MAX,
   THEME_EFFECTS, THEME_MUSIC, BACKDROP_RANGES, THEME_BACKDROP_FITS, isClipId,
-  themeCssVars, themeAccent, contrastWithWhite, isHexColor,
+  themeCssVars, themeAccent, contrastWithWhite, contrastRatio, isHexColor, withLook, withAccent, withPage,
+  PATTERN_GLYPHS, PATTERN_GEOMETRY, PATTERN_UNDRAWN, PAGE_LIGHT, PAGE_DARK, ACCENT_DERIVED_TOKENS,
 } from './quizTheme.js'
 
 describe('sanitizeTheme', () => {
@@ -11,8 +13,8 @@ describe('sanitizeTheme', () => {
   })
   it('keeps valid choices', () => {
     const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
-    const t = { look: 'midnight', accent: '#AbCdEf', pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
-    expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef' })
+    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef', page: '#101010' })
   })
   it('drops anything that is not on the fixed lists', () => {
     const t = sanitizeTheme({ look: '__proto__', pattern: 'constructor', confetti: 'toString', accent: 'javascript:alert(1)' })
@@ -134,13 +136,223 @@ describe('a theme at its largest', () => {
   it('stays inside the column check even with every sponsor and every effect customised', () => {
     // The column is `pg_column_size(theme) < 4000` (20260930190000_quiz_theme.sql), which is a binary size and so runs
     // a little above this character count for the same document. The largest theme the app can produce — every field at
-    // its limit, a backdrop picture, six sponsors and a full set of custom clips — measures 2,100 characters, so there is
-    // room to spare rather than a knife edge.
+    // its limit, including both colour fields, a backdrop picture, six sponsors and a full set of custom clips — measures
+    // under 2,500 characters, so there is room to spare rather than a knife edge.
+    //
+    // accent and page are set explicitly rather than left to default. A fixture that leaves them null measures a theme
+    // the app cannot produce, and the size check would stop noticing a field that started costing real space.
     const custom = { music: 'm'.repeat(40), effects: Object.fromEntries(Object.keys(THEME_EFFECTS).map((name) => [name, 'e'.repeat(40)])) }
-    const full = sanitizeTheme({ headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'image', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
+    const full = sanitizeTheme({ accent: '#010203', page: '#040506', headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'image', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
+    expect(full.accent).toBe('#010203')
+    expect(full.page).toBe('#040506')
     expect(Object.keys(full.sound.custom.effects)).toHaveLength(Object.keys(THEME_EFFECTS).length)
     expect(full.sound.music).toBe('custom')
     expect(JSON.stringify(full).length).toBeLessThan(3000)
+  })
+})
+
+describe('the pattern vocabulary', () => {
+  // These tables are the contract between the two renderers: the screens draw with CSS and SVG, the result card with a
+  // canvas, and neither can read the other's drawing code. A pattern missing from both tables renders on one and not the
+  // other, which is the defect these tables exist to prevent.
+  it('says what every pattern is made of, so no renderer can silently skip one', () => {
+    for (const key of Object.keys(THEME_PATTERNS)) {
+      const places = [PATTERN_GLYPHS, PATTERN_GEOMETRY].filter((table) => Object.hasOwn(table, key)).length + (PATTERN_UNDRAWN.includes(key) ? 1 : 0)
+      expect(places, key).toBe(1)
+    }
+  })
+  it('never names a pattern that does not exist, or lists one twice', () => {
+    for (const key of [...Object.keys(PATTERN_GLYPHS), ...Object.keys(PATTERN_GEOMETRY), ...PATTERN_UNDRAWN]) {
+      expect(Object.hasOwn(THEME_PATTERNS, key), key).toBe(true)
+    }
+    for (const key of Object.keys(PATTERN_GLYPHS)) expect(Object.hasOwn(PATTERN_GEOMETRY, key), key).toBe(false)
+    for (const key of PATTERN_UNDRAWN) expect(Object.hasOwn(PATTERN_GLYPHS, key) || Object.hasOwn(PATTERN_GEOMETRY, key), key).toBe(false)
+  })
+  it('gives every glyph set real single characters to draw', () => {
+    for (const [key, glyphs] of Object.entries(PATTERN_GLYPHS)) {
+      expect(glyphs.length, key).toBeGreaterThan(1)
+      for (const glyph of glyphs) expect(typeof glyph === 'string' && [...glyph].length === 1, `${key} ${glyph}`).toBe(true)
+    }
+  })
+  it('gives every drawn pattern positive measurements, so the card can scale them', () => {
+    for (const [key, shape] of Object.entries(PATTERN_GEOMETRY)) {
+      expect(Object.keys(shape).length, key).toBeGreaterThan(0)
+      for (const [name, value] of Object.entries(shape)) {
+        if (typeof value === 'number') expect(value, `${key}.${name}`).toBeGreaterThan(0)
+        else if (Array.isArray(value)) expect(value.every((n) => typeof n === 'number'), `${key}.${name}`).toBe(true)
+        else if (typeof value === 'object') expect(Object.keys(value).length, `${key}.${name}`).toBeGreaterThan(0)
+        else expect(typeof value, `${key}.${name}`).toBe('string')
+      }
+    }
+  })
+  it('is what both renderers actually read, rather than a table each keeps its own copy of', () => {
+    // The duplication this replaced was two hand-maintained arrays that agreed by luck. Neither renderer is cheaply
+    // rendered here — one is a component tree and the other needs a canvas — so what is checked is that neither has gone
+    // back to holding a backdrop vocabulary of its own.
+    //
+    // The forbidden set is read off the table rather than written out here, so a character added to PATTERN_GLYPHS in
+    // six months is covered without touching this test. A name check would be worse twice over: narrower (it would miss
+    // a list called something new) and it would have to be updated by hand to stay useful.
+    //
+    // Source is cut into top-level declarations first and each is scanned on its own. Cutting out the one declaration
+    // that is allowed to repeat the characters with a regex was the obvious way to write this and it is wrong: a lazy
+    // match runs to the next closing brace, so reflowing that declaration onto one line silently exempts the eleven
+    // per cent of the file after it, and a planted duplicate goes unseen with the suite still green. Boundaries are the
+    // start of each top-level `const`/`function`/`export`, which is where a reformat cannot reach.
+    //
+    // The scan is quadratic in the worst case — it walks each block looking for a character rather than bailing early.
+    // On files this size that is tens of microseconds; noted because the cost is invisible from the pattern.
+    const repertoire = new RegExp(`[${Object.values(PATTERN_GLYPHS).flat().join('').replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}]`)
+
+    const topLevel = /^(?:const|let|function|export)\b/gm
+    for (const file of ['src/components/quiz/QuizParts.jsx', 'api/_lib/quizCardRender.js']) {
+      const source = readFileSync(file, 'utf8')
+      expect(source, `${file} should read the shared table`).toMatch(/import\s*\{[^}]*PATTERN_GLYPHS/)
+      const starts = [...source.matchAll(topLevel)].map((m) => m.index)
+      expect(starts.length, `${file} should have top-level declarations to scan`).toBeGreaterThan(0)
+      for (const [i, start] of starts.entries()) {
+        const block = source.slice(start, starts[i + 1] ?? source.length)
+        const name = block.match(/^(?:const|let|function|export)\s+([\w$]+)/)?.[1] ?? '?'
+        // Confetti repeats these characters on purpose — a sparkles celebration and a sparkles backdrop both use ★ —
+        // and never reaches the card. It is exempt by name, so that stays true however it is written.
+        if (name.startsWith('CONFETTI_')) continue
+        expect(block, `${file} declares "${name}" with the table's own characters`).not.toMatch(repertoire)
+      }
+      expect(source, `${file} should not declare its own shape path`).not.toMatch(/=\s*'M0 /)
+    }
+    // The declarations the exemption must not swallow: an answer shape and the confetti colours, neither a backdrop.
+    const parts = readFileSync('src/components/quiz/QuizParts.jsx', 'utf8')
+    expect(parts).toContain('const SHAPES = [')
+    expect(parts).toContain('const CONFETTI_COLORS = [')
+  })
+})
+
+describe('the page colour', () => {
+  it('is off by default, so a quiz with no page colour looks exactly as it did before', () => {
+    expect(DEFAULT_THEME.page).toBeNull()
+    expect(sanitizeTheme({})).toEqual(DEFAULT_THEME)
+    expect(sanitizeTheme({})).toHaveProperty('page')
+  })
+
+  it('takes only a #rrggbb colour, the same rule the accent has', () => {
+    for (const bad of ['#fff', '#12345', '#1234567', 'red', 'rgb(0,0,0)', '#000000;}', 'var(--color-paper)', 12, [], {}]) {
+      expect(sanitizeTheme({ page: bad }).page, String(bad)).toBeNull()
+    }
+    expect(sanitizeTheme({ page: '#0A1B2c' }).page).toBe('#0a1b2c')
+  })
+
+  it('changes the tokens the screens already read, and nothing else', () => {
+    // The point of going through the tokens rather than a new mechanism: no screen file changes, because every one of
+    // them already says bg-paper or text-ink-900 and those compile to these variables.
+    const vars = themeCssVars({ page: '#0d1310' })
+    expect(vars['--color-paper']).toBe('#0d1310')
+    expect(Object.keys(vars).filter((k) => !k.startsWith('--color-') && !k.startsWith('--qz-') && k !== 'colorScheme')).toEqual([])
+    expect(themeCssVars({})['--color-paper']).toBeUndefined()
+    expect(themeCssVars({})['colorScheme']).toBeUndefined()
+  })
+
+  it('paints the colour that was chosen, not one of the two palette pages', () => {
+    // Both palette papers are used as test colours elsewhere, so a palette page passes whether or not the choice is
+    // honoured at all. These are colours the admin could pick that belong to neither, which is the only case that
+    // separates a working control from one that quietly paints everything the same two colours.
+    for (const page of ['#3b0764', '#123456', '#ffd7e0', '#7f1d1d', '#00b4d8']) {
+      expect(themeCssVars({ page })['--color-paper'], page).toBe(page)
+    }
+    // And the ink still flips around whatever was chosen.
+    expect(themeCssVars({ page: '#3b0764' })['--color-ink-900']).toBe(PAGE_DARK['ink-900'])
+    expect(themeCssVars({ page: '#ffd7e0' })['--color-ink-900']).toBe(PAGE_LIGHT['ink-900'])
+  })
+
+  it('tells the browser which colour scheme it is on, since native controls do not read our tokens', () => {
+    // `colorScheme`, not `color-scheme`: React logs an error for a hyphenated key that is not a custom property, and it
+    // would do so on every render of every quiz screen.
+    expect(themeCssVars({ page: '#3b0764' }).colorScheme).toBe('dark')
+    expect(themeCssVars({ page: '#ffd7e0' }).colorScheme).toBe('light')
+  })
+
+  it('flips the text to whichever ink reads better, measured rather than guessed', () => {
+    // A threshold on lightness gets mid-tones wrong, which is exactly where a dark page is most tempting and most
+    // likely to end up unreadable.
+    const inkOn = (page) => themeCssVars({ page })['--color-ink-900']
+    expect(inkOn('#fcf9f8')).toBe(PAGE_LIGHT['ink-900'])
+    expect(inkOn('#0d1310')).toBe(PAGE_DARK['ink-900'])
+    expect(inkOn('#808080')).toBe(PAGE_LIGHT['ink-900'])
+    // Whatever the page, the ink it picks has to be legible on it.
+    for (const page of ['#fcf9f8', '#0d1310', '#808080', '#ffc400', '#4b0082', '#00ff00']) {
+      expect(contrastRatio(inkOn(page), page), `${page} should be readable`).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it('keeps the dark palette in step with the .dark block in index.css', () => {
+    // Two sources for one palette is only safe while something compares them, and the comparison cannot be an import:
+    // index.css is CSS and this is JavaScript.
+    //
+    // Matched to the closing brace, and exactly one block expected. Slicing to end-of-file works today and then quietly
+    // stops working the first time anything below `.dark` declares a `--color-*` hex, because the last match wins and the
+    // assertion would start comparing against the wrong rule.
+    const css = readFileSync('src/index.css', 'utf8')
+    const blockOf = (pattern) => {
+      const found = [...css.matchAll(pattern)]
+      expect(found.length, `${pattern} should match exactly one block in index.css`).toBe(1)
+      return found[0][1]
+    }
+    const tokensIn = (block) => Object.fromEntries([...block.matchAll(/--color-([\w-]+):\s*(#[0-9a-fA-F]{6})/g)].map(([, token, value]) => [token, value.toLowerCase()]))
+
+    const declared = tokensIn(blockOf(/\.dark\s*\{([^}]*)\}/g))
+    const lightDeclared = tokensIn(blockOf(/@theme\s*\{([^}]*)\}/g))
+    for (const [token, value] of Object.entries(PAGE_DARK)) expect(declared[token], `${token} should match index.css`).toBe(value)
+    for (const [token, value] of Object.entries(PAGE_LIGHT)) expect(lightDeclared[token], `${token} should match index.css`).toBe(value)
+  })
+
+  it('holds nothing the accent owns, which would overwrite it on every screen', () => {
+    // themeCssVars derives the orange steps and brand-orange from the accent and spreads the page palette *after* them,
+    // so a token here would silently repaint the accent. This is the only thing standing between a routine dark-mode
+    // tweak to `.dark` and that bug, which is why it is checked rather than left to a comment.
+    for (const [name, palette] of [['PAGE_LIGHT', PAGE_LIGHT], ['PAGE_DARK', PAGE_DARK]]) {
+      for (const token of ACCENT_DERIVED_TOKENS) {
+        expect(Object.keys(palette), `${name} must not carry ${token}`).not.toContain(token)
+      }
+    }
+  })
+
+  it('covers every token a quiz screen paints its page with', () => {
+    // A token missing here is one the admin's page colour silently does not reach, which looks like the colour not working.
+    for (const token of ['paper', 'surface', 'surface-low', 'ink-900', 'ink', 'ink-muted', 'hairline', 'brand']) {
+      expect(Object.keys(PAGE_LIGHT), token).toContain(token)
+      expect(PAGE_DARK[token], token).toMatch(/^#[0-9a-f]{6}$/)
+      expect(themeCssVars({ page: '#101010' })[`--color-${token}`], token).toBeDefined()
+    }
+  })
+})
+
+describe('picking a colour', () => {
+  it('changes the scheme without disturbing a custom accent, including the scheme already chosen', () => {
+    // The studio wrote `accent: null` into every scheme button, so re-clicking your own scheme threw the custom colour
+    // away with no warning. That is what "custom colours do not work" meant.
+    const custom = sanitizeTheme({ look: 'ocean', accent: '#123456' })
+    for (const look of Object.keys(THEME_LOOKS)) expect(withLook(custom, look).accent, look).toBe('#123456')
+    expect(withLook(custom, 'ocean')).toMatchObject({ look: 'ocean', accent: '#123456' })
+    expect(withLook(custom, 'royal').look).toBe('royal')
+  })
+  it('goes back to the scheme colour only when asked, and never leaves an unusable one behind', () => {
+    expect(withAccent(sanitizeTheme({ look: 'ocean', accent: '#123456' }), null).accent).toBeNull()
+    expect(withAccent(sanitizeTheme({ look: 'ocean' }), '#AbCdEf').accent).toBe('#abcdef')
+    // A value the picker cannot produce still has to mean something, and sanitizeTheme already answers this one: none.
+    for (const bad of ['red', '#fff', 'rgb(0,0,0)', '#000000;}', 12]) {
+      expect(withAccent(sanitizeTheme({ look: 'ocean', accent: '#123456' }), bad).accent, String(bad)).toBeNull()
+    }
+  })
+  it('refuses a scheme it does not know, so a stale control cannot put junk on the projector', () => {
+    for (const bad of ['__proto__', 'constructor', 'toString', '', 5, null]) {
+      expect(withLook(sanitizeTheme({ look: 'royal' }), bad).look, String(bad)).toBe(DEFAULT_THEME.look)
+    }
+  })
+  it('sets a page colour the same way, and clears it on the same terms', () => {
+    const set = withPage(sanitizeTheme({ look: 'royal' }), '#0A1B2c')
+    expect(set.page).toBe('#0a1b2c')
+    expect(set.look, 'changing the page must not disturb the scheme').toBe('royal')
+    expect(withPage(set, null).page).toBeNull()
+    for (const bad of ['var(--color-paper)', '#fff', 12]) expect(withPage(set, bad).page, String(bad)).toBeNull()
   })
 })
 
@@ -154,6 +366,26 @@ describe('looks', () => {
   it('offers patterns and confetti styles including "none"', () => {
     expect(Object.keys(THEME_PATTERNS)).toContain('none')
     expect(Object.keys(THEME_CONFETTI)).toContain('off')
+  })
+  it('gives every celebration something to rain down, so none of them can silently fall blank', () => {
+    // The pattern side has this guard and the celebration side did not: a style added to the studio with no piece set
+    // renders nothing and the studio still says it is there.
+    //
+    // Checked in the source rather than by import, because CONFETTI_GLYPHS holds emoji and lives in QuizParts.jsx with
+    // the renderer that uses it — a pure module here has no business owning it. Same reasoning as the backdrop guard
+    // above, which reads the two renderer files for the same reason.
+    const source = readFileSync('src/components/quiz/QuizParts.jsx', 'utf8')
+    const glyphBlock = source.match(/CONFETTI_GLYPHS\s*=\s*\{([\s\S]*?)\n\}/)
+    const glyphKeys = glyphBlock ? [...glyphBlock[1].matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1]) : []
+    const shaped = source.match(/CONFETTI_SHAPED\s*=\s*new Set\(\[([^\]]*)\]\)/)
+    const shapedKeys = shaped ? [...shaped[1].matchAll(/'(\w+)'/g)].map((m) => m[1]) : []
+    for (const key of Object.keys(THEME_CONFETTI)) {
+      // 'paper' is the one style with no character in it, so it is listed in the shaped set rather than the glyph map.
+      if (key === 'off') continue
+      const has = glyphKeys.includes(key) || shapedKeys.includes(key)
+      expect(has, `${key} has nothing to draw`).toBe(true)
+    }
+    expect(Object.keys(THEME_CONFETTI)).toEqual(['math', 'stars', 'petals', 'emoji', 'paper', 'letters', 'money', 'notes', 'hearts', 'off'])
   })
 })
 
@@ -217,8 +449,14 @@ describe('themeCssVars', () => {
     expect(themeAccent({ look: 'forest' })).toBe(THEME_LOOKS.forest.accent)
   })
   it('only ever produces safe values', () => {
-    for (const value of Object.values(themeCssVars({ look: 'royal', accent: '#abcdef' }))) {
-      expect(value).toMatch(/^(#[0-9a-f]{6}|color-mix\(in srgb, #[0-9a-f]{6} \d+%, (black|white)\))$/)
+    const safe = /^(#[0-9a-f]{6}|color-mix\(in srgb, #[0-9a-f]{6} \d+%, (black|white)\))$/
+    for (const value of Object.values(themeCssVars({ look: 'royal', accent: '#abcdef' }))) expect(value).toMatch(safe)
+    // The page case too, since it adds a property that is not a colour: colorScheme is a fixed word or it is nothing,
+    // and it is the one value here that is not caught by the hex rule.
+    const vars = themeCssVars({ look: 'royal', accent: '#abcdef', page: '#3b0764' })
+    for (const [key, value] of Object.entries(vars)) {
+      if (key === 'colorScheme') expect(value).toMatch(/^(light|dark)$/)
+      else expect(value, key).toMatch(safe)
     }
   })
   it('measures contrast sensibly', () => {
