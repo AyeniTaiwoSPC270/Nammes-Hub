@@ -5,7 +5,7 @@ import { useToast } from '../../lib/ToastContext'
 import { uploadBrandingImage, removeBrandingFiles, brandingPaths, brandingUrl, BACKDROP_MAX_EDGE, BACKDROP_MAX_BYTES } from '../../data/quizBranding'
 import { useQuizQuery, saveQuizTheme, saveQuizCard } from '../../data/quiz'
 import { cardPreviewVersion } from '../../data/quizBranding'
-import { sanitizeCard, encodeCardPreview, DEFAULT_CARD } from '../../../api/_lib/quizCard.js'
+import { sanitizeCard, encodeCardPreview, encodeThemePreview, DEFAULT_CARD } from '../../../api/_lib/quizCard.js'
 import {
   DEFAULT_THEME,
   THEME_LOOKS,
@@ -19,7 +19,13 @@ import {
   THEME_TAGLINE_MAX,
   sanitizeTheme,
   themeAccent,
+  themePageVars,
   contrastWithWhite,
+  contrastRatio,
+  withLook,
+  withAccent,
+  withPage,
+  PAGE_LIGHT,
 } from '../../../api/_lib/quizTheme.js'
 import { isQuizImagePath } from '../../../api/_lib/quizImage.js'
 import Breadcrumbs from '../../components/Breadcrumbs'
@@ -36,6 +42,9 @@ import SoundLab from '../../components/admin/quizStudio/SoundLab'
 // each game when it starts.
 
 const ACCENT_SWATCHES = ['#ff5a1f', '#d97706', '#15803d', '#0e7490', '#2563eb', '#6366f1', '#7c3aed', '#db2777', '#dc2626', '#52525b']
+// Light and dark, so an admin can see what a dark projector looks like without typing a hex. The pale three are the
+// site's own light tokens; the first two dark ones are its dark tokens; the last three are schemes' dark ends.
+const PAGE_SWATCHES = ['#fcf9f8', '#ffffff', '#f6f3f2', '#0d1310', '#16211b', '#1e1b4b', '#3b0764', '#18181b']
 
 function Section({ title, hint, children }) {
   return (
@@ -100,10 +109,16 @@ export default function AdminQuizStudio() {
   const dirty = draft !== null && JSON.stringify(sanitizeTheme(draft)) !== JSON.stringify(saved)
   const accent = themeAccent(theme)
   const contrast = contrastWithWhite(accent)
+  // The colour input has to show a value, so it shows the one in effect — the page that is actually on screen, which is
+  // the site's own paper while no page colour is set.
+  const page = theme.page ?? PAGE_LIGHT.paper
+  const pageLowContrast = theme.page !== null && contrastRatio(themePageVars(theme.page)['--color-ink-900'], theme.page) < 4.5
 
   // The card has its own column, its own draft and its own save, so the look's dirty state never drags it along.
   const savedCard = sanitizeCard(quiz?.card, { quizId: id })
   const card = cardDraft ?? savedCard
+  // The colour input cannot show nothing, so it shows the background it is replacing while no colour of its own is set.
+  const look = THEME_LOOKS[theme.look]
   const cardDirty = cardDraft !== null && JSON.stringify(sanitizeCard(cardDraft, { quizId: id })) !== JSON.stringify(savedCard)
   function changeCard(patch) {
     setCardDraft({ ...card, ...patch })
@@ -235,7 +250,36 @@ export default function AdminQuizStudio() {
               </p>
             </Section>
 
-            <Section title="Card background" hint="A picture behind the card. Without one, the card uses the maths pattern like the screens do.">
+            <Section title="Card pattern" hint="The backdrop drawn on the card itself. Same as the game is the default, so the card matches the screens unless you say otherwise.">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <Choice selected={card.pattern === null} onClick={() => changeCard({ pattern: null })} className="px-3 py-2.5">
+                  Same as the game
+                </Choice>
+                {Object.entries(THEME_PATTERNS).map(([key, label]) => (
+                  <Choice key={key} selected={card.pattern === key} onClick={() => changeCard({ pattern: key })} className="px-3 py-2.5">
+                    {label}
+                  </Choice>
+                ))}
+              </div>
+            </Section>
+
+            <Section title="Card background" hint="A colour or a picture behind the card. A picture is drawn over the colour; without either, the card uses the pattern on the colour scheme's own background.">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-2 rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                  {card.backgroundColor ?? 'Custom colour'}
+                  <input
+                    type="color"
+                    aria-label="Card background colour"
+                    value={card.backgroundColor ?? look.deep[0]}
+                    onChange={(e) => changeCard({ backgroundColor: e.target.value })}
+                    className="h-7 w-12 cursor-pointer rounded-md border border-hairline"
+                  />
+                </label>
+                {card.backgroundColor !== null && (
+                  <Button variant="secondary" size="sm" onClick={() => changeCard({ backgroundColor: null })}>Use the scheme&rsquo;s background</Button>
+                )}
+              </div>
+              <div className="mt-3">
               {card.background ? (
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-hairline bg-surface-low">
@@ -273,6 +317,7 @@ export default function AdminQuizStudio() {
                   />
                 </label>
               )}
+              </div>
             </Section>
 
             <Section title="What the card shows" hint="Hide anything you would rather not post. The rank band only appears for a hosted game; a practice run has no rank.">
@@ -319,8 +364,8 @@ export default function AdminQuizStudio() {
                 changing an accent or unticking a box used to leave the preview exactly as it was. */}
             {quiz && (
               <img
-                key={cardPreviewVersion(card, id)}
-                src={`/api/quiz-card?preview=${id}&v=${cardPreviewVersion(card, id)}&d=${encodeCardPreview(card, { quizId: id })}`}
+                key={cardPreviewVersion(card, id, theme)}
+                src={`/api/quiz-card?preview=${id}&v=${cardPreviewVersion(card, id, theme)}&d=${encodeCardPreview(card, { quizId: id })}&t=${encodeThemePreview(theme)}`}
                 alt="Result card preview"
                 className="w-full max-w-xs rounded-2xl shadow-md"
               />
@@ -343,10 +388,10 @@ export default function AdminQuizStudio() {
       ) : (
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
           <div className="flex flex-col gap-4">
-            <Section title="Colour scheme" hint="Sets the accent colour and the glow behind every screen.">
+            <Section title="Colour scheme" hint="Sets the glow and the dark banner behind every screen. Choosing a scheme leaves your own accent colour alone.">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-2">
                 {Object.entries(THEME_LOOKS).map(([key, look]) => (
-                  <Choice key={key} selected={theme.look === key} onClick={() => change({ look: key, accent: null })} className="flex items-center gap-2 p-2.5">
+                  <Choice key={key} selected={theme.look === key} onClick={() => change(withLook(theme, key))} className="flex items-center gap-2 p-2.5">
                     <span
                       className="h-8 w-8 shrink-0 rounded-full border border-black/10"
                       style={{ background: `linear-gradient(135deg, ${look.accent} 50%, ${look.deep[0]} 50%)` }}
@@ -358,27 +403,67 @@ export default function AdminQuizStudio() {
               </div>
             </Section>
 
-            <Section title="Accent colour" hint="Buttons, the timer, highlights. Pick one, or choose your own.">
+            <Section title="Accent colour" hint="Buttons, the timer, highlights. This overrides the scheme's own colour until you hand it back.">
               <div className="flex flex-wrap items-center gap-2">
                 {ACCENT_SWATCHES.map((hex) => (
                   <button
                     key={hex}
                     type="button"
-                    onClick={() => change({ accent: hex })}
+                    onClick={() => change(withAccent(theme, hex))}
                     aria-label={`Accent ${hex}`}
-                    aria-pressed={accent === hex}
-                    className={['h-9 w-9 cursor-pointer rounded-full border-2', accent === hex ? 'border-ink-900 ring-2 ring-offset-2 ring-ink-900/30' : 'border-transparent'].join(' ')}
+                    // The chosen accent, not the one in effect: every scheme's own accent is in this row, so keying off
+                    // the resolved colour showed one as picked when the admin had only picked a scheme.
+                    aria-pressed={theme.accent === hex}
+                    className={['h-9 w-9 cursor-pointer rounded-full border-2', theme.accent === hex ? 'border-ink-900 ring-2 ring-offset-2 ring-ink-900/30' : 'border-transparent'].join(' ')}
                     style={{ background: hex }}
                   />
                 ))}
                 <label className="flex cursor-pointer items-center gap-2 rounded-full border border-hairline px-3 py-1.5 text-sm font-semibold text-ink-900">
-                  <input type="color" value={accent} onChange={(e) => change({ accent: e.target.value })} className="h-7 w-7 cursor-pointer border-0 bg-transparent p-0" aria-label="Custom accent colour" />
+                  <input type="color" value={accent} onChange={(e) => change(withAccent(theme, e.target.value))} className="h-7 w-7 cursor-pointer border-0 bg-transparent p-0" aria-label="Custom accent colour" />
                   Custom
                 </label>
+                {theme.accent !== null && (
+                  <Button variant="secondary" size="sm" onClick={() => change(withAccent(theme, null))}>Use the scheme&rsquo;s colour</Button>
+                )}
               </div>
               {contrast < 3 && (
                 <p role="status" className="mt-3 rounded-lg bg-orange-500/10 p-3 text-sm text-ink-900">
                   White text on this colour can be hard to read on a projector. A darker shade reads better.
+                </p>
+              )}
+            </Section>
+
+            <Section title="Page colour" hint="The colour behind every screen. The text flips to light or dark on its own, whichever reads better.">
+              <div className="flex flex-wrap items-center gap-2">
+                {PAGE_SWATCHES.map((hex) => (
+                  <button
+                    key={hex}
+                    type="button"
+                    onClick={() => change(withPage(theme, hex))}
+                    aria-label={`Page ${hex}`}
+                    aria-pressed={theme.page === hex}
+                    className={['h-9 w-9 cursor-pointer rounded-full border-2', theme.page === hex ? 'border-ink-900 ring-2 ring-offset-2 ring-ink-900/30' : 'border-hairline'].join(' ')}
+                    style={{ background: hex }}
+                  />
+                ))}
+                <label className="flex cursor-pointer items-center gap-2 rounded-full border border-hairline px-3 py-1.5 text-sm font-semibold text-ink-900">
+                  <input
+                    type="color"
+                    value={page}
+                    onChange={(e) => change(withPage(theme, e.target.value))}
+                    className="h-7 w-7 cursor-pointer border-0 bg-transparent p-0"
+                    aria-label="Custom page colour"
+                  />
+                  Custom
+                </label>
+                {theme.page !== null && (
+                  <Button variant="secondary" size="sm" onClick={() => change(withPage(theme, null))}>Use the default page</Button>
+                )}
+              </div>
+              {pageLowContrast && (
+                <p role="status" className="mt-3 rounded-lg bg-orange-500/10 p-3 text-sm text-ink-900">
+                  Text on this colour is hard to read on a projector, even after it flips. A darker or lighter shade
+                  reads better.
                 </p>
               )}
             </Section>

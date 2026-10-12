@@ -15,20 +15,102 @@ export const THEME_LOOKS = {
   mono: { name: 'Mono', accent: '#52525b', glow: ['#71717a', '#a1a1aa'], deep: ['#18181b', '#3f3f46'] },
 }
 
+// The two page palettes a quiz can be shown on. These are the site's own tokens, not new colours: a quiz screen already
+// says bg-paper and text-ink-900, and those compile to exactly these variables, so setting them on the quiz's wrapper
+// re-skins every screen at once with no screen file touched — and the translucent bg-paper/85 bars follow for free.
+//
+// PAGE_DARK is a copy of the `.dark` block in src/index.css, and a test reads that file and compares the two. Two
+// sources for one palette is only safe while something compares them, and it cannot be an import: index.css is CSS.
+//
+// `--color-brand-orange` and the three orange steps are deliberately absent: themeCssVars derives them from the accent,
+// and because the page palette is spread after them, a token in here would overwrite the accent on every screen. A test
+// holds that, because the absence is the only thing stopping it and nothing else would notice.
+export const ACCENT_DERIVED_TOKENS = Object.freeze(['orange-500', 'orange-600', 'orange-100', 'brand-orange'])
+
+export const PAGE_LIGHT = Object.freeze({
+  paper: '#fcf9f8',
+  surface: '#ffffff',
+  'surface-low': '#f6f3f2',
+  'ink-900': '#000904',
+  ink: '#1c1b1b',
+  'ink-muted': '#424843',
+  hairline: '#c2c8c1',
+  brand: '#0b2417',
+})
+
+export const PAGE_DARK = Object.freeze({
+  paper: '#0d1310',
+  surface: '#16211b',
+  'surface-low': '#111a15',
+  'ink-900': '#f7f9f7',
+  ink: '#e6e8e5',
+  'ink-muted': '#9aa79e',
+  hairline: '#2c352f',
+  brand: '#5cb88a',
+})
+
 export const THEME_PATTERNS = {
   image: 'My image',
   math: 'Maths symbols',
+  notes: 'Music notes',
+  party: 'Party shapes',
   dots: 'Dots',
   grid: 'Grid',
   waves: 'Waves',
+  hexagons: 'Hexagons',
+  stripes: 'Diagonal stripes',
+  rings: 'Rings',
   stars: 'Sparkles',
   none: 'Plain',
 }
+
+// The characters each symbolic backdrop is built from, and the measurements each drawn one is built from. The two
+// renderers cannot share their drawing code — the screens use CSS and SVG, the result card is a canvas — but they must
+// share the *vocabulary*, or the card slowly stops matching the screens it was shared from. These tables were the two
+// hand-copied arrays at QuizParts.jsx and quizCardRender.js, which agreed only because someone remembered to edit both.
+//
+// Today the card reads both tables, with a full branch for each; the browser does the same. The numbers below are in the
+// reference pixels the browser designs at, which is the same unit `backdropScale` is a percentage of, so that when the
+// card does start reading them it scales the numbers against its own 1080x1920 canvas rather than copying pixels sized
+// for a browser window.
+export const PATTERN_GLYPHS = {
+  math: ['π', 'Σ', '∫', '√', 'Δ', 'λ', 'θ', '∞', '≈', '±'],
+  stars: ['✦', '✧', '★', '✶'],
+  // Musical symbols, not 🎵. The card has no emoji font — patternFonts.test.js fails the build if a glyph the server
+  // cannot draw is put in this table — and these are the ones it can.
+  notes: ['♪', '♫', '♩', '♬'],
+}
+
+// `party` is here rather than above because its shapes are drawn, not typed: a balloon and a party hat have no
+// character to fall back on, and an emoji standing in for one prints as a tofu box on every shared card.
+export const PATTERN_GEOMETRY = {
+  dots: { cell: 26, dot: 1.6, gap: 1.8 },
+  grid: { cell: 44, stroke: 1 },
+  waves: { path: 'M0 40Q90 0 180 40T360 40T540 40T720 40V80H0z', viewBox: '0 0 720 80', band: 14, shift: { x: -140, y: 14 } },
+  // Shared layout numbers, browser-only drawing numbers, and card-only drawing numbers are split into three groups so
+  // each renderer edits only its own half. Shared: cell, count, width, gap, band, stroke. Browser-only: mark, opacity,
+  // dot, viewBox, shift. Card-only: radius, step, rings, stagger, hat, balloon, confetti, path, angle.
+  hexagons: { count: 26, cell: 88, mark: 46, opacity: 1, radius: 30, stagger: 0.5 },
+  stripes: { width: 12, gap: 12, angle: 45 },
+  rings: { count: 18, cell: 120, mark: 62, opacity: 1, radius: 22, step: 7, rings: 3, stroke: 2 },
+  party: { count: 16, cell: 150, mark: 52, opacity: 1, balloon: 22, hat: 30, streamer: 36, confetti: 10, stroke: 2 },
+}
+
+// The two patterns with nothing of their own to draw: 'image' paints a photograph where the pattern would be, and
+// 'none' paints nothing at all. Naming them is what lets the tables be checked against THEME_PATTERNS — a pattern that is
+// in no table and not named here is one a renderer has to silently skip.
+export const PATTERN_UNDRAWN = ['image', 'none']
 
 export const THEME_CONFETTI = {
   math: 'Maths symbols',
   stars: 'Stars',
   petals: 'Petals',
+  emoji: 'Emoji party',
+  paper: 'Coloured paper',
+  letters: 'Quiz letters',
+  money: 'Money',
+  notes: 'Music notes',
+  hearts: 'Hearts',
   off: 'None',
 }
 
@@ -113,6 +195,7 @@ export const BACKDROP_RANGES = {
 export const DEFAULT_THEME = Object.freeze({
   look: 'classic',
   accent: null,
+  page: null,
   pattern: 'math',
   image: null,
   backdropOpacity: 8,
@@ -133,6 +216,13 @@ const HEX = /^#[0-9a-fA-F]{6}$/
 
 export function isHexColor(value) {
   return typeof value === 'string' && HEX.test(value)
+}
+
+// One rule for "a colour a theme may hold", shared by the sanitiser and the studio's own editor helpers. A second copy of
+// `isHexColor(x) ? x.toLowerCase() : null` is a copy that can drift from the one the API enforces, and the sanitiser is
+// the only thing that gets to decide what reaches a projector.
+function cleanHexColor(value) {
+  return isHexColor(value) ? value.toLowerCase() : null
 }
 
 function cleanText(value, max) {
@@ -220,7 +310,8 @@ export function sanitizeTheme(input, { quizId } = {}) {
   const image = cleanPath(t.image, quizId)
   return {
     look: oneOf(THEME_LOOKS, t.look, DEFAULT_THEME.look),
-    accent: isHexColor(t.accent) ? t.accent.toLowerCase() : null,
+    accent: cleanHexColor(t.accent),
+    page: cleanHexColor(t.page),
     pattern: cleanPattern(t.pattern, image),
     image,
     backdropOpacity: num(BACKDROP_RANGES.opacity, t.backdropOpacity, DEFAULT_THEME.backdropOpacity),
@@ -244,6 +335,44 @@ export function sanitizeTheme(input, { quizId } = {}) {
 export function themeAccent(theme) {
   const t = sanitizeTheme(theme)
   return t.accent ?? THEME_LOOKS[t.look].accent
+}
+
+// Picking a scheme and picking an accent are two separate decisions, and neither may quietly undo the other. Changing
+// the look used to clear the accent, so re-clicking your own scheme threw a custom colour away with no warning and no
+// undo — which is what "custom colours do not work" meant. Both rules live beside the sanitiser rather than in a click
+// handler so there is one place a rule has to change; the studio's wiring is held in place by a source test, because
+// nothing here can stop a button from being wired to the wrong thing.
+export function withLook(theme, look) {
+  return { ...theme, look: oneOf(THEME_LOOKS, look, DEFAULT_THEME.look) }
+}
+
+// Clearing the accent is a deliberate act with its own button. A value the picker cannot produce falls to null for the
+// same reason sanitizeTheme does it: nothing reaches the screens that the sanitiser would not accept anyway.
+export function withAccent(theme, accent) {
+  return { ...theme, accent: cleanHexColor(accent) }
+}
+
+// Same rule as withAccent, for the page behind the screens. Kept beside it so a future "reset everything" control has one
+// place to reach rather than a third spelling of cleanHexColor.
+export function withPage(theme, page) {
+  return { ...theme, page: cleanHexColor(page) }
+}
+
+// The page tokens for a chosen page colour. `--color-paper` is the colour the admin picked — that is the whole point of
+// the control, and taking it from the palette instead would paint every choice the same two colours whatever was chosen.
+// The rest of the palette is picked by measured contrast, because cards, chips and borders have to sit *off* the page to
+// be seen at all, and the site's own two sets do that on a page of either kind. Leaving them on the site's colours is
+// deliberate: an admin asking for a plum backdrop is asking for the backdrop, not to have every chip repainted with it.
+export function themePageVars(page) {
+  if (!isHexColor(page)) return {}
+  const dark = contrastRatio(page, PAGE_DARK['ink-900']) > contrastRatio(page, PAGE_LIGHT['ink-900'])
+  const palette = dark ? PAGE_DARK : PAGE_LIGHT
+  const tokens = Object.fromEntries(Object.entries(palette).map(([token, value]) => [`--color-${token}`, value]))
+  // Native controls follow the document's colour-scheme rather than our custom tokens, so a dark page leaves a light
+  // text field in it unless this says otherwise. `colorScheme`, not `color-scheme`: React logs an error for a hyphenated
+  // key that is not a custom property. The page scrollbar is not fixed by this — that comes from :root, and a
+  // `display: contents` wrapper generates no box to set it on.
+  return { ...tokens, colorScheme: dark ? 'dark' : 'light', '--color-paper': page }
 }
 
 function channel(hex, from) {
@@ -270,7 +399,9 @@ export function contrastRatio(a, b) {
   return Math.round(((light + 0.05) / (dark + 0.05)) * 100) / 100
 }
 
-// The CSS variables a theme sets on the page. The accent replaces the site's orange everywhere in the quiz screens.
+// The CSS variables a theme sets on the page. The accent replaces the site's orange everywhere in the quiz screens; a
+// page colour replaces `--color-paper` and supplies the ink set that reads on it. With no page colour neither is emitted,
+// so a quiz that has never been given one looks exactly as it did before this option existed.
 export function themeCssVars(theme) {
   const t = sanitizeTheme(theme)
   const look = THEME_LOOKS[t.look]
@@ -284,5 +415,6 @@ export function themeCssVars(theme) {
     '--qz-glow-b': look.glow[1],
     '--qz-deep-a': look.deep[0],
     '--qz-deep-b': look.deep[1],
+    ...themePageVars(t.page),
   }
 }

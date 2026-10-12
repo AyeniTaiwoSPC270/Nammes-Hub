@@ -1,12 +1,107 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CARD } from './quizCard.js'
-import { renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit, podiumLayout, PODIUM_TEXT_WIDTH, CARD_WIDTH } from './quizCardRender.js'
-import { contrastRatio, THEME_LOOKS } from './quizTheme.js'
+import { createCanvas } from '@napi-rs/canvas'
+import { DEFAULT_CARD, sanitizeCard } from './quizCard.js'
+import { ensureFonts } from './fonts.js'
+import { drawBackdrop, renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit, podiumLayout, PODIUM_TEXT_WIDTH, CARD_WIDTH, CARD_HEIGHT } from './quizCardRender.js'
+import { contrastRatio, THEME_LOOKS, THEME_PATTERNS, PATTERN_UNDRAWN } from './quizTheme.js'
 
 const QUIZ = { title: 'Naming Origins' }
 const THEME = { look: 'classic', accent: null, pattern: 'math', logo: null, backdropOpacity: 8 }
 const ME = { nickname: 'Ada', avatarId: 13, score: 14200, rank: 3, playerCount: 42, correctCount: 12, totalQuestions: 15, bestStreak: 5, teamName: 'Crimson' }
 const isPng = (buf) => buf.subarray(1, 4).toString() === 'PNG'
+// sanitizeCard only keeps a background that lives in this quiz's folder, so the path has to be shaped like a real
+// upload for the picture to reach the renderer at all. Its own name, not QUIZ's: QUIZ is the quiz record and passing
+// it as an id would quietly drop the background and leave the picture test comparing three identical blank cards.
+const UPLOAD_QUIZ = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+const WIDE_PATH = `${UPLOAD_QUIZ}/33333333-3333-4333-8333-333333333333-1700000000000.jpg`
+
+describe('the card backdrop', () => {
+  // A pattern added to THEME_PATTERNS with no branch in this renderer would draw nothing and still produce a perfectly
+  // valid png, so the check is on the pixels. The baseline is 'none', which by definition draws no pattern at all: a card
+  // that still differs from it drew something, and one that matches it drew nothing.
+  //
+  // Only the backdrop is painted, not the whole card. Rendering thirty cards to ask a question about the bottom layer
+  // means rendering a React character tree thirty times, which is minutes of suite time for nothing.
+  const backdrop = async (card, theme = THEME, loadBackground = async () => null) => {
+    const canvas = createCanvas(CARD_WIDTH, CARD_HEIGHT)
+    ensureFonts()
+    await drawBackdrop(canvas.getContext('2d'), sanitizeCard(card, { quizId: UPLOAD_QUIZ }), theme, undefined, loadBackground)
+    return canvas.getContext('2d').getImageData(0, 0, CARD_WIDTH, CARD_HEIGHT).data
+  }
+  // A wide, two-toned picture, because it is what separates the three fits. Wide: a square picture makes 'cover' and
+  // 'stretch' identical and a tall one makes 'contain' and 'cover' identical. Two-toned: on a flat colour there is
+  // nothing to stretch, so 'cover' and 'stretch' come out pixel-identical and the test would pass on a card that
+  // ignored the setting.
+  const widePicture = async () => {
+    const source = createCanvas(1600, 400)
+    const pen = source.getContext('2d')
+    pen.fillStyle = '#ff0000'
+    pen.fillRect(0, 0, 800, 400)
+    pen.fillStyle = '#0000ff'
+    pen.fillRect(800, 0, 800, 400)
+    return source.toBuffer('image/png')
+  }
+  // How many sampled pixels the pattern moved. A count rather than a yes/no because one antialiased stray would satisfy
+  // a "differs" check on a backdrop that drew a single smudge in the corner — which is the failure worth catching, and
+  // the one the original one-pixel test would have passed.
+  const ink = (a, b) => {
+    let n = 0
+    for (let i = 0; i < a.length; i += 4 * 31) if (a[i] !== b[i] || a[i + 1] !== b[i + 1] || a[i + 2] !== b[i + 2]) n++
+    return n
+  }
+  const differs = (a, b) => ink(a, b) > 0
+
+  it('draws something for every pattern, rather than leaving the card flat', async () => {
+    const blank = await backdrop({ ...DEFAULT_CARD, pattern: 'none' })
+    for (const pattern of Object.keys(THEME_PATTERNS)) {
+      // 'image' and 'none' have nothing to draw by design — one paints a photograph, the other nothing.
+      if (PATTERN_UNDRAWN.includes(pattern)) continue
+      expect(ink(await backdrop({ ...DEFAULT_CARD, pattern }), blank), `${pattern} drew nothing`).toBeGreaterThan(9)
+    }
+  }, 90_000)
+
+  it('honours the card pattern over the game\'s, and falls back to the game when the card has none', async () => {
+    const game = { ...THEME, pattern: 'grid' }
+    const grid = await backdrop(DEFAULT_CARD, game)
+    const blank = await backdrop({ ...DEFAULT_CARD, pattern: 'none' }, game)
+    expect(differs(grid, blank), 'the game pattern should have drawn').toBe(true)
+    expect(differs(await backdrop({ ...DEFAULT_CARD, pattern: 'rings' }, game), grid), 'the card pattern should win').toBe(true)
+    expect(differs(await backdrop({ ...DEFAULT_CARD, pattern: null }, game), grid), 'null should follow the game').toBe(false)
+  }, 90_000)
+
+  it('paints a background colour of the card\'s own instead of the scheme gradient', async () => {
+    const plain = await backdrop(DEFAULT_CARD)
+    expect(differs(await backdrop({ ...DEFAULT_CARD, backgroundColor: '#3b0764' }), plain)).toBe(true)
+    // And two different colours of the admin's own are told apart, so the control is not painting one fixed answer.
+    expect(differs(await backdrop({ ...DEFAULT_CARD, backgroundColor: '#1a1a1a' }), await backdrop({ ...DEFAULT_CARD, backgroundColor: '#3b0764' }))).toBe(true)
+  }, 90_000)
+
+  it('draws an uploaded picture the way the fit control asks, rather than always cropping it', async () => {
+    // A wide picture is the case that separates the three: 'contain' leaves background at the top and bottom, 'cover'
+    // crops the sides away, and 'stretch' fills all four corners. If the card ignored fit, all three would be identical
+    // bytes and the admin's crop choice would change on every device but the card.
+    const wide = await widePicture()
+    const painted = (fit) => backdrop({ ...DEFAULT_CARD, background: WIDE_PATH }, { ...THEME, backdropFit: fit }, async () => wide)
+    const cover = await painted('cover')
+    const contain = await painted('contain')
+    const stretch = await painted('stretch')
+    expect(ink(cover, contain)).toBeGreaterThan(9)
+    expect(ink(stretch, cover)).toBeGreaterThan(9)
+    // 'contain' is the one that leaves the card's own background showing, so its corner has to match the unpainted card.
+    expect(contain[0]).toBe((await backdrop(DEFAULT_CARD, THEME))[0])
+  }, 90_000)
+
+  it('reacts to size and strength, which used to be dead on the server', async () => {
+    for (const pattern of ['dots', 'grid', 'hexagons', 'stripes', 'party', 'math', 'rings']) {
+      const at = { ...THEME, pattern, backdropOpacity: 40 }
+      expect(differs(await backdrop(DEFAULT_CARD, { ...at, backdropScale: 175 }), await backdrop(DEFAULT_CARD, at)), pattern).toBe(true)
+    }
+  }, 120_000)
+
+  it('reacts to blur, on its own test because a full-canvas blur is slow enough to be its own budget', async () => {
+    expect(differs(await backdrop(DEFAULT_CARD, { ...THEME, pattern: 'dots', backdropBlur: 8 }), await backdrop(DEFAULT_CARD, { ...THEME, pattern: 'dots' }))).toBe(true)
+  }, 120_000)
+})
 
 describe('renderPersonalCard', () => {
   it('returns a real png buffer', async () => {

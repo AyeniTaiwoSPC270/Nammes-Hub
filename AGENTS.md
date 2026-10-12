@@ -46,6 +46,14 @@ So anything in `api/_lib/*.js` must stay pure: no `window`, no Supabase client, 
 Validation and normalisation belong here so the studio, the projector, the phones and the API all
 clean a value the same way. Anything that needs I/O goes in `api/_lib/handlers/`.
 
+Several files under `api/_lib/` are **server-only** and break that rule on purpose, because a canvas draws no
+picture in a browser bundle: `quizCardRender.js`, `awardCardRender.js` and `fonts.js`. Others break it for other
+reasons — `quiz.js`, `handbookBuild.js`, `supabaseAdmin.js`, `resend.js` and `authz.js` reach for `node:` built-ins,
+a service key or `puppeteer`. Nothing in `src/` may import any of them, and the list has to be checked rather than
+assumed when adding to `api/_lib/`. `fonts.js` is the one place the five font files are registered, shared by both
+renderers and by `patternFonts.test.js`, which checks the backdrop glyph table against them — a second copy would
+let a font be deleted while the test kept checking a set no card used.
+
 ## Conventions
 
 - **Styling** is Tailwind v4 with the tokens defined in `src/index.css`: `bg-surface`,
