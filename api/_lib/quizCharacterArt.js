@@ -186,6 +186,24 @@ export function normalizeAvatarId(id) {
   return Number.isInteger(id) && id >= 0 && id < BUILTIN_COUNT ? id : 0
 }
 
+// The plain character every new part is drawn on: one blob, a round eye, a smile, nothing on, and the first move of
+// each kind. The parts lab shows it and the drawer tests build on it, so a new part is always seen on something rather
+// than floating alone. It is also what the studio's cast editor opens a new character from.
+export const DEFAULT_MOOD = {
+  name: '',
+  body: 'blob',
+  topper: 'none',
+  eyes: 'round',
+  mouth: 'smile',
+  accessory: 'none',
+  prop: 'none',
+  color: builtinColour(0),
+  idle: 'bob',
+  win: 'jump',
+  sad: 'droop',
+  hello: 'wave',
+}
+
 // Every (idle, win) pair is different for all 50 ids, because 11 and 10 share no factor and 50 is less than 110.
 export function avatarInfo(id) {
   const n = normalizeAvatarId(id)
