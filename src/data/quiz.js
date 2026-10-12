@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { sanitizeCard } from '../../api/_lib/quizCard.js'
@@ -25,8 +25,10 @@ export function avatarStyle(nickname) {
   return OPTION_STYLES[hash % OPTION_STYLES.length]
 }
 
-// The 50 characters live in quizCharacters.js.
-export { AVATAR_COUNT, avatarInfo, normalizeAvatarId, randomAvatarId } from './quizCharacters'
+// The 50 characters, and the drawing they are made of, live in api/_lib/quizCharacterArt.js — one home, shared with the
+// server. AVATAR_COUNT is kept as an alias here so the four screens that pick a character do not all change their
+// vocabulary in one go.
+export { BUILTIN_COUNT as AVATAR_COUNT, avatarInfo, normalizeAvatarId, randomAvatarId } from '../../api/_lib/quizCharacterArt.js'
 
 // How long the answer reveal and the leaderboard stay up before the game moves on by itself.
 export const AUTO_ADVANCE_MS = 5000
@@ -137,6 +139,34 @@ export async function callQuiz(action, body, accessToken) {
 export async function hostAction(action, body) {
   const { data } = await supabase.auth.getSession()
   return callQuiz(action, body, data.session?.access_token)
+}
+
+export function castQueryKey(target) {
+  if (typeof target?.code === 'string' && target.code) return ['cast', 'code', target.code]
+  if (typeof target?.quizId === 'string' && target.quizId) return ['cast', 'quiz', target.quizId]
+  return null
+}
+
+// A join code reads the hosted session's snapshot; a quiz id reads the live cast for battles and practice.
+export function useCastQuery(target) {
+  const key = castQueryKey(target)
+  return useQuery({
+    queryKey: key ?? ['cast', 'none'],
+    queryFn: () => callQuiz('roster', target),
+    enabled: Boolean(key),
+    staleTime: 60_000,
+  })
+}
+
+export function useSaveCast(quizId) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (cast) => hostAction('cast', { quizId, ...cast }),
+    onSuccess: (cast) => {
+      queryClient.setQueryData(['cast', 'quiz', quizId], cast)
+      queryClient.invalidateQueries({ queryKey: ['quizzes'] })
+    },
+  })
 }
 
 // A host control (kick, lock, pause, extend, skip, rename). See api/_lib/handlers/quiz-host.js.

@@ -6,6 +6,7 @@ import { sanitizeCard, decodeCardPreview, decodeThemePreview } from '../quizCard
 import { buildPracticeMe, toBoardRow } from '../quizCardData.js'
 import { renderBoardCard, renderDuelCard, renderPersonalCard } from '../quizCardRender.js'
 import { sessionQuestionIds } from '../quizSessionQuestions.js'
+import { readQuizCast } from '../castStore.js'
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 
@@ -94,13 +95,14 @@ export function createQuizCardHandler(
         bestStreak: me.streak ?? null,
         teamName: team?.name ?? null,
       },
+      cast: session.characters,
       loadBackground: loadBackground(),
     })
     sendPng(res, buffer, 'no-store')
   }
 
   async function serveBoard(res, db, sessionId) {
-    const { data: session } = await db.from('quiz_sessions').select('id, quiz_id, state, theme, card, team_mode').eq('id', sessionId).maybeSingle()
+    const { data: session } = await db.from('quiz_sessions').select('id, quiz_id, state, theme, card, team_mode, characters').eq('id', sessionId).maybeSingle()
     if (!session) {
       res.status(404).json({ error: 'Game not found' })
       return
@@ -128,6 +130,7 @@ export function createQuizCardHandler(
       quiz,
       ranked: rankPlayers(players ?? []).map(toBoardRow),
       teams: (teams ?? []).map((t) => ({ name: t.name, color: t.color, score: perTeam.get(t.id) ?? 0 })),
+      cast: session.characters,
       loadBackground: loadBackground(),
     })
     // Browser-only: a shared cache would serve every player's nickname and score to anyone who knew the session id,
@@ -162,11 +165,19 @@ export function createQuizCardHandler(
       db.from('quiz_practice_answers').select('correct').eq('run_id', run.id),
       db.from('quizzes').select('id, title, theme, card').eq('id', run.quiz_id).maybeSingle(),
     ])
+    let cast
+    try {
+      cast = await readQuizCast(db, run.quiz_id)
+    } catch {
+      res.status(500).json({ error: 'Could not draw the result card.' })
+      return
+    }
     const buffer = await renderPersonalCard({
       card: sanitizeCard(quiz?.card, { quizId: run.quiz_id }),
       theme: sanitizeTheme(quiz?.theme, { quizId: run.quiz_id }),
       quiz,
       me: buildPracticeMe(run, answers ?? [], run.question_ids?.length ?? 0),
+      cast,
       loadBackground: loadBackground(),
     })
     sendPng(res, buffer, 'no-store')
@@ -202,6 +213,13 @@ export function createQuizCardHandler(
       db.from('quiz_battle_sides').select('slot, nickname, avatar_id, total_score').eq('battle_id', battle.id),
       db.from('quizzes').select('id, title, theme, card').eq('id', battle.quiz_id).maybeSingle(),
     ])
+    let cast
+    try {
+      cast = await readQuizCast(db, battle.quiz_id)
+    } catch {
+      res.status(500).json({ error: 'Could not draw the result card.' })
+      return
+    }
     const buffer = await renderDuelCard({
       card: sanitizeCard(quiz?.card, { quizId: battle.quiz_id }),
       theme: sanitizeTheme(quiz?.theme, { quizId: battle.quiz_id }),
@@ -210,6 +228,7 @@ export function createQuizCardHandler(
       winnerSlot: battle.winner_slot ?? null,
       forfeit: Boolean(battle.forfeit),
       questionCount: battle.question_ids?.length ?? 0,
+      cast,
       loadBackground: loadBackground(),
     })
     sendPng(res, buffer, 'no-store')

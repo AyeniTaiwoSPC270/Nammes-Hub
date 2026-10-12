@@ -47,6 +47,25 @@ describe('practice: who can play', () => {
     expect((await call({ op: 'start', quizId: 'nope', nickname: 'Ada' })).statusCode).toBe(404)
     expect((await call({ op: 'wat' })).statusCode).toBe(400)
   })
+  it('validates the chosen id against the quiz cast, preserving slot gaps', async () => {
+    const w = world({
+      quizzes: [{ id: QUIZ, title: 'Maths', practice_enabled: true, cast_mode: 'custom' }],
+      quiz_characters: [{ id: 'c1', quiz_id: QUIZ, slot: 2, name: 'Kola', spec: {}, moves: {} }],
+    })
+    const allowed = await w.call({ op: 'start', quizId: QUIZ, nickname: 'Ada', avatarId: 52 })
+    expect(allowed.statusCode).toBe(200)
+    expect(allowed.body.avatarId).toBe(52)
+    expect((await w.call({ op: 'start', quizId: QUIZ, nickname: 'Bola', avatarId: 50 })).statusCode).toBe(400)
+  })
+  it('gives practice bots characters that exist in the live cast', async () => {
+    const w = world({
+      quizzes: [{ id: QUIZ, title: 'Maths', practice_enabled: true, cast_mode: 'custom' }],
+      quiz_characters: [{ id: 'c1', quiz_id: QUIZ, slot: 2, name: 'Kola', spec: {}, moves: {} }],
+    })
+    const started = await w.call({ op: 'start', quizId: QUIZ, nickname: 'Ada', avatarId: 52, race: 'bots' })
+    const answer = await w.call({ op: 'answer', token: started.body.token, chosenIndex: 1 })
+    expect(answer.body.race.rivals.every((rival) => rival.avatarId === 52)).toBe(true)
+  })
   it('limits how many runs one address can start', async () => {
     const { call } = world()
     const res = await call({ op: 'start', quizId: QUIZ, nickname: 'Ada' }, { allowStart: () => false })

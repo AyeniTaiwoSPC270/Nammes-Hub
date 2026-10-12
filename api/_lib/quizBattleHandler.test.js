@@ -56,6 +56,27 @@ describe('battle: who can start one', () => {
     expect((await w.call({ op: 'create', quizId: QUIZ, mode: 'challenge', nickname: 'Ada', vsBot: true })).statusCode).toBe(400)
     expect((await w.call({ op: 'wat' })).statusCode).toBe(400)
   })
+  it('validates battle ids against the current quiz cast', async () => {
+    const w = world({
+      quizzes: [{ id: QUIZ, title: 'Maths', battle_enabled: true, cast_mode: 'custom' }],
+      quiz_characters: [{ id: 'c1', quiz_id: QUIZ, slot: 2, name: 'Kola', spec: {}, moves: {} }],
+    })
+    const a = await w.call({ op: 'create', quizId: QUIZ, mode: 'challenge', nickname: 'Ada', avatarId: 52 })
+    expect(a.statusCode).toBe(200)
+    expect(a.body.me.avatarId).toBe(52)
+    expect((await w.call({ op: 'create', quizId: QUIZ, mode: 'challenge', nickname: 'Bola', avatarId: 50 })).statusCode).toBe(400)
+    expect((await w.join(a.body.code, { avatarId: 50 })).statusCode).toBe(400)
+    expect((await w.join(a.body.code, { avatarId: 52 })).statusCode).toBe(409)
+  })
+  it('gives a bot duel opponent an id from the live quiz cast', async () => {
+    const w = world({
+      quizzes: [{ id: QUIZ, title: 'Maths', battle_enabled: true, cast_mode: 'custom' }],
+      quiz_characters: [{ id: 'c1', quiz_id: QUIZ, slot: 2, name: 'Kola', spec: {}, moves: {} }],
+    })
+    const duel = await w.create({ mode: 'duel', nickname: 'Ada', avatarId: 52, vsBot: true })
+    expect(duel.state).toBe('question')
+    expect(w.db.tables.quiz_battle_sides.find((side) => side.slot === 'b').avatar_id).toBe(52)
+  })
   it('limits how many battles one address can start', async () => {
     const { call } = world()
     expect((await call({ op: 'create', quizId: QUIZ, mode: 'duel', nickname: 'Ada' }, { allowCreate: () => false })).statusCode).toBe(429)

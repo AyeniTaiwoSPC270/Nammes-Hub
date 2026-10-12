@@ -127,6 +127,13 @@ describe('isAvatarId', () => {
     for (const ok of [0, 1, 49]) expect(isAvatarId(ok)).toBe(true)
     for (const bad of [-1, 50, 1.5, '3', null, undefined, NaN]) expect(isAvatarId(bad)).toBe(false)
   })
+  it('accepts only the custom ids present in an offered cast', () => {
+    const cast = { mode: 'all', characters: [{ slot: 0 }, { slot: 2 }] }
+    expect(isAvatarId(50, cast)).toBe(true)
+    expect(isAvatarId(52, cast)).toBe(true)
+    expect(isAvatarId(51, cast)).toBe(false)
+    expect(isAvatarId(50, { ...cast, mode: 'builtins' })).toBe(false)
+  })
 })
 
 describe('isMaxPlayers', () => {

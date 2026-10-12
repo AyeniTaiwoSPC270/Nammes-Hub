@@ -9,7 +9,6 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "cards:characters": "node scripts/regenerateCharacters.mjs",
     "manual:build": "node scripts/manual/build.mjs",
     "manual:capture": "node scripts/manual/capture-screens.mjs scripts/manual/out/raw",
     "manual:capture:admin": "node scripts/manual/capture-screens.mjs scripts/manual/out/raw --admin",

@@ -7,6 +7,7 @@ import { sanitizeTheme } from '../quizTheme.js'
 import { sanitizeCard } from '../quizCard.js'
 import { cleanTeams, TEAM_SCORING } from '../quizTeams.js'
 import { cleanDrawSettings, buildQuestionSet } from '../quizDraw.js'
+import { sanitizeCast } from '../quizCharacterArt.js'
 
 const CODE_ATTEMPTS = 8
 
@@ -59,12 +60,30 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     // so later edits never change a running game.
     const { data: quiz, error: quizError } = await supabaseAdmin
       .from('quizzes')
-      .select('max_players, theme, card, game_options, team_mode, team_scoring, team_presets, draw_settings')
+      .select('max_players, theme, card, game_options, team_mode, team_scoring, team_presets, draw_settings, cast_mode')
       .eq('id', quizId)
       .maybeSingle()
     if (quizError) {
       console.error('quiz-create: quiz read failed', quizError)
       await logError(supabaseAdmin, 'quiz-create', quizError, 500)
+      res.status(500).json({ error: 'Could not start the game' })
+      return
+    }
+
+    const { data: castRows, error: castError } = await supabaseAdmin
+      .from('quiz_characters').select('*').eq('quiz_id', quizId).order('slot', { ascending: true })
+    if (castError) {
+      console.error('quiz-create: cast read failed', castError)
+      await logError(supabaseAdmin, 'quiz-create', castError, 500)
+      res.status(500).json({ error: 'Could not start the game' })
+      return
+    }
+    let characters
+    try {
+      characters = sanitizeCast({ mode: quiz?.cast_mode, characters: castRows ?? [] })
+    } catch (castValidationError) {
+      console.error('quiz-create: cast data is invalid', castValidationError)
+      await logError(supabaseAdmin, 'quiz-create', castValidationError, 500)
       res.status(500).json({ error: 'Could not start the game' })
       return
     }
@@ -96,7 +115,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     const scoring = teamScoring ?? quiz?.team_scoring ?? 'average'
     let teams = []
     if (useTeams) {
-      const checked = cleanTeams(teamsInput ?? quiz?.team_presets)
+      const checked = cleanTeams(teamsInput ?? quiz?.team_presets, characters)
       if (!checked.ok) {
         res.status(400).json({ error: `Set up the teams first: ${checked.error}` })
         return
@@ -115,6 +134,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
             max_players: limit,
             theme,
             card,
+            characters,
             game_options: gameOptions,
             team_mode: useTeams,
             team_scoring: scoring,

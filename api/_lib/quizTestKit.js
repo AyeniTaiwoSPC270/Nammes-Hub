@@ -18,6 +18,7 @@ export function fakeDb(seed = {}) {
     admins: [{ user_id: ADMIN, is_owner: true }],
     feature_flags: [],
     quizzes: [{ id: QUIZ, max_players: 40 }],
+    quiz_characters: [],
     quiz_questions: [
       { id: 'q1', quiz_id: QUIZ, position: 0, text: 'Q1?', options: ['a', 'b', 'c'], correct_index: 1, time_limit_seconds: 20, points: 1000 },
       { id: 'q2', quiz_id: QUIZ, position: 1, text: 'Q2?', options: ['a', 'b'], correct_index: 0, time_limit_seconds: 10, points: 1000 },

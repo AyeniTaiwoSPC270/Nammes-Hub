@@ -4,8 +4,9 @@ import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
 import {
   stepUpdate, EXTEND_STEP_MS, MAX_EXTEND_MS, effectiveElapsedMs, questionLimitMs, scoreAnswer, gradeAnswer, computeAward,
-  isComeback, sanitizeGameOptions, ANSWER_GRACE_MS, DEFAULT_MAX_PLAYERS, AVATAR_COUNT,
+  isComeback, sanitizeGameOptions, ANSWER_GRACE_MS, DEFAULT_MAX_PLAYERS,
 } from '../quiz.js'
+import { castIds } from '../quizCharacterArt.js'
 import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_ONCE } from '../quizBots.js'
 import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion, fitsBracketLength, bracketLengthsThatFit } from '../quizBracket.js'
 import { settleRound } from '../quizBracketEngine.js'
@@ -238,8 +239,13 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
       const added = Math.min(wanted, free)
       const names = botNicknames(added, [...(existing ?? []).map((p) => p.nickname), ...(session.blocked_nicknames ?? [])])
       const offset = (existing ?? []).length
+      const avatarIds = castIds(session.characters)
+      if (avatarIds.length === 0) {
+        res.status(409).json({ error: 'This quiz has no characters available for bots', session })
+        return
+      }
       const rows = names.map((nickname, i) => ({
-        session_id: sessionId, nickname, avatar_id: (offset + i * 7 + 2) % AVATAR_COUNT, bot_skill: skillForBot(skill, offset + i),
+        session_id: sessionId, nickname, avatar_id: avatarIds[(offset + i * 7 + 2) % avatarIds.length], bot_skill: skillForBot(skill, offset + i),
       }))
       const { data: made, error } = await supabaseAdmin.from('quiz_players').insert(rows).select('id')
       if (error) return fail(error, 'Could not add the bots')

@@ -10,6 +10,8 @@ import { sanitizeCard } from '../quizCard.js'
 import { publicImageUrl } from '../quizImage.js'
 import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
 import { cleanDrawSettings, buildQuestionSet, shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
+import { readQuizCast } from '../castStore.js'
+import { castIds } from '../quizCharacterArt.js'
 
 // Practice mode: one person replays a quiz on their own phone, no host. Questions are sent one at a time, so a player
 // never receives a later question (or any answer) in advance. After each answer they see the result at once.
@@ -100,6 +102,14 @@ export function createQuizPracticeHandler(
       const mode = run.race_mode ?? 'none'
       if (mode === 'none' || upto < 0) return null
       const last = Math.min(upto, questions.length - 1)
+      let cast
+      try {
+        cast = await readQuizCast(supabaseAdmin, run.quiz_id)
+      } catch {
+        return { mode, rivals: [] }
+      }
+      const avatarIds = castIds(cast)
+      if (avatarIds.length === 0) return { mode, rivals: [] }
       if (mode === 'bots') {
         const pool = botNicknames(50)
         const start = Math.floor(seeded(run.id, 9) * pool.length)
@@ -114,7 +124,7 @@ export function createQuizPracticeHandler(
             score += points
             if (n === last) gain = points
           })
-          return { id, kind: 'bot', nickname: pool[(start + i * 7) % pool.length], avatarId: Math.floor(seeded(id, 5) * 50), score, gain }
+          return { id, kind: 'bot', nickname: pool[(start + i * 7) % pool.length], avatarId: avatarIds[Math.floor(seeded(id, 5) * avatarIds.length)], score, gain }
         })
         return { mode, rivals }
       }
@@ -132,7 +142,7 @@ export function createQuizPracticeHandler(
           score += points
           if (n === last) gain = points
         })
-        return { id: g.id, kind: 'ghost', nickname: g.nickname, avatarId: g.avatar_id, score, gain }
+        return { id: g.id, kind: 'ghost', nickname: g.nickname, avatarId: avatarIds.includes(g.avatar_id) ? g.avatar_id : avatarIds[0], score, gain }
       })
       return { mode, rivals }
     }
@@ -287,7 +297,13 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
         res.status(400).json({ error: checked.error })
         return
       }
-      if (!isAvatarId(avatarId)) {
+      let cast
+      try {
+        cast = await readQuizCast(supabaseAdmin, quiz.id)
+      } catch (castError) {
+        return fail(castError, 'Could not start practice')
+      }
+      if (!isAvatarId(avatarId, cast)) {
         res.status(400).json({ error: 'Pick one of the characters' })
         return
       }

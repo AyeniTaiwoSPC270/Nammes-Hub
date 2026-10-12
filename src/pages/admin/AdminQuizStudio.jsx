@@ -38,7 +38,10 @@ import { Slider } from '../../components/admin/forms/DesignControls'
 import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from '../../components/admin/quizStudio/StudioPreview'
 import SchemeColours from '../../components/admin/quizStudio/SchemeColours'
 import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery'
+import CharacterEditor from '../../components/admin/quizStudio/CharacterEditor'
+import PartsLab from '../../components/admin/quizStudio/PartsLab'
 import SoundLab from '../../components/admin/quizStudio/SoundLab'
+import { BODIES, TOPPERS, EYES, MOUTHS, ACCESSORIES, PROPS } from '../../../api/_lib/quizCharacterArt.js'
 
 // Quiz Design Studio: choose how a quiz looks on the projector and on phones (colours, backdrop, celebration,
 // event headline), with a live preview, and browse the 50 characters. The look is saved on the quiz and copied into
@@ -204,7 +207,7 @@ export default function AdminQuizStudio() {
           </p>
         </div>
         {/* The card tab saves itself, so the look's own Save and Reset stay off it. */}
-        {tab !== 'characters' && tab !== 'card' && (
+        {tab !== 'characters' && tab !== 'card' && tab !== 'parts' && (
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => setDraft(sanitizeTheme(DEFAULT_THEME))} disabled={!quiz}>
               Reset to default
@@ -219,15 +222,21 @@ export default function AdminQuizStudio() {
       <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Studio sections">
         <TabButton active={tab === 'look'} onClick={() => setTab('look')}>Look &amp; feel</TabButton>
         <TabButton active={tab === 'sound'} onClick={() => setTab('sound')}>Sound</TabButton>
-        <TabButton active={tab === 'characters'} onClick={() => setTab('characters')}>Characters (50)</TabButton>
+        <TabButton active={tab === 'characters'} onClick={() => setTab('characters')}>Characters &amp; cast</TabButton>
+        <TabButton active={tab === 'parts'} onClick={() => setTab('parts')}>Parts lab ({BODIES.length + TOPPERS.length + EYES.length + MOUTHS.length + ACCESSORIES.length + PROPS.length})</TabButton>
         <TabButton active={tab === 'card'} onClick={() => setTab('card')}>Result card</TabButton>
         <Link to="/admin/quizzes" className="ml-auto self-center text-sm text-ink-muted underline">Back to quizzes</Link>
       </div>
 
-      {tab === 'characters' ? (
-        <div className="mt-6">
-          <CharacterGallery />
-        </div>
+       {tab === 'parts' ? (
+         <div className="mt-6">
+           <PartsLab />
+         </div>
+       ) : tab === 'characters' ? (
+         <div className="mt-6 flex flex-col gap-6">
+           <CharacterEditor quizId={id} />
+           <CharacterGallery />
+         </div>
       ) : tab === 'card' ? (
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
           <div className="flex flex-col gap-4">

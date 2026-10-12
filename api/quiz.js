@@ -9,10 +9,11 @@ import practice from './_lib/handlers/quiz-practice.js'
 import battle from './_lib/handlers/quiz-battle.js'
 import sets from './_lib/handlers/quiz-sets.js'
 import cbt from './_lib/handlers/quiz-cbt.js'
+import cast from './_lib/handlers/quiz-cast.js'
 
 // One function for the live quiz routes (see api/account.js for why routes share functions).
 // Called as /api/quiz?action=join and so on.
-const ACTIONS = { create, advance, join, answer, state, host, powerup, practice, battle, sets, cbt }
+const ACTIONS = { create, advance, join, answer, state, host, powerup, practice, battle, sets, cbt, cast }
 
 export default function handler(req, res) {
   const name = req.query?.action

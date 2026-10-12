@@ -14,6 +14,7 @@ import { quizSound, tickSound, stateSound, revealSting, applauseSound, leaderboa
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { quizAudio } from '../lib/quizAudioStore'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
+import { CharacterCastContext } from '../components/quiz/characterCastContext.js'
 import { BracketBoard, BracketPodium, BracketPanel } from '../components/quiz/BracketParts'
 import { isRoundEnd, roundOfQuestion } from '../../api/_lib/quizBracketMath.js'
 import BotPanel from '../components/quiz/BotPanel'
@@ -1424,13 +1425,15 @@ rightShareRef.current = rightShare
   }
 
   return (
-    <QuizThemeScope theme={session.theme}>
-      <HostMenuProvider value={menu}>{screen}</HostMenuProvider>
-      {error && (
-        <div role="alert" className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-2xl bg-danger px-5 py-3 text-white shadow-lg">
-          {error}
-        </div>
-      )}
-    </QuizThemeScope>
+    <CharacterCastContext.Provider value={session.characters}>
+      <QuizThemeScope theme={session.theme}>
+        <HostMenuProvider value={menu}>{screen}</HostMenuProvider>
+        {error && (
+          <div role="alert" className="fixed bottom-24 left-1/2 z-30 -translate-x-1/2 rounded-2xl bg-danger px-5 py-3 text-white shadow-lg">
+            {error}
+          </div>
+        )}
+      </QuizThemeScope>
+    </CharacterCastContext.Provider>
   )
 }

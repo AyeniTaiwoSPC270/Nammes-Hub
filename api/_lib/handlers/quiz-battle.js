@@ -3,7 +3,7 @@ import { isUuid } from '../validate.js'
 import { logError } from '../logError.js'
 import {
   validateNickname, isAvatarId, newPlayerToken, hashToken, createRateLimiter, clientIp, gradeAnswer, isChoiceType, correctText,
-  ANSWER_GRACE_MS, AVATAR_COUNT,
+  ANSWER_GRACE_MS,
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
@@ -14,6 +14,8 @@ import {
   battleQuestionCount, battleWeight, pointsOnOffer,
 } from '../quizBattle.js'
 import { shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
+import { readQuizCast } from '../castStore.js'
+import { castIds } from '../quizCharacterArt.js'
 
 // Battle mode. Spec: docs/superpowers/specs/2026-10-01-quiz-battle-mode.md
 //
@@ -484,6 +486,7 @@ export function createQuizBattleHandler(
       const expired = battle.state === 'cancelled' || (battle.mode === 'challenge' && new Date(battle.expires_at).getTime() < now())
       const seatFree = sides.length < 2 && !expired && battle.state === 'open' && (battle.mode === 'duel' || Boolean(a?.finished_at))
       res.status(200).json({
+        quizId: battle.quiz_id,
         mode: battle.mode,
         title: quizRow?.title ?? '',
         questionCount: battle.question_ids.length,
@@ -512,12 +515,18 @@ export function createQuizBattleHandler(
         res.status(404).json({ error: 'This quiz is not open for battles' })
         return
       }
+      let cast
+      try {
+        cast = await readQuizCast(supabaseAdmin, quiz.id)
+      } catch (castError) {
+        return fail(castError, 'Could not start the battle')
+      }
       const checked = validateNickname(nickname)
       if (!checked.ok) {
         res.status(400).json({ error: checked.error })
         return
       }
-      if (!isAvatarId(avatarId)) {
+      if (!isAvatarId(avatarId, cast)) {
         res.status(400).json({ error: 'Pick one of the characters' })
         return
       }
@@ -581,11 +590,16 @@ export function createQuizBattleHandler(
       if (mode === 'duel' && vsBot === true) {
         const skill = skillForBot(botChoice, Math.floor(seeded(battle.id, 4) * 10))
         const botName = botNicknames(50).filter((n) => n.toLowerCase() !== checked.value.toLowerCase())[Math.floor(seeded(battle.id, 6) * 40)]
+        const avatarIds = castIds(cast)
+        if (avatarIds.length === 0) {
+          await supabaseAdmin.from('quiz_battles').delete().eq('id', battle.id)
+          return res.status(409).json({ error: 'This quiz has no characters available for a bot' })
+        }
         const { error: botError } = await supabaseAdmin.from('quiz_battle_sides').insert({
           battle_id: battle.id,
           slot: 'b',
           nickname: botName,
-          avatar_id: Math.floor(seeded(battle.id, 8) * AVATAR_COUNT),
+          avatar_id: avatarIds[Math.floor(seeded(battle.id, 8) * avatarIds.length)],
           token_hash: null,
           bot_skill: skill,
           total_score: 0,
@@ -625,13 +639,19 @@ export function createQuizBattleHandler(
         res.status(400).json({ error: checked.error })
         return
       }
-      if (!isAvatarId(avatarId)) {
-        res.status(400).json({ error: 'Pick one of the characters' })
-        return
-      }
       const { data: found } = await supabaseAdmin.from('quiz_battles').select('*').eq('code', code.toUpperCase()).maybeSingle()
       if (!found) {
         res.status(404).json({ error: 'No battle found with that code' })
+        return
+      }
+      let cast
+      try {
+        cast = await readQuizCast(supabaseAdmin, found.quiz_id)
+      } catch (castError) {
+        return fail(castError, 'Could not join the battle')
+      }
+      if (!isAvatarId(avatarId, cast)) {
+        res.status(400).json({ error: 'Pick one of the characters' })
         return
       }
       const sides = await sidesOf(found.id)
