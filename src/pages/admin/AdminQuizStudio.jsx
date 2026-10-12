@@ -19,12 +19,14 @@ import {
   THEME_TAGLINE_MAX,
   sanitizeTheme,
   themeAccent,
+  themeCssVars,
   themePageVars,
   contrastWithWhite,
   contrastRatio,
   withLook,
   withAccent,
   withPage,
+  withSchemeColors,
   PAGE_LIGHT,
 } from '../../../api/_lib/quizTheme.js'
 import { isQuizImagePath } from '../../../api/_lib/quizImage.js'
@@ -34,6 +36,7 @@ import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
 import { Slider } from '../../components/admin/forms/DesignControls'
 import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from '../../components/admin/quizStudio/StudioPreview'
+import SchemeColours from '../../components/admin/quizStudio/SchemeColours'
 import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery'
 import SoundLab from '../../components/admin/quizStudio/SoundLab'
 
@@ -117,8 +120,9 @@ export default function AdminQuizStudio() {
   // The card has its own column, its own draft and its own save, so the look's dirty state never drags it along.
   const savedCard = sanitizeCard(quiz?.card, { quizId: id })
   const card = cardDraft ?? savedCard
-  // The colour input cannot show nothing, so it shows the background it is replacing while no colour of its own is set.
-  const look = THEME_LOOKS[theme.look]
+  // The resolved CSS variables. A colour input cannot show nothing, so the card's background input and the scheme colour
+  // rows both show what is actually on screen rather than re-deriving the precedence chain a second time.
+  const vars = themeCssVars(theme)
   const cardDirty = cardDraft !== null && JSON.stringify(sanitizeCard(cardDraft, { quizId: id })) !== JSON.stringify(savedCard)
   function changeCard(patch) {
     setCardDraft({ ...card, ...patch })
@@ -270,7 +274,7 @@ export default function AdminQuizStudio() {
                   <input
                     type="color"
                     aria-label="Card background colour"
-                    value={card.backgroundColor ?? look.deep[0]}
+                    value={card.backgroundColor ?? vars['--qz-deep-a']}
                     onChange={(e) => changeCard({ backgroundColor: e.target.value })}
                     className="h-7 w-12 cursor-pointer rounded-md border border-hairline"
                   />
@@ -401,6 +405,7 @@ export default function AdminQuizStudio() {
                   </Choice>
                 ))}
               </div>
+              <SchemeColours theme={theme} onChange={(patch) => change(withSchemeColors(theme, patch))} />
             </Section>
 
             <Section title="Accent colour" hint="Buttons, the timer, highlights. This overrides the scheme's own colour until you hand it back.">
