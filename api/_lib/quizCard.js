@@ -63,9 +63,11 @@ function fromBase64Url(value) {
 }
 
 // A theme fragment for the studio's preview, so "same as the game" shows the backdrop currently on screen rather than
-// the last one saved. Six fields, not the whole theme: sponsors, sound and picture paths would make the url unusable.
-// Both sides clean it, so the preview endpoint is never handed a colour or a pattern name it has not already validated.
-export const PREVIEW_THEME_KEYS = Object.freeze(['look', 'accent', 'page', 'pattern', 'backdropOpacity', 'backdropScale'])
+// the last one saved. Eight fields, not the whole theme: sponsors, sound and picture paths would make the url unusable.
+// deepA and deepB travel because the card paints the banner the screens are using; the glow pair does not, because the
+// card draws no glow and the url should not carry it. Both sides clean it, so the preview endpoint is never handed a
+// colour or a pattern name it has not already validated.
+export const PREVIEW_THEME_KEYS = Object.freeze(['look', 'accent', 'page', 'deepA', 'deepB', 'pattern', 'backdropOpacity', 'backdropScale'])
 
 export function encodeThemePreview(theme) {
   if (!theme || typeof theme !== 'object' || Array.isArray(theme)) return ''
