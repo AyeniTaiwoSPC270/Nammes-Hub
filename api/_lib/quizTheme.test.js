@@ -4,6 +4,7 @@ import {
   sanitizeTheme, DEFAULT_THEME, THEME_LOOKS, THEME_PATTERNS, THEME_CONFETTI, THEME_HEADLINE_MAX, THEME_TAGLINE_MAX,
   THEME_EFFECTS, THEME_MUSIC, BACKDROP_RANGES, THEME_BACKDROP_FITS, isClipId,
   themeCssVars, themeAccent, contrastWithWhite, contrastRatio, isHexColor, withLook, withAccent, withPage,
+  withSchemeColors, SCHEME_COLOR_KEYS,
   PATTERN_GLYPHS, PATTERN_GEOMETRY, PATTERN_UNDRAWN, PAGE_LIGHT, PAGE_DARK, ACCENT_DERIVED_TOKENS,
 } from './quizTheme.js'
 
@@ -13,7 +14,7 @@ describe('sanitizeTheme', () => {
   })
   it('keeps valid choices', () => {
     const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
-    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', glowA: null, glowB: null, deepA: null, deepB: null, pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef', page: '#101010' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -136,15 +137,17 @@ describe('a theme at its largest', () => {
   it('stays inside the column check even with every sponsor and every effect customised', () => {
     // The column is `pg_column_size(theme) < 4000` (20260930190000_quiz_theme.sql), which is a binary size and so runs
     // a little above this character count for the same document. The largest theme the app can produce — every field at
-    // its limit, including both colour fields, a backdrop picture, six sponsors and a full set of custom clips — measures
+    // its limit, including every colour field, a backdrop picture, six sponsors and a full set of custom clips — measures
     // under 2,500 characters, so there is room to spare rather than a knife edge.
     //
-    // accent and page are set explicitly rather than left to default. A fixture that leaves them null measures a theme
-    // the app cannot produce, and the size check would stop noticing a field that started costing real space.
+    // accent, page and the four scheme colours are set explicitly rather than left to default. A fixture that leaves them
+    // null measures a theme the app cannot produce, and the size check would stop noticing a field that started costing
+    // real space.
     const custom = { music: 'm'.repeat(40), effects: Object.fromEntries(Object.keys(THEME_EFFECTS).map((name) => [name, 'e'.repeat(40)])) }
-    const full = sanitizeTheme({ accent: '#010203', page: '#040506', headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'image', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
+    const full = sanitizeTheme({ accent: '#010203', page: '#040506', glowA: '#070809', glowB: '#0a0b0c', deepA: '#0d0e0f', deepB: '#101112', headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'image', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom } }, { quizId: QUIZ_A })
     expect(full.accent).toBe('#010203')
     expect(full.page).toBe('#040506')
+    expect(full.deepA).toBe('#0d0e0f')
     expect(Object.keys(full.sound.custom.effects)).toHaveLength(Object.keys(THEME_EFFECTS).length)
     expect(full.sound.music).toBe('custom')
     expect(JSON.stringify(full).length).toBeLessThan(3000)
@@ -353,6 +356,72 @@ describe('picking a colour', () => {
     expect(set.look, 'changing the page must not disturb the scheme').toBe('royal')
     expect(withPage(set, null).page).toBeNull()
     for (const bad of ['var(--color-paper)', '#fff', 12]) expect(withPage(set, bad).page, String(bad)).toBeNull()
+  })
+})
+
+describe('the scheme’s own four colours', () => {
+  const none = sanitizeTheme({ look: 'ocean' })
+  const set = withSchemeColors(none, { deepA: '#0a1b2c' })
+
+  it('starts on the scheme’s colours, so every quiz saved before this is untouched', () => {
+    for (const key of SCHEME_COLOR_KEYS) expect(DEFAULT_THEME[key], key).toBeNull()
+    expect(none).toMatchObject({ glowA: null, glowB: null, deepA: null, deepB: null })
+  })
+
+  it('takes #rrggbb and nothing else, exactly as the accent does', () => {
+    const four = sanitizeTheme({ glowA: '#AbCdEf', glowB: '#123456', deepA: '#0B2417', deepB: '#17492f' })
+    expect(four).toMatchObject({ glowA: '#abcdef', glowB: '#123456', deepA: '#0b2417', deepB: '#17492f' })
+    for (const bad of ['red', '#fff', 'rgb(0,0,0)', '#000000;}', 12, null]) {
+      expect(sanitizeTheme({ glowA: bad }).glowA, String(bad)).toBeNull()
+      expect(sanitizeTheme({ deepB: bad }).deepB, String(bad)).toBeNull()
+    }
+  })
+
+  it('sets one end of a gradient without disturbing the other three colours', () => {
+    const vars = themeCssVars({ look: 'ocean', deepA: '#ff0000' })
+    expect(vars['--qz-deep-a']).toBe('#ff0000')
+    expect(vars['--qz-deep-b'], 'the other end is a separate decision').toBe(THEME_LOOKS.ocean.deep[1])
+    expect(vars['--qz-glow-a']).toBe(THEME_LOOKS.ocean.glow[0])
+    expect(vars['--qz-glow-b']).toBe(THEME_LOOKS.ocean.glow[1])
+  })
+
+  it('falls back to the scheme’s tint, not to its button colour', () => {
+    // ocean’s accent and its glow[0] are different colours, so conflating them is invisible on a look where the two happen
+    // to match and wrong on the ones where they do not. The neighbouring variable is named `accent`, which makes the slip
+    // an easy one to make.
+    expect(THEME_LOOKS.ocean.accent).not.toBe(THEME_LOOKS.ocean.glow[0])
+    expect(themeCssVars({ look: 'ocean' })['--qz-glow-a']).toBe(THEME_LOOKS.ocean.glow[0])
+  })
+
+  it('keeps the accent’s place in the glow, below an explicit colour and above the scheme', () => {
+    expect(themeCssVars({ look: 'ocean', accent: '#00ff00' })['--qz-glow-a'], 'a custom accent tints the glow, as it always has').toBe('#00ff00')
+    expect(themeCssVars({ look: 'ocean', accent: '#00ff00', glowA: '#ff0000' })['--qz-glow-a'], 'an explicit colour wins').toBe('#ff0000')
+    expect(themeCssVars({ look: 'ocean', accent: '#00ff00', glowA: null })['--qz-glow-a'], 'handing the glow back gives it to the accent again').toBe('#00ff00')
+  })
+
+  it('changes a colour and nothing else', () => {
+    expect(set.deepA).toBe('#0a1b2c')
+    expect(set.look, 'a colour must not change the scheme').toBe('ocean')
+    expect(set.accent, 'and must not disturb the accent').toBeNull()
+    expect(set.glowA).toBeNull()
+    expect(withSchemeColors(set, { deepA: null, deepB: null }).deepA, 'clearing a pair').toBeNull()
+    expect(withSchemeColors(set, {}).deepA, 'an absent key leaves what is already set alone').toBe('#0a1b2c')
+  })
+
+  it('refuses a key it does not own, so a patch cannot reach through and change something else', () => {
+    // The patch is looser than withAccent’s single value, so the key check is the part that has to hold.
+    for (const patch of [{ accent: '#123456' }, { look: 'royal' }, { page: '#000000' }, JSON.parse('{"__proto__":"#123456"}')]) {
+      const out = withSchemeColors(none, patch)
+      expect(out.accent, JSON.stringify(patch)).toBeNull()
+      expect(out.look, JSON.stringify(patch)).toBe('ocean')
+      expect(Object.keys(out).sort(), JSON.stringify(patch)).toEqual(Object.keys(none).sort())
+    }
+  })
+
+  it('refuses a value it cannot use, and a patch that is not a patch', () => {
+    for (const bad of ['red', '#fff', 'var(--x)', 12, null]) expect(withSchemeColors(set, { deepA: bad }).deepA, String(bad)).toBeNull()
+    // A patch that is not an object changes nothing at all, rather than throwing or wiping a colour that was set.
+    for (const bad of [null, 5, 'red', [], '#0a1b2c']) expect(withSchemeColors(set, bad).deepA, String(bad)).toBe('#0a1b2c')
   })
 })
 
