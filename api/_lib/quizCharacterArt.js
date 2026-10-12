@@ -66,7 +66,8 @@ export function toSvg(node) {
 // Six lists of parts, and four lists of moves. Anything in here can be combined with anything else in here, which is
 // what the cast editor in the studio builds from.
 
-export const BODIES = ['blob', 'box', 'round', 'bean', 'ghost', 'onigiri', 'cloud', 'drop', 'loaf', 'hexagon', 'pear', 'jelly', 'diamond']
+export const BODIES = ['blob', 'box', 'round', 'bean', 'ghost', 'onigiri', 'cloud', 'drop', 'loaf', 'hexagon', 'pear', 'jelly', 'diamond',
+  'pot', 'capsule', 'puck', 'cup', 'cone', 'moon']
 export const TOPPERS = ['none', 'cat', 'bunny', 'bear', 'horns', 'antenna', 'bugs', 'sprout', 'spikes', 'floppy', 'halo', 'tuft',
   'fin', 'mohawk', 'beret', 'headband-over', 'leafcrown', 'antennae', 'braid', 'pigtails', 'curls', 'bandana', 'cowlick', 'tiara']
 export const EYES = ['round', 'dot', 'sleepy', 'wide', 'wink', 'star', 'slit', 'lash', 'cyclops', 'spiral',
@@ -281,6 +282,14 @@ const BODY = {
   pear: { eyeY: 56, top: 16, ear: [14, 28], neckY: 78, arm: [30, 70] },
   jelly: { eyeY: 46, top: 16, ear: [22, 26], neckY: 68, arm: [30, 60] },
   diamond: { eyeY: 46, top: 12, ear: [12, 36], neckY: 66, arm: [31, 52] },
+  // The six added for a quiz's own characters. Every hat, accessory and prop positions itself off one of these rows,
+  // so a wrong number here is a hat floating above a head — which no test can see and the parts lab exists to catch.
+  pot: { eyeY: 56, top: 20, ear: [24, 26], neckY: 74, arm: [30, 64] },
+  capsule: { eyeY: 44, top: 10, ear: [14, 24], neckY: 76, arm: [27, 58] },
+  puck: { eyeY: 48, top: 32, ear: [28, 40], neckY: 74, arm: [34, 60] },
+  cup: { eyeY: 52, top: 16, ear: [30, 44], neckY: 74, arm: [26, 64] },
+  cone: { eyeY: 62, top: 12, ear: [22, 34], neckY: 78, arm: [28, 72] },
+  moon: { eyeY: 46, top: 14, ear: [12, 40], neckY: 72, arm: [24, 62] },
 }
 
 function body(kind, color) {
@@ -336,6 +345,31 @@ function body(kind, color) {
         d: 'M20 56C20 32 32 16 50 16s30 16 30 40v16c0 12-10 16-14 6-4 10-12 10-16 0-4 10-12 10-16 0-4 10-14 6-14-6z',
         ...fill,
       })
+    case 'pot':
+      return [
+        h('path', { d: 'M50 18c-13 0-20 10-22 26-2 18 4 38 22 38s24-20 22-38c-2-16-9-26-22-26z', ...fill }),
+        h('rect', { x: 24, y: 14, width: 52, height: 10, rx: 5, fill: color.dark }),
+      ]
+    case 'capsule':
+      return h('rect', { x: 26, y: 10, width: 48, height: 80, rx: 24, ...fill })
+    case 'puck':
+      return [
+        h('rect', { x: 14, y: 34, width: 72, height: 32, rx: 14, ...fill }),
+        h('rect', { x: 22, y: 74, width: 10, height: 7, rx: 2.5, fill: color.dark }),
+        h('rect', { x: 68, y: 74, width: 10, height: 7, rx: 2.5, fill: color.dark }),
+      ]
+    case 'cup':
+      return h('g', null, [
+        h('path', { d: 'M28 16h40v52a12 12 0 0 1-12 12H40a12 12 0 0 1-12-12z', ...fill }),
+        h('path', { d: 'M68 32h8a10 10 0 0 1 0 18h-8', fill: 'none', stroke: color.dark, strokeWidth: 4, strokeLinecap: 'round' }),
+      ])
+    case 'cone':
+      return [
+        h('path', { d: 'M50 12l23 68H27z', ...fill }),
+        h('path', { d: 'M35 54h30', fill: 'none', stroke: color.light, strokeWidth: 4 }),
+      ]
+    case 'moon':
+      return h('path', { d: 'M64 14a36 36 0 1 0 0 72 29 29 0 0 1 0-72z', ...fill })
     default:
       return h('path', { d: 'M50 12 84 50 50 88 16 50z', ...fill, strokeWidth: 3 })
   }
