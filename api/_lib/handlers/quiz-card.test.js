@@ -73,6 +73,21 @@ describe('quiz card endpoint', () => {
     expect(isPng(res.body)).toBe(true)
   })
 
+  it('renders a custom avatar from the finished session snapshot', async () => {
+    const cast = { mode: 'all', characters: [{
+      slot: 0, name: 'Kola', spec: { body: 'pot', color: '#ff5a1f' }, moves: {},
+      color: { main: '#ff5a1f', dark: '#8e1c00', light: '#ffe9e0' },
+    }] }
+    const customGame = finishedGame({ characters: cast })
+    customGame.tables.quiz_players[0].avatar_id = 50
+    const oldGame = finishedGame()
+    oldGame.tables.quiz_players[0].avatar_id = 50
+    const custom = await run(customGame)
+    const fallback = await run(oldGame)
+    expect(isPng(custom.body)).toBe(true)
+    expect(custom.body).not.toEqual(fallback.body)
+  })
+
   it('serves a board card to an admin, cached privately so no shared cache can hold it', async () => {
     const res = await run(finishedGame(), { session: SESSION, view: 'board' }, {
       headers: { authorization: 'Bearer good' },

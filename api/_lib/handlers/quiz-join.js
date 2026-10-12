@@ -20,10 +20,6 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
       res.status(400).json({ error: 'Enter the 6-digit game code' })
       return
     }
-    if (!isAvatarId(avatarId)) {
-      res.status(400).json({ error: 'Pick one of the characters' })
-      return
-    }
     const checked = validateNickname(nickname)
     if (!checked.ok) {
       res.status(400).json({ error: checked.error })
@@ -33,12 +29,17 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
     const supabaseAdmin = getClient()
     const { data: session } = await supabaseAdmin
       .from('quiz_sessions')
-      .select('id, state, max_players, locked, blocked_nicknames, team_mode')
+      .select('id, state, max_players, locked, blocked_nicknames, team_mode, characters')
       .eq('join_code', code)
       .neq('state', 'finished')
       .maybeSingle()
     if (!session) {
       res.status(404).json({ error: 'No game found with that code' })
+      return
+    }
+
+    if (!isAvatarId(avatarId, session.characters)) {
+      res.status(400).json({ error: 'Pick one of the characters' })
       return
     }
 

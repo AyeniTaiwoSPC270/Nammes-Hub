@@ -77,8 +77,11 @@ export const MOUTHS = ['smile', 'grin', 'cat', 'o', 'smirk', 'tongue', 'fang', '
 export const ACCESSORIES = [
   'none', 'sunglasses', 'glasses', 'headphones', 'bowtie', 'tie', 'scarf', 'monocle', 'eyepatch', 'ninja',
   'hero', 'flower', 'crown', 'gradcap', 'partyhat', 'goggles', 'mustache', 'cap', 'chef', 'beanie',
+  'weldmask', 'labcoat', 'goggles-on-hat', 'headband', 'apron', 'earmuffs', 'medal', 'scarf-long', 'gloves', 'toolbelt',
+  'armband', 'pocketwatch', 'ribbon', 'chain', 'badge', 'flask',
 ]
-export const PROPS = ['none', 'bulb', 'book', 'star', 'heart', 'note', 'pi', 'sigma', 'sqrt', 'infinity', 'balloon', 'trophy']
+export const PROPS = ['none', 'bulb', 'book', 'star', 'heart', 'note', 'pi', 'sigma', 'sqrt', 'infinity', 'balloon', 'trophy',
+  'calipers', 'ingot', 'gear', 'beaker', 'micrometer', 'anvil', 'wrench', 'magnet', 'bead', 'crystal', 'seedling', 'kite', 'lantern', 'dice']
 
 export const IDLE_MOVES = ['bob', 'sway', 'breathe', 'hover', 'nervous', 'hop', 'tilt', 'pulse', 'doze', 'glitch', 'wobble']
 export const WIN_MOVES = ['jump', 'spin', 'flip', 'shimmy', 'pogo', 'headbang', 'stretch', 'zoom', 'moonwalk', 'tada']
@@ -267,8 +270,10 @@ export function characterSpec(id, cast) {
 const INK = '#1f2937'
 
 // Per body: its outline, the row the eyes sit on, where the top of the head is (hats sit there), where ears and horns
-// attach (half-width, row), where the neck items go, and where the arms start (half-width, row).
-const BODY = {
+// attach (half-width, row), where the neck items go, and where the arms start (half-width, row). Exported because the
+// geometry tests read it: a row that is wrong does not throw, it puts a crown in mid-air, and only an assertion about
+// the numbers can catch that.
+export const BODY = {
   blob: { eyeY: 50, top: 18, ear: [20, 26], neckY: 76, arm: [28, 66] },
   box: { eyeY: 48, top: 26, ear: [22, 28], neckY: 75, arm: [28, 62] },
   round: { eyeY: 50, top: 21, ear: [22, 28], neckY: 80, arm: [27, 66] },
@@ -415,10 +420,10 @@ function topper(kind, shape, color) {
       ]
     case 'bugs':
       return [
-        h('path', { d: `M43 ${top + 6}Q36 ${top - 6} 33 ${top - 12}`, fill: 'none', stroke: color.dark, strokeWidth: 2.6, strokeLinecap: 'round' }),
-        h('path', { d: `M57 ${top + 6}Q64 ${top - 6} 67 ${top - 12}`, fill: 'none', stroke: color.dark, strokeWidth: 2.6, strokeLinecap: 'round' }),
-        h('circle', { cx: 32, cy: top - 14, r: 4, fill: color.light, stroke: color.dark, strokeWidth: 2.2 }),
-        h('circle', { cx: 68, cy: top - 14, r: 4, fill: color.light, stroke: color.dark, strokeWidth: 2.2 }),
+        h('path', { d: `M43 ${top + 6}Q36 ${above(top, 6)} 33 ${above(top, 12)}`, fill: 'none', stroke: color.dark, strokeWidth: 2.6, strokeLinecap: 'round' }),
+        h('path', { d: `M57 ${top + 6}Q64 ${above(top, 6)} 67 ${above(top, 12)}`, fill: 'none', stroke: color.dark, strokeWidth: 2.6, strokeLinecap: 'round' }),
+        h('circle', { cx: 32, cy: above(top, 14), r: 4, fill: color.light, stroke: color.dark, strokeWidth: 2.2 }),
+        h('circle', { cx: 68, cy: above(top, 14), r: 4, fill: color.light, stroke: color.dark, strokeWidth: 2.2 }),
       ]
     case 'sprout':
       return [
@@ -429,9 +434,9 @@ function topper(kind, shape, color) {
     case 'spikes':
       return [
         h('g', { fill: color.dark, stroke: color.dark, strokeWidth: 2, strokeLinejoin: 'round' }, [
-          h('polygon', { points: `34,${top + 6} 38,${top - 10} 46,${top + 2}` }),
-          h('polygon', { points: `43,${top + 3} 50,${top - 15} 57,${top + 3}` }),
-          h('polygon', { points: `54,${top + 2} 62,${top - 10} 66,${top + 6}` }),
+          h('polygon', { points: `34,${top + 6} 38,${above(top, 10)} 46,${top + 2}` }),
+          h('polygon', { points: `43,${top + 3} 50,${above(top, 15)} 57,${top + 3}` }),
+          h('polygon', { points: `54,${top + 2} 62,${above(top, 10)} 66,${top + 6}` }),
         ]),
       ]
     case 'floppy':
@@ -509,6 +514,14 @@ function topper(kind, shape, color) {
     default:
       return null
   }
+}
+
+// A hat that pokes above y=0 still looks right on a projector, because the browser lets an svg overflow and
+// characters.css says so. The result card does not: @napi-rs/canvas renders the string on its own, so anything above
+// the viewBox is simply cut off, and a party hat arrives without its tip. Anything drawn above the head is clamped to
+// stay inside the canvas for that reason, which is why the two tallest bodies do not get a full-height hat.
+function above(top, distance) {
+  return Math.max(1, top - distance)
 }
 
 const STAR = 'M0-6L1.47-2.02 5.71-1.85 2.38.77 3.53 4.85 0 2.5-3.53 4.85-2.38.77-5.71-1.85-1.47-2.02z'
@@ -701,7 +714,7 @@ function face(mood, eyes, mouthKind, eyeY, color) {
   ]
 }
 
-function accessory(kind, top, eyeY, neckY) {
+function accessory(kind, top, eyeY, neckY, color) {
   switch (kind) {
     case 'cap':
       return h('g', null, [
@@ -731,9 +744,9 @@ function accessory(kind, top, eyeY, neckY) {
       ])
     case 'partyhat':
       return h('g', null, [
-        h('path', { d: `M50 ${top - 16}L65 ${top + 5}Q50 ${top + 10} 35 ${top + 5}z`, fill: '#f59e0b', stroke: '#b45309', strokeWidth: 1.5, strokeLinejoin: 'round' }),
-        h('path', { d: `M44 ${top - 4}l12 4M41 ${top + 1}l18 5`, stroke: '#fff', strokeWidth: 2, opacity: '0.8' }),
-        h('circle', { cx: 50, cy: top - 17, r: 3.5, fill: '#ec4899' }),
+        h('path', { d: `M50 ${above(top, 16)}L65 ${top + 5}Q50 ${top + 10} 35 ${top + 5}z`, fill: '#f59e0b', stroke: '#b45309', strokeWidth: 1.5, strokeLinejoin: 'round' }),
+        h('path', { d: `M44 ${above(top, 4)}l12 4M41 ${top + 1}l18 5`, stroke: '#fff', strokeWidth: 2, opacity: '0.8' }),
+        h('circle', { cx: 50, cy: above(top, 17), r: 3.5, fill: '#ec4899' }),
       ])
     case 'crown':
       return [
@@ -829,6 +842,89 @@ function accessory(kind, top, eyeY, neckY) {
         })),
         h('circle', { r: 3.4, fill: '#fde047', stroke: '#b45309', strokeWidth: 1.2 }),
       ])
+    // ---- the sixteen added for a quiz's own characters ---------------------------------------------------------
+    case 'weldmask':
+      return h('g', { stroke: '#111827', strokeWidth: 1.8, strokeLinejoin: 'round' }, [
+        h('path', { d: `M26 ${eyeY - 15}h48v13q0 17-24 17t-24-17z`, fill: '#1f2937' }),
+        h('rect', { x: 33, y: eyeY - 9, width: 12, height: 9, rx: 2, fill: '#0b2417', stroke: '#6b7280', strokeWidth: 1.2 }),
+        h('rect', { x: 55, y: eyeY - 9, width: 12, height: 9, rx: 2, fill: '#0b2417', stroke: '#6b7280', strokeWidth: 1.2 }),
+      ])
+    case 'labcoat':
+      return h('g', { stroke: '#d1d5db', strokeWidth: 1.8, strokeLinejoin: 'round' }, [
+        h('path', { d: `M34 ${neckY + 2}h32v26H34z`, fill: '#f8fafc' }),
+        h('path', { d: `M50 ${neckY + 2}v26M34 ${neckY + 10}h16`, fill: 'none', strokeWidth: 1.2 }),
+        h('circle', { cx: 43, cy: neckY + 18, r: 2, fill: '#dc2626', stroke: 'none' }),
+        h('circle', { cx: 57, cy: neckY + 18, r: 2, fill: '#2563eb', stroke: 'none' }),
+      ])
+    case 'goggles-on-hat':
+      return h('g', null, [
+        h('path', { d: `M30 ${eyeY - 16}q20-12 40 0`, fill: 'none', stroke: '#7c2d12', strokeWidth: 4, strokeLinecap: 'round' }),
+        h('circle', { cx: 39, cy: eyeY - 13, r: 7, fill: 'rgba(125,211,252,0.5)', stroke: '#374151', strokeWidth: 2.4 }),
+        h('circle', { cx: 61, cy: eyeY - 13, r: 7, fill: 'rgba(125,211,252,0.5)', stroke: '#374151', strokeWidth: 2.4 }),
+      ])
+    case 'headband':
+      return h('path', {
+        d: `M${50 - 22} ${eyeY - 9}q22-9 44 0v6q-22-8-44 0z`, fill: '#dc2626', stroke: '#7f1d1d', strokeWidth: 1.6, strokeLinejoin: 'round',
+      })
+    case 'apron':
+      return h('g', { stroke: color.dark, strokeWidth: 1.6, strokeLinejoin: 'round' }, [
+        h('path', { d: `M37 ${neckY - 1}h26l3 24H34z`, fill: color.light }),
+        h('path', { d: `M43 ${neckY - 1}q7 7 14 0`, fill: 'none', strokeWidth: 1.4 }),
+      ])
+    case 'earmuffs':
+      return h('g', null, [
+        h('path', { d: 'M26 52q0-24 24-24t24 24', fill: 'none', stroke: '#334155', strokeWidth: 3.4, strokeLinecap: 'round' }),
+        h('rect', { x: 20, y: 50, width: 11, height: 15, rx: 5, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 1.6 }),
+        h('rect', { x: 69, y: 50, width: 11, height: 15, rx: 5, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 1.6 }),
+      ])
+    case 'medal':
+      return h('g', null, [
+        h('path', { d: `M44 ${neckY - 1}l-3-9h22l-3 9z`, fill: '#dc2626', stroke: '#7f1d1d', strokeWidth: 1.2 }),
+        h('circle', { cx: 50, cy: neckY + 8, r: 6, fill: '#fbbf24', stroke: '#b45309', strokeWidth: 1.6 }),
+      ])
+    case 'scarf-long':
+      return h('g', { stroke: '#7f1d1d', strokeWidth: 1.6, strokeLinejoin: 'round' }, [
+        h('path', { d: `M31 ${neckY - 3}q19 10 38 0v9q-19 10-38 0z`, fill: '#ef4444' }),
+        h('path', { d: `M56 ${neckY + 4}l3 22h11l-3-20z`, fill: '#dc2626' }),
+      ])
+    case 'gloves':
+      return [-1, 1].map((s) => h('circle', {
+        cx: 50 + s * 22, cy: eyeY + 18, r: 5, fill: '#1d4ed8', stroke: '#1e3a8a', strokeWidth: 1.4,
+      }))
+    case 'toolbelt':
+      return h('g', { stroke: '#78350f', strokeWidth: 1.6, strokeLinejoin: 'round' }, [
+        h('rect', { x: 24, y: neckY + 8, width: 52, height: 9, rx: 3, fill: '#92400e' }),
+        h('rect', { x: 42, y: neckY + 10, width: 16, height: 5, rx: 1.5, fill: '#fbbf24' }),
+      ])
+    case 'armband':
+      return h('rect', { x: 22, y: eyeY + 14, width: 14, height: 7, rx: 2, fill: '#16a34a', stroke: '#166534', strokeWidth: 1.2 })
+    case 'pocketwatch':
+      return h('g', null, [
+        h('path', { d: `M50 ${neckY - 1}v8`, fill: 'none', stroke: '#475569', strokeWidth: 1.4 }),
+        h('circle', { cx: 50, cy: neckY + 12, r: 7, fill: '#fde68a', stroke: '#b45309', strokeWidth: 1.8 }),
+        h('path', { d: `M50 ${neckY + 12}v-4M50 ${neckY + 12}h3`, stroke: '#b45309', strokeWidth: 1.2, strokeLinecap: 'round' }),
+      ])
+    case 'ribbon':
+      return h('g', null, [
+        h('path', { d: `M50 ${neckY}q-8-6-13 0 5 6 13 0`, fill: '#f472b6', stroke: '#be185d', strokeWidth: 1.4 }),
+        h('path', { d: `M50 ${neckY}q8-6 13 0-5 6-13 0`, fill: '#f472b6', stroke: '#be185d', strokeWidth: 1.4 }),
+        h('circle', { cx: 50, cy: neckY, r: 2.6, fill: '#db2777' }),
+      ])
+    case 'chain':
+      return h('path', {
+        d: `M${50 - 18} ${neckY - 2}q18 16 36 0`, fill: 'none', stroke: '#fbbf24', strokeWidth: 2, strokeLinecap: 'round',
+      })
+    case 'badge':
+      return h('g', null, [
+        h('rect', { x: 41, y: neckY + 1, width: 18, height: 14, rx: 3, fill: '#f8fafc', stroke: '#0ea5e9', strokeWidth: 1.6 }),
+        h('path', { d: `M45 ${neckY + 6}h10M45 ${neckY + 10}h7`, stroke: '#0ea5e9', strokeWidth: 1.3, strokeLinecap: 'round' }),
+      ])
+    case 'flask':
+      return h('g', { stroke: '#0369a1', strokeWidth: 1.6, strokeLinejoin: 'round' }, [
+        h('path', { d: `M${50 - 9} ${top + 3}h18v7l7 11v8q0 6-6 6h-20q-6 0-6-6v-8l7-11z`, fill: 'rgba(186,230,253,0.4)' }),
+        h('path', { d: `M${50 - 7} ${top + 22}h14v7q0 5-7 5t-7-5z`, fill: '#4ade80', opacity: '0.85', stroke: 'none' }),
+        h('rect', { x: 50 - 10, y: top + 1, width: 20, height: 4, rx: 1.5, fill: '#475569', stroke: 'none' }),
+      ])
     default:
       return null
   }
@@ -889,6 +985,99 @@ function prop(kind) {
         h('path', { d: 'M11 19q-4 4 0 8', fill: 'none', stroke: '#6b7280', strokeWidth: 1.2 }),
       ]
       break
+    // ---- the fourteen added for a quiz's own characters -------------------------------------------------------
+    case 'calipers':
+      art = [
+        h('path', { d: 'M4 3v15M4 3l15 6', fill: 'none', stroke: '#94a3b8', strokeWidth: 2.2, strokeLinecap: 'round' }),
+        h('path', { d: 'M19 3v15M19 3L8 9', fill: 'none', stroke: '#94a3b8', strokeWidth: 2.2, strokeLinecap: 'round' }),
+        h('rect', { x: 9, y: 1, width: 5, height: 5, rx: 1, fill: '#475569' }),
+      ]
+      break
+    case 'ingot':
+      art = [
+        h('path', { d: 'M3 11l3-5h12l3 5-3 5H6z', fill: '#9ca3af', stroke: '#4b5563', strokeWidth: 1.4, strokeLinejoin: 'round' }),
+        h('path', { d: 'M6 11h12', stroke: '#e5e7eb', strokeWidth: 1.4 }),
+      ]
+      break
+    case 'gear':
+      art = [
+        ...[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => h('rect', {
+          x: 9.5, y: 0.5, width: 3, height: 5, transform: `rotate(${deg} 11 11)`, fill: '#64748b',
+        })),
+        h('circle', { cx: 11, cy: 11, r: 7.4, fill: '#64748b', stroke: '#334155', strokeWidth: 1.4 }),
+        h('circle', { cx: 11, cy: 11, r: 2.6, fill: '#e2e8f0' }),
+      ]
+      break
+    case 'beaker':
+      art = [
+        h('path', { d: 'M6 2h10M8 2v14l-3 6h12l-3-6V2', fill: 'rgba(186,230,253,0.35)', stroke: '#0369a1', strokeWidth: 1.5, strokeLinejoin: 'round' }),
+        h('path', { d: 'M7.6 15h6.8l2 5H5.6z', fill: '#4ade80', opacity: '0.85' }),
+      ]
+      break
+    case 'micrometer':
+      art = [
+        h('path', { d: 'M3 9h10v4H3z', fill: '#475569', stroke: '#1e293b', strokeWidth: 1.3, strokeLinejoin: 'round' }),
+        h('rect', { x: 12, y: 4, width: 6, height: 14, rx: 1.5, fill: '#94a3b8', stroke: '#1e293b', strokeWidth: 1.3 }),
+        h('rect', { x: 18, y: 8, width: 5, height: 6, rx: 1, fill: '#64748b', stroke: '#1e293b', strokeWidth: 1.2 }),
+      ]
+      break
+    case 'anvil':
+      art = [
+        h('path', { d: 'M2 8h6l3-3h6l3 3h2a2 2 0 0 1 0 4h-3l-2 3H7l-2 6H3l2-6H2z', fill: '#475569', stroke: '#1e293b', strokeWidth: 1.3, strokeLinejoin: 'round' }),
+      ]
+      break
+    case 'wrench':
+      art = h('path', {
+        d: 'M20 3a5 5 0 0 0-6 6L3 20l2 2 11-11a5 5 0 0 0 6-6l-3 3-2-2z',
+        fill: '#94a3b8', stroke: '#475569', strokeWidth: 1.4, strokeLinejoin: 'round',
+      })
+      break
+    case 'magnet':
+      art = h('path', {
+        d: 'M4 13V7a7 7 0 0 1 14 0v6h-5V7a2 2 0 0 0-4 0v6z',
+        fill: '#dc2626', stroke: '#7f1d1d', strokeWidth: 1.5, strokeLinejoin: 'round',
+      })
+      break
+    case 'bead':
+      art = [
+        h('circle', { cx: 11, cy: 11, r: 8, fill: '#c4b5fd', stroke: '#7c3aed', strokeWidth: 1.4 }),
+        h('circle', { cx: 8, cy: 8, r: 2.4, fill: '#fff', opacity: '0.8' }),
+      ]
+      break
+    case 'crystal':
+      art = h('polygon', {
+        points: '11,1 19,9 14,21 8,21 3,9', fill: '#a5f3fc', stroke: '#0891b2', strokeWidth: 1.4, strokeLinejoin: 'round',
+      })
+      break
+    case 'seedling':
+      art = [
+        h('path', { d: 'M11 22V11', fill: 'none', stroke: '#15803d', strokeWidth: 1.8, strokeLinecap: 'round' }),
+        h('ellipse', { cx: 7, cy: 9, rx: 4.4, ry: 2.6, transform: 'rotate(-28 7 9)', fill: '#4ade80', stroke: '#15803d', strokeWidth: 1.2 }),
+        h('ellipse', { cx: 15, cy: 6, rx: 4.4, ry: 2.6, transform: 'rotate(28 15 6)', fill: '#86efac', stroke: '#15803d', strokeWidth: 1.2 }),
+      ]
+      break
+    case 'kite':
+      art = [
+        h('polygon', { points: '11,1 20,9 11,17 2,9', fill: '#f472b6', stroke: '#be185d', strokeWidth: 1.3, strokeLinejoin: 'round' }),
+        h('path', { d: 'M11 1v16M2 9h18', stroke: '#f9a8d4', strokeWidth: 1 }),
+        h('path', { d: 'M11 17q3 3 0 5t0 4', fill: 'none', stroke: '#6b7280', strokeWidth: 1.1 }),
+      ]
+      break
+    case 'lantern':
+      art = [
+        h('path', { d: 'M8 4a3 3 0 0 1 6 0', fill: 'none', stroke: '#475569', strokeWidth: 1.4 }),
+        h('rect', { x: 6, y: 5, width: 10, height: 14, rx: 2, fill: '#fbbf24', stroke: '#b45309', strokeWidth: 1.4 }),
+        h('path', { d: 'M11 8v8', stroke: '#b45309', strokeWidth: 1.2 }),
+      ]
+      break
+    case 'dice':
+      art = [
+        h('rect', { x: 2, y: 2, width: 18, height: 18, rx: 4, fill: '#fff', stroke: '#111827', strokeWidth: 1.6 }),
+        h('circle', { cx: 7.5, cy: 7.5, r: 1.8, fill: '#111827' }),
+        h('circle', { cx: 14.5, cy: 14.5, r: 1.8, fill: '#111827' }),
+        h('circle', { cx: 11, cy: 11, r: 1.8, fill: '#dc2626' }),
+      ]
+      break
     default:
       art = [
         h('path', { d: 'M5 2h12v7q0 7-6 8-6-1-6-8z', fill: '#fbbf24', stroke: '#b45309', strokeWidth: 1.4, strokeLinejoin: 'round' }),
@@ -923,7 +1112,7 @@ export function characterSvgBody(spec, mood = 'idle') {
       body(spec.body, spec.color),
       arms(shape, spec.color),
       face(mood, spec.eyes, spec.mouth, shape.eyeY, spec.color),
-      accessory(spec.accessory, shape.top, shape.eyeY, shape.neckY),
+      accessory(spec.accessory, shape.top, shape.eyeY, shape.neckY, spec.color),
     ]),
   ])
 }
@@ -939,4 +1128,114 @@ export function characterSvgMarkup(spec, mood = 'happy') {
     'qz-char', `qz-mood-${mood}`, `qz-i-${spec.idle}`, `qz-w-${spec.win}`, `qz-s-${spec.sad}`, `qz-h-${spec.hello}`,
   ].join(' ')
   return toSvg(h('svg', { class: classes, viewBox: '0 0 100 100' }, characterSvgBody(spec, mood)))
+}
+
+// A quiz's own cast is stored as data. This is the boundary shared by the editor, phones and API: unsupported parts or
+// moves cannot get as far as the string renderer, and malformed slots are rejected rather than repaired silently.
+export const MAX_CAST = 12
+export const CAST_MODES = ['builtins', 'all', 'custom']
+const HEX = /^#[0-9a-f]{6}$/
+
+const oneOf = (list, value, fallback) => (typeof value === 'string' && list.includes(value) ? value : fallback)
+
+export function sanitizeCharacterSpec(raw) {
+  const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  return {
+    body: oneOf(BODIES, input.body, 'blob'),
+    topper: oneOf(TOPPERS, input.topper, 'none'),
+    eyes: oneOf(EYES, input.eyes, 'round'),
+    mouth: oneOf(MOUTHS, input.mouth, 'smile'),
+    accessory: oneOf(ACCESSORIES, input.accessory, 'none'),
+    prop: oneOf(PROPS, input.prop, 'none'),
+    color: typeof input.color === 'string' && HEX.test(input.color) ? input.color : null,
+  }
+}
+
+export function sanitizeCharacterMoves(raw) {
+  const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  return {
+    idle: oneOf(IDLE_MOVES, input.idle, 'bob'),
+    win: oneOf(WIN_MOVES, input.win, 'jump'),
+    sad: oneOf(SAD_MOVES, input.sad, 'droop'),
+    hello: oneOf(HELLO_MOVES, input.hello, 'wave'),
+  }
+}
+
+export function deriveColour(hex) {
+  const base = typeof hex === 'string' && HEX.test(hex) ? hex : builtinColour(0).main
+  const n = parseInt(base.slice(1), 16)
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => c / 255)
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  const d = max - min
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1))
+  let hue = 0
+  if (d !== 0) {
+    if (max === r) hue = ((g - b) / d) % 6
+    else if (max === g) hue = (b - r) / d + 2
+    else hue = (r - g) / d + 4
+    hue *= 60
+    if (hue < 0) hue += 360
+  }
+  const sourceLightness = l * 100
+  // The normal editor range uses the same 28/90 ends as the built-ins. At the extremes there is no darker black or
+  // lighter white, so move the derived shade toward the nearest endpoint instead of making the outline brighter.
+  const darkLightness = sourceLightness > 28 ? 28 : sourceLightness / 2
+  const lightLightness = sourceLightness < 90 ? 90 : sourceLightness + (100 - sourceLightness) / 2
+  return { main: base, dark: hsl(hue, s * 100, darkLightness), light: hsl(hue, s * 100, lightLightness) }
+}
+
+export function sanitizeCast(raw) {
+  const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  const mode = CAST_MODES.includes(input.mode) ? input.mode : 'builtins'
+  const list = Array.isArray(input.characters) ? input.characters : []
+  if (list.length > MAX_CAST) throw new Error(`a cast holds at most ${MAX_CAST} characters, got ${list.length}`)
+  if (mode === 'custom' && list.length === 0) throw new Error('custom-only mode needs at least one character')
+  const taken = new Set()
+  const characters = list.map((entry) => {
+    const slot = entry?.slot
+    if (!Number.isInteger(slot) || slot < 0 || slot >= MAX_CAST) throw new Error(`slot ${slot} is outside 0-${MAX_CAST - 1}`)
+    if (taken.has(slot)) throw new Error(`two characters in slot ${slot}`)
+    taken.add(slot)
+    const name = typeof entry?.name === 'string' ? entry.name.trim().slice(0, 24) : ''
+    if (!name) throw new Error(`slot ${slot} has no name`)
+    const spec = sanitizeCharacterSpec(entry?.spec)
+    return {
+      slot,
+      name,
+      id: typeof entry?.id === 'string' ? entry.id : null,
+      spec,
+      moves: sanitizeCharacterMoves(entry?.moves),
+      color: deriveColour(spec.color ?? builtinColour(slot).main),
+    }
+  })
+  return { mode, characters }
+}
+
+const BUILTIN_IDS = Array.from({ length: BUILTIN_COUNT }, (_, id) => id)
+
+export function castIds(cast) {
+  const source = cast && typeof cast === 'object' ? cast : { mode: 'builtins', characters: [] }
+  const custom = [...new Set((Array.isArray(source.characters) ? source.characters : [])
+    .map((character) => character?.slot)
+    .filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < MAX_CAST)
+    .map((slot) => BUILTIN_COUNT + slot))].sort((a, b) => a - b)
+  if (source.mode === 'custom') return custom
+  if (source.mode === 'all') return [...BUILTIN_IDS, ...custom]
+  return BUILTIN_IDS
+}
+
+export function allowedAvatarIds(cast) {
+  return new Set(castIds(cast))
+}
+
+// Equality ignores a cast row's database metadata and accepts either a raw editor spec or the flat built-in shape.
+export function sameDesign(a, b) {
+  const left = a?.spec ?? a ?? {}
+  const right = b?.spec ?? b ?? {}
+  const color = (value) => typeof value === 'string' ? value : value?.main ?? ''
+  return left.body === right.body && left.topper === right.topper && left.eyes === right.eyes
+    && left.mouth === right.mouth && left.accessory === right.accessory && left.prop === right.prop
+    && color(left.color) === color(right.color)
 }

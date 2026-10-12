@@ -147,6 +147,15 @@ Both predate the calendar, are out of scope, and are still open:
   asked for; only the inside comes from the module. A wrapper element would move those classes off the
   element the stylesheet targets. It must also never import `characters.css` — `characterSvg.test.js`
   checks both of these.
+- **`avatar_id` has one stable meaning.** 0–49 is always a built-in; 50–61 is slot 0–11 of that
+  quiz's cast. Resolve ids through `characterSpec` and build available ids through `castIds`; never
+  add a second avatar-spec column or renumber cast slots.
+- **Deleting a cast character leaves a hole.** A slot is its identity. Shifting the remaining rows
+  would silently change what an already chosen id means.
+- **Hosted games snapshot `quiz_sessions.characters` at start.** Editing a quiz cannot restyle a
+  running hosted game. Battles and practice use the quiz's live cast, matching their live theme rules.
+- **`sanitizeCast` is the custom-character boundary.** It cleans specs and moves the same way in the
+  editor, API and phones, and rejects duplicate or out-of-range slots rather than repairing them.
 - **A quiz's `theme` (jsonb) is a design-time draft.** Each game copies it into `quiz_sessions.theme`
   when it starts, so editing a quiz never restyles a game already running. New theme fields need a
   default in `DEFAULT_THEME` and a fallback in the matching `clean*` function, or a hand-edited row

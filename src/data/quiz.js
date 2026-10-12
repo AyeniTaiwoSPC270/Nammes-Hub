@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { sanitizeTheme } from '../../api/_lib/quizTheme.js'
 import { sanitizeCard } from '../../api/_lib/quizCard.js'
@@ -139,6 +139,34 @@ export async function callQuiz(action, body, accessToken) {
 export async function hostAction(action, body) {
   const { data } = await supabase.auth.getSession()
   return callQuiz(action, body, data.session?.access_token)
+}
+
+export function castQueryKey(target) {
+  if (typeof target?.code === 'string' && target.code) return ['cast', 'code', target.code]
+  if (typeof target?.quizId === 'string' && target.quizId) return ['cast', 'quiz', target.quizId]
+  return null
+}
+
+// A join code reads the hosted session's snapshot; a quiz id reads the live cast for battles and practice.
+export function useCastQuery(target) {
+  const key = castQueryKey(target)
+  return useQuery({
+    queryKey: key ?? ['cast', 'none'],
+    queryFn: () => callQuiz('roster', target),
+    enabled: Boolean(key),
+    staleTime: 60_000,
+  })
+}
+
+export function useSaveCast(quizId) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (cast) => hostAction('cast', { quizId, ...cast }),
+    onSuccess: (cast) => {
+      queryClient.setQueryData(['cast', 'quiz', quizId], cast)
+      queryClient.invalidateQueries({ queryKey: ['quizzes'] })
+    },
+  })
 }
 
 // A host control (kick, lock, pause, extend, skip, rename). See api/_lib/handlers/quiz-host.js.

@@ -5,6 +5,7 @@ import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from './StudioPreview
 import SchemeColours from './SchemeColours'
 import CharacterGallery from './CharacterGallery'
 import Character from '../../quiz/Character'
+import { CharacterCastContext } from '../../quiz/characterCastContext.js'
 import { BUILTIN_COUNT } from '../../../../api/_lib/quizCharacterArt.js'
 import { THEME_LOOKS, THEME_PATTERNS } from '../../../../api/_lib/quizTheme.js'
 
@@ -252,6 +253,22 @@ describe('characters', () => {
       }
     }
   }, 30_000)
+  it('draws an authored spec when the parts lab supplies one', () => {
+    const spec = {
+      name: 'Moon test', body: 'moon', topper: 'none', eyes: 'round', mouth: 'smile', accessory: 'none', prop: 'none',
+      color: { main: '#123456', dark: '#07111b', light: '#aabbcc' }, idle: 'bob', win: 'jump', sad: 'droop', hello: 'wave',
+    }
+    const html = renderToStaticMarkup(<Character spec={spec} title="Moon test" />)
+    expect(html).toContain('d="M64 14a36 36 0 1 0 0 72 29 29 0 0 1 0-72z"')
+    expect(html).toContain('fill="#123456"')
+    expect(html).toContain('aria-label="Moon test"')
+  })
+  it('resolves an id through the active session cast context on the phone and projector', () => {
+    const cast = { mode: 'all', characters: [{ slot: 0, name: 'Kola', spec: { body: 'pot', color: '#ff5a1f' }, moves: {}, color: { main: '#ff5a1f', dark: '#8e1c00', light: '#ffe9e0' } }] }
+    const html = renderToStaticMarkup(<CharacterCastContext.Provider value={cast}><Character id={50} /></CharacterCastContext.Provider>)
+    expect(html).toContain('d="M50 18c-13 0-20 10-22 26-2 18 4 38 22 38s24-20 22-38c-2-16-9-26-22-26z"')
+    expect(html).toContain('fill="#ff5a1f"')
+  })
   it('gives each character its own move classes', () => {
     const classes = new Set(
       Array.from({ length: BUILTIN_COUNT }, (_, id) => renderToStaticMarkup(<Character id={id} />).match(/class="([^"]+)"/)[1]),
@@ -263,5 +280,10 @@ describe('characters', () => {
     expect(html.match(/aria-pressed/g).length).toBeGreaterThanOrEqual(BUILTIN_COUNT)
     expect(html).toContain('Pixel')
     expect(html).toContain('Glow')
+  })
+  it('keeps the built-in gallery and adds the quiz cast editor above it', () => {
+    const source = readFileSync(STUDIO, 'utf8')
+    expect(source).toContain('<CharacterEditor quizId={id} />')
+    expect(source.indexOf('<CharacterEditor quizId={id} />')).toBeLessThan(source.indexOf('<CharacterGallery />'))
   })
 })

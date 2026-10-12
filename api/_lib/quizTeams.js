@@ -1,4 +1,5 @@
 import { hasBlockedWord } from './quizText.js'
+import { allowedAvatarIds } from './quizCharacterArt.js'
 
 // Team mode rules: what a team list may look like, who joins which team, and how teams are scored and ranked.
 // Pure, so every rule can be tested without a database.
@@ -35,19 +36,20 @@ export function cleanTeamName(raw) {
 }
 
 // Checks a list of teams typed by an admin. Returns { ok: true, teams } with clean, numbered teams, or { ok: false, error }.
-export function cleanTeams(input) {
+export function cleanTeams(input, cast) {
   if (!Array.isArray(input) || input.length < MIN_TEAMS || input.length > MAX_TEAMS) {
     return { ok: false, error: `Teams need ${MIN_TEAMS} to ${MAX_TEAMS} entries` }
   }
   const seen = new Set()
   const teams = []
+  const allowed = allowedAvatarIds(cast)
   for (const [position, t] of input.entries()) {
     const name = cleanTeamName(t?.name)
     if (!name) return { ok: false, error: `Team ${position + 1} needs a name of 1 to ${TEAM_NAME_MAX} plain characters` }
     if (seen.has(name.toLowerCase())) return { ok: false, error: `Two teams are called "${name}"` }
     seen.add(name.toLowerCase())
     const color = TEAM_COLORS.includes(t?.color) ? t.color : TEAM_COLORS[position]
-    const avatarId = Number.isInteger(t?.avatarId) && t.avatarId >= 0 && t.avatarId < 50 ? t.avatarId : 0
+    const avatarId = allowed.has(t?.avatarId) ? t.avatarId : 0
     teams.push({ name, color, avatarId, position })
   }
   return { ok: true, teams }

@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomInt } from 'node:crypto'
-import { BUILTIN_COUNT } from './quizCharacterArt.js'
+import { BUILTIN_COUNT, allowedAvatarIds } from './quizCharacterArt.js'
 
 // Pure game rules for the live quiz. No database access here so every rule can be tested on its own.
 // Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -17,8 +17,8 @@ export function isMaxPlayers(value) {
   return Number.isInteger(value) && value >= MIN_PLAYERS_LIMIT && value <= MAX_PLAYERS
 }
 
-export function isAvatarId(value) {
-  return Number.isInteger(value) && value >= 0 && value < AVATAR_COUNT
+export function isAvatarId(value, cast) {
+  return Number.isInteger(value) && allowedAvatarIds(cast).has(value)
 }
 // Phones have network delay, so an answer is still accepted this long after the timer hits zero.
 export const ANSWER_GRACE_MS = 1500

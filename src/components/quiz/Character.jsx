@@ -1,4 +1,6 @@
-import { characterSvgBody, avatarInfo } from '../../../api/_lib/quizCharacterArt.js'
+import { useContext } from 'react'
+import { characterSvgBody, avatarInfo, characterSpec } from '../../../api/_lib/quizCharacterArt.js'
+import { CharacterCastContext } from './characterCastContext.js'
 
 // One of the quiz characters, drawn from the shared art module (api/_lib/quizCharacterArt.js), which the result cards
 // draw from too. Who it is comes from `id`; the module says which body, headpiece, face, outfit and moves it has, and
@@ -14,8 +16,9 @@ import { characterSvgBody, avatarInfo } from '../../../api/_lib/quizCharacterArt
 //
 // This file must not import characters.css: the card loads this drawing on a server, and Node cannot parse a stylesheet.
 
-export default function Character({ id, mood = 'idle', className = 'h-full w-full', title }) {
-  const info = avatarInfo(id)
+export default function Character({ id, spec, cast, mood = 'idle', className = 'h-full w-full', title }) {
+  const contextCast = useContext(CharacterCastContext)
+  const info = spec ?? (id === undefined ? avatarInfo(id) : characterSpec(id, cast ?? contextCast))
   return (
     <svg
       viewBox="0 0 100 100"

@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, useCastQuery } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
+import { CharacterCastContext } from '../components/quiz/characterCastContext.js'
+import CharacterPicker from '../components/quiz/CharacterPicker'
+import { randomCastId } from '../components/quiz/characterPickerUtils.js'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
 import { practiceCardUrl, cardFilename } from '../lib/quizCard'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
+import { castIds, characterSpec } from '../../api/_lib/quizCharacterArt.js'
 
 // Solo practice for a quiz an admin has opened for it: no host, no code, your own pace. Questions arrive one at a time
 // and the result shows straight away. The little leaderboard is just for fun. Spec: docs/superpowers/specs/2026-09-30-live-quiz-premium-features.md
@@ -111,11 +115,14 @@ function QuitButton({ onQuit, onDark = false }) {
   )
 }
 
-function Intro({ info, onStart, busy, error }) {
+function Intro({ info, cast, onStart, busy, error }) {
   const [nickname, setNickname] = useState('')
   const [race, setRace] = useState('none')
   const [raceSkill, setRaceSkill] = useState('mixed')
-  const [avatarId, setAvatarId] = useState(randomAvatarId)
+  const [avatarId, setAvatarId] = useState(() => randomCastId(undefined))
+  useEffect(() => {
+    if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
+  }, [cast, avatarId])
   return (
     <Shell>
       <div className="flex flex-col items-center gap-2 pt-4 text-center">
@@ -143,29 +150,16 @@ function Intro({ info, onStart, busy, error }) {
           />
         </label>
         <div className="flex items-center gap-4 rounded-2xl bg-paper p-3">
-          <span className="h-20 w-20 shrink-0"><Character id={avatarId} mood="wave" /></span>
+          <span className="h-20 w-20 shrink-0"><Character spec={characterSpec(avatarId, cast)} mood="wave" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs text-ink-muted">You will be</span>
-            <span className="block truncate text-xl font-bold">{avatarInfo(avatarId).name}</span>
+            <span className="block truncate text-xl font-bold">{characterSpec(avatarId, cast).name}</span>
           </span>
-          <button type="button" onClick={() => setAvatarId(randomAvatarId())} className="rounded-full bg-orange-500/12 px-3 py-2 text-sm font-bold text-orange-500">
+          <button type="button" onClick={() => setAvatarId(randomCastId(cast))} className="rounded-full bg-orange-500/12 px-3 py-2 text-sm font-bold text-orange-500">
             Shuffle
           </button>
         </div>
-        <div className="grid max-h-44 grid-cols-6 gap-2 overflow-y-auto rounded-2xl border border-hairline p-2" role="group" aria-label="Characters">
-          {Array.from({ length: AVATAR_COUNT }, (_, id) => (
-            <button
-              key={id}
-              type="button"
-              aria-label={avatarInfo(id).name}
-              aria-pressed={avatarId === id}
-              onClick={() => setAvatarId(id)}
-              className={`aspect-square rounded-xl border-2 p-0.5 ${avatarId === id ? 'border-orange-500 bg-orange-500/12' : 'border-transparent bg-paper'}`}
-            >
-              <Character id={id} mood="static" />
-            </button>
-          ))}
-        </div>
+        <CharacterPicker cast={cast} value={avatarId} onChange={setAvatarId} />
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Play against</legend>
           {RACE_CHOICES.map((c) => {
@@ -207,6 +201,8 @@ function Intro({ info, onStart, busy, error }) {
 
 export default function PlayPractice() {
   const { quizId } = useParams()
+  const castQuery = useCastQuery({ quizId })
+  const cast = castQuery.data
   const [info, setInfo] = useState(null)
   const [infoError, setInfoError] = useState('')
   const [saved, setSaved] = useState(() => loadSaved(quizId))
@@ -341,7 +337,7 @@ export default function PlayPractice() {
 
   let body
   if (!run) {
-    body = token ? <Shell><p className="mt-24 text-center text-xl text-ink-muted">Loading…</p></Shell> : <Intro info={info} onStart={start} busy={busy} error={error} />
+    body = token ? <Shell><p className="mt-24 text-center text-xl text-ink-muted">Loading…</p></Shell> : <Intro info={info} cast={cast} onStart={start} busy={busy} error={error} />
   } else if (run.finished) {
     body = (
       <Shell>
@@ -472,16 +468,18 @@ export default function PlayPractice() {
   }
 
   return (
-    <QuizThemeScope theme={theme}>
-      {body}
-      {cardOpen && run?.shareCode && (
-        <ResultCardModal
-          url={practiceCardUrl(run.shareCode)}
-          filename={cardFilename(run.nickname)}
-          shareTitle={`I got ${formatScore(run.score)} on a practice run`}
-          onClose={() => setCardOpen(false)}
-        />
-      )}
-    </QuizThemeScope>
+    <CharacterCastContext.Provider value={cast}>
+      <QuizThemeScope theme={theme}>
+        {body}
+        {cardOpen && run?.shareCode && (
+          <ResultCardModal
+            url={practiceCardUrl(run.shareCode)}
+            filename={cardFilename(run.nickname)}
+            shareTitle={`I got ${formatScore(run.score)} on a practice run`}
+            onClose={() => setCardOpen(false)}
+          />
+        )}
+      </QuizThemeScope>
+    </CharacterCastContext.Provider>
   )
 }

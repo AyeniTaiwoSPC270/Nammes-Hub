@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS, useCastQuery } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { BracketCard } from '../components/quiz/BracketParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
 import { QuizThemeScope, useQuizTheme } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
+import { CharacterCastContext } from '../components/quiz/characterCastContext.js'
+import CharacterPicker from '../components/quiz/CharacterPicker'
+import { randomCastId } from '../components/quiz/characterPickerUtils.js'
 import { useCountUp } from '../lib/useCountUp'
 import { quizSound, buzz } from '../lib/quizSound'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
@@ -14,6 +17,7 @@ import { teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
 import { personalCardUrl, cardFilename } from '../lib/quizCard'
+import { castIds, characterSpec } from '../../api/_lib/quizCharacterArt.js'
 
 // A player's phone. No account: the player joins with a code and nickname and keeps a secret token in this
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
@@ -41,22 +45,24 @@ function saveSaved(value) {
 }
 
 // Standard phone screen: slim bar (with the player's name and score once they are in) and a centred column.
-function Phone({ me, children }) {
+function Phone({ me, cast, children }) {
   return (
-    <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
-      <QuizBackdrop />
-      <QuizTopBar compact>
-        {me && (
-          <span className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3 text-sm font-bold">
-            <Avatar name={me.nickname} avatarId={me.avatarId} className="h-8 w-8" />
-            <span className="max-w-[7rem] truncate">{me.nickname}</span>
-            <span className="text-orange-500">{formatScore(me.score)}</span>
-            {me.streak >= 2 && <span aria-label={`${me.streak} in a row`} title={`${me.streak} in a row`}>🔥{me.streak}</span>}
-          </span>
-        )}
-      </QuizTopBar>
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">{children}</main>
-    </div>
+    <CharacterCastContext.Provider value={cast}>
+      <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+        <QuizBackdrop />
+        <QuizTopBar compact>
+          {me && (
+            <span className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3 text-sm font-bold">
+              <Avatar name={me.nickname} avatarId={me.avatarId} className="h-8 w-8" />
+              <span className="max-w-[7rem] truncate">{me.nickname}</span>
+              <span className="text-orange-500">{formatScore(me.score)}</span>
+              {me.streak >= 2 && <span aria-label={`${me.streak} in a row`} title={`${me.streak} in a row`}>🔥{me.streak}</span>}
+            </span>
+          )}
+        </QuizTopBar>
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">{children}</main>
+      </div>
+    </CharacterCastContext.Provider>
   )
 }
 
@@ -116,17 +122,23 @@ function JoinForm({ onJoined, notice }) {
   const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
   const [code, setCode] = useState(initialCode)
   const [nickname, setNickname] = useState('')
-  const [avatarId, setAvatarId] = useState(randomAvatarId)
+  const [avatarId, setAvatarId] = useState(() => randomCastId(undefined))
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [teams, setTeams] = useState(null) // the teams to choose from, once the game says it is a team game
+  const castQuery = useCastQuery({ code: code.length === 6 ? code : null })
+  const cast = castQuery.data
+
+  useEffect(() => {
+    if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
+  }, [cast, avatarId])
 
   async function attempt(teamId) {
     setBusy(true)
     setError('')
     try {
       const joined = await callQuiz('join', { code, nickname, avatarId, ...(teamId ? { teamId } : {}) })
-      onJoined(joined)
+      onJoined({ ...joined, code })
     } catch (e) {
       if (e.data?.needsTeam) setTeams(e.data.teams)
       else setError(e.message)
@@ -140,7 +152,7 @@ function JoinForm({ onJoined, notice }) {
   }
 
   return (
-    <Phone>
+    <Phone cast={cast}>
       <div className="qz-rise flex flex-col items-center gap-2 pt-4 text-center">
         <BrandMark className="h-16 w-16" />
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Campus challenge</p>
@@ -171,35 +183,19 @@ function JoinForm({ onJoined, notice }) {
         <div className="flex flex-col gap-3">
           <span className="flex items-center justify-between text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">
             Pick your character
-            <button type="button" onClick={() => setAvatarId(randomAvatarId())} className="flex items-center gap-1 rounded-full bg-orange-500/12 px-3 py-1 text-xs font-bold normal-case tracking-normal text-orange-500">
+              <button type="button" onClick={() => setAvatarId(randomCastId(cast))} className="flex items-center gap-1 rounded-full bg-orange-500/12 px-3 py-1 text-xs font-bold normal-case tracking-normal text-orange-500">
               <span className="material-symbols-outlined text-base" aria-hidden="true">casino</span>
               Surprise me
             </button>
           </span>
           <div className="flex items-center gap-4 rounded-2xl bg-paper p-3">
-            <span className="h-24 w-24 shrink-0"><Character id={avatarId} mood="wave" /></span>
+            <span className="h-24 w-24 shrink-0"><Character spec={characterSpec(avatarId, cast)} mood="wave" /></span>
             <span className="min-w-0">
               <span className="block text-xs text-ink-muted">You will be</span>
-              <span className="block truncate text-xl font-bold">{avatarInfo(avatarId).name}</span>
+              <span className="block truncate text-xl font-bold">{characterSpec(avatarId, cast).name}</span>
             </span>
           </div>
-          <div className="grid max-h-56 grid-cols-5 gap-2 overflow-y-auto rounded-2xl border border-hairline p-2" role="group" aria-label="Characters">
-            {Array.from({ length: AVATAR_COUNT }, (_, id) => (
-              <button
-                key={id}
-                type="button"
-                aria-label={avatarInfo(id).name}
-                aria-pressed={avatarId === id}
-                onClick={() => setAvatarId(id)}
-                className={[
-                  'aspect-square rounded-xl border-2 p-1 transition-transform active:scale-95',
-                  avatarId === id ? 'border-orange-500 bg-orange-500/12' : 'border-transparent bg-paper',
-                ].join(' ')}
-              >
-                <Character id={id} mood={avatarId === id ? 'happy' : 'static'} />
-              </button>
-            ))}
-          </div>
+          <CharacterPicker cast={cast} value={avatarId} onChange={setAvatarId} />
         </div>
         {teams && (
           <div className="flex flex-col gap-3" role="group" aria-label="Pick your team">
@@ -303,6 +299,8 @@ export default function PlayQuiz() {
 function PlayQuizGame({ onTheme }) {
   const theme = useQuizTheme()
   const [saved, setSaved] = useState(loadSaved)
+  const castQuery = useCastQuery({ code: saved?.code ?? null })
+  const cast = castQuery.data
   const [game, setGame] = useState(null)
   const [offset, setOffset] = useState(0) // server clock minus this phone's clock
   const [nowMs, setNowMs] = useState(() => Date.now())
@@ -461,7 +459,7 @@ function PlayQuizGame({ onTheme }) {
   if (!token) return <JoinForm onJoined={handleJoined} notice={notice} />
   if (!game) {
     return (
-      <Phone>
+      <Phone cast={cast}>
         <p className="mt-24 text-center text-xl text-ink-muted">{message || 'Joining…'}</p>
       </Phone>
     )
@@ -472,7 +470,7 @@ function PlayQuizGame({ onTheme }) {
 
   if (session.state === 'lobby') {
     return (
-      <Phone me={me}>
+      <Phone me={me} cast={cast}>
         <div className="mt-6 flex flex-col items-center gap-4 text-center">
           <div className="qz-pop relative">
             <Avatar name={me.nickname} avatarId={me.avatarId} mood="wave" className="h-36 w-36" />
@@ -559,7 +557,7 @@ function PlayQuizGame({ onTheme }) {
 
     if (question.answered || picked !== null) {
       return (
-        <Phone me={me}>
+        <Phone me={me} cast={cast}>
           <div className="mt-4 flex flex-col items-center gap-5 text-center">
             {game.session.bracket && <div className="w-full"><BracketCard bracket={game.session.bracket} compact /></div>}
             <div className="qz-pop flex h-20 w-20 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
@@ -747,7 +745,7 @@ function PlayQuizGame({ onTheme }) {
 
   if (session.state === 'leaderboard') {
     return (
-      <Phone me={me}>
+      <Phone me={me} cast={cast}>
         <section className="qz-pop rounded-3xl qz-deep p-6 text-center text-white shadow-xl">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">Your position</p>
           <p className="mt-1 text-7xl font-bold">{me.rank ? `#${me.rank}` : '—'}</p>
@@ -788,7 +786,7 @@ function PlayQuizGame({ onTheme }) {
     // The modal sits outside <Phone>, which is a fixed-width phone frame: it has to cover the whole screen.
     return (
       <>
-        <Phone me={me}>
+        <Phone me={me} cast={cast}>
         {podium && <Confetti count={30} />}
         <section className="qz-pop mt-2 rounded-3xl qz-deep p-8 text-center text-white shadow-xl">
           <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-100/80">{podium ? 'You made the podium!' : 'Final result'}</p>
@@ -839,7 +837,7 @@ function PlayQuizGame({ onTheme }) {
   }
 
   return (
-    <Phone me={me}>
+    <Phone me={me} cast={cast}>
       <p className="mt-24 flex items-center justify-center gap-3 text-xl text-ink-muted">Waiting for the host <WaitingDots /></p>
     </Phone>
   )

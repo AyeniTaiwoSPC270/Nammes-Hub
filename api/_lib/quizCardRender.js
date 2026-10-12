@@ -341,8 +341,8 @@ function drawParty(ctx, shape, unit) {
   }
 }
 
-async function drawCharacter(ctx, avatarId, cx, cy, size, mood = 'happy') {
-  const image = await loadImage(Buffer.from(characterSvg(avatarId, { mood, size })))
+async function drawCharacter(ctx, avatarId, cx, cy, size, mood = 'happy', cast) {
+  const image = await loadImage(Buffer.from(characterSvg(avatarId, { mood, size, cast })))
   ctx.drawImage(image, cx - size / 2, cy - size / 2, size, size)
 }
 
@@ -376,7 +376,7 @@ function drawFooter(ctx, colors) {
   ctx.fillText('NAMMES HUB', CARD_WIDTH / 2, CARD_HEIGHT - 60)
 }
 
-export async function renderPersonalCard({ card, theme, quiz, me, loadBackground = NO_BACKGROUND }) {
+export async function renderPersonalCard({ card, theme, quiz, me, cast, loadBackground = NO_BACKGROUND }) {
   ensureFonts()
   const c = sanitizeCard(card)
   const t = sanitizeTheme(theme)
@@ -395,7 +395,7 @@ export async function renderPersonalCard({ card, theme, quiz, me, loadBackground
 
   if (c.showCharacter) {
     // Podium players get the dancing character, everyone else the plain happy face.
-    await drawCharacter(ctx, me.avatarId, CARD_WIDTH / 2, 620, 460, me.rank && me.rank <= 3 ? 'dance' : 'happy')
+    await drawCharacter(ctx, me.avatarId, CARD_WIDTH / 2, 620, 460, me.rank && me.rank <= 3 ? 'dance' : 'happy', cast)
   }
 
   ctx.fillStyle = '#ffffff'
@@ -439,7 +439,7 @@ export async function renderPersonalCard({ card, theme, quiz, me, loadBackground
   return canvas.toBuffer('image/png')
 }
 
-export async function renderBoardCard({ card, theme, quiz, ranked, teams, loadBackground = NO_BACKGROUND }) {
+export async function renderBoardCard({ card, theme, quiz, ranked, teams, cast, loadBackground = NO_BACKGROUND }) {
   ensureFonts()
   const c = sanitizeCard(card)
   const t = sanitizeTheme(theme)
@@ -469,7 +469,7 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams, loadBa
     ctx.textAlign = 'center'
     ctx.fillText(String(place), centre, PODIUM_BASE - 24)
     if (!p) continue
-    await drawCharacter(ctx, p.avatarId, centre, top - 100, 160, place === 1 ? 'dance' : 'happy')
+    await drawCharacter(ctx, p.avatarId, centre, top - 100, 160, place === 1 ? 'dance' : 'happy', cast)
     ctx.fillStyle = '#ffffff'
     fitFont(ctx, p.nickname, PODIUM_TEXT_WIDTH, 34)
     ctx.fillText(p.nickname, centre, 740)
@@ -520,7 +520,7 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams, loadBa
     ctx.fillStyle = 'rgba(255,255,255,0.7)'
     ctx.font = 'bold 32px "Public Sans Bold"'
     ctx.fillText(String(p.rank), 110, y)
-    await drawCharacter(ctx, p.avatarId, 210, y - 10, 52, 'happy')
+    await drawCharacter(ctx, p.avatarId, 210, y - 10, 52, 'happy', cast)
     ctx.fillStyle = '#ffffff'
     fitFont(ctx, p.nickname, 520, 34)
     ctx.fillText(p.nickname, 280, y)
@@ -541,7 +541,7 @@ export async function renderBoardCard({ card, theme, quiz, ranked, teams, loadBa
   return canvas.toBuffer('image/png')
 }
 
-export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, forfeit, questionCount, loadBackground = NO_BACKGROUND }) {
+export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, forfeit, questionCount, cast, loadBackground = NO_BACKGROUND }) {
   ensureFonts()
   const c = sanitizeCard(card)
   const t = sanitizeTheme(theme)
@@ -566,7 +566,7 @@ export async function renderDuelCard({ card, theme, quiz, sides, winnerSlot, for
     const s = ordered[i]
     const cx = i === 0 ? 290 : 790
     const won = winnerSlot === s.slot
-    await drawCharacter(ctx, s.avatarId, cx, 800, 420, won ? 'dance' : 'happy')
+    await drawCharacter(ctx, s.avatarId, cx, 800, 420, won ? 'dance' : 'happy', cast)
     ctx.fillStyle = '#ffffff'
     fitFont(ctx, s.nickname, 380, 56)
     ctx.fillText(s.nickname, cx, 1110)

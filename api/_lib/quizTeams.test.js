@@ -30,6 +30,11 @@ describe('cleanTeams', () => {
     expect(teams[0]).toMatchObject({ color: TEAM_COLORS[0], avatarId: 0 })
     expect(teams[1]).toMatchObject({ color: 'blue', avatarId: 0 })
   })
+  it('keeps a mascot only when it is offered by the quiz cast', () => {
+    const cast = { mode: 'custom', characters: [{ slot: 1 }] }
+    const { teams } = cleanTeams([{ name: 'A', avatarId: 51 }, { name: 'B', avatarId: 50 }], cast)
+    expect(teams.map((team) => team.avatarId)).toEqual([51, 0])
+  })
   it('has presets that pass their own checks', () => {
     for (const preset of Object.values(TEAM_PRESETS)) expect(cleanTeams(preset.teams).ok).toBe(true)
     expect(cleanTeamName('Level 200')).toBe('Level 200')

@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, AVATAR_COUNT, avatarInfo, randomAvatarId } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, useCastQuery } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
+import { CharacterCastContext } from '../components/quiz/characterCastContext.js'
+import CharacterPicker from '../components/quiz/CharacterPicker'
+import { randomCastId } from '../components/quiz/characterPickerUtils.js'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
 import { duelCardUrl, cardFilename } from '../lib/quizCard'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
+import { castIds, characterSpec } from '../../api/_lib/quizCharacterArt.js'
 
 // Battle mode for players, no account needed. Routes: /battle (start or join one) and /battle/:code (a shared link).
 // Two kinds: a challenge (play, then a friend plays the same questions later) and a live duel (both play together, with
@@ -100,7 +104,7 @@ function ErrorLine({ error }) {
 }
 
 // Nickname and character, shared by every way in.
-function Profile({ nickname, setNickname, avatarId, setAvatarId }) {
+function Profile({ nickname, setNickname, avatarId, setAvatarId, cast }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="flex flex-col gap-3">
@@ -116,29 +120,16 @@ function Profile({ nickname, setNickname, avatarId, setAvatarId }) {
         />
       </label>
       <div className="flex items-center gap-4 rounded-2xl bg-paper p-3">
-        <span className="h-16 w-16 shrink-0"><Character id={avatarId} mood="wave" /></span>
+        <span className="h-16 w-16 shrink-0"><Character spec={characterSpec(avatarId, cast)} mood="wave" /></span>
         <span className="min-w-0 flex-1">
           <span className="block text-xs text-ink-muted">You will be</span>
-          <span className="block truncate text-lg font-bold">{avatarInfo(avatarId).name}</span>
+          <span className="block truncate text-lg font-bold">{characterSpec(avatarId, cast).name}</span>
         </span>
-        <button type="button" onClick={() => setAvatarId(randomAvatarId())} className="rounded-full bg-orange-500/12 px-3 py-2 text-sm font-bold text-orange-500">Shuffle</button>
+        <button type="button" onClick={() => setAvatarId(randomCastId(cast))} className="rounded-full bg-orange-500/12 px-3 py-2 text-sm font-bold text-orange-500">Shuffle</button>
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="rounded-full bg-orange-500/12 px-3 py-2 text-sm font-bold text-orange-500">{open ? 'Hide' : 'Pick'}</button>
       </div>
       {open && (
-        <div className="grid max-h-44 grid-cols-6 gap-2 overflow-y-auto rounded-2xl border border-hairline p-2" role="group" aria-label="Characters">
-          {Array.from({ length: AVATAR_COUNT }, (_, id) => (
-            <button
-              key={id}
-              type="button"
-              aria-label={avatarInfo(id).name}
-              aria-pressed={avatarId === id}
-              onClick={() => setAvatarId(id)}
-              className={`aspect-square rounded-xl border-2 p-0.5 ${avatarId === id ? 'border-orange-500 bg-orange-500/12' : 'border-transparent bg-paper'}`}
-            >
-              <Character id={id} mood="static" />
-            </button>
-          ))}
-        </div>
+        <CharacterPicker cast={cast} value={avatarId} onChange={setAvatarId} />
       )}
     </div>
   )
@@ -194,11 +185,16 @@ function Champions({ ranking, period, onPeriod }) {
 // /battle: choose a quiz and how to battle, or join with a code.
 function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, period, onPeriod }) {
   const [nickname, setNickname] = useState('')
-  const [avatarId, setAvatarId] = useState(randomAvatarId)
+  const [avatarId, setAvatarId] = useState(() => randomCastId(undefined))
   const [quizId, setQuizId] = useState(presetQuiz ?? '')
   const [botSkill, setBotSkill] = useState('average')
   const [code, setCode] = useState('')
   const chosen = quizzes.find((q) => q.id === quizId) ?? quizzes[0]
+  const castQuery = useCastQuery({ quizId: chosen?.id ?? null })
+  const cast = castQuery.data
+  useEffect(() => {
+    if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
+  }, [cast, avatarId])
   const ready = Boolean(nickname.trim() && chosen)
   const make = (mode, vsBot = false) => onCreate({ quizId: chosen.id, mode, vsBot, botSkill, nickname, avatarId })
   return (
@@ -211,7 +207,7 @@ function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, 
         <p className="rounded-2xl border border-hairline bg-surface p-5 text-center text-ink-muted">No quiz is open for battles right now.</p>
       ) : (
         <div className="flex flex-col gap-4 rounded-3xl border border-hairline bg-surface p-5 shadow-md">
-          <Profile nickname={nickname} setNickname={setNickname} avatarId={avatarId} setAvatarId={setAvatarId} />
+          <Profile nickname={nickname} setNickname={setNickname} avatarId={avatarId} setAvatarId={setAvatarId} cast={cast} />
           {quizzes.length > 1 && (
             <label className="flex flex-col gap-2">
               <span className="text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">Quiz</span>
@@ -260,7 +256,12 @@ function Hub({ onCreate, onJoinCode, busy, error, quizzes, presetQuiz, ranking, 
 // /battle/:code: someone shared this link.
 function Landing({ info, onTake, busy, error }) {
   const [nickname, setNickname] = useState('')
-  const [avatarId, setAvatarId] = useState(randomAvatarId)
+  const [avatarId, setAvatarId] = useState(() => randomCastId(undefined))
+  const castQuery = useCastQuery({ quizId: info.quizId })
+  const cast = castQuery.data
+  useEffect(() => {
+    if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
+  }, [cast, avatarId])
   const who = info.challenger
   const blocked = info.expired ? 'This battle has ended.' : info.notReady ? `${who?.nickname ?? 'The challenger'} is still playing. Try again in a moment.` : !info.seatFree ? 'This battle already has two players.' : null
   return (
@@ -286,7 +287,7 @@ function Landing({ info, onTake, busy, error }) {
           }}
           className="flex flex-col gap-4 rounded-3xl border border-hairline bg-surface p-5 shadow-md"
         >
-          <Profile nickname={nickname} setNickname={setNickname} avatarId={avatarId} setAvatarId={setAvatarId} />
+          <Profile nickname={nickname} setNickname={setNickname} avatarId={avatarId} setAvatarId={setAvatarId} cast={cast} />
           <ErrorLine error={error} />
           <button type="submit" disabled={busy || !nickname.trim()} className={`${bigButton} bg-orange-500 text-white`}>{busy ? 'Joining…' : info.mode === 'duel' ? 'Join the duel' : 'Accept the challenge'}</button>
         </form>
@@ -473,6 +474,8 @@ export default function PlayBattle() {
   const token = saved?.token
   const presetQuizId = search.get('quiz') ?? undefined
   const lastAction = useRef(null)
+  const castQuery = useCastQuery({ quizId: view?.quizId ?? info?.quizId ?? lastAction.current?.quizId ?? presetQuizId ?? null })
+  const cast = castQuery.data
 
   const accept = useCallback((data) => {
     setOffset(data.serverNow - Date.now())
@@ -757,5 +760,9 @@ export default function PlayBattle() {
     )
   }
 
-  return <QuizThemeScope theme={theme}>{body}</QuizThemeScope>
+  return (
+    <CharacterCastContext.Provider value={cast}>
+      <QuizThemeScope theme={theme}>{body}</QuizThemeScope>
+    </CharacterCastContext.Provider>
+  )
 }

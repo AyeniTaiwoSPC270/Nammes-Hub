@@ -41,6 +41,12 @@ describe('quiz-host: addBots / removeBots', () => {
     expect(new Set(bots.map((b) => b.nickname.toLowerCase())).size).toBe(6)
     expect(db.tables.quiz_host_log.at(-1)).toMatchObject({ op: 'addBots', detail: { added: 6, skill: 'expert' } })
   })
+  it('draws every bot from the session cast', async () => {
+    const cast = { mode: 'custom', characters: [{ slot: 2, name: 'Kola', spec: {}, moves: {} }] }
+    const db = lobby({ characters: cast })
+    await host(db, { op: 'addBots', count: 4, skill: 'average' })
+    expect(db.tables.quiz_players.map((player) => player.avatar_id)).toEqual([52, 52, 52, 52])
+  })
 
   it('mixed spreads the skills', async () => {
     const db = lobby({ max_players: 30 })

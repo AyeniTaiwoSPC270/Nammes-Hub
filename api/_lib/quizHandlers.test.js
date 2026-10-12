@@ -60,6 +60,16 @@ describe('quiz-create', () => {
     await createQuizCreateHandler(() => db, { makeCode: () => '555555' })(admin({ quizId: QUIZ }), fakeRes())
     expect(db.tables.quiz_sessions.at(-1).card).toEqual({ ...DEFAULT_CARD, accent: '#abcdef', showStreak: false, background: null })
   })
+  it("freezes the cleaned character cast into a new session", async () => {
+    const db = fakeDb({
+      quizzes: [{ id: QUIZ, max_players: 40, cast_mode: 'all' }],
+      quiz_characters: [{ id: 'c1', quiz_id: QUIZ, slot: 0, name: 'Kola', spec: { body: 'pot', color: '#ff5a1f' }, moves: { idle: 'sway' } }],
+    })
+    const res = fakeRes()
+    await createQuizCreateHandler(() => db, { makeCode: () => '666666' })(admin({ quizId: QUIZ }), res)
+    expect(res.statusCode).toBe(200)
+    expect(db.tables.quiz_sessions.at(-1).characters).toMatchObject({ mode: 'all', characters: [{ slot: 0, name: 'Kola', spec: { body: 'pot' } }] })
+  })
   it('asks the quizzes table for the card column everywhere it reads a card', () => {
     // Supabase returns only the columns a select names, so leaving `card` off a select makes `quiz.card` undefined and
     // sanitizeCard quietly falls back to the defaults. The fake db above discards the column list, so that failure is
@@ -119,6 +129,17 @@ describe('quiz-join', () => {
     expect((await joinPlayer(db, 'Cy', '123456', 50)).statusCode).toBe(400)
     expect((await joinPlayer(db, 'Di', '123456', -1)).statusCode).toBe(400)
     expect((await joinPlayer(db, 'Ed', '123456', 'x')).statusCode).toBe(400)
+  })
+  it('checks custom character ids against the hosted game snapshot', async () => {
+    const db = fakeDb({ quiz_sessions: [{
+      id: SESSION, quiz_id: QUIZ, join_code: '123456', state: 'lobby', current_question_index: -1,
+      characters: { mode: 'custom', characters: [{ slot: 2, name: 'Kola', spec: {}, moves: {} }] },
+    }] })
+    const chosen = await joinPlayer(db, 'Ada', '123456', 52)
+    expect(chosen.statusCode).toBe(200)
+    expect(chosen.body.avatarId).toBe(52)
+    expect((await joinPlayer(db, 'Bola', '123456', 50)).statusCode).toBe(400)
+    expect((await joinPlayer(db, 'Chika', '123456', 0)).statusCode).toBe(400)
   })
   it("enforces the game's player limit and starts the full-lobby countdown exactly once", async () => {
     const db = fakeDb({ quiz_sessions: [{ id: SESSION, quiz_id: QUIZ, join_code: '123456', state: 'lobby', current_question_index: -1, max_players: 2 }] })

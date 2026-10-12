@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey } from './quiz'
 
 function question(over = {}) {
   return { ...blankQuestion(), text: 'Capital of Nigeria?', options: ['Lagos', 'Abuja', '', ''], correct_index: 1, ...over }
@@ -90,5 +90,16 @@ describe('validateMaxPlayers', () => {
     const q = { ...blankQuestion(), text: 'Q?', options: ['a', 'b', '', ''], correct_index: 0 }
     expect(validateQuizDraft({ title: 'x', questions: [q], maxPlayers: '500' })).toMatch(/between 2 and 150/)
     expect(validateQuizDraft({ title: 'x', questions: [q], maxPlayers: '40' })).toBeNull()
+  })
+})
+
+describe('castQueryKey', () => {
+  it('keys by the join code or quiz id', () => {
+    expect(castQueryKey({ code: '123456' })).toEqual(['cast', 'code', '123456'])
+    expect(castQueryKey({ quizId: 'q1' })).toEqual(['cast', 'quiz', 'q1'])
+  })
+  it('returns null when there is no target, rather than using one shared cache key', () => {
+    expect(castQueryKey({})).toBeNull()
+    expect(castQueryKey(null)).toBeNull()
   })
 })

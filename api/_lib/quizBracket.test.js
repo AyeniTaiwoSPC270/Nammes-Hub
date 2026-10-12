@@ -90,6 +90,11 @@ describe('matchRows and views', () => {
     expect(rows[1]).toMatchObject({ player_b: null, bot_b: true, bot_skill: 'expert' })
     expect(rows[1].name_b).toBeTruthy()
   })
+  it('draws bye opponents from the session cast', () => {
+    const cast = { mode: 'custom', characters: [{ slot: 2 }] }
+    const rows = matchRows({ sessionId: SESSION, round: 0, pairs: [{ a: { id: 'p1', nickname: 'A', avatar_id: 1 }, b: null }], botSkill: 'expert', cast })
+    expect(rows[0].avatar_b).toBe(52)
+  })
   it('shows a player their match, result and status', () => {
     const session = { bracket_mode: true, bracket_rounds: 2, bracket_length: 3, bracket_done: false, bracket_champion: null }
     const matches = [{ round: 0, player_a: 'me', player_b: 'them', name_a: 'Me', name_b: 'Them', avatar_a: 1, avatar_b: 2, settled_at: iso(START), winner: 'b', score_a: 100, score_b: 200 }]

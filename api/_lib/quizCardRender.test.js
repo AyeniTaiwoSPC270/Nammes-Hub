@@ -104,6 +104,20 @@ describe('the card backdrop', () => {
 })
 
 describe('renderPersonalCard', () => {
+  it('uses the saved cast for a custom character instead of drawing built-in zero', async () => {
+    const cast = {
+      mode: 'all',
+      characters: [{
+        slot: 0, name: 'Kola', spec: { body: 'pot', color: '#ff5a1f' }, moves: { idle: 'sway', win: 'jump', sad: 'droop', hello: 'wave' },
+        color: { main: '#ff5a1f', dark: '#8e1c00', light: '#ffe9e0' },
+      }],
+    }
+    const options = { card: DEFAULT_CARD, theme: THEME, quiz: QUIZ, me: { ...ME, avatarId: 50 } }
+    const custom = await renderPersonalCard({ ...options, cast })
+    const fallback = await renderPersonalCard(options)
+    expect(custom).not.toEqual(fallback)
+  })
+
   it('returns a real png buffer', async () => {
     const png = await renderPersonalCard({ card: DEFAULT_CARD, theme: THEME, quiz: QUIZ, me: ME })
     expect(Buffer.isBuffer(png)).toBe(true)

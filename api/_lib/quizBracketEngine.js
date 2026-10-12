@@ -20,7 +20,7 @@ export async function startBracket(db, session) {
     return { started: false }
   }
   const pairs = pairPlayers(players, session.id)
-  const { error } = await db.from('quiz_bracket_matches').insert(matchRows({ sessionId: session.id, round: 0, pairs, botSkill: session.bracket_bot_skill }))
+  const { error } = await db.from('quiz_bracket_matches').insert(matchRows({ sessionId: session.id, round: 0, pairs, botSkill: session.bracket_bot_skill, cast: session.characters }))
   if (error) throw error
   await db.from('quiz_sessions').update({ bracket_rounds: rounds }).eq('id', session.id)
   return { started: true, rounds }
@@ -83,7 +83,7 @@ export async function settleRound(db, session, round, nowIso) {
     return { settled: settledNow.length, done: true, champion }
   }
   const pairs = pairPlayers(survivors, `${session.id}:r${round + 1}`)
-  const { error } = await db.from('quiz_bracket_matches').insert(matchRows({ sessionId: session.id, round: round + 1, pairs, botSkill: session.bracket_bot_skill }))
+  const { error } = await db.from('quiz_bracket_matches').insert(matchRows({ sessionId: session.id, round: round + 1, pairs, botSkill: session.bracket_bot_skill, cast: session.characters }))
   if (error && error.code !== '23505') throw error // 23505: another request already made the next round
   return { settled: settledNow.length, done: false, next: pairs.length }
 }

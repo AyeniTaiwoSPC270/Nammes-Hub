@@ -6,6 +6,7 @@
 // a bot. Everyone keeps answering all questions, but only the players still in the bracket count towards it.
 import { scoreAnswer } from './quiz.js'
 import { botDecision, botNicknames, skillForBot, seeded } from './quizBots.js'
+import { castIds } from './quizCharacterArt.js'
 
 export * from './quizBracketMath.js'
 
@@ -26,8 +27,9 @@ export function botRoundScore({ botId, skill, questions }) {
 }
 
 // The rows for a round's matches, from pairs of players (see pairPlayers).
-export function matchRows({ sessionId, round, pairs, botSkill }) {
+export function matchRows({ sessionId, round, pairs, botSkill, cast }) {
   const names = botNicknames(60)
+  const avatarIds = castIds(cast)
   return pairs.map(({ a, b }, slot) => {
     const row = { session_id: sessionId, round, slot, player_a: a.id, name_a: a.nickname, avatar_a: a.avatar_id ?? 0, bot_b: false }
     if (b) return { ...row, player_b: b.id, name_b: b.nickname, avatar_b: b.avatar_id ?? 0 }
@@ -38,7 +40,7 @@ export function matchRows({ sessionId, round, pairs, botSkill }) {
       bot_b: true,
       bot_skill: skillForBot(botSkill, slot),
       name_b: names[Math.floor(seeded(id, 3) * names.length)],
-      avatar_b: Math.floor(seeded(id, 5) * 50),
+       avatar_b: avatarIds.length ? avatarIds[Math.floor(seeded(id, 5) * avatarIds.length)] : 0,
     }
   })
 }

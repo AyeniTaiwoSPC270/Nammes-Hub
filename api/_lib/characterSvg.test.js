@@ -20,6 +20,15 @@ describe('characterSvg', () => {
     expect(characterSvg(-1)).toBe(characterSvg(0))
   })
 
+  it('resolves a custom id from the same cast shape used by sessions', () => {
+    const cast = { mode: 'all', characters: [{
+      slot: 0, name: 'Kola', spec: { body: 'pot', color: '#ff5a1f' }, moves: {},
+      color: { main: '#ff5a1f', dark: '#8e1c00', light: '#ffe9e0' },
+    }] }
+    expect(characterSvg(50, { cast })).toContain('M50 18c-13 0-20 10-22 26')
+    expect(characterSvg(50, { cast })).not.toBe(characterSvg(0))
+  })
+
   it('carries the mood so a happy face differs from a sad one', () => {
     expect(characterSvg(3, { mood: 'sad' })).not.toBe(characterSvg(3, { mood: 'happy' }))
   })
