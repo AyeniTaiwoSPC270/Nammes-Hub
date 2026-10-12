@@ -87,16 +87,19 @@ function fitFont(ctx, text, maxWidth, startSize, family = 'Public Sans Bold') {
 // The card's palette: the studio's own choice first, then the theme's accent, then the look's own accent. The same
 // precedence themeAccent uses, so a card never disagrees with the screens it was shared from.
 //
-// A colour of the admin's own replaces both ends of the scheme's gradient, which flattens the fill. The contrast check
+// Three sources for the background, in order: the card tab's own colour, then the banner the screens are using, then the
+// scheme's. A shareable image that shows a different gradient to the room is the defect that middle step removes.
+//
+// A colour of the admin's own replaces both ends of the gradient, which flattens the fill. The contrast check
 // then runs against *that* colour rather than the scheme's, so an accent that would be muddy on it still falls back to
 // white instead of printing an unreadable score.
-function palette(card, theme) {
+export function palette(card, theme) {
   const t = sanitizeTheme(theme)
   const look = THEME_LOOKS[t.look]
   const accent = card.accent ?? t.accent ?? look.accent
   const flat = card.backgroundColor ?? null
-  const deepA = flat ?? look.deep[0]
-  const deepB = flat ?? look.deep[1]
+  const deepA = flat ?? t.deepA ?? look.deep[0]
+  const deepB = flat ?? t.deepB ?? look.deep[1]
   // Several looks are close in tone to their own background (mono grey on near-black, forest green on dark green),
   // and the live screens never notice because they put white text *on* an accent. The card does the opposite, so it
   // has to check: an accent too close to the background falls back to white rather than rendering a muddy score.

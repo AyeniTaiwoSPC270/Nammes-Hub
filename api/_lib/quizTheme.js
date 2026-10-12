@@ -15,6 +15,11 @@ export const THEME_LOOKS = {
   mono: { name: 'Mono', accent: '#52525b', glow: ['#71717a', '#a1a1aa'], deep: ['#18181b', '#3f3f46'] },
 }
 
+// The four colours a scheme owns, each of which the admin may replace in the studio. They are one list because they
+// share one rule and one function: a colour is a #rrggbb or it is nothing, and null means "the scheme's own colour"
+// — which is what every theme saved before this existed holds, so a live quiz changes for no one.
+export const SCHEME_COLOR_KEYS = Object.freeze(['glowA', 'glowB', 'deepA', 'deepB'])
+
 // The two page palettes a quiz can be shown on. These are the site's own tokens, not new colours: a quiz screen already
 // says bg-paper and text-ink-900, and those compile to exactly these variables, so setting them on the quiz's wrapper
 // re-skins every screen at once with no screen file touched — and the translucent bg-paper/85 bars follow for free.
@@ -196,6 +201,10 @@ export const DEFAULT_THEME = Object.freeze({
   look: 'classic',
   accent: null,
   page: null,
+  glowA: null,
+  glowB: null,
+  deepA: null,
+  deepB: null,
   pattern: 'math',
   image: null,
   backdropOpacity: 8,
@@ -304,6 +313,15 @@ function cleanPattern(value, image) {
   return pattern === 'image' && !image ? 'none' : pattern
 }
 
+// The admin's own four scheme colours. Only keys this file names are read, so a hand-edited row carrying extra shape
+// cannot reach through and change a field it was never given: SCHEME_COLOR_KEYS is the whole surface.
+function cleanSchemeColors(input) {
+  const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  const out = {}
+  for (const key of SCHEME_COLOR_KEYS) out[key] = cleanHexColor(t[key])
+  return out
+}
+
 // Anything goes in, a complete valid theme comes out (bad or missing values fall back to the defaults).
 export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
@@ -312,6 +330,7 @@ export function sanitizeTheme(input, { quizId } = {}) {
     look: oneOf(THEME_LOOKS, t.look, DEFAULT_THEME.look),
     accent: cleanHexColor(t.accent),
     page: cleanHexColor(t.page),
+    ...cleanSchemeColors(t),
     pattern: cleanPattern(t.pattern, image),
     image,
     backdropOpacity: num(BACKDROP_RANGES.opacity, t.backdropOpacity, DEFAULT_THEME.backdropOpacity),
@@ -356,6 +375,19 @@ export function withAccent(theme, accent) {
 // place to reach rather than a third spelling of cleanHexColor.
 export function withPage(theme, page) {
   return { ...theme, page: cleanHexColor(page) }
+}
+
+// The four scheme colours are one decision with four ends, so one function takes the whole patch rather than four
+// functions each taking one value. A key absent from the patch is left alone; a key present but unusable clears, which
+// is how the studio's own clear button hands a pair back to the scheme.
+export function withSchemeColors(theme, patch) {
+  const next = { ...theme }
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return next
+  for (const key of SCHEME_COLOR_KEYS) {
+    if (!Object.hasOwn(patch, key)) continue
+    next[key] = cleanHexColor(patch[key])
+  }
+  return next
 }
 
 // The page tokens for a chosen page colour. `--color-paper` is the colour the admin picked — that is the whole point of
@@ -411,10 +443,13 @@ export function themeCssVars(theme) {
     '--color-orange-600': `color-mix(in srgb, ${accent} 72%, black)`,
     '--color-orange-100': `color-mix(in srgb, ${accent} 14%, white)`,
     '--color-brand-orange': accent,
-    '--qz-glow-a': t.accent ?? look.glow[0],
-    '--qz-glow-b': look.glow[1],
-    '--qz-deep-a': look.deep[0],
-    '--qz-deep-b': look.deep[1],
+    // The accent sits above the scheme's tint and below the admin's own, which is today's order with one step
+    // added. The fallback is look.glow[0] and deliberately not `accent`: that variable holds the scheme's *button*
+    // colour, which is a different value that merely happens to match on some looks.
+    '--qz-glow-a': t.glowA ?? t.accent ?? look.glow[0],
+    '--qz-glow-b': t.glowB ?? look.glow[1],
+    '--qz-deep-a': t.deepA ?? look.deep[0],
+    '--qz-deep-b': t.deepB ?? look.deep[1],
     ...themePageVars(t.page),
   }
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createCanvas } from '@napi-rs/canvas'
 import { DEFAULT_CARD, sanitizeCard } from './quizCard.js'
 import { ensureFonts } from './fonts.js'
-import { drawBackdrop, renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit, podiumLayout, PODIUM_TEXT_WIDTH, CARD_WIDTH, CARD_HEIGHT } from './quizCardRender.js'
+import { drawBackdrop, palette, renderBoardCard, renderDuelCard, renderPersonalCard, FOOTER_TOP, rowsThatFit, podiumLayout, PODIUM_TEXT_WIDTH, CARD_WIDTH, CARD_HEIGHT } from './quizCardRender.js'
 import { contrastRatio, THEME_LOOKS, THEME_PATTERNS, PATTERN_UNDRAWN } from './quizTheme.js'
 
 const QUIZ = { title: 'Naming Origins' }
@@ -297,5 +297,27 @@ describe('every look stays legible', () => {
       expect(contrastRatio('#581c87', look.deep[1])).toBeLessThan(3)
       expect(contrastRatio('#ffffff', look.deep[1])).toBeGreaterThanOrEqual(3)
     }
+  })
+
+  it('gives the card the banner the theme asks for, and the card’s own colour the last word', () => {
+    const look = THEME_LOOKS[THEME.look]
+    expect(palette(DEFAULT_CARD, THEME)).toMatchObject({ deepA: look.deep[0], deepB: look.deep[1] })
+    expect(palette(DEFAULT_CARD, { ...THEME, deepA: '#3b0764', deepB: '#1a0033' })).toMatchObject({ deepA: '#3b0764', deepB: '#1a0033' })
+    // The card tab's own background colour is a different decision and still wins, or that control would do nothing.
+    expect(palette({ ...DEFAULT_CARD, backgroundColor: '#0b2417' }, { ...THEME, deepA: '#3b0764' })).toMatchObject({ deepA: '#0b2417', deepB: '#0b2417' })
+  })
+
+  it('prints the score white on a pale banner the admin chose, rather than in a matching accent', () => {
+    // The studio warns about a pale banner rather than refusing it, so this is a state the app deliberately allows and
+    // the card has to survive. The card draws its score in the accent on the background, the opposite of what the screens
+    // do, so the same white fallback that covers the presets has to cover a colour of the admin's own too.
+    //
+    // The check runs against deepB, the end of the gradient the score is drawn on, so that is the stop that has to go
+    // pale. #f6f3f2 is the site's own light surface token — a colour the admin can already reach — and classic's orange
+    // on it measures 2.82, under the 3 the fallback is looking for.
+    const pale = { ...THEME, deepA: '#f6f3f2', deepB: '#f6f3f2' }
+    expect(contrastRatio(THEME_LOOKS.classic.accent, '#f6f3f2'), 'the accent really is unreadable on this banner').toBeLessThan(3)
+    expect(palette(DEFAULT_CARD, pale).accent, 'the accent itself is untouched').toBe(THEME_LOOKS.classic.accent)
+    expect(palette(DEFAULT_CARD, pale).onBackground, 'but the score is drawn in white').toBe('#ffffff')
   })
 })

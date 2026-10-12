@@ -32,12 +32,17 @@ describe('the card backdrop', () => {
       expect(sanitizeCard({ backgroundColor: bad }).backgroundColor, String(bad)).toBeNull()
     }
   })
-  it('carries the backdrop theme fragment on the preview url, and only six fields of it', () => {
-    // Six fields because the preview endpoint renders a card, not a screen: sponsors, sound and picture paths would make
-    // the url unusable, and the cap is shared with the card draft beside it.
-    expect(PREVIEW_THEME_KEYS).toEqual(['look', 'accent', 'page', 'pattern', 'backdropOpacity', 'backdropScale'])
-    const back = decodeThemePreview(encodeThemePreview({ look: 'ocean', accent: '#123456', pattern: 'rings', headline: 'x'.repeat(60), sponsor: 'nope' }))
-    expect(back).toMatchObject({ look: 'ocean', accent: '#123456', pattern: 'rings', headline: '' })
+  it('carries the backdrop theme fragment on the preview url, and only eight fields of it', () => {
+    // Eight fields because the preview endpoint renders a card, not a screen: sponsors, sound and picture paths would make
+    // the url unusable, and the cap is shared with the card draft beside it. deepA and deepB are here because the card
+    // paints the banner; the glow pair is not, because the card draws no glow.
+    expect(PREVIEW_THEME_KEYS).toEqual(['look', 'accent', 'page', 'deepA', 'deepB', 'pattern', 'backdropOpacity', 'backdropScale'])
+    const back = decodeThemePreview(encodeThemePreview({ look: 'ocean', accent: '#123456', deepA: '#3b0764', pattern: 'rings', headline: 'x'.repeat(60), sponsor: 'nope' }))
+    expect(back).toMatchObject({ look: 'ocean', accent: '#123456', deepA: '#3b0764', pattern: 'rings', headline: '' })
+  })
+
+  it('leaves the glow off the url, because the card draws no glow', () => {
+    expect(decodeThemePreview(encodeThemePreview({ look: 'ocean', glowA: '#ff0000', glowB: '#00ff00' }))).toMatchObject({ glowA: null, glowB: null })
   })
   it('refuses a theme fragment that is junk, hostile or oversized rather than throwing on it', () => {
     for (const bad of [null, undefined, 5, '', 'not base64 $$', 'x'.repeat(800)]) {
@@ -46,7 +51,7 @@ describe('the card backdrop', () => {
     expect(decodeThemePreview(encodeThemePreview({ accent: 'red;background:url(x)', pattern: 'nope' }))).toMatchObject({ accent: null, pattern: 'math' })
   })
   it('keeps the whole preview url inside its cap with both payloads on it', () => {
-    const theme = encodeThemePreview({ look: 'ocean', accent: '#123456', page: '#3b0764', pattern: 'rings', backdropOpacity: 80, backdropScale: 150 })
+    const theme = encodeThemePreview({ look: 'ocean', accent: '#123456', page: '#3b0764', deepA: '#0b2417', deepB: '#17492f', pattern: 'rings', backdropOpacity: 80, backdropScale: 150 })
     const card = encodeCardPreview({ ...DEFAULT_CARD, accent: '#abcdef', pattern: 'hexagons', backgroundColor: '#3b0764' }, { quizId: QUIZ })
     expect(theme.length + card.length).toBeLessThanOrEqual(700)
   })

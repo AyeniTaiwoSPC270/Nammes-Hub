@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
 import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from './StudioPreview'
+import SchemeColours from './SchemeColours'
 import CharacterGallery from './CharacterGallery'
 import Character from '../../quiz/Character'
 import { AVATAR_COUNT } from '../../../data/quizCharacters'
@@ -10,6 +11,7 @@ import { THEME_LOOKS, THEME_PATTERNS } from '../../../../api/_lib/quizTheme.js'
 const theme = { look: 'royal', accent: '#123456', pattern: 'waves', confetti: 'stars', headline: 'Freshers Night', tagline: 'Phones out' }
 
 const STUDIO = 'src/pages/admin/AdminQuizStudio.jsx'
+const SCHEME_COLOURS = 'src/components/admin/quizStudio/SchemeColours.jsx'
 
 describe('the studio colour controls', () => {
   // A custom accent used to vanish the moment any colour scheme was clicked, which is what "custom colours do not work"
@@ -57,6 +59,85 @@ describe('the studio colour controls', () => {
     expect(source).toContain('aria-pressed={theme.accent === hex}')
     expect(source).toContain('theme.accent === hex ?')
     expect(source).not.toMatch(/aria-pressed=\{accent === hex\}/)
+  })
+})
+
+describe('the scheme colour rows', () => {
+  // These render, unlike the rest of this file. The rows take a plain theme and a plain callback, so there is no router,
+  // toast or query to mount around them, and rendering is the only way to prove which colour each input actually shows.
+  const row = (theme) => renderToStaticMarkup(<SchemeColours theme={theme} onChange={() => {}} />)
+
+  it('shows the colour in effect in every picker, because a colour input cannot show nothing', () => {
+    const html = row({ look: 'ocean' })
+    expect(html).toContain('value="#0891b2"') // ocean glow[0]
+    expect(html).toContain('value="#2563eb"') // ocean glow[1]
+    expect(html).toContain('value="#083344"') // ocean deep[0]
+    expect(html).toContain('value="#164e63"') // ocean deep[1]
+  })
+
+  it('follows the accent on the glow until the admin says otherwise, which is what it has always done', () => {
+    // ocean's accent (#0e7490) and its glow[0] (#0891b2) are different colours, so a row that showed the accent where
+    // the scheme's tint belongs is visibly wrong here rather than only on a look where the two happen to match.
+    const custom = row({ look: 'ocean', accent: '#00ff00' })
+    expect(custom).toContain('value="#00ff00"')
+    expect(custom).not.toContain('value="#0891b2"')
+    expect(row({ look: 'ocean', accent: '#00ff00', glowA: '#ff0000' })).toContain('value="#ff0000"')
+  })
+
+  it('warns about a banner white text cannot be read on, and says nothing about the glow', () => {
+    // text-white is hardcoded on every qz-deep panel, so a pale banner is legible enough to be allowed and not legible
+    // enough to be safe. The glow is two radial gradients at 14% alpha behind text and cannot cause that.
+    expect(row({ look: 'ocean', deepA: '#f6f3f2', deepB: '#ffffff' })).toContain('role="status"')
+    expect(row({ look: 'ocean', glowA: '#f6f3f2', glowB: '#ffffff' })).not.toContain('role="status"')
+    expect(row({ look: 'ocean' }), 'no built-in scheme may trip the warning').not.toContain('role="status"')
+  })
+
+  it('offers no clear button until there is something of the admin’s own to clear', () => {
+    const customised = row({ look: 'ocean', deepB: '#083344' })
+    expect(customised).toContain('Use the scheme’s banner')
+    expect(customised).not.toContain('Use the scheme’s glow')
+    expect(row({ look: 'ocean' })).not.toContain('Use the scheme’s banner')
+  })
+
+  it('marks a swatch chosen only when the admin chose it, not when the scheme happens to use it', () => {
+    // Every scheme's own colours are in every strip, so keying the pressed state off the resolved colour would show one
+    // as picked when the admin had only picked a scheme. This is the defect the Accent row already had.
+    expect(row({ look: 'ocean' })).not.toContain('aria-pressed="true"')
+    expect(row({ look: 'ocean', deepA: '#083344' })).toContain('aria-pressed="true"')
+  })
+
+  it('clears a pair in exactly one place, and takes both ends with it', () => {
+    // Clearing one end of a gradient is not a state the studio offers, so the clear has to name both keys and there has
+    // to be exactly one of it — the same rule the Accent and Page rows are held to.
+    const source = readFileSync(SCHEME_COLOURS, 'utf8')
+    const clears = source.split('onChange({ [aKey]: null, [bKey]: null })').length - 1
+    expect(clears, 'clearing a pair should have exactly one home').toBe(1)
+    expect(source).not.toMatch(/onChange\(\{ \[(aKey|bKey)\]: null \}\)/)
+  })
+
+  it('takes every colour it displays from themeCssVars rather than deriving it again', () => {
+    // The precedence chain is easy to get wrong and is unit-tested exactly once, in quizTheme.js. A second copy in a
+    // component would be a second place to get it wrong with nothing noticing. The swatch strips may read THEME_LOOKS —
+    // they are the preset list by definition — but no input may, and nothing may index it by the current look.
+    const source = readFileSync(SCHEME_COLOURS, 'utf8')
+    expect(source).toContain('themeCssVars(theme)')
+    expect(source, 'no input may read the preset directly').not.toMatch(/value=\{look\./)
+    expect(source, 'nothing may look the current scheme up itself').not.toMatch(/THEME_LOOKS\[/)
+  })
+})
+
+describe('the studio wiring', () => {
+  it('writes the four scheme colours only through withSchemeColors', () => {
+    const source = readFileSync(STUDIO, 'utf8')
+    expect(source, 'the rows should hand their patch to the helper').toContain('withSchemeColors(theme,')
+    // Reaching past the helper would be a second way to write a colour, which is how the accent regressed in the first place.
+    expect(source).not.toMatch(/change\(\{[^}]*\b(glowA|glowB|deepA|deepB)\s*:/)
+  })
+
+  it('shows the card background input the banner the card would actually use', () => {
+    const source = readFileSync(STUDIO, 'utf8')
+    expect(source).toContain("value={card.backgroundColor ?? vars['--qz-deep-a']}")
+    expect(source, 'the old fallback showed a colour the card was not using').not.toContain('value={card.backgroundColor ?? look.deep[0]}')
   })
 })
 
