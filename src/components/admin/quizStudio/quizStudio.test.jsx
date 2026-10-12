@@ -5,7 +5,7 @@ import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from './StudioPreview
 import SchemeColours from './SchemeColours'
 import CharacterGallery from './CharacterGallery'
 import Character from '../../quiz/Character'
-import { AVATAR_COUNT } from '../../../data/quizCharacters'
+import { BUILTIN_COUNT } from '../../../../api/_lib/quizCharacterArt.js'
 import { THEME_LOOKS, THEME_PATTERNS } from '../../../../api/_lib/quizTheme.js'
 
 const theme = { look: 'royal', accent: '#123456', pattern: 'waves', confetti: 'stars', headline: 'Freshers Night', tagline: 'Phones out' }
@@ -245,7 +245,7 @@ describe('studio preview', () => {
 
 describe('characters', () => {
   it('draws all 50 in every mood', () => {
-    for (let id = 0; id < AVATAR_COUNT; id++) {
+    for (let id = 0; id < BUILTIN_COUNT; id++) {
       for (const mood of ['idle', 'happy', 'dance', 'sad', 'wave']) {
         const html = renderToStaticMarkup(<Character id={id} mood={mood} />)
         expect(html).toContain(`qz-mood-${mood}`)
@@ -254,13 +254,13 @@ describe('characters', () => {
   }, 30_000)
   it('gives each character its own move classes', () => {
     const classes = new Set(
-      Array.from({ length: AVATAR_COUNT }, (_, id) => renderToStaticMarkup(<Character id={id} />).match(/class="([^"]+)"/)[1]),
+      Array.from({ length: BUILTIN_COUNT }, (_, id) => renderToStaticMarkup(<Character id={id} />).match(/class="([^"]+)"/)[1]),
     )
-    expect(classes.size).toBe(AVATAR_COUNT)
+    expect(classes.size).toBe(BUILTIN_COUNT)
   })
   it('lists all 50 in the gallery', () => {
     const html = renderToStaticMarkup(<CharacterGallery />)
-    expect(html.match(/aria-pressed/g).length).toBeGreaterThanOrEqual(AVATAR_COUNT)
+    expect(html.match(/aria-pressed/g).length).toBeGreaterThanOrEqual(BUILTIN_COUNT)
     expect(html).toContain('Pixel')
     expect(html).toContain('Glow')
   })

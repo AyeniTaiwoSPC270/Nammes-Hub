@@ -25,8 +25,10 @@ export function avatarStyle(nickname) {
   return OPTION_STYLES[hash % OPTION_STYLES.length]
 }
 
-// The 50 characters live in quizCharacters.js.
-export { AVATAR_COUNT, avatarInfo, normalizeAvatarId, randomAvatarId } from './quizCharacters'
+// The 50 characters, and the drawing they are made of, live in api/_lib/quizCharacterArt.js — one home, shared with the
+// server. AVATAR_COUNT is kept as an alias here so the four screens that pick a character do not all change their
+// vocabulary in one go.
+export { BUILTIN_COUNT as AVATAR_COUNT, avatarInfo, normalizeAvatarId, randomAvatarId } from '../../api/_lib/quizCharacterArt.js'
 
 // How long the answer reveal and the leaderboard stay up before the game moves on by itself.
 export const AUTO_ADVANCE_MS = 5000

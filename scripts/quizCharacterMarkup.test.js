@@ -3,7 +3,7 @@ import { writeFileSync, existsSync } from 'node:fs'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createElement } from 'react'
 import Character from '../src/components/quiz/Character.jsx'
-import { AVATAR_COUNT } from '../src/data/quizCharacters.js'
+import { BUILTIN_COUNT } from '../api/_lib/quizCharacterArt.js'
 
 // The result cards are drawn on the server, where Node cannot load a .jsx file — Vercel's Node runtime fails the whole
 // function with FUNCTION_INVOCATION_FAILED rather than degrading. So the characters' markup is generated here, from
@@ -30,7 +30,7 @@ function fromComponent(id, mood) {
 function build() {
   const entries = {}
   for (const mood of MOODS) {
-    for (let id = 0; id < AVATAR_COUNT; id++) entries[`${id}:${mood}`] = fromComponent(id, mood)
+    for (let id = 0; id < BUILTIN_COUNT; id++) entries[`${id}:${mood}`] = fromComponent(id, mood)
   }
   return entries
 }
@@ -59,8 +59,8 @@ if (process.env.REGEN_CARD_CHARACTERS === '1') writeFileSync(TARGET, SOURCE)
 
 describe('the generated character markup', () => {
 
-  it(`covers all ${AVATAR_COUNT} characters and ${MOODS.length} moods`, () => {
-    expect(Object.keys(entries)).toHaveLength(AVATAR_COUNT * MOODS.length)
+  it(`covers all ${BUILTIN_COUNT} characters and ${MOODS.length} moods`, () => {
+    expect(Object.keys(entries)).toHaveLength(BUILTIN_COUNT * MOODS.length)
   })
 
   it('matches Character.jsx exactly', async () => {

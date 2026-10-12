@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AVATAR_COUNT, avatarInfo } from '../../../data/quizCharacters'
+import { BUILTIN_COUNT, avatarInfo } from '../../../../api/_lib/quizCharacterArt.js'
 import Character from '../../quiz/Character'
 // This page exists to show how each character moves, so it needs the moves. The import lives in QuizParts.jsx
 // because the result card renders Character on the server, where Node cannot parse a stylesheet.
@@ -29,7 +29,7 @@ export default function CharacterGallery() {
             <Character key={`${selected}-${mood}`} id={selected} mood={mood} title={info.name} />
           </div>
           <h3 className="mt-2 text-2xl font-bold text-ink-900">{info.name}</h3>
-          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Character {selected + 1} of {AVATAR_COUNT}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Character {selected + 1} of {BUILTIN_COUNT}</p>
           <dl className="mt-4 grid gap-2 text-left text-sm">
             {[
               ['Waiting', info.moves.idle],
@@ -67,7 +67,7 @@ export default function CharacterGallery() {
       </aside>
 
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
-        {Array.from({ length: AVATAR_COUNT }, (_, id) => {
+        {Array.from({ length: BUILTIN_COUNT }, (_, id) => {
           const c = avatarInfo(id)
           return (
             <li key={id}>

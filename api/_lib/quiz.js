@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomInt } from 'node:crypto'
+import { BUILTIN_COUNT } from './quizCharacterArt.js'
 
 // Pure game rules for the live quiz. No database access here so every rule can be tested on its own.
 // Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
@@ -8,7 +9,8 @@ export const DEFAULT_MAX_PLAYERS = 50
 export const MIN_PLAYERS_LIMIT = 2
 // How long a full lobby waits before the game starts by itself (the host can start it sooner).
 export const FULL_LOBBY_COUNTDOWN_MS = 10_000
-export const AVATAR_COUNT = 50
+// The 50 built-in characters. The one declaration is in quizCharacterArt.js, next to the roster it counts.
+export const AVATAR_COUNT = BUILTIN_COUNT
 
 // The limit an admin sets for a game: a whole number from 2 up to the hard ceiling.
 export function isMaxPlayers(value) {
