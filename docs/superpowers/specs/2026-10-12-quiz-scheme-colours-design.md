@@ -139,7 +139,8 @@ replaces the other.
 
 ### 5.2 The resolved values come from `themeCssVars`, not from JSX
 
-The studio already imports `themeCssVars` for the preview. The rows read their colours out of it:
+`StudioPreview` computes `themeCssVars` today and the studio page does not import it. §7 is what puts it there; the rows
+then read their colours out of the same call:
 
 ```js
 const vars = themeCssVars(theme)   // already computed for the live preview
