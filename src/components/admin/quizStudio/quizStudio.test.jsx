@@ -106,12 +106,23 @@ describe('the scheme colour rows', () => {
     expect(row({ look: 'ocean', deepA: '#083344' })).toContain('aria-pressed="true"')
   })
 
+  it('clears a pair in exactly one place, and takes both ends with it', () => {
+    // Clearing one end of a gradient is not a state the studio offers, so the clear has to name both keys and there has
+    // to be exactly one of it — the same rule the Accent and Page rows are held to.
+    const source = readFileSync(SCHEME_COLOURS, 'utf8')
+    const clears = source.split('onChange({ [aKey]: null, [bKey]: null })').length - 1
+    expect(clears, 'clearing a pair should have exactly one home').toBe(1)
+    expect(source).not.toMatch(/onChange\(\{ \[(aKey|bKey)\]: null \}\)/)
+  })
+
   it('takes every colour it displays from themeCssVars rather than deriving it again', () => {
     // The precedence chain is easy to get wrong and is unit-tested exactly once, in quizTheme.js. A second copy in a
-    // component would be a second place to get it wrong with nothing noticing.
+    // component would be a second place to get it wrong with nothing noticing. The swatch strips may read THEME_LOOKS —
+    // they are the preset list by definition — but no input may, and nothing may index it by the current look.
     const source = readFileSync(SCHEME_COLOURS, 'utf8')
     expect(source).toContain('themeCssVars(theme)')
-    expect(source, 'the swatch strips may read the presets; no input may').not.toMatch(/value=\{look\./)
+    expect(source, 'no input may read the preset directly').not.toMatch(/value=\{look\./)
+    expect(source, 'nothing may look the current scheme up itself').not.toMatch(/THEME_LOOKS\[/)
   })
 })
 

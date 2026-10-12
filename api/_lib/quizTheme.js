@@ -313,6 +313,15 @@ function cleanPattern(value, image) {
   return pattern === 'image' && !image ? 'none' : pattern
 }
 
+// The admin's own four scheme colours. Only keys this file names are read, so a hand-edited row carrying extra shape
+// cannot reach through and change a field it was never given: SCHEME_COLOR_KEYS is the whole surface.
+function cleanSchemeColors(input) {
+  const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  const out = {}
+  for (const key of SCHEME_COLOR_KEYS) out[key] = cleanHexColor(t[key])
+  return out
+}
+
 // Anything goes in, a complete valid theme comes out (bad or missing values fall back to the defaults).
 export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
@@ -366,15 +375,6 @@ export function withAccent(theme, accent) {
 // place to reach rather than a third spelling of cleanHexColor.
 export function withPage(theme, page) {
   return { ...theme, page: cleanHexColor(page) }
-}
-
-// The admin's own four scheme colours. Only keys this file names are read, so a theme carrying a patch-shaped object
-// cannot reach through and change a field it was never given: SCHEME_COLOR_KEYS is the whole surface.
-function cleanSchemeColors(input) {
-  const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
-  const out = {}
-  for (const key of SCHEME_COLOR_KEYS) out[key] = cleanHexColor(t[key])
-  return out
 }
 
 // The four scheme colours are one decision with four ends, so one function takes the whole patch rather than four
