@@ -2,10 +2,14 @@
 
 The 50 quiz characters are fixed. They live in a hard-coded roster (`src/data/quizCharacters.js:27`) compiled into the
 bundle, and an admin can only browse them. Every part they are made of — 13 bodies, 12 headpieces, 10 eyes, 8 mouths,
-20 accessories, 12 props, 33 moves — is already separate and combinable, but nothing lets anyone put a new
-combination together.
+20 accessories, 12 props, 33 moves — is already separate and combinable, but nothing lets anyone put a new combination
+together.
 
-**Status:** approved. **Date:** 2026-10-12.
+This spec adds the other half: an admin designs custom characters for a quiz from a grown drawer of 137 parts, and
+players pick from them.
+
+**Status:** approved. **Date:** 2026-10-12. **Amended:** 2026-10-12, after review — the 62 new parts and the parts lab
+moved from out of scope into §4a and §8a, which split the build into three phases (§10).
 
 ---
 
@@ -16,6 +20,8 @@ combination together.
 | Area | Change |
 |---|---|
 | Drawing | One shared art module in `api/_lib/` that draws any character spec, for the browser and the result card |
+| Parts | 62 new parts across all six lists, including 6 new bodies (§4a) |
+| Parts lab | A read-only studio browser for every part, so new art has somewhere to be reviewed (§8a) |
 | Storage | `quiz_characters` table (max 12 per quiz) plus `quizzes.cast_mode` |
 | Id space | `avatar_id` check widened from `0..49` to `0..61` on the five tables that hold one |
 | Snapshot | The cast copies into `quiz_sessions.characters` when a hosted game starts, like `theme` does |
@@ -28,9 +34,8 @@ combination together.
 ### Out
 
 - **Letting players design characters.** Admin-only. A player picks from the cast, they do not author it.
-- **Growing the part tables.** No new bodies, headpieces or accessories. Each is a small function plus a test, but it
-  is design work and belongs in its own change. Until then the six part lists in §4 are the ceiling on what a cast can
-  be: about 3 million combinations before colour.
+- **New parts in the built-in 50.** The 62 are for custom characters only. The roster rows stay as they are, so the 50
+  players already know are unchanged.
 - **A second accent colour** for the headpiece and prop, separate from the body. Cheap to add later, and it doubles the
   colour handling in the art module today.
 - **Editing the 50 built-ins.** They stay code. A built-in is still one row and no admin controls.
@@ -53,6 +58,9 @@ combination together.
 | Colour | One free hex; outline and highlight derived | The art needs three colours. Two would be more admin decisions with nothing to show for it |
 | Snapshot rule | Hosted games snapshot; battles and practice read live | Exactly what `theme` already does — a game in progress cannot restyle itself, but a practice card drawn on demand does not need a copy |
 | Reordering | Not in this change | Slots are stable, so order is cosmetic; the picker can sort by name later without touching ids |
+| Part volume | 62, weighted towards the cheap categories | Six new bodies cost far more than six new mouths, because every hat and accessory positions itself off a body's geometry row (§4a) |
+| Where new parts are reviewed | A parts lab in the studio | New parts are unusable until Phase 3, so without the lab nobody sees a floating hat until an admin builds a character with it by accident |
+| Part flavour | General-cute, with about seven materials-engineering items | The site belongs to a materials engineering department and already nods to it with π, Σ, √ and ∞, but a roster that is all lab equipment stops being cute |
 
 ---
 
@@ -142,6 +150,50 @@ character rather than markup.
 `api/_lib/characterSvg.test.js` keeps the checks that were never about the copy — that every file rendering a
 `Character` imports `characters.css`, and that `Character.jsx` does not, because Node cannot parse a stylesheet when it
 draws the card.
+
+---
+
+## 4a. The part expansion
+
+The six part lists grow from 75 entries to 137:
+
+| List | Now | After | New |
+|---|---|---|---|
+| `BODIES` | 13 | 19 | 6 |
+| `TOPPERS` | 12 | 24 | 12 |
+| `EYES` | 10 | 18 | 8 |
+| `MOUTHS` | 8 | 14 | 6 |
+| `ACCESSORIES` | 20 | 36 | 16 |
+| `PROPS` | 12 | 26 | 14 |
+
+19 × 24 × 18 × 14 × 36 × 26 is 107,557,632 combinations before colour, so nothing runs out.
+
+### Colour
+
+A new part does whatever the part of its kind already does. Bodies and most headpieces take the character's `main`,
+`dark` and `light`; accessories and props carry their own fixed hexes, the way the crown is gold and the bowtie red
+(`Character.jsx:395-470`). There is no third rule to invent, which is the point.
+
+### Flavour
+
+General-cute, with about seven materials-engineering items among them — a welding mask, calipers, an ingot, a heat
+shield, a gear, a beaker, a micrometer. Seven, not seventy: `PROPS` already nods to the department with π, Σ, √ and ∞,
+and a drawer that is all lab equipment stops being a drawer anyone browses.
+
+### The six new bodies are the risk
+
+Every headpiece, accessory and prop positions itself off the body's geometry row — the eye row, the top of the head,
+where ears attach, where the neck sits, where the arms start. A new body with a wrong row does not fail; it looks wrong
+in a way no test can see: a crown hovering above the head, a scarf drawn on the shoulder of nothing.
+
+So each new body is rendered against **all 24 headpieces, all 36 accessories and all 26 props** in a test strip, and
+every coordinate in the output is checked to fall inside the 100 × 100 box. That catches a hat drawn off the canvas; it
+does not catch a hat drawn two millimetres too high, which is what §8a is for.
+
+### They are for custom characters only
+
+`ROSTER` keeps its 50 rows, so nothing built in ever references a new part and the gallery of 50 is unchanged. The
+distinctness test (`quizCharacters.test.js:7`) is unaffected.
 
 ---
 
@@ -290,6 +342,28 @@ by default without being able to change it.
 
 ---
 
+## 8a. The parts lab
+
+A read-only studio tab, next to Characters. It exists because the 62 new parts are unusable until Phase 3: without it,
+nobody sees a floating hat until an admin builds a character with it by accident.
+
+| | |
+|---|---|
+| Categories | Six tabs — Body, Headpiece, Eyes, Mouth, Wears, Prop — with counts on each |
+| Canvas | Every option drawn on one neutral `blob` body, at 96px |
+| Filter | A text box matching part names, so 36 accessories do not have to be scanned |
+| Detail | One tile at a time: the part alone, the part on the neutral body, and a five-mood strip |
+
+It is a browsing surface, not an editor. Nothing here writes.
+
+### Why it is a tab and not a section
+
+137 options across six categories in one scroll is a list nobody reads. One category at a time, with the filter, is
+readable. It is also the acceptance surface for Phase 2: **a new part is not done until somebody has looked at it
+here**, because the tests in §11 prove it draws and not that it looks right.
+
+---
+
 ## 9. The picker
 
 All three join screens replace `Array.from({ length: AVATAR_COUNT }, ...)` with `castIds(cast)`:
@@ -312,15 +386,16 @@ else from the roster op.
 
 ## 10. Delivery order
 
-Two dependent pieces, and the order is not negotiable — the second cannot exist without the first.
+Three dependent pieces, and the order is not negotiable — each one cannot exist without the one before it.
 
-| Phase | What | Why first |
+| Phase | What | Why here |
 |---|---|---|
-| 1 | The art module (§4): move the drawing into `api/_lib/`, prove it against the 50, delete the generated copy | Nothing else can draw a character that is not one of the 50 until this lands. It ships with **no behaviour change at all** — the same 50, drawn by the same code, on every screen |
-| 2 | The cast (§3, §5–§9): the table, the ids, the roster op, the editor, the pickers | Only now is there anything to store |
+| 1 | The art module (§4): move the drawing into `api/_lib/`, prove it against the 50, delete the generated copy | Nothing can draw a character that is not one of the 50 until this lands, and **drawing 62 parts twice is not an option**. It ships with **no behaviour change at all** — the same 50, drawn by the same code, on every screen |
+| 2 | The 62 new parts and the parts lab (§4a, §8a) | They are drawn as string builders once, into the module Phase 1 put in place. The lab is what makes them reviewable, and it has to exist before there is anything to review |
+| 3 | The cast (§3, §5–§9): the table, the ids, the roster op, the editor, the pickers | Only now is there anything to store, and by now there are 137 parts to store it from |
 
 Phase 1 is the risky one and it is worth landing on its own, so a problem with the drawing shows up against a card that
-worked yesterday.
+worked yesterday. Phase 2 is the long one and can be split again, category by category, without breaking anything.
 
 ---
 
@@ -329,11 +404,13 @@ worked yesterday.
 | Test | Asserts |
 |---|---|
 | `api/_lib/quizCharacterArt.test.js` | Every part list value draws; `sanitizeCharacterSpec` maps junk, wrong types and prototype keys to a valid spec rather than markup; `deriveColour` always returns a dark darker than its main and a light lighter; a fixture captured from today's output is reproduced byte for byte by the string builder |
+| `api/_lib/quizCharacterArt.test.js` (parts) | Every one of the 137 entries appears in exactly one list; each body's geometry row puts the eyes above the neck and the head top above the eyes, with ear and arm anchors inside the box; each new body renders against all 24 headpieces, 36 accessories and 26 props without throwing |
+| `api/_lib/quizCharacterArt.test.js` (bounds) | For every part on every body, no emitted coordinate falls outside the 100 × 100 viewBox, and no part name appears verbatim in the markup — the sanitiser boundary, proved rather than asserted |
 | `api/_lib/quizCharacterArt.test.js` (cast) | `castIds` is 50 ids for `builtins`, 50 + filled slots for `all`, filled slots only for `custom`; a hole in the slots is skipped, not renumbered; a cast over 12 is refused |
-| `api/_lib/quizCharacterArt.test.js` (roster, moved from `src/data/quizCharacters.test.js`) | Unchanged assertions — 50 built-ins, all distinct, an out-of-range id falls back to 0 |
+| `api/_lib/quizCharacterArt.test.js` (roster, moved from `src/data/quizCharacters.test.js`) | Unchanged assertions — 50 built-ins, all distinct, an out-of-range id falls back to 0 — plus: no roster row references a part added in Phase 2 |
 | `api/_lib/quizCardRender.test.js` | A custom spec reaches the painted card; a cast the card was not given falls back exactly as `characterMarkup` does today |
 | `api/_lib/quizHandlers.test.js` | The session snapshot carries `{ mode, characters }`; join rejects an id outside the quiz's cast and accepts every id in it; `addBots` picks from the cast; the roster op answers by code and by quiz id |
-| `src/components/admin/quizStudio/quizStudio.test.jsx` | Every draft write goes through `sanitizeCharacterSpec`/`sanitizeCharacterMoves`; deleting frees a slot rather than renumbering; the duplicate warning names the other character and the save proceeds |
+| `src/components/admin/quizStudio/quizStudio.test.jsx` | Every draft write goes through `sanitizeCharacterSpec`/`sanitizeCharacterMoves`; deleting frees a slot rather than renumbering; the duplicate warning names the other character and the save proceeds; the parts lab shows one category at a time and writes nothing |
 | `api/_lib/characterSvg.test.js` | Keeps the stylesheet-reach checks it has today, minus the deleted generator |
 
 ---
@@ -348,6 +425,8 @@ worked yesterday.
 - The colour picker is one labelled `<input type="color">`; the character is never identified by colour alone, since
   the shape and the name are on screen with it.
 - The preview keeps its `title`/`aria-label` on the `Character` root, so the character is announced by name.
+- The parts lab's category tabs are a real tablist, the filter is a labelled search input, and each tile carries its
+  part's name as text under the drawing — so the lab is usable without seeing any of the art.
 
 ---
 
@@ -364,3 +443,9 @@ worked yesterday.
   first and reproduces it byte for byte, so a change in how a body is drawn fails loudly instead of shipping.
 - **`dangerouslySetInnerHTML` in a hot path.** It runs for every character on a 42-player board. The string is built
   once per `Character` render, same as the JSX tree was, but it is worth watching on a busy lobby.
+- **Sixty-two hand-drawn parts is a lot of visual judgement no test can make.** The bounds test catches a hat drawn off
+  the canvas; it cannot catch one drawn two millimetres too high, and six new bodies mean six chances to be wrong about
+  where a neck is. This is what the parts lab is for, and the claim that the new art looks right has to be made by
+  somebody who opened it, not by a passing suite.
+- **137 options is past the point where a grid reads.** The parts lab answers it by showing one category at a time; the
+  editor answers it with the accordion. If either ends up showing everything at once, that is the symptom to look for.
