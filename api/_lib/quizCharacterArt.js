@@ -27,9 +27,9 @@ const CAMEL_AS_IS = new Set([
   'yChannelSelector', 'zoomAndPan',
 ])
 
-// React escapes these inside an attribute value, and the committed markup was produced by React, so escaping has to
-// match it exactly or the parity test fails on characters nobody changed. React writes ' as &#x27; — confirmed
-// against the font-family attribute in api/_lib/quizCharacterMarkup.js, not assumed.
+// React escapes these inside an attribute value, so escaping has to match it exactly — the drawing moved here from a
+// React component, and a character that renders one glyph differently is a bug nobody would notice. React writes ' as
+// &#x27;, which was checked against a rendered font-family attribute rather than assumed.
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' }
 
 export function h(tag, attrs = null, children = null) {
