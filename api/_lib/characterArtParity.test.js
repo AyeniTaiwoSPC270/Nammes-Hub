@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { createElement } from 'react'
 import { CHARACTER_MARKUP } from './quizCharacterMarkup.js'
+import Character from '../../src/components/quiz/Character.jsx'
 import * as art from './quizCharacterArt.js'
 
 const { characterSvgBody, characterSvgMarkup, avatarInfo, BUILTIN_COUNT } = art
@@ -60,5 +63,30 @@ describe('characterSvgMarkup', () => {
   it('leaves labelling to whoever renders it, so it cannot contradict the root', () => {
     expect(characterSvgMarkup(avatarInfo(13), 'happy')).not.toContain('aria-')
     expect(characterSvgMarkup(avatarInfo(13), 'happy')).not.toContain('role=')
+  })
+})
+
+// The component owns the root, because the root carries the classes the browser's stylesheet animates and the aria
+// attributes the caller asked for. This checks that the two halves still meet exactly: the component's root plus the
+// module's body is the markup that was generated from the JSX before the drawing moved.
+describe('the component and the builder agree', () => {
+  it('renders exactly the stored markup for a character', () => {
+    expect(strip(renderToStaticMarkup(createElement(Character, { id: 13, mood: 'happy' }))))
+      .toBe(stored(13, 'happy'))
+  })
+
+  it('still renders an svg root with the animation classes and whatever sizing it was given', () => {
+    const html = renderToStaticMarkup(createElement(Character, { id: 0, mood: 'idle', className: 'h-16 w-16' }))
+    expect(html.startsWith('<svg viewBox="0 0 100 100" class="qz-char qz-mood-idle')).toBe(true)
+    expect(html).toContain('h-16 w-16')
+    expect(html).toContain('<g class="qz-body">')
+  })
+
+  it('keeps the root hidden from assistive tech unless it is given a name', () => {
+    expect(renderToStaticMarkup(createElement(Character, { id: 0 }))).toContain('aria-hidden="true"')
+    const named = renderToStaticMarkup(createElement(Character, { id: 0, title: 'Pixel' }))
+    expect(named).toContain('role="img"')
+    expect(named).toContain('aria-label="Pixel"')
+    expect(named).not.toContain('aria-hidden')
   })
 })
