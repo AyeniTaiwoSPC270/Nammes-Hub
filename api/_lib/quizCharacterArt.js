@@ -219,6 +219,23 @@ export function randomAvatarId() {
   return Math.floor(Math.random() * BUILTIN_COUNT)
 }
 
+// The one answer to "which character is id N", for every caller on both sides.
+//
+// 0 to BUILTIN_COUNT-1 is always a built-in. BUILTIN_COUNT to BUILTIN_COUNT+11 is slot 0-11 of a quiz's own cast, but
+// only when that cast is being offered — a quiz whose mode is 'builtins' must fall back to a built-in rather than
+// resolve a character nobody can pick.
+//
+// The id is NOT normalised before this lookup: normalizeAvatarId clamps to the built-ins, which would turn a cast id of
+// 50 into character 0 before it ever reached here.
+export function characterSpec(id, cast) {
+  const entry = Number.isInteger(id) && id >= BUILTIN_COUNT && Array.isArray(cast?.characters)
+    ? cast.characters.find((c) => BUILTIN_COUNT + c.slot === id)
+    : null
+  const offered = cast?.mode === 'all' || cast?.mode === 'custom'
+  if (entry && offered) return { ...entry.spec, ...entry.moves, color: entry.color, name: entry.name, id }
+  return avatarInfo(id)
+}
+
 // ---- the drawing ----------------------------------------------------------------------------------------------------
 //
 // One of the 50, drawn as SVG. Which character it is comes from the spec; `mood` changes the face and the movement:

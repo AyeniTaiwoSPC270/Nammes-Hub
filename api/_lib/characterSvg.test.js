@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { characterSvg } from './characterSvg.js'
-import { AVATAR_COUNT } from '../../src/data/quizCharacters.js'
+import { BUILTIN_COUNT, avatarInfo, characterSvgMarkup } from './quizCharacterArt.js'
 
 describe('characterSvg', () => {
   it('produces a complete svg for all 50 characters', () => {
-    for (let id = 0; id < AVATAR_COUNT; id++) {
+    for (let id = 0; id < BUILTIN_COUNT; id++) {
       const svg = characterSvg(id)
       expect(svg.startsWith('<svg')).toBe(true)
       expect(svg.endsWith('</svg>')).toBe(true)
@@ -30,6 +30,24 @@ describe('characterSvg', () => {
 
   it('is a standalone document, which is what the canvas parser needs', () => {
     expect(characterSvg(0)).toContain('xmlns="http://www.w3.org/2000/svg"')
+  })
+
+  // The animation classes are what the browser's stylesheet acts on. They mean nothing to the canvas, so they are
+  // stripped — which is also exactly right for a still card. If this ever stops holding, the card is carrying dead
+  // class names into every download.
+  it('strips the animation classes, which mean nothing without the stylesheet', () => {
+    const svg = characterSvg(7)
+    expect(svg).not.toContain('class=')
+    expect(svg).not.toContain('qz-i-')
+    expect(svg).not.toContain('qz-body')
+  })
+
+  it('draws the same picture the art module builds, with only xmlns and the size added', () => {
+    expect(characterSvg(7, { size: 160 })).toBe(
+      characterSvgMarkup(avatarInfo(7), 'happy')
+        .replace(/\sclass="[^"]*"/g, '')
+        .replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"'),
+    )
   })
 })
 
