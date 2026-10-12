@@ -37,36 +37,37 @@ const PAIRS = [
   },
 ]
 
-function Picker({ label, raw, shown, from, onPick }) {
+// The eight presets are the fast path and the colour input is the escape hatch, so both sit on one line — but only one
+// end of the gradient fits on a line at all. The studio's control column is 420px wide with p-5 on it, leaving 380px of
+// content: a tag at 16px, nine items at 32px and eight gaps at 6px comes to 352px. Two of these side by side is 704px,
+// which is why the ends are stacked rather than set flex-1 against each other — flex-1 does not wrap, it squeezes, and
+// two squeezed strips overlap their own controls instead of falling onto a second line.
+function Picker({ tag, name, raw, shown, from, onPick }) {
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-2">
-      <span className="text-xs font-bold uppercase tracking-wide text-ink-muted">{label}</span>
-      <div className="flex flex-wrap items-center gap-2">
-        {Object.entries(THEME_LOOKS).map(([id, look]) => {
-          const hex = from(look)
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onPick(hex)}
-              aria-label={`${label}: ${look.name} ${hex}`}
-              aria-pressed={raw === hex}
-              className={['h-9 w-9 cursor-pointer rounded-full border-2', raw === hex ? 'border-ink-900 ring-2 ring-offset-2 ring-ink-900/30' : 'border-transparent'].join(' ')}
-              style={{ background: hex }}
-            />
-          )
-        })}
-        <label className="flex cursor-pointer items-center gap-2 rounded-full border border-hairline px-3 py-1.5 text-sm font-semibold text-ink-900">
-          <input
-            type="color"
-            value={shown}
-            onChange={(e) => onPick(e.target.value)}
-            className="h-7 w-7 cursor-pointer border-0 bg-transparent p-0"
-            aria-label={`Custom ${label.toLowerCase()} colour`}
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="w-4 shrink-0 text-xs font-bold uppercase text-ink-muted">{tag}</span>
+      {Object.entries(THEME_LOOKS).map(([id, look]) => {
+        const hex = from(look)
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onPick(hex)}
+            aria-label={`${name}: ${look.name} ${hex}`}
+            aria-pressed={raw === hex}
+            className={['h-8 w-8 shrink-0 cursor-pointer rounded-full border-2', raw === hex ? 'border-ink-900 ring-2 ring-ink-900/30' : 'border-transparent'].join(' ')}
+            style={{ background: hex }}
           />
-          Custom
-        </label>
-      </div>
+        )
+      })}
+      <input
+        type="color"
+        value={shown}
+        onChange={(e) => onPick(e.target.value)}
+        className="h-8 w-8 shrink-0 cursor-pointer rounded-full border-2 border-hairline bg-transparent p-0"
+        aria-label={`Custom ${name.toLowerCase()} colour`}
+        title="Any other colour"
+      />
     </div>
   )
 }
@@ -82,22 +83,23 @@ export default function SchemeColours({ theme, onChange }) {
         const customised = keys.some((k) => (theme[k] ?? null) !== null)
         const worst = warn ? Math.min(contrastWithWhite(vars[names[aKey]]), contrastWithWhite(vars[names[bKey]])) : Infinity
         return (
-          <div key={aKey}>
-            <div className="flex flex-wrap items-start gap-3">
-              <span
-                className="mt-6 h-11 w-11 shrink-0 rounded-xl border border-black/10"
-                style={{ background: `linear-gradient(135deg, ${vars[names[aKey]]}, ${vars[names[bKey]]})` }}
-                aria-hidden="true"
-              />
-              <Picker label={`${label} A`} raw={theme[aKey] ?? null} shown={vars[names[aKey]]} from={from[aKey]} onPick={(hex) => onChange({ [aKey]: hex })} />
-              <Picker label={`${label} B`} raw={theme[bKey] ?? null} shown={vars[names[bKey]]} from={from[bKey]} onPick={(hex) => onChange({ [bKey]: hex })} />
+          <div key={aKey} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-bold text-ink-900">{label}</span>
               {customised && (
                 <Button variant="secondary" size="sm" onClick={() => onChange({ [aKey]: null, [bKey]: null })}>{clear}</Button>
               )}
             </div>
-            <p className="mt-2 text-sm text-ink-muted">{hint}</p>
+            <span
+              className="h-2 w-full rounded-full border border-black/10"
+              style={{ background: `linear-gradient(90deg, ${vars[names[aKey]]}, ${vars[names[bKey]]})` }}
+              aria-hidden="true"
+            />
+            <Picker tag="A" name={`${label} A`} raw={theme[aKey] ?? null} shown={vars[names[aKey]]} from={from[aKey]} onPick={(hex) => onChange({ [aKey]: hex })} />
+            <Picker tag="B" name={`${label} B`} raw={theme[bKey] ?? null} shown={vars[names[bKey]]} from={from[bKey]} onPick={(hex) => onChange({ [bKey]: hex })} />
+            <p className="text-sm text-ink-muted">{hint}</p>
             {warn && worst < warn.below && (
-              <p role="status" className="mt-2 rounded-lg bg-orange-500/10 p-3 text-sm text-ink-900">{warn.text}</p>
+              <p role="status" className="mt-1 rounded-lg bg-orange-500/10 p-3 text-sm text-ink-900">{warn.text}</p>
             )}
           </div>
         )

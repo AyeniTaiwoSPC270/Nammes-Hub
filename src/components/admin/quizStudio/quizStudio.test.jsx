@@ -13,6 +13,10 @@ const theme = { look: 'royal', accent: '#123456', pattern: 'waves', confetti: 's
 const STUDIO = 'src/pages/admin/AdminQuizStudio.jsx'
 const SCHEME_COLOURS = 'src/components/admin/quizStudio/SchemeColours.jsx'
 
+// Source checks read the file with its line comments taken out. Several of the rules below are explained in the comment
+// that sits beside the code they govern, and a grep that matched prose would fail on its own explanation.
+const code = (path) => readFileSync(path, 'utf8').replace(/^\s*\/\/.*$/gm, '')
+
 describe('the studio colour controls', () => {
   // A custom accent used to vanish the moment any colour scheme was clicked, which is what "custom colours do not work"
   // meant. The rule that prevents it lives in quizTheme.js and is unit-tested there, but a render test cannot fire a
@@ -109,10 +113,22 @@ describe('the scheme colour rows', () => {
   it('clears a pair in exactly one place, and takes both ends with it', () => {
     // Clearing one end of a gradient is not a state the studio offers, so the clear has to name both keys and there has
     // to be exactly one of it — the same rule the Accent and Page rows are held to.
-    const source = readFileSync(SCHEME_COLOURS, 'utf8')
+    const source = code(SCHEME_COLOURS)
     const clears = source.split('onChange({ [aKey]: null, [bKey]: null })').length - 1
     expect(clears, 'clearing a pair should have exactly one home').toBe(1)
     expect(source).not.toMatch(/onChange\(\{ \[(aKey|bKey)\]: null \}\)/)
+  })
+
+  it('never puts the two ends of a gradient side by side, which is what broke the row', () => {
+    // The studio's control column is 420px with p-5 on it, so 380px of content. One strip is a 16px tag, nine 32px items
+    // and eight 6px gaps: 352px. Two side by side is 704px and does not fit, and `flex-1` does not solve that — it
+    // squeezes instead of wrapping, so the swatches fell into vertical columns and the two colour inputs overlapped.
+    //
+    // jsdom applies no stylesheet, so nothing here can measure a pixel. This pins the shape that caused it rather than
+    // the result: a row that grows instead of shrinking is what has to come back if this ever breaks again.
+    const source = code(SCHEME_COLOURS)
+    expect(source, 'a squeezed strip is the bug this guards').not.toMatch(/flex-1/)
+    expect(source, 'the ends are stacked').toMatch(/flex flex-col gap-2/)
   })
 
   it('takes every colour it displays from themeCssVars rather than deriving it again', () => {
