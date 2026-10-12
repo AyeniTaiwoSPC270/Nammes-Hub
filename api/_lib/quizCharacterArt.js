@@ -67,9 +67,12 @@ export function toSvg(node) {
 // what the cast editor in the studio builds from.
 
 export const BODIES = ['blob', 'box', 'round', 'bean', 'ghost', 'onigiri', 'cloud', 'drop', 'loaf', 'hexagon', 'pear', 'jelly', 'diamond']
-export const TOPPERS = ['none', 'cat', 'bunny', 'bear', 'horns', 'antenna', 'bugs', 'sprout', 'spikes', 'floppy', 'halo', 'tuft']
-export const EYES = ['round', 'dot', 'sleepy', 'wide', 'wink', 'star', 'slit', 'lash', 'cyclops', 'spiral']
-export const MOUTHS = ['smile', 'grin', 'cat', 'o', 'smirk', 'tongue', 'fang', 'flat']
+export const TOPPERS = ['none', 'cat', 'bunny', 'bear', 'horns', 'antenna', 'bugs', 'sprout', 'spikes', 'floppy', 'halo', 'tuft',
+  'fin', 'mohawk', 'beret', 'headband-over', 'leafcrown', 'antennae', 'braid', 'pigtails', 'curls', 'bandana', 'cowlick', 'tiara']
+export const EYES = ['round', 'dot', 'sleepy', 'wide', 'wink', 'star', 'slit', 'lash', 'cyclops', 'spiral',
+  'goggles-round', 'sleep', 'wink-left', 'shades', 'heart-eyes', 'hollow', 'glasses-dot', 'squint']
+export const MOUTHS = ['smile', 'grin', 'cat', 'o', 'smirk', 'tongue', 'fang', 'flat',
+  'zigzag', 'smiley', 'open-smile', 'flat-wide', 'smirk-left', 'stitched']
 export const ACCESSORIES = [
   'none', 'sunglasses', 'glasses', 'headphones', 'bowtie', 'tie', 'scarf', 'monocle', 'eyepatch', 'ninja',
   'hero', 'flower', 'crown', 'gradcap', 'partyhat', 'goggles', 'mustache', 'cap', 'chef', 'beanie',
@@ -409,6 +412,66 @@ function topper(kind, shape, color) {
         d: `M50 ${top + 4}c-8-5-4-14 4-13 6 1 5 8 0 9`,
         fill: 'none', stroke: color.dark, strokeWidth: 3.2, strokeLinecap: 'round',
       })
+    case 'fin':
+      return h('path', {
+        d: `M50 ${top + 4}q-7-15 4-17 9-1 4 10`, fill: 'none', stroke: color.dark, strokeWidth: 3.2, strokeLinecap: 'round',
+      })
+    case 'mohawk':
+      return [38, 44, 50, 56, 62].map((x, i) => h('polygon', {
+        points: `${x - 3},${top + 5} ${x},${top - 4 - i * 2} ${x + 3},${top + 5}`,
+        fill: color.dark, stroke: color.dark, strokeWidth: 1.6, strokeLinejoin: 'round',
+      }))
+    case 'beret':
+      return [
+        h('ellipse', { cx: 50, cy: top + 3, rx: 21, ry: 8, fill: color.dark, stroke: color.light, strokeWidth: 1.6 }),
+        h('circle', { cx: 50, cy: top - 5, r: 2.6, fill: color.dark }),
+      ]
+    case 'headband-over':
+      return h('path', {
+        d: `M${50 - ex - 2} ${ey - 6}q${ex + 2} -11 ${ex * 2 + 4} 0z`, fill: '#0ea5e9', stroke: '#0369a1', strokeWidth: 1.8, strokeLinejoin: 'round',
+      })
+    case 'leafcrown':
+      return [36, 43, 57, 64].map((x, i) => h('ellipse', {
+        cx: x, cy: top - 2, rx: 6.6, ry: 3.4, transform: `rotate(${i < 2 ? -26 : 26} ${x} ${top - 2})`,
+        fill: i % 2 ? '#86efac' : '#4ade80', stroke: '#15803d', strokeWidth: 1.4,
+      }))
+    case 'antennae':
+      return [-1, 1].map((s) => [
+        h('path', {
+          d: `M${50 + s * 5} ${top + 4}q${s * 6} -7 ${s * 8} -12`,
+          fill: 'none', stroke: color.dark, strokeWidth: 2.4, strokeLinecap: 'round',
+        }),
+        h('circle', { cx: 50 + s * 13, cy: top - 9, r: 3.2, fill: color.light, stroke: color.dark, strokeWidth: 1.8 }),
+      ])
+    case 'braid':
+      return [0, 1, 2].map((i) => h('ellipse', {
+        cx: 58, cy: top + 8 + i * 9, rx: 5.4, ry: 4.6,
+        fill: color.main, stroke: color.dark, strokeWidth: 2, strokeLinejoin: 'round',
+      }))
+    case 'pigtails':
+      return [-1, 1].map((s) => h('ellipse', {
+        cx: 50 + s * (ex + 5), cy: ey + 11, rx: 7, ry: 12,
+        transform: `rotate(${s * 14} ${50 + s * (ex + 5)} ${ey + 11})`,
+        fill: color.main, stroke: color.dark, strokeWidth: 2,
+      }))
+    case 'curls':
+      return [0, 1, 2, 3].map((i) => h('circle', {
+        cx: 33 + i * 11, cy: top + 3, r: 6.2, fill: color.main, stroke: color.dark, strokeWidth: 2,
+      }))
+    case 'bandana':
+      return h('g', null, [
+        h('path', { d: `M${50 - ex - 3} ${ey - 3}q${ex + 3} -11 ${ex * 2 + 6} 0z`, fill: '#dc2626', stroke: '#7f1d1d', strokeWidth: 1.8, strokeLinejoin: 'round' }),
+        h('path', { d: `M${50 - ex - 3} ${ey - 3}l-9-3 3 7z`, fill: '#b91c1c', stroke: '#7f1d1d', strokeWidth: 1.6, strokeLinejoin: 'round' }),
+      ])
+    case 'cowlick':
+      return h('path', {
+        d: `M46 ${top + 6}q3-15 13-10t-3 10`, fill: 'none', stroke: color.dark, strokeWidth: 3.4, strokeLinecap: 'round',
+      })
+    case 'tiara':
+      return [
+        h('path', { d: `M38 ${top + 5}l-2-11 8 6 6-10 6 10 8-6-2 11z`, fill: '#fbbf24', stroke: '#b45309', strokeWidth: 1.8, strokeLinejoin: 'round' }),
+        h('circle', { cx: 50, cy: top - 3, r: 2, fill: '#f43f5e' }),
+      ]
     default:
       return null
   }
@@ -461,6 +524,40 @@ function eye(kind, x, y) {
         h('circle', { cx: x, cy: y, r: 7.4, fill: '#fff' }),
         h('path', { d: `M${x} ${y}m0-1.2a1.2 1.2 0 1 1-1.2 1.2a3 3 0 1 1 3 3a5 5 0 1 1-5-5`, fill: 'none', stroke: INK, strokeWidth: 1.6, strokeLinecap: 'round' }),
       ]
+    case 'goggles-round':
+      return [
+        h('circle', { cx: x, cy: y, r: 7, fill: '#fff', stroke: '#1e3a8a', strokeWidth: 1.4 }),
+        h('circle', { cx: x + 0.6, cy: y + 0.6, r: 3.6, fill: INK }),
+        h('circle', { cx: x - 2.6, cy: y - 3, r: 2.2, fill: '#93c5fd', opacity: '0.9' }),
+      ]
+    case 'sleep':
+      return h('path', { d: `M${x - 6} ${y}q6 5 12 0`, fill: 'none', stroke: INK, strokeWidth: 2.6, strokeLinecap: 'round' })
+    case 'wink-left':
+      return x < 50
+        ? h('path', { d: `M${x - 6} ${y}q6 6 12 0`, fill: 'none', stroke: INK, strokeWidth: 3, strokeLinecap: 'round' })
+        : [
+          h('circle', { cx: x, cy: y, r: 7, fill: '#fff' }),
+          h('circle', { cx: x + 1, cy: y + 0.5, r: 3.6, fill: INK }),
+        ]
+    case 'shades':
+      return h('rect', { x: x - 8, y: y - 5, width: 16, height: 9, rx: 3.5, fill: '#111827', stroke: INK, strokeWidth: 1.2 })
+    case 'heart-eyes':
+      return h('path', {
+        d: `M${x} ${y + 5}C${x - 8} ${y - 1} ${x - 7} ${y - 9} ${x} ${y - 5}C${x + 7} ${y - 9} ${x + 8} ${y - 1} ${x} ${y + 5}z`,
+        fill: '#f43f5e', stroke: '#9f1239', strokeWidth: 1.2, strokeLinejoin: 'round',
+      })
+    case 'hollow':
+      return [
+        h('circle', { cx: x, cy: y, r: 7, fill: '#0b2417' }),
+        h('circle', { cx: x - 2, cy: y - 2, r: 2.2, fill: '#fff', opacity: '0.85' }),
+      ]
+    case 'glasses-dot':
+      return [
+        h('circle', { cx: x, cy: y, r: 7.4, fill: '#fff', stroke: '#2563eb', strokeWidth: 1.8 }),
+        h('circle', { cx: x + 1, cy: y + 0.5, r: 3.4, fill: INK }),
+      ]
+    case 'squint':
+      return h('path', { d: `M${x - 6} ${y - 2}l12 4`, stroke: INK, strokeWidth: 2.8, strokeLinecap: 'round' })
     default:
       return [
         h('circle', { cx: x, cy: y, r: 7, fill: '#fff' }),
@@ -493,6 +590,26 @@ function mouth(kind, y) {
       ]
     case 'flat':
       return h('path', { d: `M43 ${y + 3}h14`, ...stroke })
+    case 'zigzag':
+      return h('path', { d: `M41 ${y + 2}l4 -3 4 3 4 -3 4 3`, fill: 'none', stroke: INK, strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round' })
+    case 'smiley':
+      return [
+        h('circle', { cx: 50, cy: y - 1, r: 9, fill: '#fff', stroke: INK, strokeWidth: 1.8 }),
+        h('circle', { cx: 46, cy: y - 4, r: 1.6, fill: INK }),
+        h('circle', { cx: 54, cy: y - 4, r: 1.6, fill: INK }),
+        h('path', { d: `M45 ${y + 1}q5 5 10 0`, fill: 'none', stroke: INK, strokeWidth: 2, strokeLinecap: 'round' }),
+      ]
+    case 'open-smile':
+      return h('path', { d: `M41 ${y - 2}q9 14 18 0z`, fill: '#7f1d1d', stroke: INK, strokeWidth: 2, strokeLinejoin: 'round' })
+    case 'flat-wide':
+      return h('path', { d: `M40 ${y + 2}h20`, stroke: INK, strokeWidth: 3, strokeLinecap: 'round' })
+    case 'smirk-left':
+      return h('path', { d: `M42 ${y + 3}q8 -5 16 0`, fill: 'none', stroke: INK, strokeWidth: 2.8, strokeLinecap: 'round' })
+    case 'stitched':
+      return [
+        h('path', { d: `M41 ${y + 1}h18`, stroke: INK, strokeWidth: 2.6, strokeLinecap: 'round' }),
+        ...[44, 49, 54].map((sx) => h('line', { x1: sx, y1: y - 1.5, x2: sx, y2: y + 3.5, stroke: INK, strokeWidth: 1.6 })),
+      ]
     default:
       return h('path', { d: `M42 ${y}q8 7 16 0`, ...stroke })
   }
