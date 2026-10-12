@@ -131,6 +131,22 @@ Both predate the calendar, are out of scope, and are still open:
   called from a real click or tap. Do not "fix" a silent sound by removing that guard.
 - **Audio must never break the game.** Unsupported, blocked or closed audio contexts fail silently by
   design. Keep it that way.
+- **`api/_lib/quizCharacterArt.js` is the only place a quiz character is drawn**, and it returns SVG
+  **strings**, not React elements — a Vercel function cannot load a `.jsx` file, which is the failure
+  recorded in `api/_lib/characterSvg.js`. The browser injects the string into its own `<svg>` with
+  `dangerouslySetInnerHTML`; the card parses the same string with `@napi-rs/canvas`. Neither side can
+  disagree about what a character looks like. Two things undo this: adding a `react-dom/server` call
+  to a serverless function, or drawing a character anywhere else.
+- **Nothing admin-authored may reach that markup.** Every part is a key in one of the six lists in the
+  same module, and the colour is a validated `#rrggbb`; a character's `name` is never drawn into the
+  SVG at all. The serialiser's escaping has to match React's exactly (`'` is `&#x27;`), because the
+  drawing moved here out of a React component and a character rendering one glyph differently is a
+  bug nobody would notice.
+- **`Character.jsx` must keep a real `<svg>` root.** The root carries `qz-char`, `qz-mood-*` and the
+  four move classes that `characters.css` animates, plus the `aria-hidden` / `aria-label` the caller
+  asked for; only the inside comes from the module. A wrapper element would move those classes off the
+  element the stylesheet targets. It must also never import `characters.css` — `characterSvg.test.js`
+  checks both of these.
 - **A quiz's `theme` (jsonb) is a design-time draft.** Each game copies it into `quiz_sessions.theme`
   when it starts, so editing a quiz never restyles a game already running. New theme fields need a
   default in `DEFAULT_THEME` and a fallback in the matching `clean*` function, or a hand-edited row
