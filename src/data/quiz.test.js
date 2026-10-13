@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey } from './quiz'
+import { afterEach, describe, it, expect, vi } from 'vitest'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster } from './quiz'
+
+afterEach(() => vi.unstubAllGlobals())
 
 function question(over = {}) {
   return { ...blankQuestion(), text: 'Capital of Nigeria?', options: ['Lagos', 'Abuja', '', ''], correct_index: 1, ...over }
@@ -101,5 +103,19 @@ describe('castQueryKey', () => {
   it('returns null when there is no target, rather than using one shared cache key', () => {
     expect(castQueryKey({})).toBeNull()
     expect(castQueryKey(null)).toBeNull()
+  })
+})
+
+describe('fetchCastRoster', () => {
+  it('sends roster reads through the registered cast action', async () => {
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ mode: 'builtins', characters: [] }) })
+    vi.stubGlobal('fetch', fetch)
+
+    await fetchCastRoster({ code: '123456' })
+
+    expect(fetch).toHaveBeenCalledWith('/api/quiz?action=cast', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ op: 'roster', code: '123456' }),
+    }))
   })
 })

@@ -70,6 +70,19 @@ describe('quiz-create', () => {
     expect(res.statusCode).toBe(200)
     expect(db.tables.quiz_sessions.at(-1).characters).toMatchObject({ mode: 'all', characters: [{ slot: 0, name: 'Kola', spec: { body: 'pot' } }] })
   })
+  it('does not copy retired characters into a new session snapshot', async () => {
+    const db = fakeDb({
+      quizzes: [{ id: QUIZ, max_players: 40, cast_mode: 'all' }],
+      quiz_characters: [
+        { id: 'c1', quiz_id: QUIZ, slot: 0, name: 'Kola', spec: { body: 'pot' }, moves: {} },
+        { id: 'c2', quiz_id: QUIZ, slot: 1, name: 'Deleted', spec: {}, moves: {}, deleted_at: '2026-10-13T00:00:00.000Z' },
+      ],
+    })
+
+    await createQuizCreateHandler(() => db, { makeCode: () => '777777' })(admin({ quizId: QUIZ }), fakeRes())
+
+    expect(db.tables.quiz_sessions.at(-1).characters.characters.map((character) => character.slot)).toEqual([0])
+  })
   it('asks the quizzes table for the card column everywhere it reads a card', () => {
     // Supabase returns only the columns a select names, so leaving `card` off a select makes `quiz.card` undefined and
     // sanitizeCard quietly falls back to the defaults. The fake db above discards the column list, so that failure is

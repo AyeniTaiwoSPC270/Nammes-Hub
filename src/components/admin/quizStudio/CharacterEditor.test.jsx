@@ -30,4 +30,9 @@ describe('cast editor rules', () => {
     expect(source).toContain('Save cast')
     expect(source).toContain('useSaveCast')
   })
+
+  it('keeps save controls available when the last saved character is deleted', () => {
+    const source = readFileSync(SOURCE, 'utf8')
+    expect(source).toMatch(/\{\(draft \|\| selected\) && \(/)
+  })
 })

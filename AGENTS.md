@@ -149,9 +149,10 @@ Both predate the calendar, are out of scope, and are still open:
   checks both of these.
 - **`avatar_id` has one stable meaning.** 0–49 is always a built-in; 50–61 is slot 0–11 of that
   quiz's cast. Resolve ids through `characterSpec` and build available ids through `castIds`; never
-  add a second avatar-spec column or renumber cast slots.
-- **Deleting a cast character leaves a hole.** A slot is its identity. Shifting the remaining rows
-  would silently change what an already chosen id means.
+  add a second avatar-spec column, renumber cast slots, or reuse a retired slot. Deleted character rows
+  scrub their authored data but retain a `deleted_at` slot reservation; live rosters omit those rows.
+- **The cast roster is the `roster` op on `/api/quiz?action=cast`.** Send `{ op: 'roster', code }` or
+  `{ op: 'roster', quizId }`; `roster` is not a top-level quiz action.
 - **Hosted games snapshot `quiz_sessions.characters` at start.** Editing a quiz cannot restyle a
   running hosted game. Battles and practice use the quiz's live cast, matching their live theme rules.
 - **`sanitizeCast` is the custom-character boundary.** It cleans specs and moves the same way in the

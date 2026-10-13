@@ -8,8 +8,8 @@ together.
 This spec adds the other half: an admin designs custom characters for a quiz from a grown drawer of 137 parts, and
 players pick from them.
 
-**Status:** approved. **Date:** 2026-10-12. **Amended:** 2026-10-12, after review — the 62 new parts and the parts lab
-moved from out of scope into §4a and §8a, which split the build into three phases (§10).
+**Status:** approved. **Date:** 2026-10-12. **Amended:** 2026-10-13, after code review — retired slot identities
+remain reserved after deletion, while the deleted character's name and design are scrubbed.
 
 ---
 
@@ -22,7 +22,7 @@ moved from out of scope into §4a and §8a, which split the build into three pha
 | Drawing | One shared art module in `api/_lib/` that draws any character spec, for the browser and the result card |
 | Parts | 62 new parts across all six lists, including 6 new bodies (§4a) |
 | Parts lab | A read-only studio browser for every part, so new art has somewhere to be reviewed (§8a) |
-| Storage | `quiz_characters` table (max 12 per quiz) plus `quizzes.cast_mode` |
+| Storage | `quiz_characters` table (12 allocated slots per quiz lifetime) plus `quizzes.cast_mode` |
 | Id space | `avatar_id` check widened from `0..49` to `0..61` on the five tables that hold one |
 | Snapshot | The cast copies into `quiz_sessions.characters` when a hosted game starts, like `theme` does |
 | Reading it | One read-only `roster` op on the existing quiz router, keyed by join code or quiz id |
@@ -49,7 +49,7 @@ moved from out of scope into §4a and §8a, which split the build into three pha
 | Decision | Choice | Why |
 |---|---|---|
 | How a custom character is referenced | Ids 50–61, after the 50 built-ins | One integer in the column that already exists. A parallel jsonb spec column would make "who is this player" two answers, in ~20 read sites |
-| Slot stability | A slot is allocated once and never renumbered | If deleting slot 3 renumbered everyone, a game already running would point a player at a different character (§5) |
+| Slot stability | A slot is allocated once and never reused | Reusing a deleted slot would let the same avatar id point at a different character in saved results or a running game (§5) |
 | Where the cast lives | A `quiz_characters` table | The roster is read whole, once, and edited row by row. A jsonb column on `quizzes` would need a second answer for ordering and per-row validation |
 | Card support | Refactor the drawing into shared pure JS | The card reads a generated table of the 50 and silently falls back to character 0 for anything else (`quizCharacterMarkup.js:50`). A custom character on a shared card is a wrong character on a thing people download and post |
 | How the drawing is shared | A string builder, not `react-dom/server` | The repo has already been bitten by a module Vercel's Node runtime could not load. A string builder keeps React off the server entirely |
@@ -205,8 +205,9 @@ The obvious design reindexes: delete the second of three and the third becomes 5
 player who already picked 52 would be re-pointed at a different design, and the change is invisible — their
 `avatar_id` still says 52 and still passes every check.
 
-So a slot is allocated on creation and never reused. Deleting slot 3 leaves a hole; the picker shows the filled slots
-and `castIds` simply does not include 51. The ids of every other character are untouched by any edit.
+So a slot is allocated on creation and never reused. Deleting slot 3 scrubs the character data and leaves a slot
+reservation; the picker shows the filled slots and `castIds` simply does not include 53. The editor can allocate only a
+slot that has never been used. The ids of every other character are untouched by any edit.
 
 `avatar_id` therefore means one thing for its whole life: 0–49 is a built-in, 50–61 is slot 0–11 of the quiz's cast.
 
@@ -223,6 +224,7 @@ create table public.quiz_characters (
   spec       jsonb not null check (jsonb_typeof(spec) = 'object'),
   moves      jsonb not null check (jsonb_typeof(moves) = 'object'),
   created_at timestamptz not null default now(),
+  deleted_at timestamptz,
   unique (quiz_id, slot)
 );
 
@@ -240,16 +242,24 @@ the admin surface uses. Players never read this table: `quizzes` is admin-only t
 (`20260930150000_live_quiz.sql:78-79`), and every player read goes through the API with the service key, which is how
 joining already works.
 
-**The snapshot** is `{ mode, characters: [...] }` — the custom cast only, because the 50 are compiled in and cost
+**The snapshot** is `{ mode, characters: [...] }` — the active custom cast only, because the 50 are compiled in and cost
 nothing to carry. The largest cast an admin can build is 12 rows of about 180 characters, roughly 2.2 KB, against the
 8 KB check. `theme`'s 4 KB check is untouched: this is a separate column on purpose, since a cast and a look are saved
 independently and must not be able to overflow each other.
 
+### Retired slots
+
+Deleting a character scrubs its name, spec and moves, then sets `deleted_at`; the row remains only as a reservation for
+that quiz's slot. Live roster reads omit retired rows and return their slot numbers separately so the editor allocates
+only never-used slots. A quiz is limited to 12 allocated slots over its lifetime, not 12 active characters at once.
+Hosted-session snapshots contain only active characters and do not need reservation metadata.
+
 ### Saving a cast
 
-One **Save cast** button writes the whole draft: upsert each character by `id`, scoped to the quiz, and delete the ids
-the draft no longer has. Saving is refused, not silently repaired, when the draft has two characters in one slot or a
-part that is not in the tables. Freeing a slot is an explicit delete, so §5 holds.
+One **Save cast** button writes the whole draft: upsert each active character by `id`, scoped to the quiz, and retire the
+ids the draft no longer has. Retiring clears the authored data but preserves the slot reservation. Saving is refused,
+not silently repaired, when the draft has two characters in one slot, tries to reuse a retired slot, or contains a part
+that is not in the tables.
 
 ---
 
@@ -258,11 +268,12 @@ part that is not in the tables. Freeing a slot is an explicit delete, so §5 hol
 One new read-only op on the quiz router, keyed either way:
 
 ```js
-callQuiz('roster', { code })      // joining a hosted game or a battle — the phone has only the 6-character code
-callQuiz('roster', { quizId })    // practice, and creating a battle, where the client already chose the quiz
+callQuiz('cast', { op: 'roster', code })      // joining a hosted game or a battle — the phone has only the 6-character code
+callQuiz('cast', { op: 'roster', quizId })    // practice, and creating a battle, where the client already chose the quiz
 ```
 
-It returns `{ mode, characters }` already run through `sanitizeCast`. Registered in the router's `ACTIONS` map, not as
+It returns `{ mode, characters }` already run through `sanitizeCast`; live quiz-id reads also include `retiredSlots` for
+the editor. The op is sent through the registered `cast` action. It is registered in the router's `ACTIONS` map, not as
 a new `api/*.js` entry point — the function budget rule in `AGENTS.md` is deliberate.
 
 The join screens need it *before* joining, which is why it cannot be part of the join response: today a player types a
@@ -302,17 +313,17 @@ disabled with the count when the cast is empty, so the mode can never promise a 
 | Section | Contents |
 |---|---|
 | Name | A text field, 24 characters |
-| Body | 13 |
+| Body | 19 |
 | Colour | One `<input type="color">` plus a strip of ten swatches |
-| Headpiece | 12 |
-| Eyes | 10 |
-| Mouth | 8 |
-| Wears | 20 |
-| Prop | 12 |
+| Headpiece | 24 |
+| Eyes | 18 |
+| Mouth | 14 |
+| Wears | 36 |
+| Prop | 26 |
 | Moves | idle 11, win 10, sad 4, hello 8 |
 
-**One section open at a time.** All eight expanded is 75 live animated drawings, which is why the sections are an
-accordion. At most 20 render.
+**One section open at a time.** The six part sections contain 137 options in total; opening them all would render 137
+character previews. The accordion bounds that to the largest section, Wears, at 36 previews at once.
 
 Every option is drawn **on the character as it stands** — a hat swatch is the current body with that hat — because a
 list of words cannot tell an admin whether a crown sits right on a `loaf`. Each swatch is `aria-pressed` and labelled
@@ -406,11 +417,12 @@ worked yesterday. Phase 2 is the long one and can be split again, category by ca
 | `api/_lib/quizCharacterArt.test.js` | Every part list value draws; `sanitizeCharacterSpec` maps junk, wrong types and prototype keys to a valid spec rather than markup; `deriveColour` always returns a dark darker than its main and a light lighter; a fixture captured from today's output is reproduced byte for byte by the string builder |
 | `api/_lib/quizCharacterArt.test.js` (parts) | Every one of the 137 entries appears in exactly one list; each body's geometry row puts the eyes above the neck and the head top above the eyes, with ear and arm anchors inside the box; each new body renders against all 24 headpieces, 36 accessories and 26 props without throwing |
 | `api/_lib/quizCharacterArt.test.js` (bounds) | For every part on every body, no emitted coordinate falls outside the 100 × 100 viewBox, and no part name appears verbatim in the markup — the sanitiser boundary, proved rather than asserted |
-| `api/_lib/quizCharacterArt.test.js` (cast) | `castIds` is 50 ids for `builtins`, 50 + filled slots for `all`, filled slots only for `custom`; a hole in the slots is skipped, not renumbered; a cast over 12 is refused |
+| `api/_lib/quizCharacterArt.test.js` (cast) | `castIds` is 50 ids for `builtins`, 50 + filled slots for `all`, filled slots only for `custom`; holes including retired slots are skipped, never reused; a cast over 12 is refused |
 | `api/_lib/quizCharacterArt.test.js` (roster, moved from `src/data/quizCharacters.test.js`) | Unchanged assertions — 50 built-ins, all distinct, an out-of-range id falls back to 0 — plus: no roster row references a part added in Phase 2 |
 | `api/_lib/quizCardRender.test.js` | A custom spec reaches the painted card; a cast the card was not given falls back exactly as `characterMarkup` does today |
 | `api/_lib/quizHandlers.test.js` | The session snapshot carries `{ mode, characters }`; join rejects an id outside the quiz's cast and accepts every id in it; `addBots` picks from the cast; the roster op answers by code and by quiz id |
-| `src/components/admin/quizStudio/quizStudio.test.jsx` | Every draft write goes through `sanitizeCharacterSpec`/`sanitizeCharacterMoves`; deleting frees a slot rather than renumbering; the duplicate warning names the other character and the save proceeds; the parts lab shows one category at a time and writes nothing |
+| `src/components/admin/quizStudio/CharacterEditor.test.jsx` | Every draft write goes through the sanitizers; deleting retires a slot rather than renumbering or reusing it; the duplicate warning names the other character and saving proceeds |
+| `src/components/admin/quizStudio/PartsLab.test.jsx` | The parts lab shows one category at a time and writes nothing |
 | `api/_lib/characterSvg.test.js` | Keeps the stylesheet-reach checks it has today, minus the deleted generator |
 
 ---
