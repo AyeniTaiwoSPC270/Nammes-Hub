@@ -204,7 +204,7 @@ function PhoneResult() {
   )
 }
 
-export default function StudioPreview({ theme, surface, screen, title }) {
+export default function StudioPreview({ theme, surface, screen, title, overlay = null }) {
   const projector = surface === 'projector'
   return (
     <QuizThemeScope theme={theme} className="block">
@@ -237,6 +237,7 @@ export default function StudioPreview({ theme, surface, screen, title }) {
         )}
         {/* The frame is transformed, so the fixed-position confetti falls inside it instead of over the whole window. */}
         {projector && screen === 'podium' && <Confetti count={24} />}
+        {overlay}
       </Frame>
     </QuizThemeScope>
   )

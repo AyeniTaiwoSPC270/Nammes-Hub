@@ -78,33 +78,115 @@ export const THEME_PATTERNS = {
 // reference pixels the browser designs at, which is the same unit `backdropScale` is a percentage of, so that when the
 // card does start reading them it scales the numbers against its own 1080x1920 canvas rather than copying pixels sized
 // for a browser window.
+//
+// Each glyph carries a **key**, not just a character, because an admin can now place a prop by name rather than by
+// accident. The card reads `Object.values`, so a key is invisible to it — but there is still only one copy of every
+// character, which is what the source-scan in the tests exists to protect.
 export const PATTERN_GLYPHS = {
-  math: ['π', 'Σ', '∫', '√', 'Δ', 'λ', 'θ', '∞', '≈', '±'],
-  stars: ['✦', '✧', '★', '✶'],
+  math: { pi: 'π', sum: 'Σ', int: '∫', root: '√', delta: 'Δ', lambda: 'λ', theta: 'θ', inf: '∞', approx: '≈', plusminus: '±' },
+  stars: { spark: '✦', sparkle: '✧', star: '★', ray: '✶' },
   // Musical symbols, not 🎵. The card has no emoji font — patternFonts.test.js fails the build if a glyph the server
   // cannot draw is put in this table — and these are the ones it can.
-  notes: ['♪', '♫', '♩', '♬'],
+  notes: { single: '♪', pair: '♫', quarter: '♩', beamed: '♬' },
 }
+
+// How many glyphs each symbolic backdrop scatters. Kept here rather than in the call sites for the same reason as the
+// glyphs themselves: the count is a property of the pattern, and two renderers reading two different numbers for it is
+// how a card stops matching the screens.
+export const GLYPH_PROP_COUNTS = { math: 14, notes: 16, stars: 18 }
 
 // `party` is here rather than above because its shapes are drawn, not typed: a balloon and a party hat have no
 // character to fall back on, and an emoji standing in for one prints as a tofu box on every shared card.
+//
+// `shapes` names the drawn props of the three mark patterns, and it lives inside this table rather than beside it
+// because that is what keeps the "every pattern is in exactly one of the three tables" test honest: hexagons, rings and
+// party are already geometry patterns, and a fourth table holding their prop names would put three patterns in two.
 export const PATTERN_GEOMETRY = {
   dots: { cell: 26, dot: 1.6, gap: 1.8 },
   grid: { cell: 44, stroke: 1 },
   waves: { path: 'M0 40Q90 0 180 40T360 40T540 40T720 40V80H0z', viewBox: '0 0 720 80', band: 14, shift: { x: -140, y: 14 } },
   // Shared layout numbers, browser-only drawing numbers, and card-only drawing numbers are split into three groups so
-  // each renderer edits only its own half. Shared: cell, count, width, gap, band, stroke. Browser-only: mark, opacity,
-  // dot, viewBox, shift. Card-only: radius, step, rings, stagger, hat, balloon, confetti, path, angle.
-  hexagons: { count: 26, cell: 88, mark: 46, opacity: 1, radius: 30, stagger: 0.5 },
+  // each renderer edits only its own half. Shared: cell, count, width, gap, band, stroke, shapes. Browser-only: mark,
+  // opacity, dot, viewBox, shift. Card-only: radius, step, rings, stagger, hat, balloon, confetti, path, angle.
+  hexagons: { count: 26, cell: 88, mark: 46, opacity: 1, radius: 30, stagger: 0.5, shapes: ['hex'] },
   stripes: { width: 12, gap: 12, angle: 45 },
-  rings: { count: 18, cell: 120, mark: 62, opacity: 1, radius: 22, step: 7, rings: 3, stroke: 2 },
-  party: { count: 16, cell: 150, mark: 52, opacity: 1, balloon: 22, hat: 30, streamer: 36, confetti: 10, stroke: 2 },
+  rings: { count: 18, cell: 120, mark: 62, opacity: 1, radius: 22, step: 7, rings: 3, stroke: 2, shapes: ['ring'] },
+  party: { count: 16, cell: 150, mark: 52, opacity: 1, balloon: 22, hat: 30, streamer: 36, confetti: 10, stroke: 2, shapes: ['balloon', 'hat', 'streamer', 'confetti'] },
 }
 
 // The two patterns with nothing of their own to draw: 'image' paints a photograph where the pattern would be, and
 // 'none' paints nothing at all. Naming them is what lets the tables be checked against THEME_PATTERNS — a pattern that is
 // in no table and not named here is one a renderer has to silently skip.
 export const PATTERN_UNDRAWN = ['image', 'none']
+
+// How many props an admin may leave on one backdrop, and how many across every backdrop on a quiz at once. Both exist
+// because the theme is a single column with a size check on it (see 20261013120000_quiz_theme_layout_size.sql): a limit
+// the app cannot exceed is what makes that check a bound rather than a trap. 60 is well above the busiest pattern's own
+// default of 26, and 150 is the six prop patterns' 108 defaults plus about 40%.
+export const LAYOUT_MAX_PER_PATTERN = 60
+export const LAYOUT_MAX_TOTAL = 150
+
+// The one prop whose drawing is rotationally symmetric. An angle set on a ring would be stored, sanitised and rendered
+// and nothing would ever move, which reads as a broken control rather than as a fact about circles — so the angle is
+// dropped on the way in and the studio does not offer the slider.
+export const PROP_TILTLESS = Object.freeze(['ring'])
+
+// Which props a pattern owns, as one list. A maths backdrop offers maths and a hexagons backdrop offers hexagons, and
+// that is enforced here rather than in the editor, so a saved look carried from one quiz to another loses whatever the
+// target pattern does not have rather than showing a prop nothing knows how to draw.
+export function propVocabulary(pattern) {
+  return [
+    ...Object.keys(PATTERN_GLYPHS[pattern] ?? {}),
+    ...(PATTERN_GEOMETRY[pattern]?.shapes ?? []),
+  ]
+}
+
+// What a prop is called in the studio and on a hit box. A glyph is its own character, which is the shortest honest
+// label there is; a drawn shape has no character, so its name is capitalised.
+export function propLabel(pattern, key) {
+  const glyph = PATTERN_GLYPHS[pattern]?.[key]
+  if (glyph) return glyph
+  return typeof key === 'string' ? key.charAt(0).toUpperCase() + key.slice(1) : String(key)
+}
+
+// How big a prop of this pattern may be, in the same unscaled pixels the pattern is designed at — which is the unit
+// `backdropScale` is a percentage of, so a stored size is multiplied at draw time and the Size slider keeps working on
+// an arrangement. The glyph span is the range the old scatter produced (28..71); a shape starts at its own mark, since
+// that is what its default sizes are counted from.
+export function propSizeRange(pattern) {
+  const mark = PATTERN_GEOMETRY[pattern]?.mark
+  if (typeof mark === 'number') return { min: mark, max: mark + 24 }
+  return PATTERN_GLYPHS[pattern] ? { min: 28, max: 72 } : null
+}
+
+// Where a pattern's props sit when nobody has moved them: the two closed-form scatters that used to live in QuizParts.jsx,
+// in one place so that an unedited backdrop and the studio's Reset can never disagree. Positions come from the index
+// rather than from a random number — a backdrop that rearranged itself on every reload would read as a bug — and they are
+// rounded here because a stored prop is a stored integer.
+export function defaultBackdropProps(pattern) {
+  const glyphs = PATTERN_GLYPHS[pattern]
+  const count = GLYPH_PROP_COUNTS[pattern]
+  if (glyphs && count) {
+    const keys = Object.keys(glyphs)
+    return Array.from({ length: count }, (_, i) => ({
+      k: keys[i % keys.length],
+      x: Math.round((i * 37 + 8) % 92),
+      y: Math.round((i * 53 + 5) % 90),
+      s: 28 + ((i * 17) % 44),
+      r: ((i * 41) % 50) - 25,
+    }))
+  }
+  const geometry = PATTERN_GEOMETRY[pattern]
+  const shapes = geometry?.shapes
+  if (!shapes || !geometry.count) return []
+  return Array.from({ length: geometry.count }, (_, i) => ({
+    k: shapes[i % shapes.length],
+    x: Math.round((i * geometry.cell + 8) % 92),
+    y: Math.round((i * geometry.cell * 1.4 + 5) % 90),
+    s: geometry.mark + ((i * 13) % 12),
+    r: ((i * 41) % 50) - 25,
+  }))
+}
 
 export const THEME_CONFETTI = {
   math: 'Maths symbols',
@@ -278,6 +360,7 @@ export const DEFAULT_THEME = Object.freeze({
   backdropMotion: 'off',
   backdropMotionSpeed: 3,
   backdropMotionOnPhones: true,
+  backdropLayout: Object.freeze({}),
   confetti: 'math',
   headline: '',
   tagline: '',
@@ -400,6 +483,66 @@ function cleanSchemeColors(input) {
   return out
 }
 
+// A range for the two numbers on a prop that are not a size: where it sits, and how far it is turned. Percentages run
+// the whole way to the edge because a prop is allowed to hang off it — the studio shows the clipping rather than
+// pretending, since a phone really does cut a prop at 98% off the screen.
+const PROP_POSITION_RANGE = Object.freeze({ min: 0, max: 100 })
+const PROP_ROTATION_RANGE = Object.freeze({ min: -180, max: 180 })
+
+// One prop of one pattern's arrangement. Every field is checked against the pattern that owns it, so a prop can never
+// arrive carrying a size a maths symbol was never drawn at or a name its pattern does not have. `c` and `h` are left off
+// entirely at their defaults: a row has a size check on it, and 36 characters per prop is what keeps 150 of them
+// affordable.
+function cleanProp(value, pattern) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  if (!propVocabulary(pattern).includes(value.k)) return null
+  const range = propSizeRange(pattern)
+  if (!range) return null
+  const tiltless = PROP_TILTLESS.includes(value.k)
+  const prop = {
+    k: value.k,
+    x: num(PROP_POSITION_RANGE, value.x, 50),
+    y: num(PROP_POSITION_RANGE, value.y, 50),
+    s: num(range, value.s, range.min),
+    r: tiltless ? 0 : num(PROP_ROTATION_RANGE, value.r, 0),
+  }
+  const color = cleanHexColor(value.c)
+  if (color) prop.c = color
+  if (value.h === true) prop.h = true
+  return prop
+}
+
+// The arrangement of every backdrop on the quiz, keyed by pattern. A pattern that is absent draws its defaults, so the
+// common case of a quiz nobody has arranged stores nothing at all. An explicit empty array is different: it means the
+// admin deleted every prop, so it must stay empty instead of scattering the defaults back over the screen. Malformed
+// non-empty lists that clean to nothing are omitted; cleaning twice therefore gives the same jsonb back, which the
+// studio's dirty check depends on.
+function cleanLayout(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {}
+  const out = {}
+  let total = 0
+  // PostgreSQL jsonb does not preserve object insertion order. Walk the vocabulary's fixed order so the 150-prop cap
+  // produces the same cleaned layouts before and after a save/fetch round-trip, rather than favouring whichever key
+  // happened to be first in the caller's object.
+  for (const pattern of Object.keys(THEME_PATTERNS)) {
+    if (!Object.hasOwn(input, pattern)) continue
+    if (!Array.isArray(input[pattern])) continue
+    const cleaned = []
+    for (const item of input[pattern]) {
+      if (cleaned.length >= LAYOUT_MAX_PER_PATTERN || total >= LAYOUT_MAX_TOTAL) break
+      const prop = cleanProp(item, pattern)
+      if (!prop) continue
+      cleaned.push(prop)
+      total += 1
+    }
+    // An explicitly empty list is meaningful: it is how an admin deletes the last prop without the renderer mistaking
+    // "all gone" for "never arranged" and scattering the defaults back over it. A non-empty list that cleans to nothing
+    // is malformed input and is dropped so a bad row cannot create an accidental blank pattern.
+    if (cleaned.length || input[pattern].length === 0) out[pattern] = cleaned
+  }
+  return out
+}
+
 // Anything goes in, a complete valid theme comes out (bad or missing values fall back to the defaults).
 export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
@@ -420,6 +563,7 @@ export function sanitizeTheme(input, { quizId } = {}) {
     backdropMotion: cleanMotion(t.backdropMotion, pattern),
     backdropMotionSpeed: num(BACKDROP_RANGES.motionSpeed, t.backdropMotionSpeed, DEFAULT_THEME.backdropMotionSpeed),
     backdropMotionOnPhones: t.backdropMotionOnPhones !== false,
+    backdropLayout: cleanLayout(t.backdropLayout),
     confetti: oneOf(THEME_CONFETTI, t.confetti, DEFAULT_THEME.confetti),
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),

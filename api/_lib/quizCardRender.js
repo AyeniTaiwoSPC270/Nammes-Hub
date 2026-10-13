@@ -203,7 +203,12 @@ function drawPattern(ctx, card, t, colors) {
   if (PATTERN_GLYPHS[chosen]) {
     // Glyph patterns tile by row rather than scatter: on a fixed grid every one of them reads as wallpaper, which is what
     // a backdrop is for, and the maths backdrop has always been drawn this way.
-    const glyphs = PATTERN_GLYPHS[chosen]
+    //
+    // `Object.values` because the vocabulary is keyed now — an admin places a prop by name — and a card has no use for
+    // the names. It never reads the admin's arrangement either: a card is one image of a different shape from the
+    // projector, and a layout tuned for a 16:9 screen does not transfer to 1080x1920. quizCardRender.test.js proves it by
+    // painting both.
+    const glyphs = Object.values(PATTERN_GLYPHS[chosen])
     pen.font = `bold ${Math.round(64 * unit)}px "DejaVu Sans"`
     const pitch = 130 * unit
     for (let row = 0; row * pitch < CARD_HEIGHT + pitch; row++) {

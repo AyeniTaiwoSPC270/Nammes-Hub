@@ -8,7 +8,13 @@ import {
   PATTERN_GLYPHS, PATTERN_GEOMETRY, PATTERN_UNDRAWN, PAGE_LIGHT, PAGE_DARK, ACCENT_DERIVED_TOKENS,
   THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, MOTION_PER_MARK, MOTION_MARKLESS_STANDIN, MOTION_DURATIONS,
   MOTION_SPEED_LABELS, MOTION_DISTANCE, MOTION_BLEED, resolveMotion, motionDuration, hasMarks,
+  GLYPH_PROP_COUNTS, LAYOUT_MAX_PER_PATTERN, LAYOUT_MAX_TOTAL, PROP_TILTLESS,
+  propVocabulary, propLabel, propSizeRange, defaultBackdropProps,
 } from './quizTheme.js'
+
+// The six patterns that draw discrete marks, read off the tables rather than written out: a fourth list would be one more
+// thing to remember when a pattern is added, which is the whole reason hasMarks is not a list either.
+const PROP_PATTERNS = Object.keys(THEME_PATTERNS).filter(hasMarks)
 
 describe('sanitizeTheme', () => {
   it('turns nothing, junk or the wrong type into the default look', () => {
@@ -16,7 +22,7 @@ describe('sanitizeTheme', () => {
   })
   it('keeps valid choices', () => {
     const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
-    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', glowA: null, glowB: null, deepA: null, deepB: null, pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', backdropMotion: 'drift', backdropMotionSpeed: 5, backdropMotionOnPhones: false, confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', glowA: null, glowB: null, deepA: null, deepB: null, pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', backdropMotion: 'drift', backdropMotionSpeed: 5, backdropMotionOnPhones: false, backdropLayout: {}, confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef', page: '#101010' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -154,6 +160,29 @@ describe('a theme at its largest', () => {
     expect(full.sound.music).toBe('custom')
     expect(JSON.stringify(full).length).toBeLessThan(3000)
   })
+
+  it('fits a maximum arrangement on every prop pattern as well, so the size bump is proven rather than hoped for', () => {
+    // The check is now `pg_column_size(theme) < 16000` (20261013120000_quiz_theme_layout_size.sql). This is the document
+    // that number was chosen against: the previous worst case, plus the largest arrangement the sanitiser will let
+    // through — 150 props, each carrying a colour and a hidden flag, which is the most expensive prop it can produce.
+    // A prop with neither is 36 characters; these are the long ones on purpose.
+    const capped = {}
+    let left = LAYOUT_MAX_TOTAL
+    for (const pattern of PROP_PATTERNS) {
+      const props = []
+      const key = propVocabulary(pattern)[0]
+      const count = Math.min(LAYOUT_MAX_PER_PATTERN, left)
+      for (let i = 0; i < count; i++, left--) {
+        props.push({ k: key, x: i, y: i, s: propSizeRange(pattern).max, r: 180, c: '#aabbcc', h: true })
+      }
+      if (props.length) capped[pattern] = props
+    }
+    const arrangement = sanitizeTheme({ accent: '#010203', page: '#040506', glowA: '#070809', glowB: '#0a0b0c', deepA: '#0d0e0f', deepB: '#101112', headline: 'h'.repeat(60), tagline: 't'.repeat(80), pattern: 'math', image: good, logo: good, sponsors: Array.from({ length: 6 }, () => ({ name: 'n'.repeat(40), path: good })), sound: { music: 'custom', off: Object.keys(THEME_EFFECTS), custom: { music: 'm'.repeat(40), effects: Object.fromEntries(Object.keys(THEME_EFFECTS).map((name) => [name, 'e'.repeat(40)])) } }, backdropLayout: capped }, { quizId: QUIZ_A })
+
+    // The caps held rather than being quietly exceeded by the fixture.
+    expect(Object.values(arrangement.backdropLayout).flat()).toHaveLength(LAYOUT_MAX_TOTAL)
+    expect(JSON.stringify(arrangement).length).toBeLessThan(15000)
+  })
 })
 
 describe('the pattern vocabulary', () => {
@@ -173,21 +202,35 @@ describe('the pattern vocabulary', () => {
     for (const key of Object.keys(PATTERN_GLYPHS)) expect(Object.hasOwn(PATTERN_GEOMETRY, key), key).toBe(false)
     for (const key of PATTERN_UNDRAWN) expect(Object.hasOwn(PATTERN_GLYPHS, key) || Object.hasOwn(PATTERN_GEOMETRY, key), key).toBe(false)
   })
-  it('gives every glyph set real single characters to draw', () => {
+  it('gives every glyph set real single characters to draw, under keys an admin can place by name', () => {
     for (const [key, glyphs] of Object.entries(PATTERN_GLYPHS)) {
-      expect(glyphs.length, key).toBeGreaterThan(1)
-      for (const glyph of glyphs) expect(typeof glyph === 'string' && [...glyph].length === 1, `${key} ${glyph}`).toBe(true)
+      const chars = Object.values(glyphs)
+      expect(chars.length, key).toBeGreaterThan(1)
+      // A key that is not a plain lowercase word is one that could reach a CSS selector or an aria-label by accident, and
+      // one that collides inside a pattern is two props that the editor could not tell apart.
+      for (const name of Object.keys(glyphs)) expect(name, `${key}.${name}`).toMatch(/^[a-z][a-z0-9]*$/)
+      for (const glyph of chars) expect(typeof glyph === 'string' && [...glyph].length === 1, `${key} ${glyph}`).toBe(true)
     }
   })
   it('gives every drawn pattern positive measurements, so the card can scale them', () => {
     for (const [key, shape] of Object.entries(PATTERN_GEOMETRY)) {
       expect(Object.keys(shape).length, key).toBeGreaterThan(0)
       for (const [name, value] of Object.entries(shape)) {
-        if (typeof value === 'number') expect(value, `${key}.${name}`).toBeGreaterThan(0)
+        // `shapes` is the one entry that is neither a measurement nor a point: it is the list of prop names this pattern
+        // owns, which have no size because they are drawn, not measured.
+        if (name === 'shapes') expect(value.length, `${key}.shapes`).toBeGreaterThan(0)
+        else if (typeof value === 'number') expect(value, `${key}.${name}`).toBeGreaterThan(0)
         else if (Array.isArray(value)) expect(value.every((n) => typeof n === 'number'), `${key}.${name}`).toBe(true)
         else if (typeof value === 'object') expect(Object.keys(value).length, `${key}.${name}`).toBeGreaterThan(0)
         else expect(typeof value, `${key}.${name}`).toBe('string')
       }
+    }
+    // A drawn prop with no name could not be placed, so every mark pattern needs at least one — and a mark pattern with
+    // no count would draw none of them, which is how a prop name could sit in the table belonging to nothing.
+    for (const [key, shape] of Object.entries(PATTERN_GEOMETRY)) {
+      if (!shape.shapes) continue
+      expect(shape.count, `${key} draws marks`).toBeGreaterThan(0)
+      for (const name of shape.shapes) expect(name, `${key}.${name}`).toMatch(/^[a-z][a-z0-9]*$/)
     }
   })
   it('is what both renderers actually read, rather than a table each keeps its own copy of', () => {
@@ -207,7 +250,7 @@ describe('the pattern vocabulary', () => {
     //
     // The scan is quadratic in the worst case — it walks each block looking for a character rather than bailing early.
     // On files this size that is tens of microseconds; noted because the cost is invisible from the pattern.
-    const repertoire = new RegExp(`[${Object.values(PATTERN_GLYPHS).flat().join('').replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}]`)
+    const repertoire = new RegExp(`[${Object.values(PATTERN_GLYPHS).flatMap((glyphs) => Object.values(glyphs)).join('').replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')}]`)
 
     const topLevel = /^(?:const|let|function|export)\b/gm
     for (const file of ['src/components/quiz/QuizParts.jsx', 'api/_lib/quizCardRender.js']) {
@@ -229,6 +272,156 @@ describe('the pattern vocabulary', () => {
     const parts = readFileSync('src/components/quiz/QuizParts.jsx', 'utf8')
     expect(parts).toContain('const SHAPES = [')
     expect(parts).toContain('const CONFETTI_COLORS = [')
+  })
+})
+
+describe('a backdrop arrangement', () => {
+  const laid = (over = {}) => sanitizeTheme({ pattern: 'math', backdropLayout: { math: [{ k: 'pi', x: 10, y: 20, s: 40, r: -12 }, ...Array(over.more ?? 0).fill({ k: 'sum' })] } }).backdropLayout.math[0]
+
+  it('is off by default, so a quiz nobody has arranged draws exactly what it drew before', () => {
+    expect(DEFAULT_THEME.backdropLayout).toEqual({})
+    expect(sanitizeTheme({}).backdropLayout).toEqual({})
+    // A pattern with no entry of its own falls back to its designed arrangement rather than to nothing.
+    expect(sanitizeTheme({ backdropLayout: { hexagons: [{ k: 'hex', x: 1, y: 2, s: 46, r: 0 }] } }).backdropLayout.math).toBeUndefined()
+  })
+
+  it('names a prop only from the pattern that owns it', () => {
+    // A maths symbol has no place on a hexagons backdrop and a hexagon has no character to draw, so a layout carried in
+    // from another quiz loses what it cannot show rather than reaching a projector that has nothing to render it with.
+    expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'hex', x: 1, y: 2, s: 46, r: 0 }] } }).backdropLayout).toEqual({})
+    expect(sanitizeTheme({ backdropLayout: { hexagons: [{ k: 'pi', x: 1, y: 2, s: 46, r: 0 }] } }).backdropLayout).toEqual({})
+    // A pattern that draws nothing of its own has no vocabulary at all, so every prop falls away.
+    for (const pattern of ['dots', 'grid', 'stripes', 'waves', 'image', 'none']) {
+      expect(sanitizeTheme({ backdropLayout: { [pattern]: [{ k: 'pi', x: 1, y: 2, s: 30, r: 0 }] } }).backdropLayout, pattern).toEqual({})
+    }
+    expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'int', x: 1, y: 2, s: 30, r: 0 }] } }).backdropLayout.math[0].k).toBe('int')
+  })
+
+  it('clamps every number to something the screen can actually draw', () => {
+    const p = laid({ more: 1 })
+    expect(p).toMatchObject({ x: 10, y: 20, s: 40, r: -12 })
+    expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'pi', x: -999, y: 9999, s: 99999, r: -9999 }] } }).backdropLayout.math[0])
+      .toEqual({ k: 'pi', x: 0, y: 100, s: 72, r: -180 })
+    // A maths symbol is drawn between 28 and 72 unscaled pixels; a hexagon starts at its own mark, which is a different
+    // range because the three mark patterns are not drawn to the same size.
+    expect(sanitizeTheme({ backdropLayout: { hexagons: [{ k: 'hex', x: 1, y: 2, s: 10, r: 0 }] } }).backdropLayout.hexagons[0].s).toBe(46)
+    for (const junk of ['20', null, undefined, NaN, {}, []]) {
+      expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'pi', x: junk, y: junk, s: junk, r: junk }] } }).backdropLayout.math[0])
+        .toEqual({ k: 'pi', x: 50, y: 50, s: 28, r: 0 })
+    }
+  })
+
+  it('leaves the optional fields off entirely at their defaults, because the row has a size check on it', () => {
+    const plain = sanitizeTheme({ backdropLayout: { math: [{ k: 'pi', x: 10, y: 20, s: 40, r: 0 }] } }).backdropLayout.math[0]
+    expect(JSON.stringify(plain)).toBe('{"k":"pi","x":10,"y":20,"s":40,"r":0}')
+    expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'pi', x: 10, y: 20, s: 40, r: 0, c: 'red', h: 'yes' }] } }).backdropLayout.math[0])
+      .toEqual({ k: 'pi', x: 10, y: 20, s: 40, r: 0 })
+    expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'pi', x: 10, y: 20, s: 40, r: 0, c: '#AABBCC', h: true }] } }).backdropLayout.math[0])
+      .toEqual({ k: 'pi', x: 10, y: 20, s: 40, r: 0, c: '#aabbcc', h: true })
+  })
+
+  it('drops an angle on a prop that is round, rather than storing a rotation nothing would ever show', () => {
+    expect(PROP_TILTLESS).toEqual(['ring'])
+    expect(sanitizeTheme({ backdropLayout: { rings: [{ k: 'ring', x: 1, y: 2, s: 62, r: 90 }] } }).backdropLayout.rings[0].r).toBe(0)
+    expect(sanitizeTheme({ backdropLayout: { hexagons: [{ k: 'hex', x: 1, y: 2, s: 46, r: 90 }] } }).backdropLayout.hexagons[0].r).toBe(90)
+  })
+
+  it('refuses anything that is not a list of props of that pattern', () => {
+    for (const bad of ['math', 5, [], null, { math: 'nope' }, { math: { 0: { k: 'pi' } } }, { math: [[]] }]) {
+      expect(sanitizeTheme({ backdropLayout: bad }).backdropLayout, JSON.stringify(bad)).toEqual({})
+    }
+    expect(sanitizeTheme({ backdropLayout: { math: [{ k: 'pi', x: 1, y: 2, s: 40, r: 0 }, 'nope', null, 7] } }).backdropLayout.math).toHaveLength(1)
+  })
+
+  it('caps the arrangement, because the theme is one column with a size check on it', () => {
+    const many = (n) => Array.from({ length: n }, () => ({ k: 'pi', x: 1, y: 2, s: 40, r: 0 }))
+    expect(sanitizeTheme({ backdropLayout: { math: many(LAYOUT_MAX_PER_PATTERN + 20) } }).backdropLayout.math).toHaveLength(LAYOUT_MAX_PER_PATTERN)
+    const all = Object.fromEntries(PROP_PATTERNS.map((p) => [p, many(LAYOUT_MAX_PER_PATTERN).map((item) => ({ ...item, k: propVocabulary(p)[0] }))]))
+    const clean = sanitizeTheme({ backdropLayout: all }).backdropLayout
+    expect(Object.values(clean).flat()).toHaveLength(LAYOUT_MAX_TOTAL)
+    // jsonb sorts object keys on disk; the cap must still keep the same props when a fetch changes their insertion order.
+    expect(JSON.stringify(sanitizeTheme({ backdropLayout: Object.fromEntries(Object.entries(all).reverse()) }).backdropLayout)).toBe(JSON.stringify(clean))
+  })
+
+  it('gives the same jsonb back every time, or the studio would think an unsaved change was a change', () => {
+    // The studio compares JSON.stringify(sanitizeTheme(draft)) against the same call on the saved row. If cleaning twice
+    // gave a different document, every freshly loaded quiz would read as dirty.
+    const input = { backdropLayout: { math: [{ k: 'pi', x: 10.4, y: 20.6, s: 40, r: 0, c: '#FFFFFF' }], rings: [], stars: [{ k: 'spark', x: 1, y: 2, s: 30, r: 0 }] } }
+    const once = sanitizeTheme(input)
+    expect(JSON.stringify(sanitizeTheme(once))).toBe(JSON.stringify(once))
+    // An explicit empty arrangement is meaningful; unlike a malformed prop list, it deliberately hides every default.
+    expect(once.backdropLayout).toHaveProperty('rings', [])
+  })
+
+  it('lets each pattern keep its own arrangement, so arranging hexagons never costs you the maths', () => {
+    const both = sanitizeTheme({
+      backdropLayout: {
+        math: [{ k: 'pi', x: 1, y: 2, s: 30, r: 0 }],
+        hexagons: [{ k: 'hex', x: 80, y: 60, s: 50, r: 15 }],
+      },
+    }).backdropLayout
+    expect(both.math[0]).toMatchObject({ k: 'pi', x: 1 })
+    expect(both.hexagons[0]).toMatchObject({ k: 'hex', x: 80, y: 60, r: 15 })
+  })
+})
+
+describe('what a pattern is made of, for the editor to offer', () => {
+  it('offers a maths backdrop maths and a hexagons backdrop hexagons, from one list each', () => {
+    expect(propVocabulary('math')).toEqual(['pi', 'sum', 'int', 'root', 'delta', 'lambda', 'theta', 'inf', 'approx', 'plusminus'])
+    expect(propVocabulary('hexagons')).toEqual(['hex'])
+    expect(propVocabulary('rings')).toEqual(['ring'])
+    expect(propVocabulary('party')).toEqual(['balloon', 'hat', 'streamer', 'confetti'])
+    for (const pattern of ['dots', 'grid', 'stripes', 'waves', 'image', 'none', 'nonsense']) expect(propVocabulary(pattern)).toEqual([])
+    // The list and the pattern tables cannot drift, or the editor's Add row would offer a prop the sanitiser drops.
+    for (const pattern of PROP_PATTERNS) {
+      expect(propVocabulary(pattern).length, pattern).toBeGreaterThan(0)
+      for (const key of propVocabulary(pattern)) {
+        expect(PATTERN_GLYPHS[pattern]?.[key] ?? PATTERN_GEOMETRY[pattern].shapes).toBeDefined()
+      }
+    }
+  })
+
+  it('calls a glyph by its character and a drawn shape by its name, so a chip is readable', () => {
+    expect(propLabel('math', 'pi')).toBe('π')
+    expect(propLabel('party', 'balloon')).toBe('Balloon')
+    expect(propLabel('rings', 'ring')).toBe('Ring')
+  })
+
+  it('gives a size range that contains what the pattern draws by default', () => {
+    for (const pattern of PROP_PATTERNS) {
+      const range = propSizeRange(pattern)
+      expect(range, pattern).not.toBeNull()
+      for (const prop of defaultBackdropProps(pattern)) {
+        expect(prop.s, `${pattern} default`).toBeGreaterThanOrEqual(range.min)
+        expect(prop.s, `${pattern} default`).toBeLessThanOrEqual(range.max)
+      }
+    }
+    for (const pattern of ['dots', 'image', 'none']) expect(propSizeRange(pattern)).toBeNull()
+  })
+
+  it('puts each pattern back exactly where it was before there was an editor', () => {
+    // The two scatters that used to live in QuizParts.jsx, written out here independently. A refactor of the generator
+    // that moved a symbol would restyle six backdrops and every quiz that had never arranged one.
+    const glyphKeys = Object.keys(PATTERN_GLYPHS.math)
+    const math = defaultBackdropProps('math')
+    expect(GLYPH_PROP_COUNTS).toEqual({ math: 14, notes: 16, stars: 18 })
+    expect(math).toHaveLength(14)
+    expect(math[0]).toEqual({ k: glyphKeys[0], x: 8, y: 5, s: 28, r: -25 })
+    expect(math[3]).toEqual({ k: glyphKeys[3], x: Math.round((3 * 37 + 8) % 92), y: Math.round((3 * 53 + 5) % 90), s: 28 + (3 * 17) % 44, r: ((3 * 41) % 50) - 25 })
+
+    const hex = defaultBackdropProps('hexagons')
+    expect(hex).toHaveLength(PATTERN_GEOMETRY.hexagons.count)
+    expect(hex[2]).toEqual({ k: 'hex', x: Math.round((2 * 88 + 8) % 92), y: Math.round((2 * 88 * 1.4 + 5) % 90), s: 46 + (2 * 13) % 12, r: ((2 * 41) % 50) - 25 })
+
+    // Party cycles its four shapes, so a scattered backdrop shows a balloon, a hat, a streamer and a piece of confetti
+    // rather than sixteen balloons — and an admin adding one hat gets a hat.
+    expect(defaultBackdropProps('party').map((p) => p.k)).toEqual(Array.from({ length: 16 }, (_, i) => ['balloon', 'hat', 'streamer', 'confetti'][i % 4]))
+
+    for (const pattern of ['dots', 'grid', 'stripes', 'waves', 'image', 'none']) expect(defaultBackdropProps(pattern)).toEqual([])
+    // Nothing on a default arrangement is hidden or coloured, so an unedited backdrop is indistinguishable from before.
+    for (const pattern of PROP_PATTERNS) {
+      for (const prop of defaultBackdropProps(pattern)) expect(prop.h ?? false, pattern).toBe(false)
+    }
   })
 })
 

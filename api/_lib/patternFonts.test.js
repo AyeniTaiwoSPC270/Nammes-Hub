@@ -65,7 +65,8 @@ describe('the fonts behind the card backdrop', () => {
     const notdef = ink(NOTDEF)
     const missing = []
     for (const [pattern, glyphs] of Object.entries(PATTERN_GLYPHS)) {
-      for (const glyph of glyphs) {
+      // The characters, not the keys: a key is what an admin picks, the character is what has to exist on a card.
+      for (const glyph of Object.values(glyphs)) {
         const pixels = ink(glyph)
         if (same(pixels, notdef)) missing.push(`${pattern}: ${glyph} U+${glyph.codePointAt(0).toString(16).toUpperCase()} (no glyph)`)
         else if (blank(pixels)) missing.push(`${pattern}: ${glyph} U+${glyph.codePointAt(0).toString(16).toUpperCase()} (draws nothing)`)

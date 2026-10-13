@@ -34,6 +34,12 @@ import {
   withPage,
   withSchemeColors,
   PAGE_LIGHT,
+  LAYOUT_MAX_PER_PATTERN,
+  LAYOUT_MAX_TOTAL,
+  defaultBackdropProps,
+  propLabel,
+  propSizeRange,
+  propVocabulary,
 } from '../../../api/_lib/quizTheme.js'
 import { isQuizImagePath } from '../../../api/_lib/quizImage.js'
 import Breadcrumbs from '../../components/Breadcrumbs'
@@ -48,6 +54,7 @@ import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery
 import CharacterEditor from '../../components/admin/quizStudio/CharacterEditor'
 import PartsLab from '../../components/admin/quizStudio/PartsLab'
 import SoundLab from '../../components/admin/quizStudio/SoundLab'
+import { BackdropPropInspector, BackdropPropLayer } from '../../components/admin/quizStudio/BackdropPropEditor'
 import { BODIES, TOPPERS, EYES, MOUTHS, ACCESSORIES, PROPS } from '../../../api/_lib/quizCharacterArt.js'
 
 // Quiz Design Studio: choose how a quiz looks on the projector and on phones (colours, backdrop, celebration,
@@ -89,9 +96,8 @@ function Choice({ selected, onClick, children, className = '', disabled = false,
   )
 }
 
-// The three backdrop-motion controls, kept out of the Backdrop section because they need to reason about the pattern
-// rather than sit under it: which styles are on offer, and whether the phone toggle means anything, both depend on what
-// is currently chosen above them.
+// The backdrop-motion controls are a component of their own because which styles are on offer, and whether the phone
+// toggle means anything, both depend on the pattern chosen above them.
 //
 // A style is greyed out rather than hidden when it cannot apply. Hiding it would make the row change shape every time the
 // pattern changed, and an admin would not know a ninth option existed.
@@ -203,6 +209,7 @@ export default function AdminQuizStudio() {
   const [cardDraft, setCardDraft] = useState(null)
   const [surface, setSurface] = useState('projector')
   const [screens, setScreens] = useState({ projector: 'lobby', phone: 'lobby' })
+  const [selectedBackdropProp, setSelectedBackdropProp] = useState(null)
   const [brandBusy, setBrandBusy] = useState(false)
   const [brandError, setBrandError] = useState('')
 
@@ -276,6 +283,46 @@ export default function AdminQuizStudio() {
   }
 
   const screenList = surface === 'projector' ? PROJECTOR_SCREENS : PHONE_SCREENS
+  const backdropProps = theme.backdropLayout[theme.pattern] ?? defaultBackdropProps(theme.pattern)
+  const backdropTotal = Object.values(theme.backdropLayout).reduce((sum, props) => sum + props.length, 0)
+  const selectedProp = selectedBackdropProp === null ? null : backdropProps[selectedBackdropProp] ?? null
+  const backdropPreviewTheme = { ...theme, backdropMotion: 'off' }
+
+  function changeBackdropProps(next) {
+    change({ backdropLayout: { ...theme.backdropLayout, [theme.pattern]: next } })
+  }
+
+  function patchBackdropProp(index, patch) {
+    changeBackdropProps(backdropProps.map((prop, i) => (i === index ? { ...prop, ...patch } : prop)))
+  }
+
+  function deleteBackdropProp(index) {
+    changeBackdropProps(backdropProps.filter((_, i) => i !== index))
+    setSelectedBackdropProp(null)
+  }
+
+  function toggleBackdropProp(index) {
+    const prop = backdropProps[index]
+    if (!prop) return
+    const next = { ...prop }
+    if (next.h) delete next.h
+    else next.h = true
+    changeBackdropProps(backdropProps.map((item, i) => (i === index ? next : item)))
+  }
+
+  function resetBackdropPattern() {
+    const layout = { ...theme.backdropLayout }
+    delete layout[theme.pattern]
+    change({ backdropLayout: layout })
+    setSelectedBackdropProp(null)
+  }
+
+  function addBackdropProp(key) {
+    const range = propSizeRange(theme.pattern)
+    if (!range || backdropProps.length >= LAYOUT_MAX_PER_PATTERN || backdropTotal >= LAYOUT_MAX_TOTAL) return
+    changeBackdropProps([...backdropProps, { k: key, x: 50, y: 50, s: Math.round((range.min + range.max) / 2), r: 0 }])
+    setSelectedBackdropProp(backdropProps.length)
+  }
 
   // Uploads a logo, sponsor or backdrop picture right away (it is only part of the look once you press Save). A backdrop
   // is allowed to be far bigger than a logo, so the caller passes the limits it wants.
@@ -306,7 +353,7 @@ export default function AdminQuizStudio() {
         {/* The card tab saves itself, so the look's own Save and Reset stay off it. */}
         {tab !== 'characters' && tab !== 'card' && tab !== 'parts' && (
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => setDraft(sanitizeTheme(DEFAULT_THEME))} disabled={!quiz}>
+            <Button variant="secondary" onClick={() => { setDraft(sanitizeTheme(DEFAULT_THEME)); setSelectedBackdropProp(null) }} disabled={!quiz}>
               Reset to default
             </Button>
             <Button variant="accent" onClick={() => saveMutation.mutate()} loading={saveMutation.isPending} disabled={!dirty}>
@@ -322,6 +369,7 @@ export default function AdminQuizStudio() {
         <TabButton active={tab === 'characters'} onClick={() => setTab('characters')}>Characters &amp; cast</TabButton>
         <TabButton active={tab === 'parts'} onClick={() => setTab('parts')}>Parts lab ({BODIES.length + TOPPERS.length + EYES.length + MOUTHS.length + ACCESSORIES.length + PROPS.length})</TabButton>
         <TabButton active={tab === 'card'} onClick={() => setTab('card')}>Result card</TabButton>
+        <TabButton active={tab === 'backdrop'} onClick={() => { setTab('backdrop'); setSelectedBackdropProp(null) }}>Backdrop</TabButton>
         <Link to="/admin/quizzes" className="ml-auto self-center text-sm text-ink-muted underline">Back to quizzes</Link>
       </div>
 
@@ -495,13 +543,149 @@ export default function AdminQuizStudio() {
             })}
           />
         </div>
+      ) : tab === 'backdrop' ? (
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
+          <div className="flex flex-col gap-4">
+            <Section title="Backdrop" hint="Choose a pattern, then drag its props on the preview. One arrangement is used on the projector and phones.">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {Object.entries(THEME_PATTERNS).map(([key, label]) => (
+                  <Choice key={key} selected={theme.pattern === key} onClick={() => { change({ pattern: key }); setSelectedBackdropProp(null) }} className="px-3 py-2.5">
+                    {label}
+                  </Choice>
+                ))}
+              </div>
+
+              {theme.pattern === 'image' && (
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <span className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-hairline bg-surface-low">
+                    {theme.image
+                      ? <img src={brandingUrl(theme.image)} alt="" className="h-full w-full object-cover" />
+                      : <span className="material-symbols-outlined text-2xl text-ink-muted" aria-hidden="true">add_photo_alternate</span>}
+                  </span>
+                  <label className="cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
+                    {theme.image ? 'Replace picture' : 'Upload a picture'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      disabled={brandBusy}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        e.target.value = ''
+                        if (file) addPicture(file, (path) => change({ pattern: 'image', image: path }), { maxEdge: BACKDROP_MAX_EDGE, maxBytes: BACKDROP_MAX_BYTES })
+                      }}
+                    />
+                  </label>
+                  {theme.image && <Button variant="ghost" size="sm" onClick={() => change({ image: null })}>Remove picture</Button>}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col gap-3">
+                {theme.pattern === 'image' && (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold text-ink">Fit</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(THEME_BACKDROP_FITS).map(([key, label]) => (
+                        <Choice key={key} selected={theme.backdropFit === key} onClick={() => change({ backdropFit: key })} className="px-3 py-2.5">{label}</Choice>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <Slider label="Strength" className="accent-orange-500" value={theme.backdropOpacity} min={BACKDROP_RANGES.opacity.min} max={BACKDROP_RANGES.opacity.max} step={BACKDROP_RANGES.opacity.step} unit={BACKDROP_RANGES.opacity.unit} onChange={(backdropOpacity) => change({ backdropOpacity })} />
+                {theme.pattern !== 'none' && (
+                  <>
+                    <Slider
+                      label={theme.pattern === 'image' ? 'Zoom' : hasMarks(theme.pattern) ? 'Size' : 'Density'}
+                      className="accent-orange-500"
+                      value={theme.backdropScale}
+                      min={theme.pattern === 'image' ? 100 : BACKDROP_RANGES.scale.min}
+                      max={BACKDROP_RANGES.scale.max}
+                      step={BACKDROP_RANGES.scale.step}
+                      unit={BACKDROP_RANGES.scale.unit}
+                      onChange={(backdropScale) => change({ backdropScale })}
+                    />
+                    <Slider label="Blur" className="accent-orange-500" value={theme.backdropBlur} min={BACKDROP_RANGES.blur.min} max={BACKDROP_RANGES.blur.max} step={BACKDROP_RANGES.blur.step} unit={BACKDROP_RANGES.blur.unit} onChange={(backdropBlur) => change({ backdropBlur })} />
+                  </>
+                )}
+                {theme.pattern === 'image' && <Slider label="Fade back" className="accent-orange-500" value={theme.backdropDim} min={BACKDROP_RANGES.dim.min} max={BACKDROP_RANGES.dim.max} step={BACKDROP_RANGES.dim.step} unit={BACKDROP_RANGES.dim.unit} onChange={(backdropDim) => change({ backdropDim })} />}
+              </div>
+              <MotionControls theme={theme} change={change} />
+              {brandError && <p role="alert" className="mt-3 text-sm text-danger">{brandError}</p>}
+            </Section>
+
+            <Section title="Props" hint={hasMarks(theme.pattern) ? `${backdropProps.length} props · ${LAYOUT_MAX_PER_PATTERN} max for this pattern · ${backdropTotal}/${LAYOUT_MAX_TOTAL} saved across patterns` : 'This pattern has no individual props to arrange.'}>
+              {hasMarks(theme.pattern) ? (
+                <>
+                  <p className="mb-2 text-xs text-ink-muted">Add from this pattern&rsquo;s own set:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {propVocabulary(theme.pattern).map((key) => (
+                      <Button key={key} variant="secondary" size="sm" disabled={backdropProps.length >= LAYOUT_MAX_PER_PATTERN || backdropTotal >= LAYOUT_MAX_TOTAL} onClick={() => addBackdropProp(key)}>
+                        <span className="material-symbols-outlined" aria-hidden="true">add</span>
+                        {propLabel(theme.pattern, key)}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button variant="secondary" size="sm" onClick={resetBackdropPattern}>Reset pattern</Button>
+                    {selectedProp && <span className="self-center text-xs text-ink-muted">Arrows nudge · Shift + arrows moves faster · H hides · Delete removes</span>}
+                  </div>
+                  <div className="mt-3">
+                    <BackdropPropInspector
+                      pattern={theme.pattern}
+                      prop={selectedProp}
+                      theme={theme}
+                      selectionKey={selectedBackdropProp}
+                      onChange={(patch) => patchBackdropProp(selectedBackdropProp, patch)}
+                      onDelete={() => selectedBackdropProp !== null && deleteBackdropProp(selectedBackdropProp)}
+                      onToggleHidden={() => selectedBackdropProp !== null && toggleBackdropProp(selectedBackdropProp)}
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-ink-muted">{['dots', 'grid', 'stripes', 'waves'].includes(theme.pattern) ? 'No props to arrange — Density sets how big a tile is.' : 'An uploaded picture or a plain backdrop has no props to arrange.'}</p>
+              )}
+            </Section>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-24 xl:self-start">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Preview surface">
+              <Choice selected={surface === 'projector'} onClick={() => setSurface('projector')} className="min-h-10 px-4">Projector</Choice>
+              <Choice selected={surface === 'phone'} onClick={() => setSurface('phone')} className="min-h-10 px-4">Phone</Choice>
+              <span className="mx-1 hidden h-6 w-px bg-hairline sm:block" aria-hidden="true" />
+              {Object.entries(screenList).map(([key, label]) => (
+                <Choice key={key} selected={screens[surface] === key} onClick={() => setScreens((current) => ({ ...current, [surface]: key }))} className="min-h-10 px-4">{label}</Choice>
+              ))}
+            </div>
+            <StudioPreview
+              theme={backdropPreviewTheme}
+              surface={surface}
+              screen={screens[surface]}
+              title={quiz?.title ?? ''}
+              overlay={hasMarks(theme.pattern) ? (
+                <BackdropPropLayer
+                  pattern={theme.pattern}
+                  props={backdropProps}
+                  scale={theme.backdropScale / 100}
+                  inset={theme.backdropBlur}
+                  selectedIndex={selectedBackdropProp}
+                  onSelect={setSelectedBackdropProp}
+                  onChangeProps={changeBackdropProps}
+                  onDelete={deleteBackdropProp}
+                  onToggleHidden={toggleBackdropProp}
+                  onDeselect={() => setSelectedBackdropProp(null)}
+                />
+              ) : null}
+            />
+            <p className="text-center text-xs text-ink-muted">Drag props on the preview. Movement pauses while arranging; hidden props stay outlined so you can select and restore them.</p>
+          </div>
+        </div>
       ) : (
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
           <div className="flex flex-col gap-4">
             {/* First on the tab because it is the one control that does not change a single control below it -- it
                 replaces the whole design at once. It fills the draft like every other control, so Save is still the
                 thing that puts it on the quiz. */}
-            <SavedLooks quizId={id} draft={theme} dirty={dirty} onApply={setDraft} />
+            <SavedLooks quizId={id} draft={theme} dirty={dirty} onApply={(look) => { setDraft(look); setSelectedBackdropProp(null) }} />
 
             <Section title="Colour scheme" hint="Sets the glow and the dark banner behind every screen. Choosing a scheme leaves your own accent colour alone.">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-2">
@@ -584,109 +768,8 @@ export default function AdminQuizStudio() {
               )}
             </Section>
 
-            <Section title="Backdrop" hint="A faint pattern behind the screens, so text always stays clear. Your own picture shows on the projector only, never on phones.">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {Object.entries(THEME_PATTERNS).map(([key, label]) => (
-                  <Choice key={key} selected={theme.pattern === key} onClick={() => change({ pattern: key })} className="px-3 py-2.5">
-                    {label}
-                  </Choice>
-                ))}
-              </div>
-
-              {theme.pattern === 'image' && (
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <span className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border border-hairline bg-surface-low">
-                    {theme.image
-                      ? <img src={brandingUrl(theme.image)} alt="" className="h-full w-full object-cover" />
-                      : <span className="material-symbols-outlined text-2xl text-ink-muted" aria-hidden="true">add_photo_alternate</span>}
-                  </span>
-                  <label className="cursor-pointer rounded-md bg-surface-low px-4 py-2.5 text-sm font-bold text-brand hover:bg-hairline/40">
-                    {theme.image ? 'Replace picture' : 'Upload a picture'}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      disabled={brandBusy}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0]
-                        e.target.value = ''
-                        if (f) addPicture(f, (path) => change({ pattern: 'image', image: path }), { maxEdge: BACKDROP_MAX_EDGE, maxBytes: BACKDROP_MAX_BYTES })
-                      }}
-                    />
-                  </label>
-                  {theme.image && <Button variant="ghost" size="sm" onClick={() => change({ image: null })}>Remove picture</Button>}
-                </div>
-              )}
-
-              <div className="mt-4 flex flex-col gap-3">
-                {theme.pattern === 'image' && (
-                  <div>
-                    <p className="mb-1 text-xs font-semibold text-ink">Fit</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {Object.entries(THEME_BACKDROP_FITS).map(([key, label]) => (
-                        <Choice key={key} selected={theme.backdropFit === key} onClick={() => change({ backdropFit: key })} className="px-3 py-2.5">
-                          {label}
-                        </Choice>
-                      ))}
-                    </div>
-                    <p className="mt-1 text-xs text-ink-muted">
-                      {theme.backdropFit === 'contain'
-                        ? 'The whole picture shows. Where it does not reach, the page colour fills in.'
-                        : theme.backdropFit === 'stretch'
-                          ? 'Fills the screen exactly, but stretches anything that is not the screen’s shape.'
-                          : 'Fills the screen. Parts of the picture that do not fit are cut off.'}
-                    </p>
-                  </div>
-                )}
-                <Slider
-                  label="Strength"
-                  className="accent-orange-500"
-                  value={theme.backdropOpacity}
-                  min={BACKDROP_RANGES.opacity.min}
-                  max={BACKDROP_RANGES.opacity.max}
-                  step={BACKDROP_RANGES.opacity.step}
-                  unit={BACKDROP_RANGES.opacity.unit}
-                  onChange={(backdropOpacity) => change({ backdropOpacity })}
-                />
-                {theme.pattern !== 'none' && (
-                  <>
-                    <Slider
-                      label={theme.pattern === 'image' ? 'Zoom' : 'Size'}
-                      className="accent-orange-500"
-                      value={theme.backdropScale}
-                      min={theme.pattern === 'image' ? 100 : BACKDROP_RANGES.scale.min}
-                      max={BACKDROP_RANGES.scale.max}
-                      step={BACKDROP_RANGES.scale.step}
-                      unit={BACKDROP_RANGES.scale.unit}
-                      onChange={(backdropScale) => change({ backdropScale })}
-                    />
-                    <Slider
-                      label="Blur"
-                      className="accent-orange-500"
-                      value={theme.backdropBlur}
-                      min={BACKDROP_RANGES.blur.min}
-                      max={BACKDROP_RANGES.blur.max}
-                      step={BACKDROP_RANGES.blur.step}
-                      unit={BACKDROP_RANGES.blur.unit}
-                      onChange={(backdropBlur) => change({ backdropBlur })}
-                    />
-                  </>
-                )}
-                {theme.pattern === 'image' && (
-                  <Slider
-                    label="Fade back"
-                    className="accent-orange-500"
-                    value={theme.backdropDim}
-                    min={BACKDROP_RANGES.dim.min}
-                    max={BACKDROP_RANGES.dim.max}
-                    step={BACKDROP_RANGES.dim.step}
-                    unit={BACKDROP_RANGES.dim.unit}
-                    onChange={(backdropDim) => change({ backdropDim })}
-                  />
-                )}
-              </div>
-              <MotionControls theme={theme} change={change} />
-              {theme.pattern !== 'none' && <p className="mt-2 text-xs text-ink-muted">Keep the strength low and the fade high, so the projector stays easy to read from the back row.</p>}
+            <Section title="Backdrop" hint="Backdrop patterns, image positioning and prop layouts are edited on the Backdrop tab.">
+              <Button variant="secondary" onClick={() => setTab('backdrop')}>Open backdrop editor</Button>
             </Section>
 
             <Section title="Celebration" hint="What rains down on the final leaderboard.">
