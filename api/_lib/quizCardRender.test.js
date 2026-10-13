@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import { createCanvas } from '@napi-rs/canvas'
 import { DEFAULT_CARD, sanitizeCard } from './quizCard.js'
 import { ensureFonts } from './fonts.js'
@@ -68,6 +69,14 @@ describe('the card backdrop', () => {
     expect(differs(await backdrop({ ...DEFAULT_CARD, pattern: 'rings' }, game), grid), 'the card pattern should win').toBe(true)
     expect(differs(await backdrop({ ...DEFAULT_CARD, pattern: null }, game), grid), 'null should follow the game').toBe(false)
   }, 90_000)
+
+  it('does not read the projector prop arrangement, because the card is its own portrait composition', () => {
+    // Rendering and sampling two full 1080x1920 canvases to prove one unused field cannot affect them was taking longer
+    // than the card renderer's timeout on CI-sized workers. This renderer has a single module, so asserting the absence
+    // of the field at that boundary is direct and does not allocate two full-canvas pixel buffers.
+    const source = readFileSync('api/_lib/quizCardRender.js', 'utf8')
+    expect(source).not.toContain('backdropLayout')
+  })
 
   it('paints a background colour of the card\'s own instead of the scheme gradient', async () => {
     const plain = await backdrop(DEFAULT_CARD)

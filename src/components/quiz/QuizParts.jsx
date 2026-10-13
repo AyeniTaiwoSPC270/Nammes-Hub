@@ -8,7 +8,7 @@ import { useQuizTheme } from './QuizTheme'
 // The backdrop's characters come from the same table the result card draws its maths from, rather than a second list
 // kept in step by hand. The card now reads both tables with a full branch for each, so this line is proof the two
 // renderers agree: a divergent table is caught by the guard tests in quizTheme.test.js.
-import { PATTERN_GLYPHS, PATTERN_GEOMETRY, MOTION_PER_MARK, MOTION_DISTANCE, MOTION_BLEED, resolveMotion, motionDuration } from '../../../api/_lib/quizTheme.js'
+import { PATTERN_GLYPHS, PATTERN_GEOMETRY, MOTION_PER_MARK, MOTION_DISTANCE, MOTION_BLEED, resolveMotion, motionDuration, defaultBackdropProps } from '../../../api/_lib/quizTheme.js'
 // The characters' moves live in this stylesheet, not in Character.jsx: the result card renders that same component
 // to an SVG string on the server, and Node cannot parse a stylesheet. Anything that renders a Character and wants
 // its animations imports this file, or imports characters.css itself.
@@ -123,60 +123,39 @@ export function CountdownRing({ seconds, total, size = 96, stroke = 9 }) {
   )
 }
 
-// One deterministic scatter, shared by every drawn pattern so they all land in the same places at the same count.
-// Positions come from the index rather than from a random number: a backdrop that rearranged itself on every reload
-// would read as a bug, and a card and a screen showing the same theme put the marks in the same spots. Only the spots
-// match — each renderer scales the size against its own canvas, so the marks are recognisably the same, not identical.
-//
-// Positions are percentages of the backdrop and sizes are in pixels, because that is what each can express without
-// measuring the screen: a percentage positions, a pixel size. An SVG with no viewBox treats its numbers as pixels, so
-// feeding it the percentage set left a hexagon pattern in a 350x350px box in the corner of every projector.
-function scatter(count, cell, mark) {
-  return Array.from({ length: count }, (_, i) => ({
-    left: (i * cell + 8) % 92,
-    top: (i * (cell * 1.4) + 5) % 90,
-    size: mark + ((i * 13) % 12),
-    rotate: ((i * 41) % 50) - 25,
-  }))
-}
-
 // Each mark's place in its loop, as a negative delay so the marks are already mid-animation on first paint. Positive
 // delays would make every mark start together, which reads as one pulse that then settles — a visible wind-up in the
-// first second of a game. Derived from the index like every other mark position, for the same reason `scatter` does it:
-// a backdrop that rearranges itself on reload reads as a bug.
+// first second of a game. Derived from the index like every other mark position, for the same reason defaultBackdropProps
+// does it: a backdrop that rearranges itself on reload reads as a bug.
 function markMotion(i, seconds) {
   return { animationDelay: `${-(((i * 7) % 11) / 11) * seconds}s`, animationDuration: `${seconds}s` }
 }
 
-// Faint symbols scattered behind the page. Positions come from the index so it renders the same every time.
+// Faint symbols scattered behind the page, placed by the arrangement the admin saved and drawn from defaultBackdropProps
+// when there is none. Positions come from the prop itself so the studio's picture and this one cannot disagree.
 //
 // The opacity lives on the wrapper rather than on each span, because Twinkle animates `opacity` and an animation beats an
 // inline value — a mark that kept its own would never fade. Opacity on a parent multiplies through the subtree, so the
 // result is the same number either way. The wrapper is `inset-0` so the marks' percentage positions still resolve
 // against the same box they did before it existed.
-function GlyphField({ glyphs, count = 14, opacity, scale, motion }) {
-  const items = useMemo(
-    () =>
-      Array.from({ length: count }, (_, i) => ({
-        glyph: glyphs[i % glyphs.length],
-        left: (i * 37 + 8) % 92,
-        top: (i * 53 + 5) % 90,
-        size: (28 + ((i * 17) % 44)) * scale,
-        rotate: ((i * 41) % 50) - 25,
-      })),
-    [glyphs, count, scale],
-  )
+//
+// `size` is multiplied here rather than stored multiplied: the prop holds the pattern's own pixels, so the global Size
+// slider still scales an arrangement the admin placed by hand.
+function GlyphField({ pattern, props, opacity, scale, motion }) {
+  const glyphs = PATTERN_GLYPHS[pattern]
   return (
     <div className="absolute inset-0" style={{ opacity }} aria-hidden="true">
-      {items.map((item, i) => (
-        <span
-          key={i}
-          className={`absolute select-none font-bold text-brand${motion ? ` ${motion.className}` : ''}`}
-          style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, transform: `rotate(${item.rotate}deg)`, ...motion?.style(i) }}
-        >
-          {item.glyph}
-        </span>
-      ))}
+      {props.map((prop, i) =>
+        prop.h ? null : (
+          <span
+            key={i}
+            className={`absolute select-none font-bold text-brand${motion ? ` ${motion.className}` : ''}`}
+            style={{ left: `${prop.x}%`, top: `${prop.y}%`, fontSize: prop.s * scale, color: prop.c ?? undefined, transform: `rotate(${prop.r}deg)`, ...motion?.style(i) }}
+          >
+            {glyphs[prop.k]}
+          </span>
+        ),
+      )}
     </div>
   )
 }
@@ -185,10 +164,6 @@ const DOTS = PATTERN_GEOMETRY.dots
 const GRID = PATTERN_GEOMETRY.grid
 const WAVES = PATTERN_GEOMETRY.waves
 const STRIPES = PATTERN_GEOMETRY.stripes
-const HEX = PATTERN_GEOMETRY.hexagons
-const RINGS = PATTERN_GEOMETRY.rings
-const PARTY = PATTERN_GEOMETRY.party
-
 function hexPoints(cx, cy, r) {
   return Array.from({ length: 6 }, (_, i) => {
     const a = (Math.PI / 3) * i
@@ -200,29 +175,31 @@ function hexPoints(cx, cy, r) {
 // itself correct: the SVG fills it and, with the default meet, scales the shape to fit rather than stretching it to a
 // screen of some other aspect.
 //
-// As in GlyphField, the opacity is on the wrapper so a per-mark animation is free to set its own.
-function ShapeField({ shape, count, cell, children, motion }) {
-  const items = useMemo(() => scatter(count, cell, shape.mark), [count, cell, shape.mark])
+// As in GlyphField, the opacity is on the wrapper so a per-mark animation is free to set its own. A prop's own colour is
+// inline here rather than on the SVG, because every one of these draws itself with `currentColor`.
+function ShapeField({ props, opacity, children, motion }) {
   return (
-    <div className="absolute inset-0 text-brand" style={{ opacity: shape.opacity }} aria-hidden="true">
-      {items.map((item, i) => (
-        <div
-          key={i}
-          className={`absolute${motion ? ` ${motion.className}` : ''}`}
-          style={{ left: `${item.left}%`, top: `${item.top}%`, width: item.size, height: item.size, ...motion?.style(i) }}
-        >
-          {children(item, i)}
-        </div>
-      ))}
+    <div className="absolute inset-0 text-brand" style={{ opacity }} aria-hidden="true">
+      {props.map((prop, i) =>
+        prop.h ? null : (
+          <div
+            key={i}
+            className={`absolute${motion ? ` ${motion.className}` : ''}`}
+            style={{ left: `${prop.x}%`, top: `${prop.y}%`, width: prop.s, height: prop.s, color: prop.c ?? undefined, ...motion?.style(i) }}
+          >
+            {children(prop, i)}
+          </div>
+        ),
+      )}
     </div>
   )
 }
 
-function HexagonField({ opacity, scale, motion }) {
+function HexagonField({ opacity, scale, motion, props }) {
   return (
-    <ShapeField shape={{ ...HEX, opacity }} count={HEX.count} cell={HEX.cell} motion={motion}>
-      {(item) => (
-        <svg viewBox="0 0 100 100" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth={7} style={{ transform: `rotate(${item.rotate * 0.5}deg) scale(${scale})` }}>
+    <ShapeField props={props} opacity={opacity} motion={motion}>
+      {(prop) => (
+        <svg viewBox="0 0 100 100" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth={7} style={{ transform: `rotate(${prop.r}deg) scale(${scale})` }}>
           <polygon points={hexPoints(50, 50, 44)} />
         </svg>
       )}
@@ -230,9 +207,9 @@ function HexagonField({ opacity, scale, motion }) {
   )
 }
 
-function RingField({ opacity, scale, motion }) {
+function RingField({ opacity, scale, motion, props }) {
   return (
-    <ShapeField shape={{ ...RINGS, opacity }} count={RINGS.count} cell={RINGS.cell} motion={motion}>
+    <ShapeField props={props} opacity={opacity} motion={motion}>
       {() => (
         <svg viewBox="0 0 100 100" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth={5} style={{ transform: `scale(${scale})` }}>
           {[0, 1, 2].map((r) => (
@@ -244,40 +221,42 @@ function RingField({ opacity, scale, motion }) {
   )
 }
 
-// Balloons, hats, streamers and loose confetti, cycling in that order so every scatter shows all four rather than thirty
-// balloons. Drawn as shapes because the card has no emoji font; see the note on PATTERN_GEOMETRY.party.
-function PartyField({ opacity, scale, motion }) {
+// Balloons, hats, streamers and loose confetti. The prop carries its own shape rather than the index picking one, so an
+// admin can add a single hat to a backdrop full of balloons; the default arrangement still cycles in that order so every
+// scatter shows all four rather than thirty balloons. Drawn as shapes because the card has no emoji font; see the note
+// on PATTERN_GEOMETRY.party.
+function PartyField({ opacity, scale, motion, props }) {
   return (
-    <ShapeField shape={{ ...PARTY, opacity }} count={PARTY.count} cell={PARTY.cell} motion={motion}>
-      {(item, i) => {
-        const r = 14 + (item.size % 6)
-        const w = 60 + (item.size % 14)
+    <ShapeField props={props} opacity={opacity} motion={motion}>
+      {(prop) => {
+        const r = 14 + (prop.s % 6)
+        const w = 60 + (prop.s % 14)
         const common = { fill: 'none', stroke: 'currentColor', strokeWidth: 7 }
-        if (i % 4 === 0) {
+        if (prop.k === 'balloon') {
           return (
-            <svg viewBox="0 0 100 100" className="h-full w-full text-brand" style={{ transform: `rotate(${item.rotate * 0.4}deg) scale(${scale})` }} aria-hidden="true">
+            <svg viewBox="0 0 100 100" className="h-full w-full" style={{ transform: `rotate(${prop.r}deg) scale(${scale})` }} aria-hidden="true">
               <ellipse cx={50} cy={42} rx={r} ry={r * 1.2} {...common} />
               <path d={`M50 ${42 + r * 1.2}c12 16 -12 22 0 36`} {...common} />
             </svg>
           )
         }
-        if (i % 4 === 1) {
+        if (prop.k === 'hat') {
           return (
-            <svg viewBox="0 0 100 100" className="h-full w-full text-brand" style={{ transform: `rotate(${item.rotate}deg) scale(${scale})` }} aria-hidden="true">
+            <svg viewBox="0 0 100 100" className="h-full w-full" style={{ transform: `rotate(${prop.r}deg) scale(${scale})` }} aria-hidden="true">
               <polygon points="18,82 50,14 82,82" {...common} />
               <line x1={14} y1={82} x2={86} y2={82} stroke="currentColor" strokeWidth={7} />
             </svg>
           )
         }
-        if (i % 4 === 2) {
+        if (prop.k === 'streamer') {
           return (
-            <svg viewBox="0 0 100 100" className="h-full w-full text-brand" style={{ transform: `scale(${scale})` }} aria-hidden="true">
-              <path d={`M20 20c14 -20 14 20 0 34s-14 20 0 34s14 20 0 34`} {...common} />
+            <svg viewBox="0 0 100 100" className="h-full w-full" style={{ transform: `rotate(${prop.r}deg) scale(${scale})` }} aria-hidden="true">
+              <path d="M20 20c14 -20 14 20 0 34s-14 20 0 34s14 20 0 34" {...common} />
             </svg>
           )
         }
         return (
-          <svg viewBox="0 0 100 100" className="h-full w-full text-brand" style={{ transform: `rotate(${item.rotate}deg) scale(${scale})` }} aria-hidden="true">
+          <svg viewBox="0 0 100 100" className="h-full w-full" style={{ transform: `rotate(${prop.r}deg) scale(${scale})` }} aria-hidden="true">
             <rect x={50 - w / 6} y={26} width={w / 3} height={48} fill="currentColor" stroke="none" />
           </svg>
         )
@@ -298,8 +277,12 @@ function PartyField({ opacity, scale, motion }) {
 // whether the backdrop moves there: the phone toggle is the one place motion is per-surface, because fifty animated
 // handsets is a battery question rather than a taste question.
 export function QuizBackdrop({ surface = 'phone' }) {
-  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim, backdropFit, backdropMotion, backdropMotionSpeed, backdropMotionOnPhones } = useQuizTheme()
+  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim, backdropFit, backdropMotion, backdropMotionSpeed, backdropMotionOnPhones, backdropLayout } = useQuizTheme()
   const photo = surface === 'projector' && pattern === 'image' && image ? brandingUrl(image) : null
+  // The arrangement for this pattern, or the one it is designed with. A pattern nobody has arranged stores nothing at
+  // all, so this is the common answer as well as the fallback — which is why an unedited backdrop is not a special case
+  // anywhere below.
+  const props = backdropLayout[pattern] ?? defaultBackdropProps(pattern)
   const opacity = backdropOpacity / 100
   const scale = backdropScale / 100
   // A blurred layer fades to nothing at its own edge, so it is grown by the blur radius to keep the corners filled. A
@@ -369,9 +352,7 @@ export function QuizBackdrop({ surface = 'phone' }) {
         </div>
       ) : (
         <div className={`absolute overflow-hidden${layerClass ? ` ${layerClass}` : ''}`} style={{ ...softened, ...layerStyle }}>
-          {pattern === 'math' && <GlyphField glyphs={PATTERN_GLYPHS.math} opacity={opacity} scale={scale} motion={markMotionArg} />}
-          {pattern === 'notes' && <GlyphField glyphs={PATTERN_GLYPHS.notes} count={16} opacity={opacity} scale={scale} motion={markMotionArg} />}
-          {pattern === 'stars' && <GlyphField glyphs={PATTERN_GLYPHS.stars} count={18} opacity={opacity} scale={scale} motion={markMotionArg} />}
+          {PATTERN_GLYPHS[pattern] && <GlyphField pattern={pattern} props={props} opacity={opacity} scale={scale} motion={markMotionArg} />}
           {pattern === 'dots' && (
             <div
               className="absolute inset-0 text-brand"
@@ -403,9 +384,9 @@ export function QuizBackdrop({ surface = 'phone' }) {
               }}
             />
           )}
-          {pattern === 'hexagons' && <HexagonField opacity={opacity} scale={scale} motion={markMotionArg} />}
-          {pattern === 'rings' && <RingField opacity={opacity} scale={scale} motion={markMotionArg} />}
-          {pattern === 'party' && <PartyField opacity={opacity} scale={scale} motion={markMotionArg} />}
+          {pattern === 'hexagons' && <HexagonField opacity={opacity} scale={scale} motion={markMotionArg} props={props} />}
+          {pattern === 'rings' && <RingField opacity={opacity} scale={scale} motion={markMotionArg} props={props} />}
+          {pattern === 'party' && <PartyField opacity={opacity} scale={scale} motion={markMotionArg} props={props} />}
         </div>
       )}
       {/* A picture is a picture: this washes it back towards the page colour so a photo can never swallow the text. */}
@@ -416,13 +397,13 @@ export function QuizBackdrop({ surface = 'phone' }) {
 
 const CONFETTI_COLORS = ['text-red-600', 'text-blue-600', 'text-amber-500', 'text-green-600', 'text-orange-500']
 const CONFETTI_GLYPHS = {
-  math: [...PATTERN_GLYPHS.math, '★', '✦'],
+  math: [...Object.values(PATTERN_GLYPHS.math), '★', '✦'],
   stars: ['★', '✦', '✧', '✶', '✷'],
   petals: ['❀', '✿', '❁', '✾', '❃'],
   emoji: ['🎉', '🎊', '🥳', '🙌', '🎈'],
   letters: ['A', 'B', 'C', 'D'],
   money: ['💰', '🪙', '💵', '💸', '🤑'],
-  notes: [...PATTERN_GLYPHS.notes, '🎶'],
+  notes: [...Object.values(PATTERN_GLYPHS.notes), '🎶'],
   hearts: ['♥', '❤', '💕', '💖', '💗'],
 }
 

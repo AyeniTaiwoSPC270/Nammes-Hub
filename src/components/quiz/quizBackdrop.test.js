@@ -30,6 +30,17 @@ describe('the quiz backdrop', () => {
     expect(readFileSync(BACKDROP, 'utf8')).toContain('-z-10')
   })
 
+  it('keeps editor state out of the game backdrop component', () => {
+    // The studio's hit layer is an overlay sibling, never a mode on QuizBackdrop. If selection or pointer handlers land
+    // on this production component, a live game has acquired an editor it cannot use.
+    const source = readFileSync(BACKDROP, 'utf8')
+    expect(source).toMatch(/export function QuizBackdrop\(\{\s*surface = 'phone'\s*\}\)/)
+    const start = source.indexOf('export function QuizBackdrop')
+    const end = source.indexOf('\nexport function Confetti', start)
+    const declaration = source.slice(start, end < 0 ? source.length : end)
+    expect(declaration).not.toMatch(/\b(?:editing|selected|onPointer)\b/)
+  })
+
   it('is mounted on every screen inside a wrapper that opens a stacking context', () => {
     const unisolated = []
     for (const file of listFiles('src/pages')) {

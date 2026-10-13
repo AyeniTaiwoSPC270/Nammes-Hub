@@ -6,6 +6,7 @@ import SchemeColours from './SchemeColours'
 import CharacterGallery from './CharacterGallery'
 import Character from '../../quiz/Character'
 import { CharacterCastContext } from '../../quiz/characterCastContext.js'
+import { BackdropPropLayer } from './BackdropPropEditor'
 import { BUILTIN_COUNT } from '../../../../api/_lib/quizCharacterArt.js'
 import { THEME_LOOKS, THEME_PATTERNS, THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, hasMarks, resolveMotion } from '../../../../api/_lib/quizTheme.js'
 
@@ -227,6 +228,48 @@ describe('studio preview', () => {
     for (const look of Object.keys(THEME_LOOKS)) for (const pattern of Object.keys(THEME_PATTERNS)) {
       expect(() => renderToStaticMarkup(<StudioPreview theme={{ look, pattern }} surface="projector" screen="question" title="" />)).not.toThrow()
     }
+  })
+  it('draws saved prop positions and colours, and leaves hidden props out of the backdrop', () => {
+    const html = renderToStaticMarkup(
+      <StudioPreview
+        theme={{
+          pattern: 'math',
+          backdropScale: 100,
+          backdropLayout: {
+            math: [
+              { k: 'pi', x: 80, y: 60, s: 50, r: 45, c: '#123456' },
+              { k: 'sum', x: 20, y: 30, s: 40, r: 0, h: true },
+            ],
+          },
+        }}
+        surface="projector"
+        screen="question"
+        title=""
+      />,
+    )
+    expect(html).toContain('left:80%;top:60%;font-size:50px;color:#123456;transform:rotate(45deg)')
+    expect(html).not.toContain('left:20%;top:30%;font-size:40px')
+    expect(html).toContain('aria-hidden="true"')
+  })
+  it('places hit boxes over props in the same percentage coordinates and scaled size', () => {
+    const overlay = renderToStaticMarkup(
+      <BackdropPropLayer
+        pattern="math"
+        props={[{ k: 'pi', x: 25, y: 40, s: 40, r: 0 }]}
+        scale={1.5}
+        inset={10}
+        selectedIndex={0}
+        onSelect={() => {}}
+        onChangeProps={() => {}}
+        onDelete={() => {}}
+        onToggleHidden={() => {}}
+        onDeselect={() => {}}
+      />,
+    )
+    expect(overlay).toContain('aria-label="π at 25, 40"')
+    expect(overlay).toContain('inset:-10px')
+    expect(overlay).toContain('left:25%;top:40%;width:72px;height:72px')
+    expect(overlay).toContain('aria-pressed="true"')
   })
   describe('backdrop motion', () => {
     // Rendering without throwing proves nothing here: a mistyped class name, or a style that quietly resolved to Still,
