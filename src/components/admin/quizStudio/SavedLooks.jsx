@@ -122,7 +122,7 @@ export default function SavedLooks({ quizId, draft, dirty, onApply }) {
     toast.success(
       lost
         ? `“${look.name}” applied. Its uploaded picture belongs to another quiz, so that part was left out.`
-        : `“${look.name}” applied. Press Save to keep it on this quiz.`,
+        : `“${look.name}” applied. Press “Save look” to keep it on this quiz.`,
     )
   }
 
