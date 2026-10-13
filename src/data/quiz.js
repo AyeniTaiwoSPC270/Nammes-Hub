@@ -151,6 +151,10 @@ export function fetchCastRoster(target) {
   return callQuiz('cast', { op: 'roster', ...target })
 }
 
+export function castSavePayload(quizId, cast) {
+  return { op: 'cast', quizId, ...cast }
+}
+
 // A join code reads the hosted session's snapshot; a quiz id reads the live cast for battles and practice.
 export function useCastQuery(target) {
   const key = castQueryKey(target)
@@ -165,7 +169,7 @@ export function useCastQuery(target) {
 export function useSaveCast(quizId) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (cast) => hostAction('cast', { quizId, ...cast }),
+    mutationFn: (cast) => hostAction('cast', castSavePayload(quizId, cast)),
     onSuccess: (cast) => {
       queryClient.setQueryData(['cast', 'quiz', quizId], cast)
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })

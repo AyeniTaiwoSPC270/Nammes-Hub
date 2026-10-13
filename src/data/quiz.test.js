@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster, castSavePayload } from './quiz'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -117,5 +117,16 @@ describe('fetchCastRoster', () => {
       method: 'POST',
       body: JSON.stringify({ op: 'roster', code: '123456' }),
     }))
+  })
+})
+
+describe('castSavePayload', () => {
+  it('sends the cast op and its quiz id with the saved cast', () => {
+    expect(castSavePayload('quiz-1', { mode: 'all', characters: [] })).toEqual({
+      op: 'cast',
+      quizId: 'quiz-1',
+      mode: 'all',
+      characters: [],
+    })
   })
 })
