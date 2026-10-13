@@ -186,10 +186,10 @@
 /* Backdrop motion. One keyframe per style the studio offers, named qz-bd-<style> so the styles list in quizTheme.js and
    the names here can be checked against each other — a style with no keyframe is a still projector and nothing fails.
 
-   Three of these are written as a ping-pong rather than a repeat, because repeating a translation snaps it back to the
-   start on every cycle: the renderer sets `alternate`, and the reversal *is* the loop. Drift and orbit could instead step
-   one tile and jump, which is seamless for a tiled gradient but not for a scattered glyph field, and the glyph fields are
-   the common case. Cascade resets by fading out rather than by teleporting back up, copying qz-fall above.
+   Drift and orbit ping-pong rather than repeat, because repeating a translation snaps it back to the start on every
+   cycle: their classes set `alternate`, and the reversal *is* the loop. They could instead step one tile and jump, which
+   is seamless for a tiled gradient but not for a scattered glyph field, and the glyph fields are the common case.
+   Cascade uses a different loop: fade out rather than teleport back up, copying qz-fall above.
 
    The three per-mark styles animate `translate`, not `transform`, because every mark already carries an inline
    transform for its own rotation and scale — an animation writing `transform` would silently discard it. `translate` is a
@@ -209,15 +209,15 @@
 @keyframes qz-bd-bounce {
   0%, 100% { transform: scale(1); }
   38% { transform: scale(1.075); }
-  62% { transform: scale(0.965); }
-  82% { transform: scale(1.018); }
+  62% { transform: scale(1.01); }
+  82% { transform: scale(1.035); }
 }
 /* Fades rather than resetting, so a falling mark teleports from the floor back to the top while it is invisible. */
 @keyframes qz-bd-cascade {
-  0% { translate: 0 -14%; opacity: 0; }
+  0% { translate: 0 -14vh; opacity: 0; }
   12% { opacity: 1; }
   88% { opacity: 1; }
-  100% { translate: 0 118%; opacity: 0; }
+  100% { translate: 0 118vh; opacity: 0; }
 }
 @keyframes qz-bd-float {
   0%, 100% { translate: 0 0; }
@@ -230,8 +230,8 @@
 /* Multiplies into the zoom the picture's own Size slider already applied, rather than replacing it — the zoom arrives as
    a custom property precisely so it can be read from inside a keyframe. */
 @keyframes qz-bd-pan {
-  0%, 100% { transform: scale(calc(var(--qz-bd-zoom, 1) / 1.09)) translateX(-1.6%); }
-  50% { transform: scale(calc(var(--qz-bd-zoom, 1) * 1.09)) translateX(1.6%); }
+  0%, 100% { transform: scale(calc(var(--qz-bd-zoom, 1) * 1.04)) translateX(-1.6%); }
+  50% { transform: scale(calc(var(--qz-bd-zoom, 1) * 1.12)) translateX(1.6%); }
 }
 /* One rule per style, and each one names its own keyframes. Declaring them as a group of shared properties reads well
    and is how this shipped broken the first time: a group can carry `infinite` and still never set `animation-name`, and

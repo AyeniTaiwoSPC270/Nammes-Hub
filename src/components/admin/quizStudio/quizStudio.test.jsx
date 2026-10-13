@@ -268,6 +268,50 @@ describe('studio preview', () => {
       expect(draw({ ...moving, backdropMotionOnPhones: false }, 'phone'), 'phones stay still').not.toContain('qz-bd-')
       expect(draw({ ...moving, backdropMotionOnPhones: false }, 'projector'), 'the projector is not a phone').toContain('qz-bd-drift')
     })
+    it('does not animate an image pattern on phones where neither the picture nor a replacement pattern is drawn', () => {
+      const html = draw({ pattern: 'image', image: pic, backdropMotion: 'drift' }, 'phone')
+      expect(html).not.toContain('qz-bd-')
+    })
+    it('keeps the chosen static image zoom when Pan is disabled by reduced motion', () => {
+      // The media query disables the Pan keyframes. The inline Size transform must remain as the still frame, otherwise
+      // choosing Pan removes the existing Zoom control for anyone with reduced motion enabled.
+      const html = draw({ pattern: 'image', image: pic, backdropMotion: 'pan' })
+      const image = html.match(/<img[^>]*qz-bd-pan[^>]*>/)?.[0]
+      expect(image).toBeTruthy()
+      expect(image).toContain('transform:scale(1)')
+    })
+    it('keeps Pan zoomed in throughout its cycle so it cannot reveal the image edge', () => {
+      const css = readFileSync('src/index.css', 'utf8')
+      const keyframes = css.match(/@keyframes qz-bd-pan\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+      const scales = [...keyframes.matchAll(/scale\(calc\(var\(--qz-bd-zoom, 1\) ([*/]) ([\d.]+)\)\)/g)]
+      expect(scales.length, 'both ends of the cycle keep a safety zoom').toBeGreaterThanOrEqual(2)
+      expect(scales.every((match) => match[1] === '*' && Number(match[2]) >= 1)).toBe(true)
+    })
+    it('grows translating layers on all sides and keeps Bounce from shrinking below the viewport', () => {
+      for (const motion of ['drift', 'orbit']) {
+        const html = draw({ pattern: 'dots', backdropMotion: motion })
+        expect(html, `${motion} needs top and bottom bleed too`).toContain('inset:calc(-0px - 15%)')
+      }
+      const css = readFileSync('src/index.css', 'utf8')
+      const keyframes = css.match(/@keyframes qz-bd-bounce\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+      const scales = [...keyframes.matchAll(/scale\(([\d.]+)\)/g)].map((match) => Number(match[1]))
+      expect(scales.length).toBeGreaterThan(0)
+      expect(Math.min(...scales), 'Bounce should spring outward, never expose the backdrop edge').toBeGreaterThanOrEqual(1)
+    })
+    it('moves Cascade by the viewport height rather than one mark height', () => {
+      const css = readFileSync('src/index.css', 'utf8')
+      const keyframes = css.match(/@keyframes qz-bd-cascade\s*\{([\s\S]*?)\n\}/)?.[1] ?? ''
+      expect(keyframes).toContain('118vh')
+      expect(keyframes).not.toContain('118%')
+    })
+    it('uses a native disabled state for motion styles that are unavailable', () => {
+      // Muted styling alone leaves Pan reachable and selectable by keyboard, even when saving cleans the choice back to
+      // Still. Assert the control's semantic wiring, not just its colour.
+      const studio = code(STUDIO)
+      expect(studio).toMatch(/function Choice\(\{[^}]*disabled/)
+      expect(studio).toContain('disabled={disabled}')
+      expect(studio).toMatch(/<Choice[\s\S]*?disabled=\{!usable\}/)
+    })
     it('draws a still backdrop exactly as it did before motion existed', () => {
       // 'off' has to leave no trace, or every existing quiz would change appearance the day this shipped.
       const plain = draw({ pattern: 'hexagons' })

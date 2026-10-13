@@ -170,7 +170,11 @@ Both predate the calendar, are out of scope, and are still open:
   becomes `MOTION_MARKLESS_STANDIN` on a pattern that draws no marks, and `pan` needs a picture. Both
   are resolved in `QuizBackdrop`, so switching pattern and switching back gives the admin the style they
   picked. `cleanMotion` separately settles `pan` to `off` on a non-image pattern, the same defence
-  `cleanPattern` gives `image` with no upload.
+  `cleanPattern` gives `image` with no upload. Phones never draw the uploaded picture or a substitute for
+  it, so an `image` pattern resolves to `off` on phones even when their motion toggle is enabled.
+- **`MOTION_DISTANCE` is not the bleed.** CSS translate percentages are measured against the layer after
+  it has grown, and Orbit moves vertically and rotates. `MOTION_BLEED` separately grows all four edges
+  far enough to cover those excursions; keep its value larger than the translation distance.
 - **Per-mark backdrop styles animate the CSS `translate` property, never `transform`.** Every mark
   carries an inline `transform: rotate(…) scale(…)`, and an animation writing `transform` silently
   discards it. `translate` composes with it. Twinkle is the one style that moved a mark's opacity onto

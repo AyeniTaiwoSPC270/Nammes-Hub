@@ -68,15 +68,18 @@ function Section({ title, hint, children }) {
   )
 }
 
-function Choice({ selected, onClick, children, className = '' }) {
+function Choice({ selected, onClick, children, className = '', disabled = false, describedBy }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-describedby={describedBy}
       aria-pressed={selected}
       className={[
         'cursor-pointer rounded-xl border text-left text-sm font-semibold transition-colors',
         selected ? 'border-orange-500 bg-orange-500/10 text-ink-900 ring-2 ring-orange-500/40' : 'border-hairline bg-surface text-ink-900 hover:bg-surface-low',
+        disabled ? 'cursor-not-allowed opacity-45 hover:bg-surface' : '',
         className,
       ].join(' ')}
     >
@@ -106,15 +109,19 @@ function MotionControls({ theme, change }) {
           const needsPhoto = MOTION_PICTURE_ONLY.includes(key)
           const usable = !needsPhoto || (picture && Boolean(theme.image))
           const standIn = MOTION_PER_MARK.includes(key) && !marks ? MOTION_MARKLESS_STANDIN[key] : null
+          const reasonId = `backdrop-motion-${key}-reason`
+          const selected = theme.backdropMotion === key && usable || key === 'off' && theme.backdropMotion === 'pan' && !usable
           return (
             <Choice
               key={key}
-              selected={theme.backdropMotion === key}
+              selected={selected}
               onClick={() => change({ backdropMotion: key })}
-              className={`px-3 py-2.5 ${usable ? '' : 'cursor-not-allowed opacity-45 hover:bg-surface'}`}
+              disabled={!usable}
+              describedBy={!usable ? reasonId : undefined}
+              className="px-3 py-2.5"
             >
               <span className="block">{label}</span>
-              {!usable && <span className="mt-0.5 block text-xs font-normal text-ink-muted">Needs your picture</span>}
+              {!usable && <span id={reasonId} className="mt-0.5 block text-xs font-normal text-ink-muted">Needs your picture</span>}
               {usable && standIn && (
                 // Said out loud rather than done silently, so a Float that draws as a Breathe on Dots is a choice the
                 // admin can see they made.

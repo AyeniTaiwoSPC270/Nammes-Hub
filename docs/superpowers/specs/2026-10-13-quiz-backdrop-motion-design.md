@@ -18,7 +18,7 @@ evening, and the one thing an audience notices about a big screen is that nothin
 | Styles | Eight named loops, plus `off`: drift, orbit, breathe, bounce, float, cascade, twinkle, pan |
 | Speed | One 1–5 slider labelled Calm / Gentle / Steady / Brisk / Lively |
 | Phones | A separate toggle, so the projector can move while fifty handsets stay still |
-| Screens | Every backdrop pattern animates; the studio preview animates because it already *is* the real component |
+| Screens | Every visible backdrop can animate; image backdrops remain projector-only, and the phone toggle only affects backdrops actually drawn on phones |
 | Accessibility | Every new class joins the existing `prefers-reduced-motion` block |
 
 ### Out
@@ -43,12 +43,12 @@ evening, and the one thing an audience notices about a big screen is that nothin
 | Styles vs toggles | A single `backdropMotion` naming one of eight | Asked for. It also keeps the field to one string, which is what the 4,000-byte `theme` budget and the allow-list sanitiser both prefer |
 | Default | `off`, for every existing quiz | A projector may already be on air. Games snapshot `theme` at start (`handlers/quiz-create.js:111`), so a new default can never restyle a running game — but it would restyle every *next* game, unasked |
 | Speed | 1–5 slider with the five labels printed under the ticks | A named stop is friendlier than a bare number, but a fixed 1–5 range is testable the way `BACKDROP_RANGES` already is. Storing the number keeps the sanitiser's `num()` path unchanged |
-| Phones | Separate boolean toggle, default on | The admin asked for it, and it is the one surface where "will this drain the room's batteries" is a real objection. Default on because the toggle is moot while `backdropMotion` is `off` |
+| Phones | Separate boolean toggle, default on | The admin asked for it, and it is the one surface where "will this drain the room's batteries" is a real objection. Default on because the toggle is moot while `backdropMotion` is `off`. If the selected pattern is an uploaded image, phones draw no backdrop at all and motion resolves to off there regardless of the toggle |
 | Whole-layer styles | Animate `transform` on the one layer `QuizParts.jsx:305` already sizes | Dots, grid and stripes are CSS gradients; animating `background-position` is a repaint per frame on every device in the room. One transform path covers all four styles and all twelve patterns and stays on the compositor |
 | Per-mark styles | Animate the CSS `translate` property, not `transform` | Marks already carry an inline `transform: rotate(…) scale(…)` (`QuizParts.jsx:160`, `:206`). An animation writing `transform` silently discards that rotation. `translate` is a separate property that composes with it, so no field has to be restructured |
 | Durations | A shared table in `quizTheme.js`, applied inline | Same shape as `Confetti` (`QuizParts.jsx:368`), which already sets `animationDuration` from a JS table. Keyframe *names* stay out of the pure file — that is the `characters.css` boundary |
 | Picture-only styles | `pan` is greyed out **and** falls back to `off` | Asked for, and it mirrors `cleanPattern` (`quizTheme.js:311`), which already turns `pattern: 'image'` into `none` when the picture is missing. Both halves are needed: the studio for a real admin, the sanitiser for a hand-edited row |
-| Markless patterns | Per-mark styles resolve to a whole-layer stand-in at render time | See §5.2. Five of twelve patterns have no discrete marks to float, and greying out three of eight buttons across five of twelve patterns is a picker nobody can read |
+| Markless patterns | Per-mark styles resolve to a whole-layer stand-in at render time | See §5.2. Six of twelve patterns have no discrete marks to float, and greying out three of eight buttons across those patterns is a picker nobody can read |
 
 ### The two calls made without asking
 
@@ -159,9 +159,10 @@ export const MOTION_DURATIONS = {
 
 export const MOTION_SPEED_LABELS = ['Calm', 'Gentle', 'Steady', 'Brisk', 'Lively']
 
-// How far a translating layer is grown so a drift never exposes an edge. Only the two styles that translate need this;
-// the scaling ones grow themselves. Percent of the layer.
+// Translation amplitude and independent bleed, both as percentages. Bleed covers the expanded layer's own transform
+// reference box plus Orbit's vertical and rotational excursion on portrait and landscape screens.
 export const MOTION_DISTANCE = { drift: 5, orbit: 5 }
+export const MOTION_BLEED = { drift: 15, orbit: 15 }
 ```
 
 `MOTION_DURATIONS` has no `off` entry and no picture key; `off` never reaches a duration lookup, and `pan` is in there
@@ -175,25 +176,26 @@ because the photograph moves even though the pattern layer does not.
 
 | Key | Label | What moves | Layer | Works on |
 |---|---|---|---|---|
-| `drift` | Drift | the whole pattern slides sideways and back | one | every pattern |
-| `orbit` | Orbit | the same slide, diagonally, with a gentle tilt | one | every pattern |
-| `breathe` | Breathe | the whole backdrop swells in and out, slowly | one | every pattern |
-| `bounce` | Bounce | the whole backdrop springs in scale with overshoot | one | every pattern |
-| `float` | Float | each mark bobs on its own phase | marks | marked patterns |
-| `cascade` | Cascade | each mark falls, fading out as it goes | marks | marked patterns |
-| `twinkle` | Twinkle | each mark fades in and out softly | marks | marked patterns |
-| `pan` | Pan | the uploaded picture zooms and drifts | picture | `image` only |
+| `drift` | Drift | the whole pattern slides sideways and back | one | every drawn pattern, on both enabled surfaces |
+| `orbit` | Orbit | the same slide, diagonally, with a gentle tilt | one | every drawn pattern, on both enabled surfaces |
+| `breathe` | Breathe | the whole backdrop swells in and out, slowly | one | every drawn pattern, on both enabled surfaces |
+| `bounce` | Bounce | the whole backdrop springs outward in scale with overshoot | one | every drawn pattern, on both enabled surfaces |
+| `float` | Float | each mark bobs on its own phase | marks | marked patterns; layer stand-in otherwise |
+| `cascade` | Cascade | each mark falls across the viewport, fading out as it goes | marks | marked patterns; layer stand-in otherwise |
+| `twinkle` | Twinkle | each mark fades in and out softly | marks | marked patterns; layer stand-in otherwise |
+| `pan` | Pan | the uploaded picture zooms and drifts | picture | projector with `image`; still zoom retained under reduced motion |
 
 **Bounce is a springy scale, not a hop.** `breathe` is the slow organic swell; `bounce` is the same axis with overshoot and
 a fourth of the cycle, so it reads as a trampoline rather than a pulse. The alternative — each mark hopping on its own
 phase — was rejected because `float` and `cascade` already move marks vertically, and a third vertical mark motion would
 have been the same idea twice.
 
-### 5.2 Five of twelve patterns have no marks
+### 5.2 Six of twelve patterns have no discrete marks
 
 `math`, `notes`, `stars` (glyph fields) and `hexagons`, `rings`, `party` (`ShapeField`) draw discrete marks that can each
 carry their own animation. `dots`, `grid`, `stripes` and `waves` are continuous: a tiled gradient or a single SVG band.
-There is nothing in `dots` to float.
+`image` draws one photograph on the projector and nothing on phones; `none` draws nothing anywhere. That makes six
+patterns with no discrete marks, though `none` resolves to Still and `image` uses its picture on the projector.
 
 Rather than grey out three buttons whenever the pattern changes, each per-mark style resolves to a whole-layer stand-in:
 
@@ -220,8 +222,9 @@ look broken:
   `animation-direction: alternate`, so the reversal is the loop rather than a jump. This is also why they cannot use the
   translate-by-one-tile trick that works for a seamless gradient — a tiled gradient has no period a scattered glyph
   pattern shares.
-- **Cascade** falls. Repeating would teleport every mark from the bottom to the top. It copies `qz-fall`
-  (`index.css:165-169`), which is invisible-reset instead: `opacity: 0` at 0%, in by 10%, out by 100%. The confetti has
+- **Cascade** falls across the viewport. Its `vh` travel distance is relative to the screen rather than the mark's own
+  tiny transform box; repeating would teleport every mark from the bottom to the top. It copies `qz-fall`
+  (`index.css:165-169`), which is invisible-reset instead: `opacity: 0` at 0%, in by 12%, out by 100%. The confetti has
   shipped this way for a year. Cascade adds no rotation and is much slower.
 - **Breathe, bounce, float and twinkle** return to their start state naturally, and loop by repeating.
 
@@ -232,8 +235,8 @@ look broken:
 bug, and a card and a screen showing the same theme must put their marks in the same spots.
 
 Per-mark motion keeps that promise and adds one more rule. `animationDelay` is **negative**, derived from the index —
-`-(i * 7 % 11) * 0.4s` — so the marks are already mid-loop on first paint. Positive delays would make every mark start
-together, which reads as a single pulse and then settles: a visible "wind-up" in the first second of a game.
+`-(((i * 7) % 11) / 11) * duration` — so the marks are already mid-loop on first paint. Positive delays would make every
+mark start together, which reads as a single pulse and then settles: a visible "wind-up" in the first second of a game.
 
 ---
 
@@ -262,21 +265,24 @@ a fixed list and `oneOf` already rejects `__proto__`, `constructor` and arrays-a
 
 ### 7.1 The layer
 
-`QuizBackdrop` (`QuizParts.jsx:279-349`) already renders the right box. The inner layer's `inset` comes from `softened`
-(`QuizParts.jsx:285`), which is `0` when nothing is blurred and `-(blur)px` when it is — so it is a full-bleed box in both
-cases, and negative-inset already grows it for exactly the reason a drifting layer has to be grown.
+`QuizBackdrop` (`QuizParts.jsx:300-409`) already renders the right box. The inner layer's `inset` comes from `softened`
+(`QuizParts.jsx:328-337`): blur grows it in px, and the translating styles grow it equally on all four sides by
+`MOTION_BLEED`. `MOTION_DISTANCE` is the amplitude, not the bleed — percentages in `translate` are measured against the
+already-expanded layer, and Orbit also moves vertically and rotates.
 
-The motion layer is therefore that same div, with `transform` and `will-change: transform` added. Translating styles grow
-it by `MOTION_DISTANCE` first; scaling styles do not need to, because a scale above 1 cannot expose an edge.
+The motion layer is therefore that same div, with `transform` and `will-change: transform` added. Bounce never scales
+below 1, so scaling does not expose an edge.
 
-`pan` animates the `<img>`'s own transform at `QuizParts.jsx:302`, which already carries `scale(photoZoom)`. The keyframes
-multiply into it rather than replacing it, for the same reason the marks keep their rotation.
+`pan` animates the `<img>`'s own transform at `QuizParts.jsx:357-362`. Its inline transform always retains the Size slider's
+static zoom, and the keyframes multiply an additional zoom and drift into it. When reduced-motion disables the keyframes,
+the static image zoom remains in effect. The loop's minimum zoom stays above 1 so it does not expose the image boundary.
 
 ### 7.2 Reduced motion
 
-The new classes join the block at `index.css:197-199` alongside the six that are already there. A motion theme is still
-legible when frozen — every style is a loop, so a still frame is a valid still — which is why this is a media query rather
-than a studio setting an admin has to remember to use.
+The new classes join the block at `index.css:267-274` alongside the six that are already there. Pan keeps the configured
+static image zoom after its animation is disabled. A motion theme is still legible when frozen — every style is a loop, so
+a still frame is a valid still — which is why this is a media query rather than a studio setting an admin has to remember
+to use.
 
 ---
 
@@ -285,11 +291,12 @@ than a studio setting an admin has to remember to use.
 Three controls under the existing Backdrop section (`AdminQuizStudio.jsx:485-587`), after the sliders:
 
 1. **Style** — a row of `Choice` buttons over `THEME_BACKDROP_MOTION`, matching the pattern picker directly above it.
-   `pan` is disabled with a reason unless `pattern === 'image'`.
+   `pan` is natively disabled and described for assistive technology unless a validated picture is selected.
 2. **Speed** — a 1–5 slider over `BACKDROP_RANGES.motionSpeed`, with the five labels under the ticks. Hidden while
    `backdropMotion` is `off`, since there is no speed to set.
-3. **Move on phones** — a checkbox. Hidden while `backdropMotion` is `off`; disabled with a reason when the style is
-   `pan`, because phones never draw an uploaded picture at all (`QuizParts.jsx:281`).
+3. **Move on phones** — a checkbox. Hidden while `backdropMotion` is `off`; disabled with a reason for any image pattern,
+   because phones never draw the uploaded picture or an alternative backdrop (`QuizParts.jsx:302,312`). A phone image
+   pattern resolves to Still even if a hand-edited theme enables the toggle, avoiding an invisible animation.
 
 The studio's preview is `StudioPreview` (`StudioPreview.jsx:207-213`), which already renders the **real** `QuizBackdrop`
 rather than a mock. Motion therefore appears in the preview with no work, and because it passes `surface`, switching the
@@ -308,10 +315,11 @@ The result card preview is unaffected and needs nothing: the card never reads a 
 | `api/_lib/quizTheme.test.js` (updated) | the full-theme fixture at `:17` and the snapshot assertions carry the three new keys |
 | `api/_lib/quizTheme.test.js` (new) | a bad `backdropMotion` falls back to `off`; `pan` falls back to `off` unless `pattern === 'image'`; a kept picture with a changed pattern stops panning |
 | `api/_lib/quizTheme.test.js` (new) | speed clamps 1–5, and `BACKDROP_RANGES.motionSpeed` is round-tripped by the existing mechanical test at `:502` |
-| `api/_lib/quizTheme.test.js` (new) | **every key in `THEME_BACKDROP_MOTION` has a duration and a `@keyframes` in `index.css`**, source-scanned — the trick already used at `:191` to stop the two renderers drifting |
-| `api/_lib/quizTheme.test.js` (new) | **every style resolves to something drawable on every pattern** — no style resolves to `off` except on `none`, and `pan` only on `image` |
+| `api/_lib/quizTheme.test.js` (new) | **every key in `THEME_BACKDROP_MOTION` has a duration, `@keyframes`, a matching `animation-name`, and an infinite loop in `index.css`**, source-scanned |
+| `api/_lib/quizTheme.test.js` (new) | every style resolves to a drawable loop on supported patterns; `none` resolves to Still and Pan resolves to Still unless a picture pattern is active |
 | `api/_lib/quizTheme.test.js` (new) | every per-mark style has a stand-in, and every whole-layer style has no entry in `MOTION_PER_MARK` |
-| `src/components/admin/quizStudio/quizStudio.test.jsx` (updated) | the existing every-look × every-pattern loop, extended over all nine motion settings on every pattern they claim |
+| `src/components/admin/quizStudio/quizStudio.test.jsx` (updated) | the existing every-look × every-pattern loop plus a motion × pattern loop for the projector |
+| `src/components/admin/quizStudio/quizStudio.test.jsx` (new) | image phones get no empty animation; Pan retains static zoom; Pan zoom never falls below 1; Drift/Orbit bleed covers all edges; Bounce never shrinks; Cascade uses viewport distance; unavailable Pan is a native disabled button |
 | `src/components/quiz/quizBackdrop.test.js` | unchanged — every new class mounts on the layer already covered by the `isolate` ancestor rule |
 | existing shape assertions | `quizHandlers.test.js:51` and `:279` gain the three keys |
 
