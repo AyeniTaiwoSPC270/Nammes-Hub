@@ -11,7 +11,6 @@ create table public.quiz_characters (
   spec       jsonb not null check (jsonb_typeof(spec) = 'object'),
   moves      jsonb not null check (jsonb_typeof(moves) = 'object'),
   created_at timestamptz not null default now(),
-  deleted_at timestamptz,
   unique (quiz_id, slot)
 );
 

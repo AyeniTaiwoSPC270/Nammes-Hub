@@ -20,6 +20,8 @@
 |---|---|
 | `supabase/migrations/20261013090000_quiz_character_cast.sql` | **Create.** The table, `cast_mode`, the session snapshot, and the five widened checks. |
 | `supabase/rollbacks/20261013090000_quiz_character_cast.rollback.sql` | **Create.** |
+| `supabase/migrations/20261013100000_quiz_character_slot_retirement.sql` | **Create.** Add the `deleted_at` slot-reservation marker after the initial cast migration. |
+| `supabase/rollbacks/20261013100000_quiz_character_slot_retirement.rollback.sql` | **Create.** Removes `deleted_at`; this permits slot reuse again. |
 | `api/_lib/quizCharacterArt.js` | **Modify.** `sanitizeCharacterSpec`, `sanitizeCharacterMoves`, `sanitizeCast`, `deriveColour`, `castIds`, `allowedAvatarIds`, `characterSpec`. |
 | `api/_lib/quiz.js` | **Modify.** `isAvatarId(value, cast)`. |
 | `api/_lib/castStore.js` | **Create.** Read and write a quiz's cast rows. |
@@ -60,7 +62,6 @@ create table public.quiz_characters (
   spec       jsonb not null check (jsonb_typeof(spec) = 'object'),
   moves      jsonb not null check (jsonb_typeof(moves) = 'object'),
   created_at timestamptz not null default now(),
-  deleted_at timestamptz,
   unique (quiz_id, slot)
 );
 
@@ -97,6 +98,15 @@ alter table public.quiz_characters enable row level security;
 grant select, insert, update, delete on public.quiz_characters to authenticated;
 create policy quiz_characters_admin_all on public.quiz_characters
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
+```
+
+Because the cast migration may already be applied when slot retirement is added, add the marker in its own later
+migration rather than editing and rerunning the original:
+
+```sql
+-- supabase/migrations/20261013100000_quiz_character_slot_retirement.sql
+alter table public.quiz_characters
+  add column if not exists deleted_at timestamptz;
 ```
 
 **Check the generated constraint names first.** Postgres names a column check `<table>_<column>_check`, which is what the
