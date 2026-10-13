@@ -8,7 +8,7 @@ import { useQuizTheme } from './QuizTheme'
 // The backdrop's characters come from the same table the result card draws its maths from, rather than a second list
 // kept in step by hand. The card now reads both tables with a full branch for each, so this line is proof the two
 // renderers agree: a divergent table is caught by the guard tests in quizTheme.test.js.
-import { PATTERN_GLYPHS, PATTERN_GEOMETRY } from '../../../api/_lib/quizTheme.js'
+import { PATTERN_GLYPHS, PATTERN_GEOMETRY, MOTION_PER_MARK, MOTION_DISTANCE, resolveMotion, motionDuration } from '../../../api/_lib/quizTheme.js'
 // The characters' moves live in this stylesheet, not in Character.jsx: the result card renders that same component
 // to an SVG string on the server, and Node cannot parse a stylesheet. Anything that renders a Character and wants
 // its animations imports this file, or imports characters.css itself.
@@ -140,8 +140,21 @@ function scatter(count, cell, mark) {
   }))
 }
 
+// Each mark's place in its loop, as a negative delay so the marks are already mid-animation on first paint. Positive
+// delays would make every mark start together, which reads as one pulse that then settles — a visible wind-up in the
+// first second of a game. Derived from the index like every other mark position, for the same reason `scatter` does it:
+// a backdrop that rearranges itself on reload reads as a bug.
+function markMotion(i, seconds) {
+  return { animationDelay: `${-(((i * 7) % 11) / 11) * seconds}s`, animationDuration: `${seconds}s` }
+}
+
 // Faint symbols scattered behind the page. Positions come from the index so it renders the same every time.
-function GlyphField({ glyphs, count = 14, opacity, scale }) {
+//
+// The opacity lives on the wrapper rather than on each span, because Twinkle animates `opacity` and an animation beats an
+// inline value — a mark that kept its own would never fade. Opacity on a parent multiplies through the subtree, so the
+// result is the same number either way. The wrapper is `inset-0` so the marks' percentage positions still resolve
+// against the same box they did before it existed.
+function GlyphField({ glyphs, count = 14, opacity, scale, motion }) {
   const items = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
@@ -153,15 +166,19 @@ function GlyphField({ glyphs, count = 14, opacity, scale }) {
       })),
     [glyphs, count, scale],
   )
-  return items.map((item, i) => (
-    <span
-      key={i}
-      className="absolute select-none font-bold text-brand"
-      style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, opacity, transform: `rotate(${item.rotate}deg)` }}
-    >
-      {item.glyph}
-    </span>
-  ))
+  return (
+    <div className="absolute inset-0" style={{ opacity }} aria-hidden="true">
+      {items.map((item, i) => (
+        <span
+          key={i}
+          className={`absolute select-none font-bold text-brand${motion ? ` ${motion.className}` : ''}`}
+          style={{ left: `${item.left}%`, top: `${item.top}%`, fontSize: item.size, transform: `rotate(${item.rotate}deg)`, ...motion?.style(i) }}
+        >
+          {item.glyph}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 const DOTS = PATTERN_GEOMETRY.dots
@@ -182,15 +199,17 @@ function hexPoints(cx, cy, r) {
 // Each mark sits in its own square, sized in pixels and positioned by percentage. The square is what keeps the shape
 // itself correct: the SVG fills it and, with the default meet, scales the shape to fit rather than stretching it to a
 // screen of some other aspect.
-function ShapeField({ shape, count, cell, children }) {
+//
+// As in GlyphField, the opacity is on the wrapper so a per-mark animation is free to set its own.
+function ShapeField({ shape, count, cell, children, motion }) {
   const items = useMemo(() => scatter(count, cell, shape.mark), [count, cell, shape.mark])
   return (
-    <div className="absolute inset-0 text-brand" aria-hidden="true">
+    <div className="absolute inset-0 text-brand" style={{ opacity: shape.opacity }} aria-hidden="true">
       {items.map((item, i) => (
         <div
           key={i}
-          className="absolute"
-          style={{ left: `${item.left}%`, top: `${item.top}%`, width: item.size, height: item.size, opacity: shape.opacity }}
+          className={`absolute${motion ? ` ${motion.className}` : ''}`}
+          style={{ left: `${item.left}%`, top: `${item.top}%`, width: item.size, height: item.size, ...motion?.style(i) }}
         >
           {children(item, i)}
         </div>
@@ -199,10 +218,10 @@ function ShapeField({ shape, count, cell, children }) {
   )
 }
 
-function HexagonField({ opacity, scale }) {
+function HexagonField({ opacity, scale, motion }) {
   return (
-    <ShapeField shape={{ ...HEX, opacity }} count={HEX.count} cell={HEX.cell}>
-      {(item, i) => (
+    <ShapeField shape={{ ...HEX, opacity }} count={HEX.count} cell={HEX.cell} motion={motion}>
+      {(item) => (
         <svg viewBox="0 0 100 100" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth={7} style={{ transform: `rotate(${item.rotate * 0.5}deg) scale(${scale})` }}>
           <polygon points={hexPoints(50, 50, 44)} />
         </svg>
@@ -211,9 +230,9 @@ function HexagonField({ opacity, scale }) {
   )
 }
 
-function RingField({ opacity, scale }) {
+function RingField({ opacity, scale, motion }) {
   return (
-    <ShapeField shape={{ ...RINGS, opacity }} count={RINGS.count} cell={RINGS.cell}>
+    <ShapeField shape={{ ...RINGS, opacity }} count={RINGS.count} cell={RINGS.cell} motion={motion}>
       {() => (
         <svg viewBox="0 0 100 100" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth={5} style={{ transform: `scale(${scale})` }}>
           {[0, 1, 2].map((r) => (
@@ -227,9 +246,9 @@ function RingField({ opacity, scale }) {
 
 // Balloons, hats, streamers and loose confetti, cycling in that order so every scatter shows all four rather than thirty
 // balloons. Drawn as shapes because the card has no emoji font; see the note on PATTERN_GEOMETRY.party.
-function PartyField({ opacity, scale }) {
+function PartyField({ opacity, scale, motion }) {
   return (
-    <ShapeField shape={{ ...PARTY, opacity }} count={PARTY.count} cell={PARTY.cell}>
+    <ShapeField shape={{ ...PARTY, opacity }} count={PARTY.count} cell={PARTY.cell} motion={motion}>
       {(item, i) => {
         const r = 14 + (item.size % 6)
         const w = 60 + (item.size % 14)
@@ -275,18 +294,52 @@ function PartyField({ opacity, scale }) {
 // a screen is wired up without it.
 //
 // `surface` decides whether an uploaded picture is drawn. Phones pass nothing and so get 'phone', which means forgetting
-// the prop can only ever leave the picture off the projector, never push it onto fifty players' screens.
+// the prop can only ever leave the picture off the projector, never push it onto fifty players' screens. It also decides
+// whether the backdrop moves there: the phone toggle is the one place motion is per-surface, because fifty animated
+// handsets is a battery question rather than a taste question.
 export function QuizBackdrop({ surface = 'phone' }) {
-  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim, backdropFit } = useQuizTheme()
+  const { pattern, image, backdropOpacity, backdropScale, backdropBlur, backdropDim, backdropFit, backdropMotion, backdropMotionSpeed, backdropMotionOnPhones } = useQuizTheme()
   const photo = surface === 'projector' && pattern === 'image' && image ? brandingUrl(image) : null
   const opacity = backdropOpacity / 100
   const scale = backdropScale / 100
-  // A blurred layer fades to nothing at its own edge, so it is grown by the blur radius to keep the corners filled.
-  const softened = { filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined, inset: backdropBlur > 0 ? `-${backdropBlur}px` : 0 }
+  // A blurred layer fades to nothing at its own edge, so it is grown by the blur radius to keep the corners filled. A
+  // drifting layer has the same problem for a different reason — it slides its own edge across the screen — so the two
+  // grow together. They grow in different units, which `inset` allows: px for the blur, % for the drift.
+  const blur = backdropBlur > 0 ? `-${backdropBlur}px` : '0px'
+  // The loop actually drawn, which is not always the one chosen: a per-mark style on a pattern with no marks becomes its
+  // whole-layer stand-in. Resolved here rather than when saving, so switching pattern and switching back keeps the
+  // admin's own choice.
+  const style = surface === 'phone' && !backdropMotionOnPhones ? 'off' : resolveMotion(backdropMotion, pattern)
+  const seconds = motionDuration(style, backdropMotionSpeed)
+  const perMark = MOTION_PER_MARK.includes(style)
   // A picture has to reach every corner, so its zoom starts at 1 and only ever crops in further. Letting the size slider
   // scale it below 1 would shrink the whole picture away from the edges and leave the page showing through.
   const photoZoom = Math.max(1, scale)
   const fit = { cover: 'object-cover', contain: 'object-contain', stretch: 'object-fill' }[backdropFit] ?? 'object-cover'
+  // Everything except Pan moves one layer, so the four whole-layer styles share a single transform path. That is also
+  // why they are a transform rather than a background-position: Dots, Grid and Stripes are tiled gradients, and sliding
+  // one is a repaint per frame on every device in the room.
+  //
+  // On a picture the same four move the layer the photograph sits in rather than the pattern layer, because a Drift over
+  // an uploaded picture plainly means the picture drifts.
+  const layerStyleName = style === 'off' || perMark || style === 'pan' ? '' : style
+  const layerClass = layerStyleName ? `qz-bd-${layerStyleName}` : ''
+  const shift = MOTION_DISTANCE[layerStyleName]
+  // A blurred layer fades to nothing at its own edge, and a drifting layer slides its own edge across the screen, so both
+  // are grown. They grow in different units, which `inset` allows: px for the blur, % for the drift.
+  const grow = shift ?? 0
+  const softened = {
+    filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
+    inset: grow > 0 ? `${blur} -${grow}% ${blur} -${grow}%` : blur,
+  }
+  const layerStyle = layerClass
+    ? { animationDuration: `${seconds}s`, ...(shift ? { '--qz-bd-shift': `${shift}%` } : {}) }
+    : undefined
+  // The three per-mark styles carry a class and a per-index delay rather than a single timing, and are passed down to the
+  // fields that own the marks.
+  const markMotionArg = perMark
+    ? { className: `qz-bd-${style}`, style: (i) => markMotion(i, seconds) }
+    : undefined
 
   return (
     <div
@@ -298,14 +351,21 @@ export function QuizBackdrop({ surface = 'phone' }) {
       }}
     >
       {photo ? (
-        <div className="absolute overflow-hidden" style={softened}>
-          <img src={photo} alt="" className={`h-full w-full ${fit}`} style={{ opacity, transform: `scale(${photoZoom})` }} />
+        <div className={`absolute overflow-hidden${layerClass ? ` ${layerClass}` : ''}`} style={{ ...softened, ...layerStyle }}>
+          {/* Pan reads the zoom the Size slider already set from a custom property rather than an inline transform, so the
+              keyframes can multiply into it instead of overwriting it. */}
+          <img
+            src={photo}
+            alt=""
+            className={`h-full w-full ${fit}${style === 'pan' ? ' qz-bd-pan' : ''}`}
+            style={{ opacity, ...(style === 'pan' ? { '--qz-bd-zoom': photoZoom, animationDuration: `${seconds}s` } : { transform: `scale(${photoZoom})` }) }}
+          />
         </div>
       ) : (
-        <div className="absolute overflow-hidden" style={softened}>
-          {pattern === 'math' && <GlyphField glyphs={PATTERN_GLYPHS.math} opacity={opacity} scale={scale} />}
-          {pattern === 'notes' && <GlyphField glyphs={PATTERN_GLYPHS.notes} count={16} opacity={opacity} scale={scale} />}
-          {pattern === 'stars' && <GlyphField glyphs={PATTERN_GLYPHS.stars} count={18} opacity={opacity} scale={scale} />}
+        <div className={`absolute overflow-hidden${layerClass ? ` ${layerClass}` : ''}`} style={{ ...softened, ...layerStyle }}>
+          {pattern === 'math' && <GlyphField glyphs={PATTERN_GLYPHS.math} opacity={opacity} scale={scale} motion={markMotionArg} />}
+          {pattern === 'notes' && <GlyphField glyphs={PATTERN_GLYPHS.notes} count={16} opacity={opacity} scale={scale} motion={markMotionArg} />}
+          {pattern === 'stars' && <GlyphField glyphs={PATTERN_GLYPHS.stars} count={18} opacity={opacity} scale={scale} motion={markMotionArg} />}
           {pattern === 'dots' && (
             <div
               className="absolute inset-0 text-brand"
@@ -337,9 +397,9 @@ export function QuizBackdrop({ surface = 'phone' }) {
               }}
             />
           )}
-          {pattern === 'hexagons' && <HexagonField opacity={opacity} scale={scale} />}
-          {pattern === 'rings' && <RingField opacity={opacity} scale={scale} />}
-          {pattern === 'party' && <PartyField opacity={opacity} scale={scale} />}
+          {pattern === 'hexagons' && <HexagonField opacity={opacity} scale={scale} motion={markMotionArg} />}
+          {pattern === 'rings' && <RingField opacity={opacity} scale={scale} motion={markMotionArg} />}
+          {pattern === 'party' && <PartyField opacity={opacity} scale={scale} motion={markMotionArg} />}
         </div>
       )}
       {/* A picture is a picture: this washes it back towards the page colour so a photo can never swallow the text. */}

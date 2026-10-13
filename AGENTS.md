@@ -161,6 +161,24 @@ Both predate the calendar, are out of scope, and are still open:
   when it starts, so editing a quiz never restyles a game already running. New theme fields need a
   default in `DEFAULT_THEME` and a fallback in the matching `clean*` function, or a hand-edited row
   can put junk on the projector.
+- **Backdrop motion is screens-only, and the result card never reads it.** `backdropMotion`,
+  `backdropMotionSpeed` and `backdropMotionOnPhones` move `QuizBackdrop` in the browser; the card is a
+  static PNG drawn on canvas, so it stays still by design and `PREVIEW_THEME_KEYS` needs no entry for
+  them. The eight styles live in `THEME_BACKDROP_MOTION`, with their keyframes in `index.css` named
+  `qz-bd-<style>` — a test source-scans the stylesheet so a style cannot be added without one.
+- **`resolveMotion` runs when drawing, never when saving.** A per-mark style (float, cascade, twinkle)
+  becomes `MOTION_MARKLESS_STANDIN` on a pattern that draws no marks, and `pan` needs a picture. Both
+  are resolved in `QuizBackdrop`, so switching pattern and switching back gives the admin the style they
+  picked. `cleanMotion` separately settles `pan` to `off` on a non-image pattern, the same defence
+  `cleanPattern` gives `image` with no upload.
+- **Per-mark backdrop styles animate the CSS `translate` property, never `transform`.** Every mark
+  carries an inline `transform: rotate(…) scale(…)`, and an animation writing `transform` silently
+  discards it. `translate` composes with it. Twinkle is the one style that moved a mark's opacity onto
+  its field container, because an animation beats an inline value and a mark that kept its own would
+  never fade.
+- **Motion is unverified without a real session.** Whether any of the eight styles looks right, whether
+  a ping-pong reversal reads as smooth, and whether fifty animated phones hold a battery all need a
+  Supabase login and a real room. See `docs/superpowers/specs/2026-10-13-quiz-backdrop-motion-design.md`.
 - **Phones get effects only, never music**, and each player opts in on their own device. Do not read
   `theme.sound.music` from `src/pages/PlayQuiz.jsx`.
 

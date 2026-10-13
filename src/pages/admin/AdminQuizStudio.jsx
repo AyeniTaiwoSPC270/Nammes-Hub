@@ -13,6 +13,12 @@ import {
   THEME_CONFETTI,
   THEME_MUSIC,
   THEME_BACKDROP_FITS,
+  THEME_BACKDROP_MOTION,
+  MOTION_PICTURE_ONLY,
+  MOTION_PER_MARK,
+  MOTION_MARKLESS_STANDIN,
+  MOTION_SPEED_LABELS,
+  hasMarks,
   BACKDROP_RANGES,
   MAX_SPONSORS,
   THEME_HEADLINE_MAX,
@@ -76,6 +82,89 @@ function Choice({ selected, onClick, children, className = '' }) {
     >
       {children}
     </button>
+  )
+}
+
+// The three backdrop-motion controls, kept out of the Backdrop section because they need to reason about the pattern
+// rather than sit under it: which styles are on offer, and whether the phone toggle means anything, both depend on what
+// is currently chosen above them.
+//
+// A style is greyed out rather than hidden when it cannot apply. Hiding it would make the row change shape every time the
+// pattern changed, and an admin would not know a ninth option existed.
+function MotionControls({ theme, change }) {
+  // The same answer the screens get, so a button can never promise a loop the projector will not draw.
+  const picture = theme.pattern === 'image'
+  const marks = hasMarks(theme.pattern)
+  const moving = theme.backdropMotion !== 'off'
+
+  return (
+    <div className="mt-5 border-t border-hairline pt-4">
+      <p className="mb-1 text-xs font-semibold text-ink">Movement</p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {Object.entries(THEME_BACKDROP_MOTION).map(([key, label]) => {
+          // Pan has nothing to move but a photograph, so it needs a picture behind it as well as a picture chosen.
+          const needsPhoto = MOTION_PICTURE_ONLY.includes(key)
+          const usable = !needsPhoto || (picture && Boolean(theme.image))
+          const standIn = MOTION_PER_MARK.includes(key) && !marks ? MOTION_MARKLESS_STANDIN[key] : null
+          return (
+            <Choice
+              key={key}
+              selected={theme.backdropMotion === key}
+              onClick={() => change({ backdropMotion: key })}
+              className={`px-3 py-2.5 ${usable ? '' : 'cursor-not-allowed opacity-45 hover:bg-surface'}`}
+            >
+              <span className="block">{label}</span>
+              {!usable && <span className="mt-0.5 block text-xs font-normal text-ink-muted">Needs your picture</span>}
+              {usable && standIn && (
+                // Said out loud rather than done silently, so a Float that draws as a Breathe on Dots is a choice the
+                // admin can see they made.
+                <span className="mt-0.5 block text-xs font-normal text-ink-muted">becomes {THEME_BACKDROP_MOTION[standIn]} here</span>
+              )}
+            </Choice>
+          )
+        })}
+      </div>
+
+      {moving && (
+        <div className="mt-3 flex flex-col gap-3">
+          <div>
+            <Slider
+              label="Speed"
+              className="accent-orange-500"
+              value={theme.backdropMotionSpeed}
+              min={BACKDROP_RANGES.motionSpeed.min}
+              max={BACKDROP_RANGES.motionSpeed.max}
+              step={BACKDROP_RANGES.motionSpeed.step}
+              onChange={(backdropMotionSpeed) => change({ backdropMotionSpeed })}
+            />
+            {/* Five words under the ticks, so the slider reads as a choice rather than a number. The labels and the
+                range have to stay in step, which one test asserts. */}
+            <div className="mt-1 flex justify-between px-1 text-xs text-ink-muted">
+              {MOTION_SPEED_LABELS.map((word) => (
+                <span key={word}>{word}</span>
+              ))}
+            </div>
+          </div>
+          <label className={`flex items-start gap-2.5 ${picture ? 'cursor-pointer' : 'cursor-not-allowed opacity-45'}`}>
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 accent-orange-500"
+              checked={theme.backdropMotionOnPhones !== false}
+              disabled={picture}
+              onChange={(e) => change({ backdropMotionOnPhones: e.target.checked })}
+            />
+            <span>
+              <span className="block text-sm font-semibold text-ink">Move on phones too</span>
+              <span className="block text-xs text-ink-muted">
+                {picture
+                  ? 'Your picture never shows on phones, so there is nothing there to move.'
+                  : 'Off leaves every player’s screen still, which saves battery across a whole room.'}
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -583,6 +672,7 @@ export default function AdminQuizStudio() {
                   />
                 )}
               </div>
+              <MotionControls theme={theme} change={change} />
               {theme.pattern !== 'none' && <p className="mt-2 text-xs text-ink-muted">Keep the strength low and the fade high, so the projector stays easy to read from the back row.</p>}
             </Section>
 

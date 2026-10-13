@@ -7,7 +7,7 @@ import CharacterGallery from './CharacterGallery'
 import Character from '../../quiz/Character'
 import { CharacterCastContext } from '../../quiz/characterCastContext.js'
 import { BUILTIN_COUNT } from '../../../../api/_lib/quizCharacterArt.js'
-import { THEME_LOOKS, THEME_PATTERNS } from '../../../../api/_lib/quizTheme.js'
+import { THEME_LOOKS, THEME_PATTERNS, THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, hasMarks, resolveMotion } from '../../../../api/_lib/quizTheme.js'
 
 const theme = { look: 'royal', accent: '#123456', pattern: 'waves', confetti: 'stars', headline: 'Freshers Night', tagline: 'Phones out' }
 
@@ -227,6 +227,63 @@ describe('studio preview', () => {
     for (const look of Object.keys(THEME_LOOKS)) for (const pattern of Object.keys(THEME_PATTERNS)) {
       expect(() => renderToStaticMarkup(<StudioPreview theme={{ look, pattern }} surface="projector" screen="question" title="" />)).not.toThrow()
     }
+  })
+  describe('backdrop motion', () => {
+    // Rendering without throwing proves nothing here: a mistyped class name, or a style that quietly resolved to Still,
+    // is a perfectly valid still backdrop. So these assert the class actually reaches the markup, which is the
+    // difference between "the projector moves" and "nothing failed".
+    const draw = (theme, surface = 'projector') =>
+      renderToStaticMarkup(<StudioPreview theme={theme} surface={surface} screen="question" title="" />)
+    const q = '11111111-1111-4111-8111-111111111111'
+    const pic = `${q}/33333333-3333-4333-8333-333333333333.webp`
+
+    it('puts the chosen loop on the markup, on every pattern it claims to work on', () => {
+      for (const motion of Object.keys(THEME_BACKDROP_MOTION)) {
+        for (const pattern of Object.keys(THEME_PATTERNS)) {
+          const drawn = resolveMotion(motion, pattern)
+          // 'My image' needs the picture behind it or the sanitiser settles it to Plain before anything is drawn.
+          const html = draw({ pattern, backdropMotion: motion, image: pattern === 'image' ? pic : null })
+          if (drawn === 'off') {
+            expect(html, `${motion} on ${pattern} should draw nothing`).not.toMatch(/qz-bd-/)
+          } else {
+            expect(html, `${motion} on ${pattern} draws as ${drawn} but no class reached the markup`).toContain(`qz-bd-${drawn}`)
+            expect(html, `${motion} on ${pattern} has no duration`).toContain('animation-duration')
+          }
+        }
+      }
+    })
+    it('keeps every mark its own rotation when the marks are moving', () => {
+      // Float, Cascade and Twinkle animate the `translate` property precisely so they cannot clobber the inline
+      // transform each mark already carries. An animation writing `transform` instead would leave the page perfectly
+      // valid and every mark sitting upright.
+      const html = draw({ pattern: 'hexagons', backdropMotion: 'float' })
+      expect(html).toContain('qz-bd-float')
+      expect(html).toMatch(/rotate\(-?\d/)
+      expect(html, 'marks must start spread through the loop, not all at once').toMatch(/animation-delay:-[\d.]+s/)
+    })
+    it('leaves the phones still when the phone toggle is off, without touching the projector', () => {
+      // The whole point of the toggle: the projector can move for the room while fifty handsets stay still.
+      const moving = { pattern: 'math', backdropMotion: 'drift' }
+      expect(draw(moving, 'phone'), 'phones move when the toggle is on').toContain('qz-bd-drift')
+      expect(draw({ ...moving, backdropMotionOnPhones: false }, 'phone'), 'phones stay still').not.toContain('qz-bd-')
+      expect(draw({ ...moving, backdropMotionOnPhones: false }, 'projector'), 'the projector is not a phone').toContain('qz-bd-drift')
+    })
+    it('draws a still backdrop exactly as it did before motion existed', () => {
+      // 'off' has to leave no trace, or every existing quiz would change appearance the day this shipped.
+      const plain = draw({ pattern: 'hexagons' })
+      const still = draw({ pattern: 'hexagons', backdropMotion: 'off' })
+      expect(still).toBe(plain)
+      expect(still).not.toContain('qz-bd-')
+    })
+    it('never asks a pattern without marks to move marks it does not have', () => {
+      for (const pattern of Object.keys(THEME_PATTERNS)) {
+        for (const motion of ['float', 'cascade', 'twinkle']) {
+          const drawn = resolveMotion(motion, pattern)
+          if (hasMarks(pattern) && pattern !== 'none') expect(drawn, `${motion} on ${pattern}`).toBe(motion)
+          else expect(MOTION_PICTURE_ONLY, `${motion} on ${pattern} fell back to a picture-only loop`).not.toContain(drawn)
+        }
+      }
+    })
   })
   it('spreads a drawn pattern across the whole screen, not into one corner of it', () => {
     // Hexagons, rings and party used to be painted into an <svg> with no viewBox using percentage numbers as user units,

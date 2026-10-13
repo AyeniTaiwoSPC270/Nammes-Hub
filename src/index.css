@@ -182,6 +182,64 @@
 .qz-fall { animation: qz-fall linear infinite; }
 .qz-float { animation: qz-float 3s ease-in-out infinite; }
 .qz-urgent { animation: qz-urgent 0.6s ease-in-out infinite; }
+
+/* Backdrop motion. One keyframe per style the studio offers, named qz-bd-<style> so the styles list in quizTheme.js and
+   the names here can be checked against each other — a style with no keyframe is a still projector and nothing fails.
+
+   Three of these are written as a ping-pong rather than a repeat, because repeating a translation snaps it back to the
+   start on every cycle: the renderer sets `alternate`, and the reversal *is* the loop. Drift and orbit could instead step
+   one tile and jump, which is seamless for a tiled gradient but not for a scattered glyph field, and the glyph fields are
+   the common case. Cascade resets by fading out rather than by teleporting back up, copying qz-fall above.
+
+   The three per-mark styles animate `translate`, not `transform`, because every mark already carries an inline
+   transform for its own rotation and scale — an animation writing `transform` would silently discard it. `translate` is a
+   separate property that composes with it, so no field has to be restructured to animate its marks. */
+@keyframes qz-bd-drift {
+  from { transform: translateX(calc(var(--qz-bd-shift, 5%) * -1)); }
+  to { transform: translateX(var(--qz-bd-shift, 5%)); }
+}
+@keyframes qz-bd-orbit {
+  from { transform: translate(calc(var(--qz-bd-shift, 5%) * -1), calc(var(--qz-bd-shift, 5%) * -0.5)) rotate(-1.5deg); }
+  to { transform: translate(var(--qz-bd-shift, 5%), calc(var(--qz-bd-shift, 5%) * 0.5)) rotate(1.5deg); }
+}
+@keyframes qz-bd-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+@keyframes qz-bd-bounce {
+  0%, 100% { transform: scale(1); }
+  38% { transform: scale(1.075); }
+  62% { transform: scale(0.965); }
+  82% { transform: scale(1.018); }
+}
+/* Fades rather than resetting, so a falling mark teleports from the floor back to the top while it is invisible. */
+@keyframes qz-bd-cascade {
+  0% { translate: 0 -14%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { translate: 0 118%; opacity: 0; }
+}
+@keyframes qz-bd-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -1.15rem; }
+}
+@keyframes qz-bd-twinkle {
+  0%, 100% { opacity: 0.34; }
+  50% { opacity: 1; }
+}
+/* Multiplies into the zoom the picture's own Size slider already applied, rather than replacing it — the zoom arrives as
+   a custom property precisely so it can be read from inside a keyframe. */
+@keyframes qz-bd-pan {
+  0%, 100% { transform: scale(calc(var(--qz-bd-zoom, 1) / 1.09)) translateX(-1.6%); }
+  50% { transform: scale(calc(var(--qz-bd-zoom, 1) * 1.09)) translateX(1.6%); }
+}
+.qz-bd-drift, .qz-bd-orbit { animation-direction: alternate; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+.qz-bd-breathe, .qz-bd-bounce { animation-direction: alternate; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+.qz-bd-cascade, .qz-bd-float, .qz-bd-twinkle, .qz-bd-pan { animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+/* A drifting layer is grown past the screen so its own edge cannot slide into view, the same reason the blur grows it. */
+.qz-bd-drift, .qz-bd-orbit { will-change: transform; }
+.qz-bd-breathe, .qz-bd-bounce, .qz-bd-pan { will-change: transform; }
+.qz-bd-cascade, .qz-bd-float { will-change: translate; }
 /* The results report prints on A4 without the site header, footer or buttons. */
 @media print {
   body.qz-report header,
@@ -196,4 +254,10 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .qz-pop, .qz-rise, .qz-grow, .qz-fall, .qz-float, .qz-urgent { animation: none; }
+  /* Every backdrop style is a loop, so a frozen frame is always a presentable still — none of them can look broken when
+     this switches them off, which is why this is a media query and not a studio setting to remember. */
+  .qz-bd-drift, .qz-bd-orbit, .qz-bd-breathe, .qz-bd-bounce, .qz-bd-cascade, .qz-bd-float, .qz-bd-twinkle, .qz-bd-pan {
+    animation: none;
+    will-change: auto;
+  }
 }
