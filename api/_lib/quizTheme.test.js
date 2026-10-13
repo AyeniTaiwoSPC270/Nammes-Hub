@@ -6,6 +6,8 @@ import {
   themeCssVars, themeAccent, contrastWithWhite, contrastRatio, isHexColor, withLook, withAccent, withPage,
   withSchemeColors, SCHEME_COLOR_KEYS,
   PATTERN_GLYPHS, PATTERN_GEOMETRY, PATTERN_UNDRAWN, PAGE_LIGHT, PAGE_DARK, ACCENT_DERIVED_TOKENS,
+  THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, MOTION_PER_MARK, MOTION_MARKLESS_STANDIN, MOTION_DURATIONS,
+  MOTION_SPEED_LABELS, MOTION_DISTANCE, resolveMotion, motionDuration, hasMarks,
 } from './quizTheme.js'
 
 describe('sanitizeTheme', () => {
@@ -14,7 +16,7 @@ describe('sanitizeTheme', () => {
   })
   it('keeps valid choices', () => {
     const chosen = { music: 'hype', effects: false, off: ['join'], custom: { music: null, effects: { tick: 'abc12345' } } }
-    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', glowA: null, glowB: null, deepA: null, deepB: null, pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
+    const t = { look: 'midnight', accent: '#AbCdEf', page: '#101010', glowA: null, glowB: null, deepA: null, deepB: null, pattern: 'waves', image: null, backdropOpacity: 30, backdropScale: 150, backdropBlur: 6, backdropDim: 20, backdropFit: 'contain', backdropMotion: 'drift', backdropMotionSpeed: 5, backdropMotionOnPhones: false, confetti: 'petals', headline: 'Quiz Night', tagline: 'Phones out', sound: chosen, logo: null, sponsors: [], showSponsors: { lobby: false, finish: true } }
     expect(sanitizeTheme(t)).toEqual({ ...t, accent: '#abcdef', page: '#101010' })
   })
   it('drops anything that is not on the fixed lists', () => {
@@ -500,7 +502,7 @@ describe('backdrop settings', () => {
     }
   })
   it('offers every slider a range the sanitizer keeps, so the studio cannot hand out a value that gets thrown away', () => {
-    expect(Object.keys(BACKDROP_RANGES)).toEqual(['opacity', 'scale', 'blur', 'dim'])
+    expect(Object.keys(BACKDROP_RANGES)).toEqual(['opacity', 'scale', 'blur', 'dim', 'motionSpeed'])
     const field = (name) => `backdrop${name[0].toUpperCase()}${name.slice(1)}`
     for (const [name, { min, max, step }] of Object.entries(BACKDROP_RANGES)) {
       expect(min, name).toBeLessThan(max)
@@ -508,6 +510,154 @@ describe('backdrop settings', () => {
       expect(sanitizeTheme({ [field(name)]: min })[field(name)], `${name} min`).toBe(min)
       expect(sanitizeTheme({ [field(name)]: max })[field(name)], `${name} max`).toBe(max)
     }
+  })
+})
+
+describe('backdrop motion', () => {
+  const pic = `${QUIZ_A}/${FILE}-1767261600000.webp`
+  it('is still by default, so no quiz starts moving on its own', () => {
+    // A projector may already be on air, and every next game copies this default when it starts.
+    expect(DEFAULT_THEME.backdropMotion).toBe('off')
+    expect(sanitizeTheme({})).toMatchObject({ backdropMotion: 'off', backdropMotionSpeed: 3, backdropMotionOnPhones: true })
+  })
+  it('only accepts a style that is on the list, so nothing reaches CSS', () => {
+    for (const style of Object.keys(THEME_BACKDROP_MOTION)) {
+      // Pan needs a photograph to pan, so it is asked for in the one configuration where it is valid. That it settles
+      // everywhere else is the next test's job, not this one's.
+      expect(sanitizeTheme({ pattern: 'image', image: pic, backdropMotion: style }, { quizId: QUIZ_A }).backdropMotion, style).toBe(style)
+    }
+    for (const bad of ['__proto__', 'constructor', 'spin', '', 5, null, undefined, ['drift'], { drift: true }]) {
+      expect(sanitizeTheme({ backdropMotion: bad }).backdropMotion, String(bad)).toBe('off')
+    }
+  })
+  it("settles Pan to Still on anything but 'My image', and keeps the picture for next time", () => {
+    // The same double defence cleanPattern gives 'image' with no upload: the studio greys the button out for a real
+    // admin, and this is what catches a hand-edited row. A kept picture with a changed pattern also stops panning, or
+    // the projector would animate a photograph no screen is drawing.
+    for (const pattern of Object.keys(THEME_PATTERNS)) {
+      const withPic = pattern === 'image' ? { pattern, image: pic } : { pattern }
+      expect(sanitizeTheme({ ...withPic, backdropMotion: 'pan' }, { quizId: QUIZ_A }).backdropMotion, pattern).toBe(
+        pattern === 'image' ? 'pan' : 'off',
+      )
+    }
+    // 'My image' with no upload is Plain, and Plain has nothing to pan — the same fall cleanPattern makes.
+    expect(sanitizeTheme({ pattern: 'image', backdropMotion: 'pan' }).backdropMotion).toBe('off')
+    const chosen = sanitizeTheme({ pattern: 'waves', image: pic, backdropMotion: 'pan' }, { quizId: QUIZ_A })
+    expect(chosen.image, 'the picture is kept so switching back does not need a second upload').toBe(pic)
+    expect(chosen.backdropMotion).toBe('off')
+    expect(sanitizeTheme({ pattern: 'image', image: pic, backdropMotion: 'pan' }, { quizId: QUIZ_A }).backdropMotion).toBe('pan')
+  })
+  it('moves phones unless told not to, and reads anything that is not false as yes', () => {
+    // The showSponsors shape, so a row that lost the field gets the common case rather than the quiet one.
+    expect(sanitizeTheme({ backdropMotionOnPhones: false }).backdropMotionOnPhones).toBe(false)
+    for (const missing of [null, undefined, 0, '', 'no']) {
+      expect(sanitizeTheme({ backdropMotionOnPhones: missing }).backdropMotionOnPhones, String(missing)).toBe(true)
+    }
+  })
+  it('holds the speed inside 1 to 5, so no duration can be worked out from nonsense', () => {
+    const { min, max } = BACKDROP_RANGES.motionSpeed
+    expect(sanitizeTheme({ backdropMotionSpeed: 99 }).backdropMotionSpeed).toBe(max)
+    expect(sanitizeTheme({ backdropMotionSpeed: -3 }).backdropMotionSpeed).toBe(min)
+    for (const bad of ['3', null, undefined, {}, NaN, Infinity, true]) {
+      expect(sanitizeTheme({ backdropMotionSpeed: bad }).backdropMotionSpeed, String(bad)).toBe(DEFAULT_THEME.backdropMotionSpeed)
+    }
+    expect(MOTION_SPEED_LABELS).toHaveLength(max - min + 1)
+  })
+
+  describe('the vocabulary the screens and the studio share', () => {
+    it('gives every style a duration and a keyframe, so a typo cannot leave a still projector', () => {
+      // Without this, a style added to the list and a class misspelled in the renderer is a backdrop that simply does
+      // not move, with nothing failing. The same idea as the pattern tables being checked against both renderers.
+      const css = readFileSync('src/index.css', 'utf8')
+      for (const style of Object.keys(THEME_BACKDROP_MOTION)) {
+        if (style === 'off') continue
+        expect(MOTION_DURATIONS[style], `${style} has no duration`).toBeGreaterThan(0)
+        expect(css, `${style} has no @keyframes`).toMatch(new RegExp(`@keyframes qz-bd-${style}\\s*\\{`))
+        // Matched as a selector rather than as a literal, because the rules are grouped: `.qz-bd-drift, .qz-bd-orbit {`
+        expect(css, `${style} has no class`).toMatch(new RegExp(`\\.qz-bd-${style}\\s*[,{]`))
+        // The first rule naming the class has to be the one that starts it, and a style that ran once and stopped would
+        // look identical to one that loops on a single glance at the studio.
+        const at = css.search(new RegExp(`\\.qz-bd-${style}\\s*[,{]`))
+        expect(css.slice(at, css.indexOf('}', at)), `${style} does not loop`).toContain('infinite')
+      }
+      expect(Object.keys(MOTION_DURATIONS).sort()).toEqual(Object.keys(THEME_BACKDROP_MOTION).filter((s) => s !== 'off').sort())
+      for (const label of MOTION_SPEED_LABELS) expect(typeof label).toBe('string')
+    })
+    it('splits the styles into the ones that move one layer and the ones that move each mark', () => {
+      for (const style of MOTION_PER_MARK) {
+        expect(Object.hasOwn(THEME_BACKDROP_MOTION, style), style).toBe(true)
+        expect(Object.hasOwn(MOTION_MARKLESS_STANDIN, style), `${style} has no stand-in for a pattern with no marks`).toBe(true)
+      }
+      // A stand-in must be a whole-layer loop, or Dots would resolve a per-mark style to another per-mark style and
+      // still have nothing to move.
+      for (const [style, standIn] of Object.entries(MOTION_MARKLESS_STANDIN)) {
+        expect(MOTION_PER_MARK, `${style} stands in for itself`).not.toContain(standIn)
+        expect(MOTION_PICTURE_ONLY, `${style} stands in for a picture-only loop`).not.toContain(standIn)
+        expect(Object.hasOwn(MOTION_DURATIONS, standIn), `${style} stands in for ${standIn}, which has no duration`).toBe(true)
+      }
+      for (const style of MOTION_PICTURE_ONLY) expect(MOTION_PER_MARK).not.toContain(style)
+      for (const [style, distance] of Object.entries(MOTION_DISTANCE)) {
+        expect(Object.hasOwn(MOTION_DURATIONS, style), `${style} has no duration`).toBe(true)
+        expect(distance, `${style} grows by nothing`).toBeGreaterThan(0)
+      }
+    })
+    it('resolves every style to something that can be drawn on every pattern', () => {
+      // A style that silently resolved to Still would be a dead button in the studio with no warning anywhere.
+      for (const pattern of Object.keys(THEME_PATTERNS)) {
+        for (const style of Object.keys(THEME_BACKDROP_MOTION)) {
+          const drawn = resolveMotion(style, pattern)
+          if (style === 'off' || pattern === 'none' || (MOTION_PICTURE_ONLY.includes(style) && pattern !== 'image')) {
+            expect(drawn, `${style} on ${pattern}`).toBe('off')
+          } else {
+            expect(drawn, `${style} on ${pattern} draws nothing`).not.toBe('off')
+            expect(Object.hasOwn(MOTION_DURATIONS, drawn), `${style} on ${pattern} resolves to ${drawn}, which has no duration`).toBe(true)
+          }
+        }
+      }
+    })
+    it('keeps the style the admin chose when the pattern changes, so switching back restores it', () => {
+      // The stand-in is applied when drawing, never when saving. Rewriting the row instead would mean an admin who
+      // picked Float, looked at Dots, and went back to Maths had silently lost their choice.
+      const saved = sanitizeTheme({ pattern: 'dots', backdropMotion: 'float' })
+      expect(saved.backdropMotion).toBe('float')
+      expect(resolveMotion(saved.backdropMotion, saved.pattern)).toBe('breathe')
+      expect(sanitizeTheme({ pattern: 'math', backdropMotion: 'float' }).backdropMotion).toBe('float')
+    })
+    it('reads which patterns have marks to move off the two shared tables, not a list of its own', () => {
+      // A third list would be one more thing to remember when a pattern is added, and the tables already say it: a
+      // pattern has marks if it is typed from glyphs or its geometry counts how many to draw.
+      const marked = Object.keys(THEME_PATTERNS).filter(hasMarks)
+      expect(marked.sort()).toEqual(['hexagons', 'math', 'notes', 'party', 'rings', 'stars'])
+      for (const pattern of marked) {
+        expect(PATTERN_GLYPHS[pattern] ?? PATTERN_GEOMETRY[pattern].count, pattern).toBeTruthy()
+      }
+      expect(hasMarks('nope')).toBe(false)
+      expect(hasMarks('none')).toBe(false)
+      // A per-mark style is only swapped for its stand-in exactly where there is nothing to move it on. Anywhere else,
+      // the studio would be promising one thing and the projector drawing another without ever saying so.
+      for (const pattern of Object.keys(THEME_PATTERNS)) {
+        for (const style of MOTION_PER_MARK) {
+          const swap = resolveMotion(style, pattern) !== style
+          expect(swap, `${style} on ${pattern}`).toBe(!hasMarks(pattern))
+        }
+      }
+    })
+  })
+
+  describe('motionDuration', () => {
+    it('runs the table as written at the reference speed, and divides either side of it', () => {
+      for (const [style, base] of Object.entries(MOTION_DURATIONS)) {
+        expect(motionDuration(style, 3), style).toBeCloseTo(base, 1)
+        expect(motionDuration(style, 5), style).toBeLessThan(motionDuration(style, 3))
+        expect(motionDuration(style, 1), style).toBeGreaterThan(motionDuration(style, 3))
+      }
+    })
+    it('has nothing to say about Still, or about a speed outside the slider', () => {
+      expect(motionDuration('off', 3)).toBe(0)
+      expect(motionDuration('spin', 3)).toBe(0)
+      expect(motionDuration('drift', 99)).toBe(motionDuration('drift', BACKDROP_RANGES.motionSpeed.max))
+      expect(motionDuration('drift', -3)).toBe(motionDuration('drift', BACKDROP_RANGES.motionSpeed.min))
+    })
   })
 })
 

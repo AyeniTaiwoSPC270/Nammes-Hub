@@ -190,12 +190,70 @@ export const THEME_TAGLINE_MAX = 80
 // How far the backdrop can be pushed. The studio drives its sliders off these, so a slider cannot drift from the range
 // the sanitizer allows. `scale` is a percentage of the size each pattern is designed at, not a new size in pixels, so
 // the patterns keep their proportions at every setting.
+//
+// `motionSpeed` is the one entry whose name is not simply the field it feeds. The studio and the tests both read this
+// table by turning `opacity` into `backdropOpacity`, so a range called `motion` would derive `backdropMotion` — which is
+// the style, not the speed, and would have that test asserting the *style* round-trips 1 and 5.
 export const BACKDROP_RANGES = {
   opacity: { min: 0, max: 100, step: 1, unit: '%' },
   scale: { min: 50, max: 200, step: 5, unit: '%' },
   blur: { min: 0, max: 24, step: 1, unit: 'px' },
   dim: { min: 0, max: 90, step: 5, unit: '%' },
+  motionSpeed: { min: 1, max: 5, step: 1, unit: '' },
 }
+
+// The backdrop loops an admin can pick from. 'off' is first because it is the default, matching THEME_MUSIC and
+// THEME_CONFETTI. The names are what an admin sees rather than how it is drawn, and there is no way to stack them: one
+// style at a time is a setting an admin can tune, and two at once is one they cannot.
+//
+// Five move the single layer the backdrop already draws in and work on every pattern. Three move each mark on its own
+// phase and need discrete marks to move. One needs a photograph.
+export const THEME_BACKDROP_MOTION = {
+  off: 'Still',
+  drift: 'Drift',
+  orbit: 'Orbit',
+  breathe: 'Breathe',
+  bounce: 'Bounce',
+  float: 'Float',
+  cascade: 'Cascade',
+  twinkle: 'Twinkle',
+  pan: 'Pan',
+}
+
+// The one style with nothing to move but a photograph. Kept beside PATTERN_UNDRAWN, which does the same job for patterns:
+// naming the exception is what lets a table be checked against the list above.
+export const MOTION_PICTURE_ONLY = ['pan']
+
+// The styles that need discrete marks to move individually. Everything else moves one layer, so a pattern with no marks
+// can still be given a style from this list.
+export const MOTION_PER_MARK = ['float', 'cascade', 'twinkle']
+
+// What a per-mark style becomes on a pattern with nothing to move individually. Dots, Grid, Stripes and Waves are a tiled
+// gradient or a single band, so there is no mark in them to float — but an admin who chose Float did not choose to have
+// a dead button, so each style falls to the loop that reads closest to what they asked for. Resolved when drawing rather
+// than when saving, so switching to Maths and back gives them Float again.
+export const MOTION_MARKLESS_STANDIN = { float: 'breathe', cascade: 'drift', twinkle: 'breathe' }
+
+// Seconds per cycle at the reference speed of 3, which speed then divides. Keyframe names live in `index.css` rather than
+// here because this file has to stay free of anything a serverless function cannot load, and because a stylesheet cannot
+// read a theme field to work a duration out for itself. `off` is absent because a still backdrop never asks for one.
+export const MOTION_DURATIONS = {
+  drift: 44,
+  orbit: 58,
+  breathe: 16,
+  bounce: 4.5,
+  float: 7,
+  cascade: 9,
+  twinkle: 6,
+  pan: 30,
+}
+
+// Under the ticks of the speed slider, so the number is a word as well as a reading.
+export const MOTION_SPEED_LABELS = ['Calm', 'Gentle', 'Steady', 'Brisk', 'Lively']
+
+// How far a translating layer is grown so a drift never slides its own edge into view, as a percentage of the layer.
+// Only the two styles that translate need it: the scaling ones grow themselves, since a scale above 1 cannot expose one.
+export const MOTION_DISTANCE = { drift: 5, orbit: 5 }
 
 export const DEFAULT_THEME = Object.freeze({
   look: 'classic',
@@ -212,6 +270,9 @@ export const DEFAULT_THEME = Object.freeze({
   backdropBlur: 0,
   backdropDim: 0,
   backdropFit: 'cover',
+  backdropMotion: 'off',
+  backdropMotionSpeed: 3,
+  backdropMotionOnPhones: true,
   confetti: 'math',
   headline: '',
   tagline: '',
@@ -313,6 +374,18 @@ function cleanPattern(value, image) {
   return pattern === 'image' && !image ? 'none' : pattern
 }
 
+// A picture has nothing to pan without a picture, so Pan settles to Still for the same reason cleanPattern settles an
+// image backdrop to Plain. The `pattern` test rather than an `image` one on purpose: an admin can upload a photo, choose
+// Pan, then switch the pattern to Maths and keep the picture for later — and a pattern backdrop must stop panning, or the
+// projector animates a photograph no screen is drawing.
+//
+// Only Pan is settled here. Float and Cascade on Dots are not settled — they are resolved to a whole-layer loop when the
+// backdrop is drawn (see MOTION_MARKLESS_STANDIN), which keeps the admin's own choice in the saved row.
+function cleanMotion(value, pattern) {
+  const motion = oneOf(THEME_BACKDROP_MOTION, value, DEFAULT_THEME.backdropMotion)
+  return MOTION_PICTURE_ONLY.includes(motion) && pattern !== 'image' ? DEFAULT_THEME.backdropMotion : motion
+}
+
 // The admin's own four scheme colours. Only keys this file names are read, so a hand-edited row carrying extra shape
 // cannot reach through and change a field it was never given: SCHEME_COLOR_KEYS is the whole surface.
 function cleanSchemeColors(input) {
@@ -326,18 +399,22 @@ function cleanSchemeColors(input) {
 export function sanitizeTheme(input, { quizId } = {}) {
   const t = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
   const image = cleanPath(t.image, quizId)
+  const pattern = cleanPattern(t.pattern, image)
   return {
     look: oneOf(THEME_LOOKS, t.look, DEFAULT_THEME.look),
     accent: cleanHexColor(t.accent),
     page: cleanHexColor(t.page),
     ...cleanSchemeColors(t),
-    pattern: cleanPattern(t.pattern, image),
+    pattern,
     image,
     backdropOpacity: num(BACKDROP_RANGES.opacity, t.backdropOpacity, DEFAULT_THEME.backdropOpacity),
     backdropScale: num(BACKDROP_RANGES.scale, t.backdropScale, DEFAULT_THEME.backdropScale),
     backdropBlur: num(BACKDROP_RANGES.blur, t.backdropBlur, DEFAULT_THEME.backdropBlur),
     backdropDim: num(BACKDROP_RANGES.dim, t.backdropDim, DEFAULT_THEME.backdropDim),
     backdropFit: oneOf(THEME_BACKDROP_FITS, t.backdropFit, DEFAULT_THEME.backdropFit),
+    backdropMotion: cleanMotion(t.backdropMotion, pattern),
+    backdropMotionSpeed: num(BACKDROP_RANGES.motionSpeed, t.backdropMotionSpeed, DEFAULT_THEME.backdropMotionSpeed),
+    backdropMotionOnPhones: t.backdropMotionOnPhones !== false,
     confetti: oneOf(THEME_CONFETTI, t.confetti, DEFAULT_THEME.confetti),
     headline: cleanText(t.headline, THEME_HEADLINE_MAX),
     tagline: cleanText(t.tagline, THEME_TAGLINE_MAX),
@@ -375,6 +452,46 @@ export function withAccent(theme, accent) {
 // place to reach rather than a third spelling of cleanHexColor.
 export function withPage(theme, page) {
   return { ...theme, page: cleanHexColor(page) }
+}
+
+// Whether a pattern draws discrete marks that can each be moved on their own, or is a continuous fill with nothing to
+// move. Read off the two shared tables rather than kept as a list of its own: a pattern has marks if it is typed from
+// glyphs, or if its geometry counts how many to draw — and dots, grid, stripes and waves are the four that do neither.
+// A third list would be one more thing to remember when a pattern is added.
+export function hasMarks(pattern) {
+  return Boolean(PATTERN_GLYPHS[pattern]) || Boolean(PATTERN_GEOMETRY[pattern]?.count)
+}
+
+// The loop a backdrop actually draws, which is not always the one that was chosen. A style that needs marks becomes its
+// whole-layer stand-in on a pattern that draws no marks, and Plain draws nothing at all, so it gets Still.
+//
+// This runs when the backdrop is drawn and never when the theme is saved, so switching Dots to Maths and back gives the
+// admin the style they picked. `pattern` is the raw pattern here, because a style may legitimately have been saved
+// before the picture it needs was cleared, and the studio needs the same answer to grey out Pan in the picker.
+//
+// Picture-only is checked before the stand-in, and 'image' has no marks, so an order slip here would quietly turn Pan
+// into Breathe rather than into Still.
+export function resolveMotion(motion, pattern) {
+  if (pattern === 'none') return 'off'
+  if (MOTION_PICTURE_ONLY.includes(motion) && pattern !== 'image') return 'off'
+  // Only a pattern that draws discrete marks can move them one at a time. Anywhere else the style becomes the closest
+  // whole-layer loop, so an admin who picked Float on Dots gets a moving backdrop rather than a dead button.
+  if (MOTION_PER_MARK.includes(motion) && !hasMarks(pattern)) return MOTION_MARKLESS_STANDIN[motion] ?? motion
+  return motion
+}
+
+// The speed the table in MOTION_DURATIONS is written at, which is also the default. Every duration is relative to this, so
+// renaming the middle stop means changing one number here rather than rewriting eight durations.
+const MOTION_REFERENCE_SPEED = 3
+
+// How many seconds one cycle of a style takes at the speed that was chosen. Speed scales the reference: 3 runs the table
+// as written, 5 runs it a third faster and 1 takes three times as long — which is why the slider reads as five words
+// rather than as a multiplier. An unknown style is Still and never asks, hence 0.
+export function motionDuration(motion, speed) {
+  const base = MOTION_DURATIONS[motion]
+  if (!base) return 0
+  const clamped = Math.min(BACKDROP_RANGES.motionSpeed.max, Math.max(BACKDROP_RANGES.motionSpeed.min, speed))
+  return +(base * (MOTION_REFERENCE_SPEED / clamped)).toFixed(2)
 }
 
 // The four scheme colours are one decision with four ends, so one function takes the whole patch rather than four
