@@ -44,7 +44,7 @@ describe('quiz character cast handler', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('updates by row id, removes dropped entries, and keeps the remaining slot unchanged', async () => {
+  it('updates by row id, retires dropped entries, and keeps the remaining slot unchanged', async () => {
     const db = fakeDb({
       quizzes: [{ id: QUIZ, cast_mode: 'all' }],
       quiz_characters: [
@@ -57,9 +57,42 @@ describe('quiz character cast handler', () => {
       post({ op: 'cast', quizId: QUIZ, mode: 'all', characters: [character({ id: 'c1', name: 'Kolar' })] }), res,
     )
     expect(res.statusCode).toBe(200)
-    expect(db.tables.quiz_characters).toHaveLength(1)
+    expect(db.tables.quiz_characters).toHaveLength(2)
     expect(db.tables.quiz_characters[0]).toMatchObject({ id: 'c1', slot: 0, name: 'Kolar' })
+    expect(db.tables.quiz_characters[1]).toMatchObject({ id: 'c2', slot: 1, name: 'Deleted', spec: {}, moves: {}, deleted_at: expect.any(String) })
+    expect(res.body.retiredSlots).toEqual([1])
     expect(db.tables.quizzes[0].cast_mode).toBe('all')
+  })
+
+  it('does not return retired characters in the live roster', async () => {
+    const db = fakeDb({
+      quizzes: [{ id: QUIZ, cast_mode: 'all' }],
+      quiz_characters: [
+        { id: 'c1', quiz_id: QUIZ, ...character() },
+        { id: 'c2', quiz_id: QUIZ, ...character({ slot: 1, name: 'Deleted', spec: {}, moves: {}, deleted_at: '2026-10-13T00:00:00.000Z' }) },
+      ],
+    })
+    const res = fakeRes()
+    await createQuizCastHandler(() => db, { getCaller: caller(false) })(post({ op: 'roster', quizId: QUIZ }), res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.characters.map((entry) => entry.slot)).toEqual([0])
+    expect(res.body.retiredSlots).toEqual([1])
+  })
+
+  it('refuses to allocate a slot that was previously retired', async () => {
+    const db = fakeDb({
+      quizzes: [{ id: QUIZ, cast_mode: 'all' }],
+      quiz_characters: [{ id: 'old', quiz_id: QUIZ, ...character({ name: 'Deleted', spec: {}, moves: {}, deleted_at: '2026-10-13T00:00:00.000Z' }) }],
+    })
+    const res = fakeRes()
+    await createQuizCastHandler(() => db, { getCaller: caller(true) })(
+      post({ op: 'cast', quizId: QUIZ, mode: 'all', characters: [character({ name: 'Replacement' })] }), res,
+    )
+
+    expect(res.statusCode).toBe(400)
+    expect(db.tables.quiz_characters).toHaveLength(1)
+    expect(db.tables.quiz_characters[0].id).toBe('old')
   })
 
   it('rejects a move into a slot that is still occupied without changing the cast', async () => {

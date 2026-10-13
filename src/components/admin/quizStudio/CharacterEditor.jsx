@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   ACCESSORIES, BODIES, DEFAULT_MOOD, EYES, HELLO_MOVES, IDLE_MOVES, MAX_CAST, MOUTHS,
-  PROPS, SAD_MOVES, TOPPERS, WIN_MOVES, avatarInfo, deriveColour, sameDesign, sanitizeCast,
+  PROPS, SAD_MOVES, TOPPERS, WIN_MOVES, avatarInfo, deriveColour, nextCastSlot, sameDesign, sanitizeCast,
 } from '../../../../api/_lib/quizCharacterArt.js'
 import { contrastWithWhite } from '../../../../api/_lib/quizTheme.js'
 import Character from '../../quiz/Character'
@@ -66,7 +66,11 @@ export default function CharacterEditor({ quizId }) {
       // reach the save boundary. Names are restored after all drawing fields have gone through the shared cleaner.
       characters: next.characters.map((character) => ({ ...character, name: character.name.trim() || '_' })),
     })
-    setDraft({ ...cleaned, characters: cleaned.characters.map((character, index) => ({ ...character, name: names[index] })) })
+    setDraft({
+      ...cleaned,
+      retiredSlots: next.retiredSlots ?? cast.retiredSlots ?? [],
+      characters: cleaned.characters.map((character, index) => ({ ...character, name: names[index] })),
+    })
   }
 
   function updateCharacter(patch) {
@@ -82,9 +86,8 @@ export default function CharacterEditor({ quizId }) {
   }
 
   function addCharacter() {
-    const used = new Set(cast.characters.map((character) => character.slot))
-    const slot = Array.from({ length: MAX_CAST }, (_, index) => index).find((index) => !used.has(index))
-    if (slot === undefined) return
+    const slot = nextCastSlot(cast)
+    if (slot === null) return
     changeCast({ ...cast, characters: [...cast.characters, newCharacter(slot)] })
     setSelectedSlot(slot)
     setOpen('name')
@@ -93,7 +96,11 @@ export default function CharacterEditor({ quizId }) {
   function deleteCharacter() {
     if (!selected) return
     const characters = cast.characters.filter((character) => character.slot !== selected.slot)
-    changeCast({ ...cast, mode: characters.length === 0 ? 'builtins' : cast.mode, characters })
+    // Only a saved row consumed a slot; deleting a new unsaved draft leaves its slot available.
+    const retiredSlots = selected.id
+      ? [...new Set([...(cast.retiredSlots ?? []), selected.slot])].sort((a, b) => a - b)
+      : cast.retiredSlots ?? []
+    changeCast({ ...cast, mode: characters.length === 0 ? 'builtins' : cast.mode, characters, retiredSlots })
     setSelectedSlot(characters[0]?.slot ?? null)
   }
 
@@ -108,16 +115,18 @@ export default function CharacterEditor({ quizId }) {
     : []
   const color = selected?.spec.color ?? DEFAULT_MOOD.color.main
   const contrast = contrastWithWhite(deriveColour(color).dark)
+  const allocatedSlots = cast.characters.length + (cast.retiredSlots?.length ?? 0)
+  const hasInvalidName = cast.characters.some((character) => !character.name.trim())
 
   return (
     <section className="rounded-2xl border border-hairline bg-surface p-5 shadow-md" aria-label="Character cast editor">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-ink-900">Your character cast</h2>
-          <p className="text-sm text-ink-muted">Design up to {MAX_CAST} characters. Their slots stay fixed when you remove one.</p>
+          <p className="text-sm text-ink-muted">Each quiz has {MAX_CAST} stable slots. Removing a saved character retires its slot.</p>
         </div>
-        <button type="button" onClick={addCharacter} disabled={cast.characters.length >= MAX_CAST} className="min-h-11 rounded-full bg-orange-500 px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
-          Add character ({cast.characters.length}/{MAX_CAST})
+        <button type="button" onClick={addCharacter} disabled={allocatedSlots >= MAX_CAST} className="min-h-11 rounded-full bg-orange-500 px-4 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">
+          Add character ({allocatedSlots}/{MAX_CAST} slots used)
         </button>
       </div>
 
@@ -230,15 +239,18 @@ export default function CharacterEditor({ quizId }) {
               </section>
             ))}
             {duplicates.length > 0 && <p role="status" className="rounded-lg bg-orange-500/10 p-3 text-sm text-ink-900">This design matches {duplicates.join(', ')}. You can still save it.</p>}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" onClick={deleteCharacter} className="min-h-11 rounded-full border border-hairline px-4 text-sm font-semibold text-ink-900">Delete character</button>
-              <button type="button" onClick={() => saveMutation.mutate(cast, { onSuccess: () => setDraft(null) })} disabled={saveMutation.isPending || !selected.name.trim()} className="min-h-11 rounded-full bg-orange-500 px-5 text-sm font-bold text-white disabled:opacity-50">
-                {saveMutation.isPending ? 'Saving…' : 'Save cast'}
-              </button>
-              {draft && <button type="button" onClick={() => setDraft(null)} className="min-h-11 rounded-full border border-hairline px-4 text-sm font-semibold text-ink-900">Discard changes</button>}
-            </div>
-            {saveMutation.isError && <p role="alert" className="text-sm text-red-600">{saveMutation.error.message}</p>}
           </div>
+        </div>
+      )}
+      {(draft || selected) && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {selected && <button type="button" onClick={deleteCharacter} className="min-h-11 rounded-full border border-hairline px-4 text-sm font-semibold text-ink-900">Delete character</button>}
+          <button type="button" onClick={() => saveMutation.mutate(cast, { onSuccess: () => setDraft(null) })} disabled={saveMutation.isPending || hasInvalidName} className="min-h-11 rounded-full bg-orange-500 px-5 text-sm font-bold text-white disabled:opacity-50">
+            {saveMutation.isPending ? 'Saving…' : 'Save cast'}
+          </button>
+          {draft && <button type="button" onClick={() => setDraft(null)} className="min-h-11 rounded-full border border-hairline px-4 text-sm font-semibold text-ink-900">Discard changes</button>}
+          {hasInvalidName && <p role="status" className="w-full text-sm text-ink-muted">Every character needs a name before the cast can be saved.</p>}
+          {saveMutation.isError && <p role="alert" className="w-full text-sm text-red-600">{saveMutation.error.message}</p>}
         </div>
       )}
     </section>

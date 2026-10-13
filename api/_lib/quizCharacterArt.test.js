@@ -4,7 +4,7 @@ import {
   BUILTIN_COUNT, avatarInfo, normalizeAvatarId, BODIES, TOPPERS, EYES, MOUTHS, ACCESSORIES, PROPS,
   IDLE_MOVES, WIN_MOVES, SAD_MOVES, HELLO_MOVES, BODY, DEFAULT_MOOD,
   sanitizeCharacterSpec, sanitizeCharacterMoves, sanitizeCast, deriveColour, castIds, allowedAvatarIds,
-  characterSpec, sameDesign, MAX_CAST,
+  characterSpec, sameDesign, nextCastSlot, MAX_CAST,
 } from './quizCharacterArt.js'
 
 const all = Array.from({ length: BUILTIN_COUNT }, (_, id) => avatarInfo(id))
@@ -320,6 +320,11 @@ describe('sanitizeCast and id resolution', () => {
     expect(castIds({ ...cast, mode: 'custom' })).toEqual([50, 52])
     expect(castIds({ ...cast, mode: 'builtins' })).toEqual(Array.from({ length: 50 }, (_, id) => id))
     expect([...allowedAvatarIds(cast)].sort((a, b) => a - b)).toEqual(castIds(cast))
+  })
+
+  it('allocates only never-used slots, not retired holes', () => {
+    expect(nextCastSlot({ characters: [{ slot: 1 }], retiredSlots: [0] })).toBe(2)
+    expect(nextCastSlot({ characters: [], retiredSlots: Array.from({ length: MAX_CAST }, (_, slot) => slot) })).toBeNull()
   })
 
   it('resolves built-ins and cast ids, falling back safely when the cast is not offered', () => {

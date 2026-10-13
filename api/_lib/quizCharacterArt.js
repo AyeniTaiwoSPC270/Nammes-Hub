@@ -1136,6 +1136,14 @@ export const MAX_CAST = 12
 export const CAST_MODES = ['builtins', 'all', 'custom']
 const HEX = /^#[0-9a-f]{6}$/
 
+export function nextCastSlot(cast) {
+  const taken = new Set([
+    ...(Array.isArray(cast?.characters) ? cast.characters.map((character) => character.slot) : []),
+    ...(Array.isArray(cast?.retiredSlots) ? cast.retiredSlots : []),
+  ])
+  return Array.from({ length: MAX_CAST }, (_, slot) => slot).find((slot) => !taken.has(slot)) ?? null
+}
+
 const oneOf = (list, value, fallback) => (typeof value === 'string' && list.includes(value) ? value : fallback)
 
 export function sanitizeCharacterSpec(raw) {

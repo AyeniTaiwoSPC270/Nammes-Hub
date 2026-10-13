@@ -60,7 +60,7 @@ import { BODIES, TOPPERS, EYES, MOUTHS, ACCESSORIES, PROPS, BODY, DEFAULT_MOOD }
 
 const NEW_PARTS = {
   bodies: ['pot', 'capsule', 'puck', 'cup', 'cone', 'moon'],
-  toppers: ['fin', 'mohawk', 'beret', 'headphones-over', 'leafcrown', 'antennae', 'braid', 'pigtails', 'curls', 'bandana', 'cowlick', 'tiara'],
+  toppers: ['fin', 'mohawk', 'beret', 'headband-over', 'leafcrown', 'antennae', 'braid', 'pigtails', 'curls', 'bandana', 'cowlick', 'tiara'],
   eyes: ['goggles-round', 'sleep', 'wink-left', 'shades', 'heart-eyes', 'hollow', 'glasses-dot', 'squint'],
   mouths: ['zigzag', 'smiley', 'open-smile', 'flat-wide', 'smirk-left', 'stitched'],
   accessories: ['weldmask', 'labcoat', 'goggles-on-hat', 'headband', 'apron', 'earmuffs', 'medal', 'scarf-long', 'gloves', 'toolbelt', 'armband', 'pocketwatch', 'ribbon', 'chain', 'badge', 'flask'],
@@ -240,7 +240,7 @@ because that is the whole reason a topper works on all 19 bodies and the reason 
         h('ellipse', { cx: 50, cy: top + 4, rx: 21, ry: 8, fill: color.dark }),
         h('circle', { cx: 50, cy: top - 5, r: 2.4, fill: color.dark }),
       ]
-    case 'headphones-over':
+    case 'headband-over':
       return [
         h('path', { d: `M${50 - ey} ${ey + 2}Q50 ${top - 8} ${50 + ey} ${ey + 2}`, fill: 'none', stroke: '#111827', strokeWidth: '4.4', strokeLinecap: 'round' }),
         h('rect', { x: 50 - ey - 8, y: ey, width: 9, height: 15, rx: 4, fill: color.dark }),
@@ -289,7 +289,7 @@ Then extend the three lists:
 
 ```js
 export const TOPPERS = ['none', 'cat', 'bunny', 'bear', 'horns', 'antenna', 'bugs', 'sprout', 'spikes', 'floppy', 'halo', 'tuft',
-  'fin', 'mohawk', 'beret', 'headphones-over', 'leafcrown', 'antennae', 'braid', 'pigtails', 'curls', 'bandana', 'cowlick', 'tiara']
+  'fin', 'mohawk', 'beret', 'headband-over', 'leafcrown', 'antennae', 'braid', 'pigtails', 'curls', 'bandana', 'cowlick', 'tiara']
 export const EYES = ['round', 'dot', 'sleepy', 'wide', 'wink', 'star', 'slit', 'lash', 'cyclops', 'spiral',
   'goggles-round', 'sleep', 'wink-left', 'shades', 'heart-eyes', 'hollow', 'glasses-dot', 'squint']
 export const MOUTHS = ['smile', 'grin', 'cat', 'o', 'smirk', 'tongue', 'fang', 'flat',

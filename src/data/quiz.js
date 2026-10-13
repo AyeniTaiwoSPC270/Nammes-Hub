@@ -147,12 +147,16 @@ export function castQueryKey(target) {
   return null
 }
 
+export function fetchCastRoster(target) {
+  return callQuiz('cast', { op: 'roster', ...target })
+}
+
 // A join code reads the hosted session's snapshot; a quiz id reads the live cast for battles and practice.
 export function useCastQuery(target) {
   const key = castQueryKey(target)
   return useQuery({
     queryKey: key ?? ['cast', 'none'],
-    queryFn: () => callQuiz('roster', target),
+    queryFn: () => fetchCastRoster(target),
     enabled: Boolean(key),
     staleTime: 60_000,
   })

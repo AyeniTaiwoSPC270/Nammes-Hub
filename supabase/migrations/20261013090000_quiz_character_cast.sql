@@ -1,8 +1,8 @@
 -- A quiz's own cast: up to 12 characters an admin designs, which players can pick alongside or instead of the 50
 -- built-ins. avatar_id 0-49 stays a built-in; 50-61 is slot 0-11 of this quiz's cast.
 --
--- A slot is allocated once and never renumbered, so a game in progress cannot silently re-point a player at a different
--- character if an admin deletes one.
+-- A slot is allocated once and never reused. A deleted character is scrubbed and retired in place, leaving only its
+-- slot reservation so the same avatar_id cannot later point at a different design.
 create table public.quiz_characters (
   id         uuid primary key default gen_random_uuid(),
   quiz_id    uuid not null references public.quizzes(id) on delete cascade,

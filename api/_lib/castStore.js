@@ -10,7 +10,10 @@ export async function readQuizCast(db, quizId) {
   if (!quiz) return null
   const { data: rows, error } = await db.from('quiz_characters').select('*').eq('quiz_id', quizId).order('slot', { ascending: true })
   throwIfError(error, 'read the quiz cast')
-  return sanitizeCast({ mode: quiz.cast_mode, characters: rows ?? [] })
+  const stored = rows ?? []
+  const retiredSlots = stored.filter((row) => row.deleted_at).map((row) => row.slot).sort((a, b) => a - b)
+  const characters = stored.filter((row) => !row.deleted_at)
+  return { ...sanitizeCast({ mode: quiz.cast_mode, characters }), retiredSlots }
 }
 
 // Validate the full draft against stored ids and occupied slots before writing anything. Slots are identities, so a
@@ -21,9 +24,10 @@ export async function saveQuizCast(db, quizId, rawCast) {
   throwIfError(quizError, 'read the quiz')
   if (!quiz) throw new Error('No quiz with that id.')
 
-  const { data: existing, error: existingError } = await db.from('quiz_characters').select('id, slot').eq('quiz_id', quizId)
+  const { data: existing, error: existingError } = await db.from('quiz_characters').select('id, slot, deleted_at').eq('quiz_id', quizId)
   throwIfError(existingError, 'read the existing cast')
-  const byId = new Map((existing ?? []).map((row) => [row.id, row]))
+  const active = (existing ?? []).filter((row) => !row.deleted_at)
+  const byId = new Map(active.map((row) => [row.id, row]))
   const bySlot = new Map((existing ?? []).map((row) => [row.slot, row]))
 
   for (const character of cast.characters) {
@@ -31,14 +35,21 @@ export async function saveQuizCast(db, quizId, rawCast) {
     if (character.id && !sameId) throw new Error(`Character id is not in this quiz's cast.`)
     if (sameId && sameId.slot !== character.slot) throw new Error(`Character slots cannot be changed.`)
     const occupant = bySlot.get(character.slot)
-    if (occupant && occupant.id !== character.id) throw new Error(`Slot ${character.slot} is occupied.`)
+    if (occupant && occupant.id !== character.id) {
+      throw new Error(occupant.deleted_at ? `Slot ${character.slot} has already been used.` : `Slot ${character.slot} is occupied.`)
+    }
   }
 
   const keptIds = new Set(cast.characters.map((character) => character.id).filter(Boolean))
-  const droppedIds = (existing ?? []).filter((row) => !keptIds.has(row.id)).map((row) => row.id)
-  if (droppedIds.length) {
-    const { error } = await db.from('quiz_characters').delete().in('id', droppedIds).eq('quiz_id', quizId)
-    throwIfError(error, 'delete removed characters')
+  const dropped = active.filter((row) => !keptIds.has(row.id))
+  for (const row of dropped) {
+    const { error } = await db.from('quiz_characters').update({
+      deleted_at: new Date().toISOString(),
+      name: 'Deleted',
+      spec: {},
+      moves: {},
+    }).eq('id', row.id).eq('quiz_id', quizId)
+    throwIfError(error, 'retire a removed character')
   }
 
   for (const character of cast.characters) {

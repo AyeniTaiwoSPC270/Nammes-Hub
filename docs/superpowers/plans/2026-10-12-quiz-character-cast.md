@@ -4,7 +4,7 @@
 
 **Goal:** Let an admin design up to 12 characters for one quiz from the drawer, choose who players see, and have every player, bot, bracket and result card resolve an `avatar_id` against that cast instead of against the fixed 50.
 
-**Architecture:** A quiz's cast lives in a `quiz_characters` table keyed by a stable slot, so `avatar_id` stays one integer: 0–49 is always a built-in, 50–61 is always slot 0–11 of that quiz's cast. Slots are never renumbered, so editing a cast cannot re-point a game already in progress. A hosted game snapshots its cast into `quiz_sessions.characters` at start, exactly as it snapshots `theme`; battles and practice read it live, exactly as they read `theme` live.
+**Architecture:** A quiz's cast lives in a `quiz_characters` table keyed by a stable slot, so `avatar_id` stays one integer: 0–49 is always a built-in, 50–61 is always slot 0–11 of that quiz's cast. Slots are never renumbered or reused; retired rows retain only their slot reservation after their authored data is scrubbed. A hosted game snapshots its active cast into `quiz_sessions.characters` at start, exactly as it snapshots `theme`; battles and practice read the active cast live, exactly as they read `theme` live.
 
 **Tech Stack:** Plain ESM JavaScript, React 19, TanStack Query, Tailwind v4, Vitest, Supabase, Vercel serverless functions.
 
@@ -20,6 +20,8 @@
 |---|---|
 | `supabase/migrations/20261013090000_quiz_character_cast.sql` | **Create.** The table, `cast_mode`, the session snapshot, and the five widened checks. |
 | `supabase/rollbacks/20261013090000_quiz_character_cast.rollback.sql` | **Create.** |
+| `supabase/migrations/20261013100000_quiz_character_slot_retirement.sql` | **Create.** Add the `deleted_at` slot-reservation marker after the initial cast migration. |
+| `supabase/rollbacks/20261013100000_quiz_character_slot_retirement.rollback.sql` | **Create.** Removes `deleted_at`; this permits slot reuse again. |
 | `api/_lib/quizCharacterArt.js` | **Modify.** `sanitizeCharacterSpec`, `sanitizeCharacterMoves`, `sanitizeCast`, `deriveColour`, `castIds`, `allowedAvatarIds`, `characterSpec`. |
 | `api/_lib/quiz.js` | **Modify.** `isAvatarId(value, cast)`. |
 | `api/_lib/castStore.js` | **Create.** Read and write a quiz's cast rows. |
@@ -50,9 +52,8 @@
 -- A quiz's own cast: up to 12 characters an admin designs, which players can pick alongside or instead of the 50
 -- built-ins. avatar_id 0-49 stays a built-in; 50-61 is slot 0-11 of this quiz's cast.
 --
--- A slot is allocated once and never renumbered, so deleting a character leaves a hole rather than shifting everyone
--- below it down one. That matters: a game in progress stores the id it picked, and renumbering would silently re-point
--- a player at a different character mid-game.
+-- A slot is allocated once and never reused. Deleting a character scrubs its authored data but leaves a reservation row,
+-- so the same avatar_id can never later point at a different design.
 create table public.quiz_characters (
   id         uuid primary key default gen_random_uuid(),
   quiz_id    uuid not null references public.quizzes(id) on delete cascade,
@@ -97,6 +98,15 @@ alter table public.quiz_characters enable row level security;
 grant select, insert, update, delete on public.quiz_characters to authenticated;
 create policy quiz_characters_admin_all on public.quiz_characters
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
+```
+
+Because the cast migration may already be applied when slot retirement is added, add the marker in its own later
+migration rather than editing and rerunning the original:
+
+```sql
+-- supabase/migrations/20261013100000_quiz_character_slot_retirement.sql
+alter table public.quiz_characters
+  add column if not exists deleted_at timestamptz;
 ```
 
 **Check the generated constraint names first.** Postgres names a column check `<table>_<column>_check`, which is what the
@@ -500,7 +510,7 @@ describe('the cast handler', () => {
     expect(res.statusCode).toBe(403)
   })
 
-  it('upserts by id and deletes the ones the draft dropped, never renumbering', async () => {
+  it('upserts by id and retires the ones the draft dropped, never reusing their slots', async () => {
     const db = makeDb({
       quizzes: [{ id: 'q1', cast_mode: 'all' }],
       quiz_characters: [
@@ -515,8 +525,10 @@ describe('the cast handler', () => {
     )
     expect(res.statusCode).toBe(200)
     const left = db.tables.quiz_characters
-    expect(left).toHaveLength(1)
-    expect(left[0]).toMatchObject({ id: 'c1', slot: 0, name: 'Kolar' })
+    expect(left).toHaveLength(2)
+    expect(left.find((row) => row.id === 'c1')).toMatchObject({ slot: 0, name: 'Kolar' })
+    expect(left.find((row) => row.id === 'c2')).toMatchObject({ slot: 1, name: 'Deleted', spec: {}, moves: {}, deleted_at: expect.any(String) })
+    expect(res.body.retiredSlots).toEqual([1])
     expect(db.tables.quizzes[0].cast_mode).toBe('all')
   })
 
@@ -553,7 +565,8 @@ Expected: FAIL — `createQuizCastHandler` does not exist.
 Create `api/_lib/handlers/quiz-cast.js`:
 
 ```js
-import { sanitizeCast, MAX_CAST } from '../quizCharacterArt.js'
+import { sanitizeCast } from '../quizCharacterArt.js'
+import { readQuizCast, saveQuizCast } from '../castStore.js'
 import { isUuid } from '../validate.js'
 
 // Two ops in one file, because they are the same feature and the function budget in AGENTS.md is deliberate: `roster` is
@@ -577,11 +590,9 @@ export function createQuizCastHandler(getDb, getCaller) {
         return res.status(200).json(clean(session.characters))
       }
       if (isUuid(quizId)) {
-        const db = getDb()
-        const { data: quiz } = await db.from('quizzes').select('cast_mode').eq('id', quizId).maybeSingle()
-        if (!quiz) return res.status(404).json({ error: 'No quiz with that id.' })
-        const { data: rows } = await db.from('quiz_characters').select('*').eq('quiz_id', quizId).order('slot', { ascending: true })
-        return res.status(200).json(clean({ mode: quiz.cast_mode, characters: rows ?? [] }))
+        const cast = await readQuizCast(getDb(), quizId)
+        if (!cast) return res.status(404).json({ error: 'No quiz with that id.' })
+        return res.status(200).json(cast)
       }
       return res.status(400).json({ error: 'Send a join code or a quiz id.' })
     }
@@ -600,24 +611,13 @@ export function createQuizCastHandler(getDb, getCaller) {
         return res.status(400).json({ error: error.message })
       }
 
-      const db = getDb()
-      const { data: existing } = await db.from('quiz_characters').select('id, slot').eq('quiz_id', quizId)
-      const keptIds = new Set(cleanCast.characters.map((c) => c.id).filter(Boolean))
-      const doomed = (existing ?? []).filter((row) => !keptIds.has(row.id)).map((row) => row.id)
-      if (doomed.length) await db.from('quiz_characters').delete().in('id', doomed)
-      for (const character of cleanCast.characters) {
-        const row = {
-          quiz_id: quizId,
-          slot: character.slot,
-          name: character.name,
-          spec: character.spec,
-          moves: character.moves,
-        }
-        if (character.id) await db.from('quiz_characters').update(row).eq('id', character.id).eq('quiz_id', quizId)
-        else await db.from('quiz_characters').insert(row)
+      try {
+        const saved = await saveQuizCast(getDb(), quizId, cleanCast)
+        return res.status(200).json(saved)
+      } catch (error) {
+        const status = error.message.startsWith('Could not ') ? 500 : 400
+        return res.status(status).json({ error: status === 400 ? error.message : 'Could not save the character cast.' })
       }
-      await db.from('quizzes').update({ cast_mode: cleanCast.mode }).eq('id', quizId)
-      return res.status(200).json(cleanCast)
     }
 
     return res.status(400).json({ error: 'Unknown op.' })
@@ -987,7 +987,7 @@ export function useCastQuery(target) {
   const key = castQueryKey(target)
   return useQuery({
     queryKey: key ?? ['cast', 'none'],
-    queryFn: async () => (await callQuiz('roster', target)).characters ?? { mode: 'builtins', characters: [] },
+    queryFn: () => callQuiz('cast', { op: 'roster', ...target }),
     enabled: Boolean(key),
     staleTime: 60_000,
   })
@@ -1132,7 +1132,7 @@ describe('the cast draft', () => {
     expect(dirty.characters[0].spec.color).toBeNull()
   })
 
-  it('frees a slot on delete rather than shifting the ones below', () => {
+  it('leaves a retired slot hole rather than shifting or reusing it', () => {
     const saved = sanitizeCast({
       mode: 'all',
       characters: [
@@ -1140,7 +1140,7 @@ describe('the cast draft', () => {
         { slot: 2, name: 'C', spec: {}, moves: {} },
       ],
     })
-    // Deleting slot 0 removes one entry and touches nothing else. C is still slot 2, still id 52.
+    // Deleting slot 0 retires it. C is still slot 2, still id 52, and slot 0 cannot be allocated again.
     const afterDelete = saved.characters.filter((c) => c.slot !== 0)
     expect(afterDelete.map((c) => c.slot)).toEqual([2])
     expect(afterDelete[0]).toMatchObject({ name: 'C', slot: 2 })
@@ -1193,10 +1193,11 @@ Disabled with a reason, so the mode can never promise a character that does not 
 
 - [ ] **Step 3: The accordion**
 
-Eight sections — Name, Body, Colour, Headpiece, Eyes, Mouth, Wears, Prop, Moves — with **one open at a time**.
+Nine sections — Name, Body, Colour, Headpiece, Eyes, Mouth, Wears, Prop, Moves — with **one open at a time**.
 
-All eight expanded is 137 live animated drawings, which is why it is an accordion. Each option is drawn on the character
-as it stands, not as a word:
+The six part sections contain 137 options in total; opening them all would render 137 character previews. The accordion
+bounds that to the largest section, Wears, at 36 previews at once. Each option is drawn on the character as it stands,
+not as a word:
 
 ```jsx
 <button
@@ -1232,8 +1233,8 @@ assertion — that is a property of code, and code does not get a warning.
 
 - [ ] **Step 5: Save, Reset and delete**
 
-One **Save cast** button writes the whole draft through `useSaveCast`. Delete frees the slot: the draft keeps the slot as
-a hole rather than shifting the others down, which is the rule from the spec and the thing the test must prove.
+One **Save cast** button writes the whole draft through `useSaveCast`. Deleting a saved character retires its slot; the
+draft keeps the hole and the editor allocates only never-used slots. Deleting a new, unsaved draft does not consume a slot.
 
 - [ ] **Step 6: Run it**
 
@@ -1260,7 +1261,7 @@ git commit -m "feat(quiz): add the character editor to the studio"
 - **`avatar_id` is one integer with two meanings.** 0–49 is always one of the 50 built-ins; 50–61 is slot 0–11 of the
   quiz's own cast (`api/_lib/quizCharacterArt.js`). Do not add a second `avatar_spec` column beside it: "who is this
   player" must have one answer, and about 20 read sites already have it.
-- **A slot is never renumbered.** Deleting a character leaves a hole. Renumbering would silently re-point a player in a
+- **A slot is never renumbered or reused.** Deleting a character leaves a retired hole. Renumbering or reuse would silently re-point a player in a
   game already running at a different character, and the change is invisible — their id still passes every check.
 - **A hosted game snapshots its cast** into `quiz_sessions.characters` when it starts, exactly as it snapshots `theme`.
   Battles and practice read the cast live from the quiz, exactly as they read `theme` live.

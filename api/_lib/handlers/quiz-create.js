@@ -71,7 +71,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     }
 
     const { data: castRows, error: castError } = await supabaseAdmin
-      .from('quiz_characters').select('*').eq('quiz_id', quizId).order('slot', { ascending: true })
+      .from('quiz_characters').select('*').eq('quiz_id', quizId).is('deleted_at', null).order('slot', { ascending: true })
     if (castError) {
       console.error('quiz-create: cast read failed', castError)
       await logError(supabaseAdmin, 'quiz-create', castError, 500)
