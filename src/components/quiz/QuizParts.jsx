@@ -8,7 +8,7 @@ import { useQuizTheme } from './QuizTheme'
 // The backdrop's characters come from the same table the result card draws its maths from, rather than a second list
 // kept in step by hand. The card now reads both tables with a full branch for each, so this line is proof the two
 // renderers agree: a divergent table is caught by the guard tests in quizTheme.test.js.
-import { PATTERN_GLYPHS, PATTERN_GEOMETRY, MOTION_PER_MARK, MOTION_DISTANCE, resolveMotion, motionDuration } from '../../../api/_lib/quizTheme.js'
+import { PATTERN_GLYPHS, PATTERN_GEOMETRY, MOTION_PER_MARK, MOTION_DISTANCE, MOTION_BLEED, resolveMotion, motionDuration } from '../../../api/_lib/quizTheme.js'
 // The characters' moves live in this stylesheet, not in Character.jsx: the result card renders that same component
 // to an SVG string on the server, and Node cannot parse a stylesheet. Anything that renders a Character and wants
 // its animations imports this file, or imports characters.css itself.
@@ -309,7 +309,9 @@ export function QuizBackdrop({ surface = 'phone' }) {
   // The loop actually drawn, which is not always the one chosen: a per-mark style on a pattern with no marks becomes its
   // whole-layer stand-in. Resolved here rather than when saving, so switching pattern and switching back keeps the
   // admin's own choice.
-  const style = surface === 'phone' && !backdropMotionOnPhones ? 'off' : resolveMotion(backdropMotion, pattern)
+  // Image patterns draw neither the photograph nor a replacement pattern on phones, so even an enabled phone toggle has
+  // nothing visible to move there. Do not spend a compositor animation on an empty layer.
+  const style = surface === 'phone' && (!backdropMotionOnPhones || pattern === 'image') ? 'off' : resolveMotion(backdropMotion, pattern)
   const seconds = motionDuration(style, backdropMotionSpeed)
   const perMark = MOTION_PER_MARK.includes(style)
   // A picture has to reach every corner, so its zoom starts at 1 and only ever crops in further. Letting the size slider
@@ -325,12 +327,12 @@ export function QuizBackdrop({ surface = 'phone' }) {
   const layerStyleName = style === 'off' || perMark || style === 'pan' ? '' : style
   const layerClass = layerStyleName ? `qz-bd-${layerStyleName}` : ''
   const shift = MOTION_DISTANCE[layerStyleName]
-  // A blurred layer fades to nothing at its own edge, and a drifting layer slides its own edge across the screen, so both
-  // are grown. They grow in different units, which `inset` allows: px for the blur, % for the drift.
-  const grow = shift ?? 0
+  const grow = MOTION_BLEED[layerStyleName] ?? 0
+  // A blurred layer fades to nothing at its own edge, and a translating layer sweeps beyond its base box. Grow equally
+  // on every side by the blur radius plus the animation's full bleed, rather than only extending the horizontal edges.
   const softened = {
     filter: backdropBlur > 0 ? `blur(${backdropBlur}px)` : undefined,
-    inset: grow > 0 ? `${blur} -${grow}% ${blur} -${grow}%` : blur,
+    inset: grow > 0 ? `calc(-${backdropBlur}px - ${grow}%)` : blur,
   }
   const layerStyle = layerClass
     ? { animationDuration: `${seconds}s`, ...(shift ? { '--qz-bd-shift': `${shift}%` } : {}) }
@@ -358,7 +360,11 @@ export function QuizBackdrop({ surface = 'phone' }) {
             src={photo}
             alt=""
             className={`h-full w-full ${fit}${style === 'pan' ? ' qz-bd-pan' : ''}`}
-            style={{ opacity, ...(style === 'pan' ? { '--qz-bd-zoom': photoZoom, animationDuration: `${seconds}s` } : { transform: `scale(${photoZoom})` }) }}
+            style={{
+              opacity,
+              transform: `scale(${photoZoom})`,
+              ...(style === 'pan' ? { '--qz-bd-zoom': photoZoom, animationDuration: `${seconds}s` } : {}),
+            }}
           />
         </div>
       ) : (

@@ -7,7 +7,7 @@ import {
   withSchemeColors, SCHEME_COLOR_KEYS,
   PATTERN_GLYPHS, PATTERN_GEOMETRY, PATTERN_UNDRAWN, PAGE_LIGHT, PAGE_DARK, ACCENT_DERIVED_TOKENS,
   THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, MOTION_PER_MARK, MOTION_MARKLESS_STANDIN, MOTION_DURATIONS,
-  MOTION_SPEED_LABELS, MOTION_DISTANCE, resolveMotion, motionDuration, hasMarks,
+  MOTION_SPEED_LABELS, MOTION_DISTANCE, MOTION_BLEED, resolveMotion, motionDuration, hasMarks,
 } from './quizTheme.js'
 
 describe('sanitizeTheme', () => {
@@ -602,8 +602,10 @@ describe('backdrop motion', () => {
       for (const style of MOTION_PICTURE_ONLY) expect(MOTION_PER_MARK).not.toContain(style)
       for (const [style, distance] of Object.entries(MOTION_DISTANCE)) {
         expect(Object.hasOwn(MOTION_DURATIONS, style), `${style} has no duration`).toBe(true)
-        expect(distance, `${style} grows by nothing`).toBeGreaterThan(0)
+        expect(distance, `${style} moves by nothing`).toBeGreaterThan(0)
+        expect(MOTION_BLEED[style], `${style} has no edge bleed`).toBeGreaterThan(distance)
       }
+      expect(Object.keys(MOTION_BLEED).sort()).toEqual(Object.keys(MOTION_DISTANCE).sort())
     })
     it('resolves every style to something that can be drawn on every pattern', () => {
       // A style that silently resolved to Still would be a dead button in the studio with no warning anywhere.

@@ -206,8 +206,8 @@ export const BACKDROP_RANGES = {
 // THEME_CONFETTI. The names are what an admin sees rather than how it is drawn, and there is no way to stack them: one
 // style at a time is a setting an admin can tune, and two at once is one they cannot.
 //
-// Five move the single layer the backdrop already draws in and work on every pattern. Three move each mark on its own
-// phase and need discrete marks to move. One needs a photograph.
+// Four move the backdrop layer and work on every drawn pattern. Three move each mark on its own phase and need discrete
+// marks to move. Pan moves a photograph.
 export const THEME_BACKDROP_MOTION = {
   off: 'Still',
   drift: 'Drift',
@@ -251,9 +251,14 @@ export const MOTION_DURATIONS = {
 // Under the ticks of the speed slider, so the number is a word as well as a reading.
 export const MOTION_SPEED_LABELS = ['Calm', 'Gentle', 'Steady', 'Brisk', 'Lively']
 
-// How far a translating layer is grown so a drift never slides its own edge into view, as a percentage of the layer.
-// Only the two styles that translate need it: the scaling ones grow themselves, since a scale above 1 cannot expose one.
+// Translation distance in CSS percent units. Drift and Orbit move this far from centre, but their moving layers need more
+// bleed than this number: CSS percentages use the already-expanded layer as their reference box, and Orbit also moves
+// vertically and rotates. MOTION_BLEED is the independent amount grown on each edge to cover the full path.
 export const MOTION_DISTANCE = { drift: 5, orbit: 5 }
+
+// The amount the translated layer extends past each edge. The margin exceeds the largest translation plus Orbit's
+// diagonal/rotational excursion on both landscape projectors and portrait phones.
+export const MOTION_BLEED = { drift: 15, orbit: 15 }
 
 export const DEFAULT_THEME = Object.freeze({
   look: 'classic',
