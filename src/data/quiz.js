@@ -402,6 +402,49 @@ export async function fetchQuestionBank({ limit = 600 } = {}) {
   return data
 }
 
+// ---------- saved looks ----------
+//
+// The studio saves a design the admin liked and keeps it, so it can be put back on this quiz or any other later. Before
+// this, the only way to reuse a look was duplicateQuiz (src/data/quiz.js:327), which brings the questions with it.
+//
+// A look is stored whole and cleaned through sanitizeTheme on the way in as well as on the way out, the same discipline
+// as saveQuizTheme below and saveCalendarLook (src/data/calendar.js:171). Cleaning on write means a look can never hold
+// a value the renderer would later throw away.
+
+export async function fetchQuizLooks() {
+  const { data, error } = await supabase.from('quiz_looks').select('*').order('id', { ascending: true })
+  if (error) throw error
+  return data
+}
+
+export function useQuizLooksQuery(enabled = true) {
+  return useQuery({ queryKey: ['quiz_looks'], queryFn: fetchQuizLooks, enabled })
+}
+
+export async function saveQuizLook({ id, name, design }) {
+  // No quizId: a look belongs to no quiz, so the pictures in it are kept exactly as they were saved. They are dropped
+  // later, at apply time, by the target quiz's own sanitizeTheme -- which is why applying a look to a different quiz
+  // quietly loses the backdrop and logo rather than pointing at another quiz's storage folder.
+  const { data, error } = await supabase
+    .from('quiz_looks')
+    .upsert({ id, name, design: sanitizeTheme(design) }, { onConflict: 'id' })
+    .select()
+    .single()
+  if (error) throw error
+  if (!data) throw new Error('No changes were saved — your account may not have admin access to saved looks.')
+  return data
+}
+
+export async function deleteQuizLook(id) {
+  const { data, error } = await supabase.from('quiz_looks').delete().eq('id', id).select()
+  if (error) throw error
+  // An admin-only policy turns a refused delete into an empty result rather than an error, and a silent no-op in the
+  // studio would otherwise look like the look was removed (same reason as saveQuizTheme below).
+  if (!data || data.length === 0) {
+    throw new Error('No changes were saved — your account may not have admin access to saved looks.')
+  }
+}
+
 // Saves the look designed in the Quiz Design Studio. Games started after this use it; running games keep theirs.
 export async function saveQuizTheme(id, theme) {
   const clean = sanitizeTheme(theme, { quizId: id })
@@ -494,4 +537,23 @@ export async function fetchQuizSessions(quizId) {
     .limit(20)
   if (error) throw error
   return data
+}
+
+// Applying a look is not one of these: it only fills the studio's draft, and the draft is saved onto the quiz by
+// saveQuizTheme when the admin presses Save. So neither mutation invalidates ['quizzes'] -- a look exists independently
+// of every quiz, and invalidating here would refetch the whole quiz list on every save-as.
+export function useSaveQuizLookMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: saveQuizLook,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quiz_looks'] }),
+  })
+}
+
+export function useDeleteQuizLookMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteQuizLook,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quiz_looks'] }),
+  })
 }

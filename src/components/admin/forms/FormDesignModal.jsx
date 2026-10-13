@@ -24,6 +24,7 @@ import ResizableFrame from '../../forms/ResizableFrame'
 import Toggle from '../../ui/Toggle'
 import { ColorField, ControlSection, FontSelect, Segmented, Slider, TextStyleControls, ToggleIcon } from './DesignControls'
 import ImageAdjuster from './ImageAdjuster'
+import SavedFormLooks from './SavedFormLooks'
 
 const TABS = [
   { id: 'themes', label: 'Themes', icon: 'palette' },
@@ -328,6 +329,11 @@ export default function FormDesignModal({ theme, onChange, form, questions, onQu
                     ))}
                   </div>
                   <p className="text-xs text-ink-muted">A theme is only a starting point — every setting stays editable.</p>
+                </ControlSection>
+                {/* Below the built-in themes rather than above them: the fourteen presets are what an admin reaches for
+                    first, and a saved appearance is something they made rather than something shipped. */}
+                <ControlSection title="Your saved appearances">
+                  <SavedFormLooks theme={t} onChange={onChange} />
                 </ControlSection>
                 <ControlSection title="Accent color">
                   <ColorField label="Buttons, selections, progress" value={t.accent} onChange={(accent) => update({ accent })} />
