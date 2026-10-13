@@ -573,12 +573,16 @@ describe('backdrop motion', () => {
         if (style === 'off') continue
         expect(MOTION_DURATIONS[style], `${style} has no duration`).toBeGreaterThan(0)
         expect(css, `${style} has no @keyframes`).toMatch(new RegExp(`@keyframes qz-bd-${style}\\s*\\{`))
-        // Matched as a selector rather than as a literal, because the rules are grouped: `.qz-bd-drift, .qz-bd-orbit {`
-        expect(css, `${style} has no class`).toMatch(new RegExp(`\\.qz-bd-${style}\\s*[,{]`))
-        // The first rule naming the class has to be the one that starts it, and a style that ran once and stopped would
-        // look identical to one that loops on a single glance at the studio.
-        const at = css.search(new RegExp(`\\.qz-bd-${style}\\s*[,{]`))
-        expect(css.slice(at, css.indexOf('}', at)), `${style} does not loop`).toContain('infinite')
+        // Read the style's own rule rather than searching the file: this shipped once with every keyframe present and
+        // every class present, and nothing running, because the rules were grouped and no rule ever set
+        // `animation-name`. A keyframe nobody names and a class nobody binds are both perfectly valid CSS, so the
+        // vocabulary checks all passed over a completely still projector.
+        const rule = new RegExp(`\\.qz-bd-${style}\\s*\\{([^}]*)\\}`)
+        const found = css.match(rule)
+        expect(found, `${style} has no class`).not.toBeNull()
+        const body = found[1]
+        expect(body, `${style} names no keyframes, so its animation is the initial none`).toContain(`animation-name: qz-bd-${style}`)
+        expect(body, `${style} does not loop`).toContain('infinite')
       }
       expect(Object.keys(MOTION_DURATIONS).sort()).toEqual(Object.keys(THEME_BACKDROP_MOTION).filter((s) => s !== 'off').sort())
       for (const label of MOTION_SPEED_LABELS) expect(typeof label).toBe('string')
