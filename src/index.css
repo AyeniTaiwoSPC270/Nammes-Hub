@@ -233,13 +233,25 @@
   0%, 100% { transform: scale(calc(var(--qz-bd-zoom, 1) / 1.09)) translateX(-1.6%); }
   50% { transform: scale(calc(var(--qz-bd-zoom, 1) * 1.09)) translateX(1.6%); }
 }
-.qz-bd-drift, .qz-bd-orbit { animation-direction: alternate; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-.qz-bd-breathe, .qz-bd-bounce { animation-direction: alternate; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-.qz-bd-cascade, .qz-bd-float, .qz-bd-twinkle, .qz-bd-pan { animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-/* A drifting layer is grown past the screen so its own edge cannot slide into view, the same reason the blur grows it. */
-.qz-bd-drift, .qz-bd-orbit { will-change: transform; }
-.qz-bd-breathe, .qz-bd-bounce, .qz-bd-pan { will-change: transform; }
-.qz-bd-cascade, .qz-bd-float { will-change: translate; }
+/* One rule per style, and each one names its own keyframes. Declaring them as a group of shared properties reads well
+   and is how this shipped broken the first time: a group can carry `infinite` and still never set `animation-name`, and
+   every one of the eight then sits at the initial `none` with a valid-looking duration and no animation at all. The
+   test next door asserts the binding, not just that the name and the class exist.
+
+   Duration is not here on purpose — it depends on the theme's speed slider, so QuizBackdrop sets it inline per element.
+   Everything else a loop needs is fixed, which is what makes one rule per style worth the extra lines. */
+.qz-bd-drift { animation-name: qz-bd-drift; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; will-change: transform; }
+.qz-bd-orbit { animation-name: qz-bd-orbit; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; will-change: transform; }
+/* Breathe and bounce already return to their starting scale at 100%, so the reversal is in the keyframes and `alternate`
+   would double it — they would only reach the bottom of their range on every other pass. */
+.qz-bd-breathe { animation-name: qz-bd-breathe; animation-timing-function: ease-in-out; animation-iteration-count: infinite; will-change: transform; }
+.qz-bd-bounce { animation-name: qz-bd-bounce; animation-timing-function: ease-in-out; animation-iteration-count: infinite; will-change: transform; }
+.qz-bd-float { animation-name: qz-bd-float; animation-timing-function: ease-in-out; animation-iteration-count: infinite; will-change: translate; }
+.qz-bd-cascade { animation-name: qz-bd-cascade; animation-timing-function: ease-in-out; animation-iteration-count: infinite; will-change: translate; }
+.qz-bd-twinkle { animation-name: qz-bd-twinkle; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+/* Twinkle writes `opacity`, which every mark used to carry inline and which an animation beats. The marks now take their
+   opacity from the field container instead, so this has something to modulate. */
+.qz-bd-pan { animation-name: qz-bd-pan; animation-timing-function: ease-in-out; animation-iteration-count: infinite; will-change: transform; }
 /* The results report prints on A4 without the site header, footer or buttons. */
 @media print {
   body.qz-report header,
