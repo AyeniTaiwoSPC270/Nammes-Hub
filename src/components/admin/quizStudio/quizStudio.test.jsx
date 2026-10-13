@@ -229,6 +229,25 @@ describe('studio preview', () => {
       expect(() => renderToStaticMarkup(<StudioPreview theme={{ look, pattern }} surface="projector" screen="question" title="" />)).not.toThrow()
     }
   })
+  it('can show the backdrop without the sample quiz screen while keeping the backdrop itself', () => {
+    const html = renderToStaticMarkup(
+      <StudioPreview theme={{ ...theme, pattern: 'math' }} surface="projector" screen="lobby" title="Maths Quiz" showScreen={false} />,
+    )
+    expect(html).not.toContain('NAMMES Live Quiz')
+    expect(html).not.toContain('Go to')
+    expect(html).toContain('π')
+  })
+  it('keeps editor hit targets in arrange mode and removes them for motion preview', () => {
+    const overlay = <div data-testid="prop-editor-hit-layer">handles</div>
+    const arranging = renderToStaticMarkup(
+      <StudioPreview theme={theme} surface="projector" screen="question" title="" overlay={overlay} pauseMotion />,
+    )
+    const previewing = renderToStaticMarkup(
+      <StudioPreview theme={theme} surface="projector" screen="question" title="" overlay={overlay} />,
+    )
+    expect(arranging).toContain('prop-editor-hit-layer')
+    expect(previewing).not.toContain('prop-editor-hit-layer')
+  })
   it('draws saved prop positions and colours, and leaves hidden props out of the backdrop', () => {
     const html = renderToStaticMarkup(
       <StudioPreview
@@ -294,6 +313,17 @@ describe('studio preview', () => {
           }
         }
       }
+    })
+    it('pauses motion for arranging and restores the selected loop in motion-preview mode', () => {
+      const moving = { pattern: 'math', backdropMotion: 'drift' }
+      const arranging = renderToStaticMarkup(
+        <StudioPreview theme={moving} surface="projector" screen="question" title="" pauseMotion />,
+      )
+      const previewing = renderToStaticMarkup(
+        <StudioPreview theme={moving} surface="projector" screen="question" title="" />,
+      )
+      expect(arranging).not.toContain('qz-bd-drift')
+      expect(previewing).toContain('qz-bd-drift')
     })
     it('keeps every mark its own rotation when the marks are moving', () => {
       // Float, Cascade and Twinkle animate the `translate` property precisely so they cannot clobber the inline
@@ -385,6 +415,23 @@ describe('studio preview', () => {
         expect(reached, `${pattern} never gets past ${limit}% on the ${axis} axis — it is bunched in a corner`).toBe(true)
       }
     }
+  })
+})
+
+describe('backdrop editor preview controls', () => {
+  it('uses Arrange mode to pause motion and keep prop handles available', () => {
+    const studio = code(STUDIO)
+    expect(studio).toContain('pauseMotion={backdropMode === \'arrange\'}')
+    expect(studio).toContain('overlay={hasMarks(theme.pattern) ? (')
+  })
+
+  it('offers independent controls for the sample screen and motion preview', () => {
+    const studio = code(STUDIO)
+    expect(studio).toContain('showScreen={showPreviewScreen}')
+    expect(studio).toContain('Backdrop only')
+    expect(studio).toContain('Show quiz screen')
+    expect(studio).toContain('Preview motion')
+    expect(studio).toContain('Arrange props')
   })
 })
 

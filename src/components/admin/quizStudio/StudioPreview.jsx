@@ -204,40 +204,45 @@ function PhoneResult() {
   )
 }
 
-export default function StudioPreview({ theme, surface, screen, title, overlay = null }) {
+export default function StudioPreview({ theme, surface, screen, title, overlay = null, showScreen = true, pauseMotion = false }) {
   const projector = surface === 'projector'
+  const previewTheme = pauseMotion ? { ...theme, backdropMotion: 'off' } : theme
   return (
-    <QuizThemeScope theme={theme} className="block">
+    <QuizThemeScope theme={previewTheme} className="block">
       <Frame width={projector ? 960 : 300} height={projector ? 540 : 600} maxWidth={projector ? 960 : 300}>
         <QuizBackdrop surface={projector ? 'projector' : 'phone'} />
-        <MiniBar title={title} />
-        {projector ? (
+        {showScreen && (
           <>
-            {screen === 'lobby' && (
+            <MiniBar title={title} />
+            {projector ? (
               <>
-                <ProjectorLobby theme={theme} title={title} />
-                <div className="px-6"><ProjectorLobbySponsors /></div>
+                {screen === 'lobby' && (
+                  <>
+                    <ProjectorLobby theme={theme} title={title} />
+                    <div className="px-6"><ProjectorLobbySponsors /></div>
+                  </>
+                )}
+                {screen === 'question' && <ProjectorQuestion />}
+                {screen === 'leaderboard' && <ProjectorBoard />}
+                {screen === 'podium' && (
+                  <>
+                    <ProjectorPodium />
+                    <SponsorStrip placement="finish" className="pb-2" />
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                {screen === 'lobby' && <PhoneLobby theme={theme} />}
+                {screen === 'question' && <PhoneQuestion />}
+                {screen === 'result' && <PhoneResult />}
               </>
             )}
-            {screen === 'question' && <ProjectorQuestion />}
-            {screen === 'leaderboard' && <ProjectorBoard />}
-            {screen === 'podium' && (
-              <>
-                <ProjectorPodium />
-                <SponsorStrip placement="finish" className="pb-2" />
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            {screen === 'lobby' && <PhoneLobby theme={theme} />}
-            {screen === 'question' && <PhoneQuestion />}
-            {screen === 'result' && <PhoneResult />}
+            {/* The frame is transformed, so the fixed-position confetti falls inside it instead of over the whole window. */}
+            {projector && screen === 'podium' && <Confetti count={24} />}
           </>
         )}
-        {/* The frame is transformed, so the fixed-position confetti falls inside it instead of over the whole window. */}
-        {projector && screen === 'podium' && <Confetti count={24} />}
-        {overlay}
+        {pauseMotion && overlay}
       </Frame>
     </QuizThemeScope>
   )
