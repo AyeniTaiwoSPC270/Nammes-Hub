@@ -110,6 +110,35 @@ let a font be deleted while the test kept checking a set no card used.
 - The `calendar` key in `feature_flags` is the kill switch: nav item, footer link and route all disappear without a
   deploy, and the reminder worker honours it too.
 
+## Saved design presets
+
+Three studios let an admin keep a design under a name and put it back later. Each has its **own** table and its **own**
+data module, and that is deliberate — do not merge them into one shared "presets" table.
+
+| Studio | Table | Data module | UI |
+|---|---|---|---|
+| Calendar | `calendar_looks` | `src/data/calendar.js` | `AdminCalendarDesign.jsx` (first) |
+| Email | `email_styles` | `src/data/emailStudio.js` | `AdminBroadcasts.jsx` |
+| Quiz look | `quiz_looks` | `src/data/quiz.js` | `SavedLooks.jsx` |
+| Form appearance | `form_looks` | `src/data/formLooks.js` | `SavedFormLooks.jsx` |
+
+- **One concept, four implementations.** The designs have different shapes (swatch ids vs a capped jsonb with per-mark
+  motion vs design-plus-blocks), different sanitisers and different owners (calendar is owner-write, the other three
+  admin-write). A shared table would need a `kind` column and a per-kind sanitiser, so it buys a dispatch switch and
+  costs a coupling between four unrelated sanitisers. `calendar_looks` is the model to copy for a fifth.
+- **Applying a preset is not saving it.** Every one of these fills a draft; the studio's own Save is what commits it.
+  The only exception is email, where a saved style is chosen at send time rather than applied to a form. Do not make a
+  preset apply straight to a quiz or a form — one stray click should not restyle either.
+- **Quiz looks drop their pictures; form looks keep theirs.** This is the one behavioural difference between the two new
+  modules and it is forced by the storage, not chosen. A quiz's backdrop, logo and sponsor are `<quizId>/<uuid>.webp`
+  paths inside that quiz's own storage folder, so `sanitizeTheme(look.design, { quizId })` at apply time strips them
+  (and `cleanPattern`/`cleanMotion` then settle `image`→`none` and `pan`→`off`, so nothing animates a missing photo).
+  A form's page background and header are whole `https` urls (`safeImageUrl`), which are the picture wherever they are.
+  `formLooks.test.js` asserts that `safeImageUrl` still accepts them, so if the uploader changes, that test fails and
+  the question reopens.
+- **A look is saved *with* its pictures and cleaned *without* a `quizId`.** Stripping on save would stop a look ever
+  returning to the quiz it was made on, which is the common case.
+
 ## Known open bugs
 
 Both predate the calendar, are out of scope, and are still open:

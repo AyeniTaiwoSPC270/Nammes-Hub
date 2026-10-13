@@ -16,9 +16,9 @@ const db = createClient(process.env.VITE_SUPABASE_URL, process.env.SUPABASE_SERV
 const TABLES = [
   'admins', 'audit_log', 'award_categories', 'award_nominations', 'award_nominees', 'award_seasons',
   'award_votes', 'broadcasts', 'cgpa_courses', 'cgpa_semesters', 'change_requests', 'contact_messages',
-  'email_templates', 'event_photos', 'events', 'excos', 'feature_flags', 'form_questions',
+  'email_templates', 'event_photos', 'events', 'excos', 'feature_flags', 'form_looks', 'form_questions',
   'form_responses', 'forms', 'news', 'opportunities', 'outline_submissions', 'outlines',
-  'page_banners', 'profiles', 'resources', 'site_content', 'timetables',
+  'page_banners', 'profiles', 'quiz_looks', 'resources', 'site_content', 'timetables',
 ]
 const PAGE = 1000
 

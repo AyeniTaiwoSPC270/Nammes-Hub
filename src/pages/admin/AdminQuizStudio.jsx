@@ -42,6 +42,7 @@ import FormField from '../../components/ui/FormField'
 import ErrorState from '../../components/ui/ErrorState'
 import { Slider } from '../../components/admin/forms/DesignControls'
 import StudioPreview, { PROJECTOR_SCREENS, PHONE_SCREENS } from '../../components/admin/quizStudio/StudioPreview'
+import SavedLooks from '../../components/admin/quizStudio/SavedLooks'
 import SchemeColours from '../../components/admin/quizStudio/SchemeColours'
 import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery'
 import CharacterEditor from '../../components/admin/quizStudio/CharacterEditor'
@@ -497,6 +498,11 @@ export default function AdminQuizStudio() {
       ) : (
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,420px)_1fr]">
           <div className="flex flex-col gap-4">
+            {/* First on the tab because it is the one control that does not change a single control below it -- it
+                replaces the whole design at once. It fills the draft like every other control, so Save is still the
+                thing that puts it on the quiz. */}
+            <SavedLooks quizId={id} draft={theme} dirty={dirty} onApply={setDraft} />
+
             <Section title="Colour scheme" hint="Sets the glow and the dark banner behind every screen. Choosing a scheme leaves your own accent colour alone.">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-2">
                 {Object.entries(THEME_LOOKS).map(([key, look]) => (
