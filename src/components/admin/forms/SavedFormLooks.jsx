@@ -101,7 +101,7 @@ export default function SavedFormLooks({ theme, onChange }) {
     // normalizeTheme on read as well as on write, so a hand-edited row cannot put a value on a form that the renderer
     // would then have to clamp.
     onChange(normalizeTheme(look.design))
-    toast.success(`“${look.name}” applied. Press Save to keep it on this form.`)
+    toast.success(`“${look.name}” applied. Press “Save form” to keep it on this form.`)
   }
 
   function handleRename(look, next) {
@@ -160,7 +160,7 @@ export default function SavedFormLooks({ theme, onChange }) {
           className="min-h-10 min-w-0 flex-1 rounded-md border border-hairline bg-surface px-2 py-1.5 text-sm text-ink"
         />
         <Button type="button" size="sm" variant="secondary" loading={saveMutation.isPending} disabled={!name.trim()} onClick={handleSaveAsNew}>
-          Save
+          Save as new
         </Button>
       </div>
     </div>
