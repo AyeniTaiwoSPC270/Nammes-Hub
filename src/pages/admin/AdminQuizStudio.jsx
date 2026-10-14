@@ -209,6 +209,8 @@ export default function AdminQuizStudio() {
   const [cardDraft, setCardDraft] = useState(null)
   const [surface, setSurface] = useState('projector')
   const [screens, setScreens] = useState({ projector: 'lobby', phone: 'lobby' })
+  const [backdropMode, setBackdropMode] = useState('arrange')
+  const [showPreviewScreen, setShowPreviewScreen] = useState(true)
   const [selectedBackdropProp, setSelectedBackdropProp] = useState(null)
   const [brandBusy, setBrandBusy] = useState(false)
   const [brandError, setBrandError] = useState('')
@@ -286,7 +288,6 @@ export default function AdminQuizStudio() {
   const backdropProps = theme.backdropLayout[theme.pattern] ?? defaultBackdropProps(theme.pattern)
   const backdropTotal = Object.values(theme.backdropLayout).reduce((sum, props) => sum + props.length, 0)
   const selectedProp = selectedBackdropProp === null ? null : backdropProps[selectedBackdropProp] ?? null
-  const backdropPreviewTheme = { ...theme, backdropMotion: 'off' }
 
   function changeBackdropProps(next) {
     change({ backdropLayout: { ...theme.backdropLayout, [theme.pattern]: next } })
@@ -613,32 +614,40 @@ export default function AdminQuizStudio() {
               {brandError && <p role="alert" className="mt-3 text-sm text-danger">{brandError}</p>}
             </Section>
 
-            <Section title="Props" hint={hasMarks(theme.pattern) ? `${backdropProps.length} props · ${LAYOUT_MAX_PER_PATTERN} max for this pattern · ${backdropTotal}/${LAYOUT_MAX_TOTAL} saved across patterns` : 'This pattern has no individual props to arrange.'}>
+            <Section title="Props" hint={backdropMode === 'motion'
+              ? 'Switch to Arrange props to edit this layout.'
+              : hasMarks(theme.pattern)
+                ? `${backdropProps.length} props · ${LAYOUT_MAX_PER_PATTERN} max for this pattern · ${backdropTotal}/${LAYOUT_MAX_TOTAL} saved across patterns`
+                : 'This pattern has no individual props to arrange.'}>
               {hasMarks(theme.pattern) ? (
                 <>
                   <p className="mb-2 text-xs text-ink-muted">Add from this pattern&rsquo;s own set:</p>
                   <div className="flex flex-wrap gap-2">
                     {propVocabulary(theme.pattern).map((key) => (
-                      <Button key={key} variant="secondary" size="sm" disabled={backdropProps.length >= LAYOUT_MAX_PER_PATTERN || backdropTotal >= LAYOUT_MAX_TOTAL} onClick={() => addBackdropProp(key)}>
+                      <Button key={key} variant="secondary" size="sm" disabled={backdropMode !== 'arrange' || backdropProps.length >= LAYOUT_MAX_PER_PATTERN || backdropTotal >= LAYOUT_MAX_TOTAL} onClick={() => addBackdropProp(key)}>
                         <span className="material-symbols-outlined" aria-hidden="true">add</span>
                         {propLabel(theme.pattern, key)}
                       </Button>
                     ))}
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={resetBackdropPattern}>Reset pattern</Button>
-                    {selectedProp && <span className="self-center text-xs text-ink-muted">Arrows nudge · Shift + arrows moves faster · H hides · Delete removes</span>}
+                    <Button variant="secondary" size="sm" disabled={backdropMode !== 'arrange'} onClick={resetBackdropPattern}>Reset pattern</Button>
+                    {backdropMode === 'arrange' && selectedProp && <span className="self-center text-xs text-ink-muted">Arrows nudge · Shift + arrows moves faster · H hides · Delete removes</span>}
                   </div>
                   <div className="mt-3">
-                    <BackdropPropInspector
-                      pattern={theme.pattern}
-                      prop={selectedProp}
-                      theme={theme}
-                      selectionKey={selectedBackdropProp}
-                      onChange={(patch) => patchBackdropProp(selectedBackdropProp, patch)}
-                      onDelete={() => selectedBackdropProp !== null && deleteBackdropProp(selectedBackdropProp)}
-                      onToggleHidden={() => selectedBackdropProp !== null && toggleBackdropProp(selectedBackdropProp)}
-                    />
+                    {backdropMode === 'arrange' ? (
+                      <BackdropPropInspector
+                        pattern={theme.pattern}
+                        prop={selectedProp}
+                        theme={theme}
+                        selectionKey={selectedBackdropProp}
+                        onChange={(patch) => patchBackdropProp(selectedBackdropProp, patch)}
+                        onDelete={() => selectedBackdropProp !== null && deleteBackdropProp(selectedBackdropProp)}
+                        onToggleHidden={() => selectedBackdropProp !== null && toggleBackdropProp(selectedBackdropProp)}
+                      />
+                    ) : (
+                      <p className="text-sm text-ink-muted">Switch to Arrange props to select and edit individual props.</p>
+                    )}
                   </div>
                 </>
               ) : (
@@ -656,11 +665,31 @@ export default function AdminQuizStudio() {
                 <Choice key={key} selected={screens[surface] === key} onClick={() => setScreens((current) => ({ ...current, [surface]: key }))} className="min-h-10 px-4">{label}</Choice>
               ))}
             </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Backdrop preview mode">
+                <Choice selected={backdropMode === 'arrange'} onClick={() => setBackdropMode('arrange')} className="min-h-10 px-4">
+                  {hasMarks(theme.pattern) ? 'Arrange props' : 'Pause motion'}
+                </Choice>
+                <Choice selected={backdropMode === 'motion'} onClick={() => setBackdropMode('motion')} className="min-h-10 px-4">
+                  Preview motion
+                </Choice>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-pressed={!showPreviewScreen}
+                onClick={() => setShowPreviewScreen((shown) => !shown)}
+              >
+                {showPreviewScreen ? 'Backdrop only' : 'Show quiz screen'}
+              </Button>
+            </div>
             <StudioPreview
-              theme={backdropPreviewTheme}
+              theme={theme}
               surface={surface}
               screen={screens[surface]}
               title={quiz?.title ?? ''}
+              showScreen={showPreviewScreen}
+              pauseMotion={backdropMode === 'arrange'}
               overlay={hasMarks(theme.pattern) ? (
                 <BackdropPropLayer
                   pattern={theme.pattern}
@@ -676,7 +705,13 @@ export default function AdminQuizStudio() {
                 />
               ) : null}
             />
-            <p className="text-center text-xs text-ink-muted">Drag props on the preview. Movement pauses while arranging; hidden props stay outlined so you can select and restore them.</p>
+            <p className="text-center text-xs text-ink-muted">
+              {backdropMode === 'arrange'
+                ? 'Motion pauses while arranging; hidden props stay outlined so you can select and restore them.'
+                : hasMarks(theme.pattern)
+                  ? 'Previewing the selected motion. Switch to Arrange props to edit the layout.'
+                  : 'Previewing the selected motion. Switch to Pause motion to freeze the backdrop.'}
+            </p>
           </div>
         </div>
       ) : (
