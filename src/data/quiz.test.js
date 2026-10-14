@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster, castSavePayload } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, preserveSessionTheme, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster, castSavePayload } from './quiz'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -66,6 +66,29 @@ describe('rankPlayers', () => {
       { id: 'd', nickname: 'D', total_score: 100 },
     ])
     expect(ranked.map((p) => [p.id, p.rank])).toEqual([['b', 1], ['a', 2], ['c', 2], ['d', 4]])
+  })
+})
+
+describe('preserveSessionTheme', () => {
+  it('keeps the initial theme snapshot when later session updates disagree', () => {
+    const snapshot = { look: 'royal', pattern: 'rings' }
+    const previous = { id: 'session-1', state: 'question', theme: snapshot }
+    const update = { id: 'session-1', state: 'reveal', theme: { look: 'classic', pattern: 'math' } }
+
+    expect(preserveSessionTheme(previous, update)).toEqual({ ...update, theme: snapshot })
+  })
+
+  it('accepts the theme from the first session row', () => {
+    const initial = { id: 'session-1', state: 'question', theme: { look: 'royal' } }
+
+    expect(preserveSessionTheme(null, initial)).toBe(initial)
+  })
+
+  it('uses a new theme when the host switches to a different session', () => {
+    const previous = { id: 'session-1', theme: { look: 'royal' } }
+    const next = { id: 'session-2', theme: { look: 'ocean' } }
+
+    expect(preserveSessionTheme(previous, next)).toBe(next)
   })
 })
 
