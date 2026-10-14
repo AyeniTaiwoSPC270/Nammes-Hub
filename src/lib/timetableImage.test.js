@@ -5,6 +5,7 @@ import {
   layoutTableRows,
   columnWidthsFor,
   exportCanvasDimensions,
+  tableCellStyle,
 } from './timetableImage'
 
 const measureWidth = (text) => text.length * 6
@@ -12,6 +13,13 @@ const measureWidth = (text) => text.length * 6
 describe('exportCanvasDimensions', () => {
   it('returns 4× pixel dimensions for high-resolution timetable exports', () => {
     expect(exportCanvasDimensions(1200, 900)).toEqual({ width: 4800, height: 3600 })
+  })
+})
+
+describe('tableCellStyle', () => {
+  it('gives timetable times the strongest readable body-text style', () => {
+    expect(tableCellStyle(1)).toMatchObject({ font: '700 13px "Public Sans"', color: [11, 36, 23] })
+    expect(tableCellStyle(3).font).toBe('500 13px "Public Sans"')
   })
 })
 

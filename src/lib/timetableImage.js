@@ -7,12 +7,12 @@ const MARGIN = 56
 const CONTENT_WIDTH = BASE_WIDTH - MARGIN * 2
 const COLUMN_WEIGHTS = [0.11, 0.15, 0.1, 0.27, 0.14, 0.13, 0.1]
 
-const LINE_HEIGHT = 15
+const LINE_HEIGHT = 17
 const CELL_PAD_X = 10
 const CELL_PAD_Y = 10
-const MIN_ROW_HEIGHT = 34
-const HEADER_ROW_HEIGHT = 34
-const TABLE_BODY_TOP = 260
+const MIN_ROW_HEIGHT = 38
+const HEADER_ROW_HEIGHT = 38
+const TABLE_BODY_TOP = 264
 const FOOTER_BLOCK_HEIGHT = 64
 const WATERMARK_SPACING = 900
 
@@ -67,6 +67,13 @@ export function layoutTableRows(bodyRows, columnWidths, measureWidth) {
   })
 }
 
+export function tableCellStyle(columnIndex) {
+  if (columnIndex === 0) return { font: '700 13px "Public Sans"', color: COLOR.forest }
+  if (columnIndex === 1) return { font: '700 13px "Public Sans"', color: COLOR.forest }
+  if (columnIndex === 2) return { font: '700 12px "Courier New", monospace', color: COLOR.forestAccent }
+  return { font: '500 13px "Public Sans"', color: COLOR.ink }
+}
+
 function loadLogoImageElement() {
   return new Promise((resolve) => {
     const img = new Image()
@@ -106,7 +113,7 @@ function triggerDownload(canvas, filename) {
 export async function downloadTimetableImage({ level, semester, type, rows }) {
   await Promise.all([
     document.fonts.load('700 40px "Public Sans"'),
-    document.fonts.load('600 14px "Public Sans"'),
+    document.fonts.load('500 14px "Public Sans"'),
     document.fonts.load('400 14px "Public Sans"'),
   ])
 
@@ -121,7 +128,7 @@ export async function downloadTimetableImage({ level, semester, type, rows }) {
 
   const measureCanvas = document.createElement('canvas')
   const measureCtx = measureCanvas.getContext('2d')
-  measureCtx.font = '400 12.5px "Public Sans"'
+  measureCtx.font = '700 13px "Public Sans"'
   const measureWidth = (text) => measureCtx.measureText(text).width
   const laidOutRows = layoutTableRows(bodyRows, columnWidths, measureWidth)
 
@@ -220,7 +227,7 @@ export async function downloadTimetableImage({ level, semester, type, rows }) {
 
   ctx.fillStyle = rgba(COLOR.forestLight)
   ctx.fillRect(MARGIN, 226, CONTENT_WIDTH, HEADER_ROW_HEIGHT)
-  ctx.font = '700 10px "Courier New", monospace'
+  ctx.font = '700 11px "Courier New", monospace'
   ctx.fillStyle = rgba(COLOR.forest)
   headerLabels.forEach((label, i) => {
     ctx.fillText(label, colX[i] + CELL_PAD_X, 226 + HEADER_ROW_HEIGHT / 2 + 3)
@@ -233,18 +240,11 @@ export async function downloadTimetableImage({ level, semester, type, rows }) {
 
     row.wrappedCells.forEach((lines, colIndex) => {
       const x = colX[colIndex] + CELL_PAD_X
-      const columnStyle =
-        colIndex === 0
-          ? { font: '700 12px "Public Sans"', color: COLOR.forest }
-          : colIndex === 1
-            ? { font: '400 11px "Courier New", monospace', color: COLOR.mutedInk }
-            : colIndex === 2
-              ? { font: '700 11px "Courier New", monospace', color: COLOR.forestAccent }
-              : { font: '400 12px "Public Sans"', color: COLOR.ink }
+      const columnStyle = tableCellStyle(colIndex)
 
       if (colIndex === 6 && !row.cells[6]) {
-        ctx.font = '700 11px "Courier New", monospace'
-        ctx.fillStyle = rgba(COLOR.hairline)
+        ctx.font = '700 12px "Courier New", monospace'
+        ctx.fillStyle = rgba(COLOR.mutedInk)
         const dash = '—'
         const colWidth = columnWidths[6]
         ctx.fillText(dash, colX[6] + (colWidth - ctx.measureText(dash).width) / 2, rowY + row.height / 2 + 4)
