@@ -40,6 +40,11 @@ export function autoSecondsLeft({ enteredMs, nowMs, totalMs = AUTO_ADVANCE_MS })
   return Math.min(Math.ceil(totalMs / 1000), Math.max(0, left))
 }
 
+// A hosted game's theme is a snapshot from start. Later poll or realtime rows may advance gameplay, but cannot restyle it.
+export function preserveSessionTheme(previous, next) {
+  return previous?.id === next.id ? { ...next, theme: previous.theme } : next
+}
+
 export function initialOf(nickname) {
   const first = [...String(nickname).trim()][0]
   return first ? first.toUpperCase() : '?'

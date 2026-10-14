@@ -2,7 +2,7 @@ import { useCallback, useEffect, memo, useMemo, useRef, useState, useSyncExterna
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
-import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
+import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, preserveSessionTheme, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
 import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
 import { shownQuestion, shownAnswer, shownSlots } from '../../api/_lib/quizDraw.js'
 import { rankTeams, teamStyle } from '../data/quizTeams'
@@ -931,8 +931,9 @@ export default function HostQuiz() {
   const busyRef = useRef(false)
 
   const applySession = useCallback((row, live) => {
-    sessionRef.current = row
-    setSession(row)
+    const next = preserveSessionTheme(sessionRef.current, row)
+    sessionRef.current = next
+    setSession(next)
     if (row.full_at && fullRef.current.key !== row.full_at) {
       fullRef.current = { key: row.full_at, ms: live ? Date.now() : new Date(row.full_at).getTime() }
     }
