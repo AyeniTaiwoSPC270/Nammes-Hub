@@ -156,6 +156,9 @@ Props: `columns` (string[]), `rows` (string[][]). Always wrapped in `.nm-table-w
 - `rounded-sm` (4px, not `rounded-md`), 1px hairline border, `border-collapse`.
 - Header row: `surface-low` bg, `text-xs font-semibold uppercase tracking-[.05em] text-ink` (not mono — same font as body).
 - Body cells: `px-4 py-3 text-sm text-ink`, hairline bottom border between rows (last row borderless), row hover → `bg-surface-low`.
+- Always a real `<table>` with a visible header row, on phones too. It scrolls sideways inside
+  `.nm-table-wrap` rather than collapsing each row into a label/value card: a column header
+  belongs to a column, and the stacked form lost it. Do not reintroduce a mobile stack mode.
 
 ### FormField
 
