@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest'
-import { wrapText, buildImageRows, layoutTableRows, columnWidthsFor } from './timetableImage'
+import {
+  wrapText,
+  buildImageRows,
+  layoutTableRows,
+  columnWidthsFor,
+  exportCanvasDimensions,
+} from './timetableImage'
 
 const measureWidth = (text) => text.length * 6
+
+describe('exportCanvasDimensions', () => {
+  it('returns 4× pixel dimensions for high-resolution timetable exports', () => {
+    expect(exportCanvasDimensions(1200, 900)).toEqual({ width: 4800, height: 3600 })
+  })
+})
 
 describe('wrapText', () => {
   it('keeps short text on a single line', () => {

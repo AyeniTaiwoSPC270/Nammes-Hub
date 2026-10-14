@@ -1,7 +1,7 @@
 import { COLOR, sortTimetableRows, formatTimeLabel, academicSession, hoursBetween } from './timetablePdf'
 import { SEMESTER_LABELS } from '../data/timetables'
 
-const SCALE = 2
+const EXPORT_SCALE = 4
 const BASE_WIDTH = 1200
 const MARGIN = 56
 const CONTENT_WIDTH = BASE_WIDTH - MARGIN * 2
@@ -15,6 +15,10 @@ const HEADER_ROW_HEIGHT = 34
 const TABLE_BODY_TOP = 260
 const FOOTER_BLOCK_HEIGHT = 64
 const WATERMARK_SPACING = 900
+
+export function exportCanvasDimensions(width, height) {
+  return { width: width * EXPORT_SCALE, height: height * EXPORT_SCALE }
+}
 
 function rgba(color, alpha = 1) {
   return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`
@@ -125,10 +129,11 @@ export async function downloadTimetableImage({ level, semester, type, rows }) {
   const totalHeight = TABLE_BODY_TOP + tableHeight - HEADER_ROW_HEIGHT + FOOTER_BLOCK_HEIGHT
 
   const canvas = document.createElement('canvas')
-  canvas.width = BASE_WIDTH * SCALE
-  canvas.height = totalHeight * SCALE
+  const dimensions = exportCanvasDimensions(BASE_WIDTH, totalHeight)
+  canvas.width = dimensions.width
+  canvas.height = dimensions.height
   const ctx = canvas.getContext('2d')
-  ctx.scale(SCALE, SCALE)
+  ctx.scale(EXPORT_SCALE, EXPORT_SCALE)
 
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, BASE_WIDTH, totalHeight)
