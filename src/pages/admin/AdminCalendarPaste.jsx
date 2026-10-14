@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import PreviewViewport from '../../components/admin/PreviewViewport'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import FormField from '../../components/ui/FormField'
@@ -408,8 +409,9 @@ export function CalendarPasteBody() {
             Courses&rdquo; as a registration is your call, not a regex&rsquo;s.
           </p>
 
-          <ul className="mt-4 flex flex-col gap-2">
-            {view.map((row) => {
+          <PreviewViewport label="Pasted calendar rows preview" className="mt-4 rounded-lg border border-hairline bg-surface-low p-2">
+            <ul className="flex flex-col gap-2">
+              {view.map((row) => {
               const repeatOf = row.duplicateOf !== null ? view[row.duplicateOf] : null
               return (
                 <li
@@ -485,8 +487,9 @@ export function CalendarPasteBody() {
                   )}
                 </li>
               )
-            })}
-          </ul>
+              })}
+            </ul>
+          </PreviewViewport>
         </section>
       )}
 

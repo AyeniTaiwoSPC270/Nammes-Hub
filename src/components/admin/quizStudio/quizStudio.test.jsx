@@ -160,6 +160,13 @@ describe('the studio wiring', () => {
 })
 
 describe('studio preview', () => {
+  it('keeps long preview screens in their own viewport instead of the page scroll', () => {
+    const html = renderToStaticMarkup(<StudioPreview theme={theme} surface="projector" screen="lobby" title="Maths Quiz" />)
+    expect(html).toContain('max-h-[calc(100dvh-12rem)]')
+    expect(html).toContain('overflow-y-auto')
+    expect(html).toContain('overscroll-contain')
+  })
+
   it('draws every projector and phone screen without crashing', () => {
     for (const screen of Object.keys(PROJECTOR_SCREENS)) {
       expect(renderToStaticMarkup(<StudioPreview theme={theme} surface="projector" screen={screen} title="Maths Quiz" />)).toContain('NAMMES Live Quiz')

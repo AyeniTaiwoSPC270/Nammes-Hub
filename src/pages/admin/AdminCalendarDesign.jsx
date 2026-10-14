@@ -27,6 +27,7 @@ import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import Toggle from '../../components/ui/Toggle'
+import PreviewViewport from '../../components/admin/PreviewViewport'
 import CalendarDesignControls from '../../components/calendar/CalendarDesignControls'
 import CalendarLegend from '../../components/calendar/CalendarLegend'
 import MonthGrid from '../../components/calendar/MonthGrid'
@@ -402,34 +403,36 @@ export function CalendarDesignBody() {
                 )}
               </div>
 
-              <div
-                style={themeVars(theme)}
-                className={['mt-3 flex flex-col gap-6 rounded-lg border border-hairline p-4', previewDark ? 'dark bg-paper' : 'bg-paper'].join(' ')}
-              >
-                {(academicQuery.isLoading || eventsQuery.isLoading) && !merged.items.length ? (
-                  <SkeletonText lines={4} />
-                ) : (
-                  <>
-                    {nextUp.length > 0 && <NextUpStrip items={nextUp} todayKey={todayKey} />}
-                    {previewMonth ? (
-                      <MonthGrid
-                        month={previewMonth}
-                        onMonthChange={setPreviewMonth}
-                        items={shownItems}
-                        theme={theme}
-                        todayKey={todayKey}
-                        onSelectDay={ignoreDaySelect}
-                      />
-                    ) : (
-                      <p className="rounded-md border border-hairline bg-surface p-6 text-center text-sm text-ink-muted">
-                        Nothing dated to preview. Every date on the calendar may be switched off by the defaults above.
-                      </p>
-                    )}
-                    <CalendarLegend theme={theme} />
-                    <TbaPanel items={tbaItems} theme={theme} />
-                  </>
-                )}
-              </div>
+              <PreviewViewport label="Calendar preview" className="mt-3">
+                <div
+                  style={themeVars(theme)}
+                  className={['flex flex-col gap-6 rounded-lg border border-hairline p-4', previewDark ? 'dark bg-paper' : 'bg-paper'].join(' ')}
+                >
+                  {(academicQuery.isLoading || eventsQuery.isLoading) && !merged.items.length ? (
+                    <SkeletonText lines={4} />
+                  ) : (
+                    <>
+                      {nextUp.length > 0 && <NextUpStrip items={nextUp} todayKey={todayKey} />}
+                      {previewMonth ? (
+                        <MonthGrid
+                          month={previewMonth}
+                          onMonthChange={setPreviewMonth}
+                          items={shownItems}
+                          theme={theme}
+                          todayKey={todayKey}
+                          onSelectDay={ignoreDaySelect}
+                        />
+                      ) : (
+                        <p className="rounded-md border border-hairline bg-surface p-6 text-center text-sm text-ink-muted">
+                          Nothing dated to preview. Every date on the calendar may be switched off by the defaults above.
+                        </p>
+                      )}
+                      <CalendarLegend theme={theme} />
+                      <TbaPanel items={tbaItems} theme={theme} />
+                    </>
+                  )}
+                </div>
+              </PreviewViewport>
             </section>
           </div>
         </>
