@@ -394,7 +394,6 @@ export default function Cgpa() {
                 <p className="text-sm text-ink-muted">No courses yet. Add one below.</p>
               ) : (
                 <Table
-                  stackOnMobile={false}
                   columns={['Code', 'Title', 'Units', 'Grade', 'Type', 'Counts toward CGPA', '']}
                   rows={semester.courses.map((c) => {
                     const isEditing = editingCourse?.id === c.id
