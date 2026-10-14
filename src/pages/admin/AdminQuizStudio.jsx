@@ -37,6 +37,8 @@ import {
   LAYOUT_MAX_PER_PATTERN,
   LAYOUT_MAX_TOTAL,
   defaultBackdropProps,
+  applyBackdropPreset,
+  colorBackdropProps,
   propLabel,
   propSizeRange,
   propVocabulary,
@@ -54,6 +56,7 @@ import CharacterGallery from '../../components/admin/quizStudio/CharacterGallery
 import CharacterEditor from '../../components/admin/quizStudio/CharacterEditor'
 import PartsLab from '../../components/admin/quizStudio/PartsLab'
 import SoundLab from '../../components/admin/quizStudio/SoundLab'
+import BackdropPresetPicker from '../../components/admin/quizStudio/BackdropPresetPicker'
 import { BackdropPropInspector, BackdropPropLayer } from '../../components/admin/quizStudio/BackdropPropEditor'
 import { BODIES, TOPPERS, EYES, MOUTHS, ACCESSORIES, PROPS } from '../../../api/_lib/quizCharacterArt.js'
 
@@ -212,6 +215,7 @@ export default function AdminQuizStudio() {
   const [backdropMode, setBackdropMode] = useState('arrange')
   const [showPreviewScreen, setShowPreviewScreen] = useState(true)
   const [selectedBackdropProp, setSelectedBackdropProp] = useState(null)
+  const [selectedBackdropPreset, setSelectedBackdropPreset] = useState(null)
   const [brandBusy, setBrandBusy] = useState(false)
   const [brandError, setBrandError] = useState('')
 
@@ -316,6 +320,17 @@ export default function AdminQuizStudio() {
     delete layout[theme.pattern]
     change({ backdropLayout: layout })
     setSelectedBackdropProp(null)
+    setSelectedBackdropPreset(null)
+  }
+
+  function applySelectedBackdropPreset() {
+    if (!selectedBackdropPreset) return
+    changeBackdropProps(applyBackdropPreset(theme.pattern, backdropProps, selectedBackdropPreset))
+  }
+
+  function applyColorToBackdropProps() {
+    if (!selectedProp?.c) return
+    changeBackdropProps(colorBackdropProps(backdropProps, selectedProp.c))
   }
 
   function addBackdropProp(key) {
@@ -550,7 +565,7 @@ export default function AdminQuizStudio() {
             <Section title="Backdrop" hint="Choose a pattern, then drag its props on the preview. One arrangement is used on the projector and phones.">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {Object.entries(THEME_PATTERNS).map(([key, label]) => (
-                  <Choice key={key} selected={theme.pattern === key} onClick={() => { change({ pattern: key }); setSelectedBackdropProp(null) }} className="px-3 py-2.5">
+                  <Choice key={key} selected={theme.pattern === key} onClick={() => { change({ pattern: key }); setSelectedBackdropProp(null); setSelectedBackdropPreset(null) }} className="px-3 py-2.5">
                     {label}
                   </Choice>
                 ))}
@@ -621,6 +636,13 @@ export default function AdminQuizStudio() {
                 : 'This pattern has no individual props to arrange.'}>
               {hasMarks(theme.pattern) ? (
                 <>
+                  <BackdropPresetPicker
+                    pattern={theme.pattern}
+                    selectedPreset={selectedBackdropPreset}
+                    onSelect={setSelectedBackdropPreset}
+                    onApply={applySelectedBackdropPreset}
+                    disabled={backdropMode !== 'arrange'}
+                  />
                   <p className="mb-2 text-xs text-ink-muted">Add from this pattern&rsquo;s own set:</p>
                   <div className="flex flex-wrap gap-2">
                     {propVocabulary(theme.pattern).map((key) => (
@@ -641,9 +663,11 @@ export default function AdminQuizStudio() {
                         prop={selectedProp}
                         theme={theme}
                         selectionKey={selectedBackdropProp}
+                        propCount={backdropProps.length}
                         onChange={(patch) => patchBackdropProp(selectedBackdropProp, patch)}
                         onDelete={() => selectedBackdropProp !== null && deleteBackdropProp(selectedBackdropProp)}
                         onToggleHidden={() => selectedBackdropProp !== null && toggleBackdropProp(selectedBackdropProp)}
+                        onApplyToAll={applyColorToBackdropProps}
                       />
                     ) : (
                       <p className="text-sm text-ink-muted">Switch to Arrange props to select and edit individual props.</p>

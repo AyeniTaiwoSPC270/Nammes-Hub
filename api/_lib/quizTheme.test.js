@@ -10,6 +10,7 @@ import {
   MOTION_SPEED_LABELS, MOTION_DISTANCE, MOTION_BLEED, resolveMotion, motionDuration, hasMarks,
   GLYPH_PROP_COUNTS, LAYOUT_MAX_PER_PATTERN, LAYOUT_MAX_TOTAL, PROP_TILTLESS,
   propVocabulary, propLabel, propSizeRange, defaultBackdropProps,
+  BACKDROP_PROP_PRESETS, applyBackdropPreset, colorBackdropProps,
 } from './quizTheme.js'
 
 // The six patterns that draw discrete marks, read off the tables rather than written out: a fourth list would be one more
@@ -422,6 +423,63 @@ describe('what a pattern is made of, for the editor to offer', () => {
     for (const pattern of PROP_PATTERNS) {
       for (const prop of defaultBackdropProps(pattern)) expect(prop.h ?? false, pattern).toBe(false)
     }
+  })
+})
+
+describe('backdrop prop presets', () => {
+  it('offers five repeat styles and five arrangements', () => {
+    expect(BACKDROP_PROP_PRESETS.filter((preset) => preset.group === 'repeat')).toHaveLength(5)
+    expect(BACKDROP_PROP_PRESETS.filter((preset) => preset.group === 'arrangement')).toHaveLength(5)
+    expect(BACKDROP_PROP_PRESETS.map((preset) => preset.id)).toEqual([
+      'even-grid', 'staggered-rows', 'diagonal-repeat', 'alternating-line', 'diamond-lattice',
+      'four-corners', 'bottom-sweep', 'left-cluster', 'center-burst', 'open-sparse',
+    ])
+  })
+
+  it('places a four-prop grid evenly in the safe backdrop area', () => {
+    const props = Array.from({ length: 4 }, (_, i) => ({ k: `prop-${i}`, x: 0, y: 0, s: 42, r: i * 5 }))
+    expect(applyBackdropPreset('rings', props, 'even-grid').map(({ x, y }) => [x, y])).toEqual([
+      [29, 29], [71, 29], [29, 71], [71, 71],
+    ])
+  })
+
+  it('is deterministic and moves positions only for every style and prop pattern', () => {
+    for (const pattern of PROP_PATTERNS) {
+      const source = defaultBackdropProps(pattern).map((prop, index) => ({ ...prop, c: index % 2 ? '#aabbcc' : undefined, h: index === 1 }))
+      for (const { id } of BACKDROP_PROP_PRESETS) {
+        const once = applyBackdropPreset(pattern, source, id)
+        const twice = applyBackdropPreset(pattern, source, id)
+        expect(twice, `${pattern}/${id} is stable`).toEqual(once)
+        expect(once, `${pattern}/${id} keeps the number of props`).toHaveLength(source.length)
+        once.forEach((prop, index) => {
+          expect(prop.x, `${pattern}/${id} x`).toBeGreaterThanOrEqual(0)
+          expect(prop.x, `${pattern}/${id} x`).toBeLessThanOrEqual(100)
+          expect(Number.isInteger(prop.x)).toBe(true)
+          expect(prop.y, `${pattern}/${id} y`).toBeGreaterThanOrEqual(0)
+          expect(prop.y, `${pattern}/${id} y`).toBeLessThanOrEqual(100)
+          expect(Number.isInteger(prop.y)).toBe(true)
+          expect({ ...prop, x: source[index].x, y: source[index].y }).toEqual(source[index])
+        })
+      }
+    }
+  })
+
+  it('leaves an unsupported pattern or preset unchanged', () => {
+    const props = [{ k: 'ring', x: 21, y: 43, s: 72, r: 0, c: '#123456' }]
+    expect(applyBackdropPreset('dots', props, 'even-grid')).toEqual(props)
+    expect(applyBackdropPreset('rings', props, 'unknown')).toEqual(props)
+  })
+
+  it('applies one valid colour to every prop, including hidden props, without changing their layout', () => {
+    const props = [
+      { k: 'ring', x: 10, y: 20, s: 72, r: 0 },
+      { k: 'ring', x: 70, y: 80, s: 66, r: 0, c: '#111111', h: true },
+    ]
+    expect(colorBackdropProps(props, '#ABCDEF')).toEqual([
+      { ...props[0], c: '#abcdef' },
+      { ...props[1], c: '#abcdef' },
+    ])
+    expect(colorBackdropProps(props, 'red')).toEqual(props)
   })
 })
 
