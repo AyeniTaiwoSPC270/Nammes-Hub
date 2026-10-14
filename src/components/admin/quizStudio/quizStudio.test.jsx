@@ -6,9 +6,10 @@ import SchemeColours from './SchemeColours'
 import CharacterGallery from './CharacterGallery'
 import Character from '../../quiz/Character'
 import { CharacterCastContext } from '../../quiz/characterCastContext.js'
-import { BackdropPropLayer } from './BackdropPropEditor'
+import { BackdropPropInspector, BackdropPropLayer } from './BackdropPropEditor'
+import BackdropPresetPicker from './BackdropPresetPicker'
 import { BUILTIN_COUNT } from '../../../../api/_lib/quizCharacterArt.js'
-import { THEME_LOOKS, THEME_PATTERNS, THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, hasMarks, resolveMotion } from '../../../../api/_lib/quizTheme.js'
+import { THEME_LOOKS, THEME_PATTERNS, THEME_BACKDROP_MOTION, MOTION_PICTURE_ONLY, BACKDROP_PROP_PRESETS, hasMarks, resolveMotion } from '../../../../api/_lib/quizTheme.js'
 
 const theme = { look: 'royal', accent: '#123456', pattern: 'waves', confetti: 'stars', headline: 'Freshers Night', tagline: 'Phones out' }
 
@@ -439,6 +440,68 @@ describe('backdrop editor preview controls', () => {
     expect(studio).toContain('Show quiz screen')
     expect(studio).toContain('Preview motion')
     expect(studio).toContain('Arrange props')
+  })
+})
+
+describe('backdrop pattern presets', () => {
+  const picker = (props = {}) => renderToStaticMarkup(
+    <BackdropPresetPicker
+      pattern="rings"
+      props={[{ k: 'ring', x: 20, y: 20, s: 72, r: 0 }]}
+      selectedPreset="even-grid"
+      onSelect={() => {}}
+      onApply={() => {}}
+      {...props}
+    />,
+  )
+
+  it('shows all ten styles in the two named groups and marks the selected style', () => {
+    const html = picker()
+    expect((html.match(/data-preset-id=/g) ?? [])).toHaveLength(10)
+    expect(html).toContain('Decorative repeats · 5')
+    expect(html).toContain('Prop arrangements · 5')
+    expect(html).toContain('aria-pressed="true"')
+    for (const { label } of BACKDROP_PROP_PRESETS) expect(html).toContain(label.replace('&', '&amp;'))
+  })
+
+  it('does not allow Apply until a preset is selected or while rearranging is disabled', () => {
+    const noSelection = picker({ selectedPreset: null })
+    expect(noSelection).toMatch(/disabled=""[^>]*>Apply selected style/)
+    const disabled = picker({ disabled: true })
+    expect(disabled).toMatch(/disabled=""[^>]*>Apply selected style/)
+  })
+
+  it('wires the selected layout and selected-pattern colour action into the studio draft', () => {
+    const studio = code(STUDIO)
+    expect(studio).toContain('<BackdropPresetPicker')
+    expect(studio).toContain('applyBackdropPreset(theme.pattern, backdropProps, selectedBackdropPreset)')
+    expect(studio).toContain('colorBackdropProps(backdropProps, selectedProp.c)')
+    expect(studio).toContain('propCount={backdropProps.length}')
+  })
+})
+
+describe('bulk prop colour inspector', () => {
+  const inspector = (prop) => renderToStaticMarkup(
+    <BackdropPropInspector
+      pattern="rings"
+      prop={prop}
+      theme={{ look: 'classic' }}
+      selectionKey={0}
+      propCount={18}
+      onChange={() => {}}
+      onDelete={() => {}}
+      onToggleHidden={() => {}}
+      onApplyToAll={() => {}}
+    />,
+  )
+
+  it('labels the explicit bulk action with the active pattern prop count', () => {
+    expect(inspector({ k: 'ring', x: 20, y: 20, s: 72, r: 0, c: '#16a34a' })).toContain('Apply this colour to all 18 ring props')
+  })
+
+  it('disables bulk colour until the selected prop has an explicit colour', () => {
+    const html = inspector({ k: 'ring', x: 20, y: 20, s: 72, r: 0 })
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Apply this colour to all 18 ring props/)
   })
 })
 

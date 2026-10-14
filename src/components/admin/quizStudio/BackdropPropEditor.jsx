@@ -87,7 +87,7 @@ export function BackdropPropLayer({ pattern, props, scale, inset = 0, selectedIn
   )
 }
 
-export function BackdropPropInspector({ pattern, prop, theme, selectionKey, onChange, onDelete, onToggleHidden }) {
+export function BackdropPropInspector({ pattern, prop, theme, selectionKey, propCount = 0, onChange, onDelete, onToggleHidden, onApplyToAll }) {
   const [hex, setHex] = useState(prop?.c ?? '')
   const range = propSizeRange(pattern)
   const scheme = THEME_LOOKS[theme.look] ?? THEME_LOOKS.classic
@@ -103,6 +103,8 @@ export function BackdropPropInspector({ pattern, prop, theme, selectionKey, onCh
     ['Deep B', theme.deepB ?? scheme.deep[1]],
   ]
   const colorValue = (hex && COLOR.test(hex) ? hex : '#ff5a1f')
+  const groupLabel = { math: 'maths', notes: 'music note', stars: 'star', hexagons: 'hexagon', rings: 'ring', party: 'party' }[pattern] ?? 'backdrop'
+  const countLabel = `${propCount} ${groupLabel} prop${propCount === 1 ? '' : 's'}`
   const tiltless = PROP_TILTLESS.includes(prop.k)
   const commitHex = () => {
     if (COLOR.test(hex)) onChange({ c: hex.toLowerCase() })
@@ -168,6 +170,15 @@ export function BackdropPropInspector({ pattern, prop, theme, selectionKey, onCh
           placeholder="#rrggbb"
           className="mt-2 min-h-10 w-36 rounded-md border border-hairline bg-surface px-3 font-mono text-sm text-ink"
         />
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-3 w-full"
+          disabled={!prop.c || !COLOR.test(prop.c) || propCount < 1}
+          onClick={onApplyToAll}
+        >
+          Apply this colour to all {countLabel}
+        </Button>
       </div>
 
       <Button variant="secondary" size="sm" onClick={onToggleHidden}>

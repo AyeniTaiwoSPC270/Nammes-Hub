@@ -188,6 +188,99 @@ export function defaultBackdropProps(pattern) {
   }))
 }
 
+export const BACKDROP_PROP_PRESETS = Object.freeze([
+  { id: 'even-grid', label: 'Even grid', group: 'repeat' },
+  { id: 'staggered-rows', label: 'Staggered rows', group: 'repeat' },
+  { id: 'diagonal-repeat', label: 'Diagonal repeat', group: 'repeat' },
+  { id: 'alternating-line', label: 'Alternating line', group: 'repeat' },
+  { id: 'diamond-lattice', label: 'Diamond lattice', group: 'repeat' },
+  { id: 'four-corners', label: 'Four corners', group: 'arrangement' },
+  { id: 'bottom-sweep', label: 'Bottom sweep', group: 'arrangement' },
+  { id: 'left-cluster', label: 'Left cluster', group: 'arrangement' },
+  { id: 'center-burst', label: 'Center burst', group: 'arrangement' },
+  { id: 'open-sparse', label: 'Open & sparse', group: 'arrangement' },
+].map((preset) => Object.freeze(preset)))
+
+const PROP_PRESET_MARGIN = 8
+const PROP_PRESET_SPAN = 84
+
+function presetGridPosition(index, count, mode) {
+  const columns = Math.ceil(Math.sqrt(count))
+  const rows = Math.ceil(count / columns)
+  const row = Math.floor(index / columns)
+  const column = index % columns
+  const rowCount = Math.min(columns, count - row * columns)
+  const columnRatio = (column + 0.5) / rowCount
+  const rowRatio = (row + 0.5) / rows
+  let x = columnRatio
+  let y = rowRatio
+
+  if (mode === 'staggered-rows') x += row % 2 ? 0.5 / columns : 0
+  if (mode === 'diagonal-repeat' && rows > 1) y = ((row + column) % rows) / (rows - 1)
+  if (mode === 'alternating-line') {
+    x = count <= 1 ? 0.5 : index / (count - 1)
+    y = index % 2
+  }
+  if (mode === 'diamond-lattice') y += column % 2 ? 0.5 / rows : 0
+
+  return [
+    Math.round(Math.min(92, PROP_PRESET_MARGIN + x * PROP_PRESET_SPAN)),
+    Math.round(Math.min(92, PROP_PRESET_MARGIN + y * PROP_PRESET_SPAN)),
+  ]
+}
+
+function presetPosition(id, index, count) {
+  const [gridX, gridY] = presetGridPosition(index, count, id)
+  if (id === 'even-grid' || id === 'staggered-rows' || id === 'diagonal-repeat' || id === 'alternating-line' || id === 'diamond-lattice') {
+    return [gridX, gridY]
+  }
+  if (id === 'four-corners') {
+    const corner = index % 4
+    const level = Math.floor(index / 4) * 8
+    const corners = [[12, 12], [88, 12], [12, 88], [88, 88]]
+    const [x, y] = corners[corner]
+    return [
+      Math.round(x < 50 ? Math.min(92, x + level) : Math.max(8, x - level)),
+      Math.round(y < 50 ? Math.min(92, y + level) : Math.max(8, y - level)),
+    ]
+  }
+  if (id === 'bottom-sweep') {
+    const x = count <= 1 ? 50 : PROP_PRESET_MARGIN + (index / (count - 1)) * PROP_PRESET_SPAN
+    return [Math.round(x), Math.round(80 + ((index % 3) - 1) * 5)]
+  }
+  if (id === 'left-cluster') {
+    return [Math.round(12 + (index % 4) * 7), Math.round(count <= 1 ? 50 : 8 + (index / (count - 1)) * PROP_PRESET_SPAN)]
+  }
+  if (id === 'center-burst') {
+    const radius = 10 + (Math.floor(index / 8) % 4) * 11
+    const angle = index * 2.399963229728653
+    return [Math.round(50 + Math.cos(angle) * radius), Math.round(50 + Math.sin(angle) * radius)]
+  }
+  if (id === 'open-sparse') {
+    return [Math.round(8 + ((index * 37) % 85)), Math.round(8 + ((index * 53) % 85))]
+  }
+  return null
+}
+
+// Presets are deterministic layout shortcuts, not another saved design format: they rewrite only the active props'
+// coordinates, leaving the selected mark, size, rotation, colour and visibility intact for the studio draft to save.
+export function applyBackdropPreset(pattern, props, presetId) {
+  if (!hasMarks(pattern) || !Array.isArray(props) || !BACKDROP_PROP_PRESETS.some(({ id }) => id === presetId)) return props
+  return props.map((prop, index) => {
+    const position = presetPosition(presetId, index, props.length)
+    if (!position) return prop
+    return { ...prop, x: position[0], y: position[1] }
+  })
+}
+
+// The bulk action shares the selected prop's validated colour without changing any other layout fields. Invalid input is
+// a no-op, matching the theme's #rrggbb boundary instead of letting a hand-edited value reach the renderer.
+export function colorBackdropProps(props, color) {
+  if (!Array.isArray(props) || !isHexColor(color)) return props
+  const clean = color.toLowerCase()
+  return props.map((prop) => ({ ...prop, c: clean }))
+}
+
 export const THEME_CONFETTI = {
   math: 'Maths symbols',
   stars: 'Stars',
