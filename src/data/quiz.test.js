@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, preserveSessionTheme, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster, castSavePayload } from './quiz'
+import { blankQuestion, cleanQuestion, validateQuizDraft, secondsRemaining, battleClock, avatarStyle, initialOf, formatScore, rankPlayers, validateMaxPlayers, autoSecondsLeft, preserveSessionTheme, AUTO_ADVANCE_MS, OPTION_STYLES, castQueryKey, fetchCastRoster, castSavePayload } from './quiz'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -38,6 +38,48 @@ describe('secondsRemaining', () => {
     expect(secondsRemaining({ startedAtMs: 0, timeLimitSeconds: 20, nowMs: 0 })).toBe(20)
     expect(secondsRemaining({ startedAtMs: 0, timeLimitSeconds: 20, nowMs: 4500 })).toBe(16)
     expect(secondsRemaining({ startedAtMs: 0, timeLimitSeconds: 20, nowMs: 25000 })).toBe(0)
+  })
+})
+
+describe('battleClock', () => {
+  const duel = { state: 'question', isDuel: true, startedAtMs: 0, timeLimitSeconds: 20 }
+
+  it('counts down while you are still choosing', () => {
+    expect(battleClock({ ...duel, nowMs: 0 })).toEqual({ remaining: 20, canAnswer: true })
+    expect(battleClock({ ...duel, nowMs: 4500 })).toEqual({ remaining: 16, canAnswer: true })
+  })
+
+  // The bug this exists for: locking in set the clock to "no clock", and the ring then fell back to the full limit, so
+  // a player sitting on the waiting screen watched the timer spring from 3 back to 30 and stop.
+  it('keeps counting down after you lock in, because the question is still live', () => {
+    expect(battleClock({ ...duel, myAnswered: true, nowMs: 4500 })).toEqual({ remaining: 16, canAnswer: false })
+    expect(battleClock({ ...duel, myAnswered: true, nowMs: 19500 })).toEqual({ remaining: 1, canAnswer: false })
+    expect(battleClock({ ...duel, myAnswered: true, nowMs: 20000 })).toEqual({ remaining: 0, canAnswer: false })
+    expect(battleClock({ ...duel, myAnswered: true, nowMs: 40000 })).toEqual({ remaining: 0, canAnswer: false })
+  })
+
+  it('stops you answering once the limit is gone', () => {
+    expect(battleClock({ ...duel, nowMs: 20000 })).toEqual({ remaining: 0, canAnswer: false })
+  })
+
+  it('leaves the two kinds of battle to their own flag: a duel answers with myAnswered, a challenge with its result', () => {
+    const challenge = { state: 'question', isDuel: false, startedAtMs: 0, timeLimitSeconds: 20, nowMs: 1000 }
+    // A challenge has no myAnswered at all, and a duel has no result, so each must ignore the other's flag.
+    expect(battleClock({ ...challenge, myAnswered: true })).toEqual({ remaining: 19, canAnswer: true })
+    expect(battleClock({ ...duel, nowMs: 1000, result: { correct: true } }).canAnswer).toBe(true)
+    expect(battleClock({ ...challenge, result: { correct: true } }).canAnswer).toBe(false)
+  })
+
+  it('has no clock before the question starts, or off the question', () => {
+    // A duel opens 4 seconds in the future, and that gap has its own 3-2-1 screen.
+    expect(battleClock({ ...duel, nowMs: -3000 })).toEqual({ remaining: null, canAnswer: false })
+    for (const state of ['open', 'reveal', 'finished', 'cancelled', undefined]) {
+      expect(battleClock({ ...duel, state, nowMs: 1000 }), state).toEqual({ remaining: null, canAnswer: false })
+    }
+  })
+
+  it('has no clock rather than a wrong one when the start timestamp is missing', () => {
+    expect(battleClock({ ...duel, startedAtMs: NaN, nowMs: 1000 })).toEqual({ remaining: null, canAnswer: false })
   })
 })
 
