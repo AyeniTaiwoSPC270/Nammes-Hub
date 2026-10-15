@@ -148,6 +148,65 @@
   color: var(--color-brand);
 }
 
+/* The Events and News Design Studio's look. Tailwind classes are static strings, so a setting cannot reach
+   `grid-cols-3` or `aspect-[3/4]`; api/_lib/contentTheme.js emits these `--content-*` values on the page
+   wrapper instead and these four rules are the whole of the consumption. Every rule carries a fallback, so
+   a card rendered outside a themed wrapper -- the studio's own loading state, a component test -- still
+   looks like a card rather than collapsing.
+
+   `repeat(var(--content-cols), ...)` is why `layout.columns` is a number and not a class name. */
+.content-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(var(--content-cols, 3), minmax(0, 1fr));
+}
+
+.content-image {
+  aspect-ratio: var(--content-aspect, 4 / 3);
+}
+
+.content-card {
+  border-radius: var(--content-radius, 8px);
+  box-shadow: var(--content-shadow, 0px 4px 20px rgba(0, 0, 0, 0.05));
+}
+
+/* Radius without the shadow, for a full-width picture on a detail page where a card's drop shadow would
+   read as a card floating over the article. */
+.content-radius {
+  border-radius: var(--content-radius, 8px);
+}
+
+.content-card-body {
+  padding: var(--content-pad, 24px);
+}
+
+.content-card-title {
+  font-size: var(--content-title, 20px);
+}
+
+/* Tailwind's `line-clamp-*` writes all three of these; a bare number between 2 and 6 is enough here. Kept
+   as its own class rather than folded into the title, because an event card clamps its description too. */
+.content-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--content-clamp, 3);
+  overflow: hidden;
+}
+
+/* A fixed desktop column count is the one setting that must not reach a phone: three 370px cards do not fit
+   on a 375px screen, and a settings-driven grid that did so would push the whole page sideways. */
+@media (max-width: 639px) {
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .content-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Live quiz motion. Kept small and switched off for people who ask for reduced motion. */
 @keyframes qz-pop {
   0% { transform: scale(0.6); opacity: 0; }

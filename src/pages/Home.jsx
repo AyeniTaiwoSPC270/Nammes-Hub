@@ -1,23 +1,27 @@
 import { useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import Button from '../components/ui/Button'
-import Card from '../components/ui/Card'
-import Badge from '../components/ui/Badge'
-import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import Reveal from '../components/ui/Reveal'
 import WelcomeMessage from '../components/WelcomeMessage'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
+import { ContentFeed, ContentGrid, EventCard, NewsCard, NewsFeatureCard, staggerDelay } from '../components/content/ContentCards'
 import { useNewsQuery, getNews } from '../data/news'
 import { useExcosQuery } from '../data/excos'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { useSiteContentQuery } from '../data/siteContent'
+import { usePageLook } from '../data/contentLooks'
+import { defaultTheme } from '../../api/_lib/contentTheme.js'
 import { linkifyText } from '../lib/linkify'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
+
+// Home's fallback look, resolved once per page rather than per card. Same values `usePageLook` would return
+// if nothing is saved and nothing is live, so switching the opt-in on is the only thing that changes.
+const DEFAULT_LOOKS = { news: defaultTheme('news'), events: defaultTheme('events') }
 
 export default function Home() {
   const navigate = useNavigate()
@@ -28,11 +32,25 @@ export default function Home() {
   const content = contentQuery.data
   const reducedMotion = useReducedMotion()
 
+  // Read on BOTH pages, and only ever applied to this page's own block. Home also renders awards,
+  // opportunities and announcements, and an accent that spread to those would be a bug report rather than a
+  // feature -- which is why `onHome` is a separate switch from "this design is live on /news".
+  const newsLook = usePageLook('news')
+  const eventsLook = usePageLook('events')
+
+  // The default theme unless the admin has opted this block in. A design that is live on /news but not here
+  // must render exactly what Home rendered before this existed.
+  const newsTheme = newsLook.onHome ? newsLook.theme : DEFAULT_LOOKS.news
+  const eventsTheme = eventsLook.onHome ? eventsLook.theme : DEFAULT_LOOKS.events
+
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const heroImageY = useTransform(scrollYProgress, [0, 1], reducedMotion ? [0, 0] : [0, 60])
 
-  const [featuredNews, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
+  const [leadStory, ...restNews] = getNews(newsQuery.data ?? []).slice(0, 4)
+  // A look whose lead story is switched off shows none, here exactly as it does on /news and in the studio's
+  // preview. Without this the preview would be reviewing a tree the page never builds.
+  const showLead = newsTheme.layout.featured !== 'none'
   // Only the upcoming bucket: undated events have their own bucket now and belong to the calendar's TBA panel,
   // not on Home (spec §10).
   const previewEvents = groupEventsByTime(eventsQuery.data ?? []).upcoming.slice(0, 3)
@@ -111,60 +129,26 @@ export default function Home() {
                 <SkeletonCard imageVariant="cover" />
               </div>
             </>
-          ) : !featuredNews ? (
+          ) : !leadStory ? (
             <EmptyState
               icon="article"
               title="No news yet"
               description="Department news and announcements will show up here once they're posted."
             />
           ) : (
-            <>
-              <Link to={`/news/${featuredNews.id}`} className="block">
-                <Card
-                  layout="row"
-                  tone={featuredNews.tone}
-                  eyebrow={featuredNews.category}
-                  title={featuredNews.title}
-                  image={featuredNews.image_url ? { src: featuredNews.image_url } : undefined}
-                  imageVariant="cover"
-                  interactive
-                  className="mb-5 cursor-pointer"
-                >
-                  <span className="line-clamp-3">{featuredNews.body}</span>{' '}
-                  {featuredNews.badge_tone && <Badge tone={featuredNews.badge_tone}>{featuredNews.badge_label}</Badge>}
-                  <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
-                    Read more
-                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                  </span>
-                </Card>
-              </Link>
-
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {restNews.map((item, i) => (
-                  <Reveal key={item.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
-                    <Link to={`/news/${item.id}`} className="block">
-                    <Card
-                      tone={item.tone}
-                      eyebrow={item.category}
-                      title={item.title}
-                      image={item.image_url ? { src: item.image_url } : undefined}
-                      imageVariant="cover"
-                      imageAspect="standard"
-                      interactive
-                      className="cursor-pointer"
-                    >
-                      <span className="line-clamp-2">{item.body}</span>{' '}
-                      {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
-                      <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-orange-600">
-                        Read more
-                        <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                      </span>
-                    </Card>
-                    </Link>
-                  </Reveal>
-                ))}
-              </div>
-            </>
+            /* ContentFeed, not a bare ContentGrid: the lead story is a SIBLING of the grid, so a grid that
+               carried the `--content-*` vars on its own would leave the lead story rendering at the built-in
+               radius and title size while every card under it followed the look. */
+            <ContentFeed
+              theme={newsTheme}
+              featured={showLead ? <NewsFeatureCard item={leadStory} theme={newsTheme} /> : null}
+            >
+              {(showLead ? restNews : [leadStory, ...restNews]).map((item, i) => (
+                <Reveal key={item.id} delay={staggerDelay(newsTheme, i)}>
+                  <NewsCard item={item} theme={newsTheme} excerpt={item.body} />
+                </Reveal>
+              ))}
+            </ContentFeed>
           )}
         </div>
       </Reveal>
@@ -197,27 +181,13 @@ export default function Home() {
               description="Lectures, exams and registration dates are on the calendar."
             />
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            <ContentGrid theme={eventsTheme}>
               {previewEvents.map((event, i) => (
-                <Reveal key={event.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
-                  <Link
-                    to={`/events/${event.id}`}
-                    className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    {event.image_url && (
-                      <BlurredBackdropImage src={event.image_url} reveal={false} className="aspect-[3/4] w-full shrink-0" />
-                    )}
-                    <div className="flex flex-col gap-2 p-6">
-                      <div className="flex items-center gap-1 text-sm text-ink-muted">
-                        <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-                        {event.date}
-                      </div>
-                      <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
-                    </div>
-                  </Link>
+                <Reveal key={event.id} delay={staggerDelay(eventsTheme, i)}>
+                  <EventCard event={event} theme={eventsTheme} />
                 </Reveal>
               ))}
-            </div>
+            </ContentGrid>
           )}
         </div>
       </Reveal>

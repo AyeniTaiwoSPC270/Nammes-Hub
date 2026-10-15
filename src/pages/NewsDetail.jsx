@@ -5,13 +5,19 @@ import Badge from '../components/ui/Badge'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
+import { ContentLook } from '../components/content/ContentCards'
 import { useNewsQuery, getNewsById } from '../data/news'
+import { usePageLook } from '../data/contentLooks'
 import { linkifyText } from '../lib/linkify'
 
 export default function NewsDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data, isLoading, isError, refetch } = useNewsQuery()
+  // A detail page has no cards and no grid, so the look reaches it in exactly two places: the category
+  // accent and the hero's corner radius. `ContentLook` wraps the article only, NOT the page, so the
+  // breadcrumb, the back button and the nav keep the site's own colours.
+  const { theme } = usePageLook('news')
 
   if (isError && !data) {
     return (
@@ -43,30 +49,32 @@ export default function NewsDetail() {
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs items={[{ label: 'News', to: '/news' }, { label: post.title }]} />
 
-      <div className="text-xs font-semibold uppercase tracking-[.05em] text-orange-500">
-        {post.category}
-      </div>
-      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{post.title}</h1>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-        <span>Posted by {post.author}</span>
-        <span aria-hidden="true">&middot;</span>
-        <span>{post.date}</span>
-        {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
-      </div>
+      <ContentLook theme={theme}>
+        <div className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
+          {post.category}
+        </div>
+        <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{post.title}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+          <span>Posted by {post.author}</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>{post.date}</span>
+          {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
+        </div>
 
-      <Reveal>
-        {post.image_url && (
-          <img
-            src={post.image_url}
-            decoding="async"
-            alt=""
-            style={{ width: `${post.image_width_pct || 100}%` }}
-            className="mt-6 rounded-lg"
-          />
-        )}
+        <Reveal>
+          {post.image_url && (
+            <img
+              src={post.image_url}
+              decoding="async"
+              alt=""
+              style={{ width: `${post.image_width_pct || 100}%` }}
+              className="content-radius mt-6"
+            />
+          )}
 
-        <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(post.body)}</p>
-      </Reveal>
+          <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(post.body)}</p>
+        </Reveal>
+      </ContentLook>
 
       <div className="mt-8">
         <Button variant="ghost" onClick={() => navigate('/news')}>
