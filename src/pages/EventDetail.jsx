@@ -7,6 +7,7 @@ import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
 import GalleryLightbox from '../components/GalleryLightbox'
+import { ContentLook } from '../components/content/ContentCards'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -14,6 +15,7 @@ import { saveBlob } from '../lib/downloadImage'
 import { linkifyText } from '../lib/linkify'
 import { useEventsQuery, getEventById } from '../data/events'
 import { useEventPhotosQuery } from '../data/eventPhotos'
+import { usePageLook } from '../data/contentLooks'
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -24,6 +26,9 @@ export default function EventDetail() {
   const eventsQuery = useEventsQuery()
   const photosQuery = useEventPhotosQuery(id)
   const photos = photosQuery.data ?? []
+  // Same two reaches as NewsDetail, for the same reason: the look has no grid or card here, only an accent
+  // and a radius, so the wrapper goes round the article and not round the page.
+  const { theme } = usePageLook('events')
 
   if (eventsQuery.isError && !eventsQuery.data) {
     return (
@@ -96,19 +101,21 @@ export default function EventDetail() {
       </div>
 
       {tab === 'details' ? (
-        <Reveal className="mt-6">
-          {event.image_url && <img src={event.image_url} decoding="async" alt="" className="w-full rounded-lg" />}
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-            <span>{event.date}</span>
-            {event.meta && (
-              <>
-                <span aria-hidden="true">&middot;</span>
-                <span>{event.meta}</span>
-              </>
-            )}
-          </div>
-          <p className="mt-4 max-w-2xl leading-relaxed text-ink whitespace-pre-line">{linkifyText(event.description)}</p>
-        </Reveal>
+        <ContentLook theme={theme}>
+          <Reveal className="mt-6">
+            {event.image_url && <img src={event.image_url} decoding="async" alt="" className="content-radius w-full" />}
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+              <span>{event.date}</span>
+              {event.meta && (
+                <>
+                  <span aria-hidden="true">&middot;</span>
+                  <span>{event.meta}</span>
+                </>
+              )}
+            </div>
+            <p className="mt-4 max-w-2xl leading-relaxed text-ink whitespace-pre-line">{linkifyText(event.description)}</p>
+          </Reveal>
+        </ContentLook>
       ) : (
         <div className="mt-6">
           {photosQuery.isError && !photosQuery.data ? (

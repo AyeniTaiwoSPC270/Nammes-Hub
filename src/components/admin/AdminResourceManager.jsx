@@ -25,7 +25,7 @@ async function loadRows(table, orderBy) {
   return data || []
 }
 
-export default function AdminResourceManager({ table, title, config, orderBy, renderRowExtra }) {
+export default function AdminResourceManager({ table, title, config, orderBy, renderRowExtra, bare = false }) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const { user } = useAuth()
@@ -155,7 +155,10 @@ export default function AdminResourceManager({ table, title, config, orderBy, re
   })
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+    // `bare` drops the page container's own padding and width so a screen that already has a container
+    // around it -- the tab shells in AdminEvents/AdminNews -- does not end up with doubled gutters and
+    // 96px of top padding. Default is unchanged, so the other 30-odd call sites are untouched.
+    <div className={bare ? '' : 'mx-auto max-w-[1200px] px-5 py-12 sm:px-6'}>
       <Link
         to="/admin"
         className="inline-flex items-center gap-1 py-2 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"

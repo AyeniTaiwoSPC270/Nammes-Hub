@@ -52,7 +52,9 @@ reasons — `quiz.js`, `handbookBuild.js`, `supabaseAdmin.js`, `resend.js` and `
 a service key or `puppeteer`. Nothing in `src/` may import any of them, and the list has to be checked rather than
 assumed when adding to `api/_lib/`. `fonts.js` is the one place the five font files are registered, shared by both
 renderers and by `patternFonts.test.js`, which checks the backdrop glyph table against them — a second copy would
-let a font be deleted while the test kept checking a set no card used.
+let a font be deleted while the test kept checking a set no card used. The pure ones that a browser page imports
+directly are the four `calendar*.js` modules, `quizTheme.js`, `calendarMerge.js` and — since the fifth studio —
+`contentTheme.js`.
 
 ## Conventions
 
@@ -112,7 +114,7 @@ let a font be deleted while the test kept checking a set no card used.
 
 ## Saved design presets
 
-Three studios let an admin keep a design under a name and put it back later. Each has its **own** table and its **own**
+Five studios let an admin keep a design under a name and put it back later. Each has its **own** table and its **own**
 data module, and that is deliberate — do not merge them into one shared "presets" table.
 
 | Studio | Table | Data module | UI |
@@ -121,11 +123,12 @@ data module, and that is deliberate — do not merge them into one shared "prese
 | Email | `email_styles` | `src/data/emailStudio.js` | `AdminBroadcasts.jsx` |
 | Quiz look | `quiz_looks` | `src/data/quiz.js` | `SavedLooks.jsx` |
 | Form appearance | `form_looks` | `src/data/formLooks.js` | `SavedFormLooks.jsx` |
+| Events / News | `content_looks` + `content_settings` | `src/data/contentLooks.js` | `ContentDesign.jsx` |
 
-- **One concept, four implementations.** The designs have different shapes (swatch ids vs a capped jsonb with per-mark
-  motion vs design-plus-blocks), different sanitisers and different owners (calendar is owner-write, the other three
+- **One concept, five implementations.** The designs have different shapes (swatch ids vs a capped jsonb with per-mark
+  motion vs design-plus-blocks), different sanitisers and different owners (calendar is owner-write, the other four
   admin-write). A shared table would need a `kind` column and a per-kind sanitiser, so it buys a dispatch switch and
-  costs a coupling between four unrelated sanitisers. `calendar_looks` is the model to copy for a fifth.
+  costs a coupling between five unrelated sanitisers. `calendar_looks` is the model to copy for a sixth.
 - **Applying a preset is not saving it.** Every one of these fills a draft; the studio's own Save is what commits it.
   The only exception is email, where a saved style is chosen at send time rather than applied to a form. Do not make a
   preset apply straight to a quiz or a form — one stray click should not restyle either.
@@ -138,6 +141,42 @@ data module, and that is deliberate — do not merge them into one shared "prese
   the question reopens.
 - **A look is saved *with* its pictures and cleaned *without* a `quizId`.** Stripping on save would stop a look ever
   returning to the quiz it was made on, which is the common case.
+
+## Events & News design
+
+- **The look is a join of two tables, never a column on `events` or `news`.** `content_settings.<page>_look_id` names the design
+  and `content_looks.design` carries it, so making one live is two writes. This is the whole reason: `apply_change_request`
+  enumerates `events`/`news` columns explicitly (`20261009100000_calendar_review_queue.sql:37-67`), so a `theme` column added to
+  either would be silently dropped from every queued non-owner edit. `content_looks.page` then stops a news design being made
+  live on `/events`, where `layout.featured` would mean nothing.
+- **`sanitizeTheme(input, page)` is page-aware and is the only judge.** `/news` has a lead story and `/events` has none — events
+  are grouped by date, not by importance — so `layout.featured` is settled to `'none'` on events rather than trusted. The page
+  comes from the row, never from the payload, so a design copied out of the other page's row cannot move itself across.
+- **Tailwind classes cannot carry a setting, so the whole look is CSS custom properties.** `grid-cols-3` is a static string.
+  `themeVars` emits `--content-*` on a wrapper and the `.content-*` rules in `src/index.css` are the entire consumption.
+  `themeVars` reads the page off `theme.layout.page` rather than taking an argument, so no call site can pass a news page
+  alongside an events theme.
+- **The accent works by repointing three tokens**, `--color-brand`, `--color-brand-orange` and `--color-green-900`. The middle
+  one is the load-bearing one: `src/index.css:27-32` exists precisely to say `--color-brand-orange` is the "text, borders and
+  icons on a page surface" accent, which is what a card's category label and its Read more link are. Leave it out and the
+  studio's headline control changes nothing a visitor can see. The guard against a token being repointed onto *itself* is the
+  custom-property cycle check copied from `calendarTheme.js:200-206`.
+- **Every card is one component, in `src/components/content/ContentCards.jsx`.** Before this there were four renderers that
+  did not agree — hand-written markup in `Events.jsx` and `News.jsx`, `ui/Card` on Home's news, and a fourth inline copy at
+  `Home.jsx:204-217`. The studio's preview is only worth anything if it renders the same components the page does, which is the
+  `quizCharacterArt.js` lesson applied to markup. Adding a fourth copy of a card is the regression to watch for.
+- **`layout.imageAspect` has a per-page default** (`tall` for events, `wide` for news) because the two card sets have always had
+  different proportions and one default would restyle a page on day one. It stays editable on both. Every other default is
+  pinned to what these cards rendered before the studio existed.
+- **Home opts in per page and only for its own block.** `content_settings.<page>_on_home` defaults to false, and Home also renders
+  awards, opportunities and announcements. An accent that spread to those would be a bug report, so the toast says which block is
+  affected rather than leaving the admin to work out why the whole page changed.
+- **`content_looks` is admin-write, not owner-write like `calendar_looks`.** A design is presentation, not content, and
+  `form_looks` is the closer precedent. `content_settings` is in the MFA restrictive loop for the same reason every other
+  admin-writable settings singleton is.
+- **Only `--color-brand` is redefined in `.dark`.** Every other accent token is a fixed hex, so `sand` is invisible in light mode
+  and `success`/`warning`/`danger` are dim in dark. This is the site's existing position, shared with the calendar studio — do
+  not "fix" it here, because adding tokens to the `.dark` block changes every page.
 
 ## Known open bugs
 

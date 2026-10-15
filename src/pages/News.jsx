@@ -1,26 +1,27 @@
-import { Link, useSearchParams } from 'react-router-dom'
-import Badge from '../components/ui/Badge'
+import { useSearchParams } from 'react-router-dom'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
-import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import { SkeletonCard } from '../components/ui/Skeleton'
+import { ContentFeed, NewsCard, NewsFeatureCard, staggerDelay } from '../components/content/ContentCards'
 import { useNewsQuery, getNews, filterNewsByCategory, NEWS_CATEGORIES } from '../data/news'
 import { usePageBanner } from '../data/pageBanners'
+import { usePageLook } from '../data/contentLooks'
 
 const categories = ['All', ...NEWS_CATEGORIES]
-const CARD_STAGGER = 0.06
-const MAX_STAGGER_DELAY = 0.3
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data, isLoading, isError, refetch } = useNewsQuery()
+  const { theme } = usePageLook('news')
 
   const requestedCategory = searchParams.get('category')
   const active = categories.includes(requestedCategory) ? requestedCategory : 'All'
   const items = filterNewsByCategory(getNews(data ?? []), active)
-  const [featured, ...rest] = items
+  // `featured: 'none'` on the events page, and on a news page whose admin turned the featured card off, both
+  // land here as "no featured story" -- so every item goes in the grid rather than one being held back.
+  const [first, ...rest] = theme.layout.featured === 'none' ? [null, ...items] : items
   const banner = usePageBanner('news')
 
   function selectCategory(category) {
@@ -77,61 +78,13 @@ export default function News() {
             description="Department news and announcements will show up here once they're posted."
           />
         ) : (
-          <div className="flex flex-col gap-5">
-            <Reveal>
-            <Link
-              to={`/news/${featured.id}`}
-              className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow md:flex-row"
-            >
-              {featured.image_url && (
-                <BlurredBackdropImage src={featured.image_url} className="h-64 w-full shrink-0 md:h-auto md:w-1/2" />
-              )}
-              <div className="flex w-full flex-col justify-center gap-2 p-6 md:w-1/2">
-                <div className="flex items-center gap-2">
-                  {featured.category && (
-                    <span className="text-xs font-bold uppercase tracking-[.05em] text-orange-600">
-                      {featured.category}
-                    </span>
-                  )}
-                  {featured.badge_tone && <Badge tone={featured.badge_tone}>{featured.badge_label}</Badge>}
-                </div>
-                <h3 className="text-xl font-bold text-ink-900 m-0">{featured.title}</h3>
-                <p className="text-sm text-ink-muted">{featured.date}</p>
-              </div>
-            </Link>
-            </Reveal>
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((item, i) => (
-                <Reveal key={item.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
-                <Link
-                  to={`/news/${item.id}`}
-                  className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md hover:shadow-lg transition-shadow"
-                >
-                  {item.image_url && (
-                    <BlurredBackdropImage src={item.image_url} className="h-48 w-full shrink-0" />
-                  )}
-                  <div className="flex flex-grow flex-col gap-2 p-6">
-                    <div className="flex items-center gap-2">
-                      {item.category && (
-                        <span className="text-xs font-bold uppercase tracking-[.05em] text-orange-600">
-                          {item.category}
-                        </span>
-                      )}
-                      {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
-                    </div>
-                    <h3 className="text-xl font-bold text-ink-900 m-0 line-clamp-2">{item.title}</h3>
-                    <p className="mt-auto text-sm text-ink-muted">{item.date}</p>
-                    <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-600">
-                      Read more
-                      <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                    </span>
-                  </div>
-                </Link>
-                </Reveal>
-              ))}
-            </div>
-          </div>
+          <ContentFeed theme={theme} featured={first ? <Reveal><NewsFeatureCard item={first} theme={theme} /></Reveal> : null}>
+            {rest.map((item, i) => (
+              <Reveal key={item.id} delay={staggerDelay(theme, i)}>
+                <NewsCard item={item} theme={theme} />
+              </Reveal>
+            ))}
+          </ContentFeed>
         )}
       </div>
     </div>

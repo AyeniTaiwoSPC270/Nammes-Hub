@@ -1,58 +1,32 @@
-import { Link } from 'react-router-dom'
 import PageBanner from '../components/PageBanner'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
-import BlurredBackdropImage from '../components/ui/BlurredBackdropImage'
 import { SkeletonCard } from '../components/ui/Skeleton'
+import { ContentGrid, EventCard, staggerDelay } from '../components/content/ContentCards'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
 import { usePageBanner } from '../data/pageBanners'
+import { usePageLook } from '../data/contentLooks'
 
-const CARD_STAGGER = 0.06
-const MAX_STAGGER_DELAY = 0.3
-
-function EventCard({ event }) {
-  return (
-    <Link
-      to={`/events/${event.id}`}
-      className="flex flex-col overflow-hidden rounded-lg border border-hairline bg-surface shadow-md transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md"
-    >
-      {event.image_url && (
-        <BlurredBackdropImage src={event.image_url} className="aspect-[3/4] w-full shrink-0" />
-      )}
-      <div className="flex flex-grow flex-col gap-2 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          {event.meta && <span className="text-sm text-ink-muted">{event.meta}</span>}
-          <div className="ml-auto flex items-center gap-1 text-sm text-ink-muted">
-            <span className="material-symbols-outlined text-[16px]">calendar_today</span>
-            {event.date}
-          </div>
-        </div>
-        <h3 className="text-xl font-bold text-ink-900 m-0">{event.title}</h3>
-        <p className="flex-grow line-clamp-3 text-base leading-relaxed text-ink">{event.description}</p>
-      </div>
-    </Link>
-  )
-}
-
-function EventSection({ heading, events }) {
+function EventSection({ heading, events, theme }) {
   if (events.length === 0) return null
   return (
     <Reveal as="section">
       <h2 className="mb-5 text-2xl font-bold text-ink-900">{heading}</h2>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <ContentGrid theme={theme}>
         {events.map((event, i) => (
-          <Reveal key={event.id} delay={Math.min(i * CARD_STAGGER, MAX_STAGGER_DELAY)}>
-            <EventCard event={event} />
+          <Reveal key={event.id} delay={staggerDelay(theme, i)}>
+            <EventCard event={event} theme={theme} />
           </Reveal>
         ))}
-      </div>
+      </ContentGrid>
     </Reveal>
   )
 }
 
 export default function Events() {
   const { data, isLoading, isError, refetch } = useEventsQuery()
+  const { theme } = usePageLook('events')
   const rows = data ?? []
   const { upcoming, past, tba } = groupEventsByTime(rows)
   const banner = usePageBanner('events')
@@ -70,6 +44,9 @@ export default function Events() {
         {isError && !data ? (
           <ErrorState message="Couldn't load events right now." onRetry={refetch} />
         ) : isLoading ? (
+          // A fixed three-column grid rather than the look's, because `content-grid` would need the theme
+          // vars and a page that has not loaded its rows has not earned them yet. The shape matches, so the
+          // layout does not jump when the real cards arrive.
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <SkeletonCard imageVariant="cover" />
             <SkeletonCard imageVariant="cover" />
@@ -83,12 +60,12 @@ export default function Events() {
           />
         ) : (
           <div className="flex flex-col gap-14">
-            <EventSection heading="Upcoming Events" events={upcoming} />
+            <EventSection heading="Upcoming Events" events={upcoming} theme={theme} />
             {/* Undated events left the upcoming bucket so they stop sitting at the top of the list forever
                 (spec §10.1). They are still events, so /events still shows them -- under a heading that says why
                 they are not in the list above. */}
-            <EventSection heading="Dates to be confirmed" events={tba} />
-            <EventSection heading="Past Events" events={past} />
+            <EventSection heading="Dates to be confirmed" events={tba} theme={theme} />
+            <EventSection heading="Past Events" events={past} theme={theme} />
           </div>
         )}
       </div>
