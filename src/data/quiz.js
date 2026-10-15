@@ -111,6 +111,19 @@ export function secondsRemaining({ startedAtMs, timeLimitSeconds, nowMs, bonusMs
   return Math.max(0, Math.ceil(left))
 }
 
+// The battle clock: how long is left, and may this player still answer. `nowMs` should already be corrected to the
+// server's clock, as for `secondsRemaining`.
+//
+// The clock deliberately keeps running past your own lock-in. A duel question stays live until your opponent answers or
+// the limit passes, so a clock that stopped at the moment you locked in read as the timer resetting to full. What stops
+// you answering is having answered, which is a different thing and is why this returns both answers.
+export function battleClock({ state, isDuel, myAnswered, result, startedAtMs, timeLimitSeconds, nowMs }) {
+  if (state !== 'question' || !Number.isFinite(startedAtMs) || nowMs < startedAtMs) return { remaining: null, canAnswer: false }
+  const remaining = secondsRemaining({ startedAtMs, timeLimitSeconds, nowMs })
+  const answered = isDuel ? Boolean(myAnswered) : Boolean(result)
+  return { remaining, canAnswer: !answered && remaining > 0 }
+}
+
 // How long a paused question had been running when it was paused, from the two server timestamps (no clock drift).
 export function elapsedAtPauseMs(session) {
   if (!session || !session.paused_at) return null

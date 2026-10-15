@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { callQuiz, OPTION_STYLES, secondsRemaining, formatScore, useCastQuery } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, battleClock, formatScore, useCastQuery } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { QuizThemeScope } from '../components/quiz/QuizTheme'
 import Character from '../components/quiz/Character'
@@ -530,12 +530,19 @@ export default function PlayBattle() {
   const isDuel = view?.mode === 'duel'
   const startMs = view?.question ? new Date(isDuel ? view.startsAt : view.startedAt).getTime() : 0
   const untilStart = isDuel && state === 'question' ? startMs - clock : 0
-  const active = state === 'question' && !(isDuel && view.myAnswered) && !(!isDuel && view.result)
-  const remaining = active && untilStart <= 0 ? secondsRemaining({ startedAtMs: startMs, timeLimitSeconds: view.question.timeLimitSeconds, nowMs: clock }) : null
+  const { remaining, canAnswer } = battleClock({
+    state,
+    isDuel,
+    myAnswered: view?.myAnswered,
+    result: view?.result,
+    startedAtMs: startMs,
+    timeLimitSeconds: view?.question?.timeLimitSeconds ?? 0,
+    nowMs: clock,
+  })
 
   // A challenge question that ran out of time: ask the server, which records a miss and sends the result.
   useEffect(() => {
-    if (isDuel || remaining !== 0 || !token || timedOutFor.current === view?.index) return undefined
+    if (isDuel || remaining !== 0 || canAnswer || !token || timedOutFor.current === view?.index) return undefined
     timedOutFor.current = view.index
     const timer = setTimeout(() => callQuiz('battle', { op: 'state', token }).then(accept).catch(() => {}), 1700)
     return () => clearTimeout(timer)
@@ -740,11 +747,21 @@ export default function PlayBattle() {
         <div className="flex items-center justify-between">
           <span className="rounded-full bg-orange-500 px-4 py-2 text-sm font-bold text-white">Q{view.index + 1} of {view.total}</span>
           {!isDuel && <span className="font-bold tabular-nums">{formatScore(view.me.score)} pts</span>}
-          <CountdownRing seconds={remaining ?? question.timeLimitSeconds} total={question.timeLimitSeconds} size={52} stroke={6} />
+          {/* No clock means no ring. Falling back to the full limit here is what made the timer look like it had reset
+              the moment a player locked in, because that is exactly when the old clock stopped being computed. */}
+          {remaining !== null && <CountdownRing seconds={remaining} total={question.timeLimitSeconds} size={52} stroke={6} />}
         </div>
         {question.multiplier === 2 && <span className="mx-auto rounded-full bg-orange-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-white">Double points</span>}
         {question.imageUrl && <img src={question.imageUrl} alt={question.imageAlt} className="mx-auto max-h-40 w-auto max-w-full rounded-2xl bg-white object-contain p-1 shadow-sm ring-1 ring-black/10" />}
         <p className="text-center text-lg font-bold leading-snug"><MathText>{question.text}</MathText></p>
+        {/* A duel player's own answer is secret until the reveal, but whether they have answered is not, and the server
+            already sends it on every poll. Saying so tells a still-thinking player the question is about to close,
+            rather than leaving them to find out from the reveal that they rushed for nothing. */}
+        {isDuel && view.opponentAnswered && !waitingForThem && (
+          <p role="status" className="mx-auto rounded-full bg-orange-500/15 px-4 py-2 text-center text-sm font-bold text-orange-600">
+            {view.opponent.nickname} has locked in
+          </p>
+        )}
         {waitingForThem ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
             <span className="h-24 w-24"><Character id={view.me.avatarId ?? 0} mood="wave" /></span>
@@ -752,7 +769,7 @@ export default function PlayBattle() {
             <p className="text-ink-muted">{view.opponentAnswered ? 'Revealing…' : `Waiting for ${view.opponent.nickname}…`}</p>
           </div>
         ) : (
-          <QuestionPanel question={question} disabled={busy || remaining === 0} onAnswer={answer} typed={typed} setTyped={setTyped} />
+          <QuestionPanel question={question} disabled={busy || !canAnswer} onAnswer={answer} typed={typed} setTyped={setTyped} />
         )}
         {error && <p role="alert" className="text-center text-sm text-ink-muted">{error}</p>}
         <LeaveButton label={isDuel ? 'Leave duel' : 'Quit this challenge'} confirm={isDuel ? (view.opponent.isBot ? 'Leave this duel?' : 'Leave? Your opponent wins.') : 'Quit? Your progress is lost.'} onLeave={leave} busy={busy} />
