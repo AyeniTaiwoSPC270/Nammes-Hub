@@ -100,13 +100,23 @@ function AdvancedColor({ hex, onChange }) {
   )
 }
 
+/**
+ * One control changed: return the draft with `group` replaced by `value`.
+ *
+ * Separate and pure so the shape of a control's write is testable. The bug this replaced destructured the
+ * GROUP NAME as if it were a path -- `const [group, key] = 'card'` yields `'c'` and `'a'`, so every control
+ * in the panel wrote to a junk key that sanitizeTheme then dropped. Nothing appeared to do anything, and
+ * because the draft never changed, `dirty` stayed false and Save stayed disabled.
+ */
+export function applyControl(draft, group, value) {
+  return { ...draft, [group]: value }
+}
+
 export default function ContentDesignControls({ draft, page, onChange }) {
-  // Every setter rewrites one path of the draft. Reading `draft.x` rather than destructuring means a draft
-  // that has not loaded yet cannot make this throw.
-  const set = (path, value) => {
-    const [group, key] = path
-    onChange({ ...draft, [group]: { ...draft?.[group], [key]: value } })
-  }
+  // Every call site passes the group's WHOLE replacement object (`{ ...card, radius }`), so this only has to
+  // attach it under the right key. Reading `draft.x` rather than destructuring the draft means one that has
+  // not loaded yet cannot make this throw.
+  const set = (group, value) => onChange(applyControl(draft, group, value))
   const accent = draft?.accent ?? {}
   const card = draft?.card ?? {}
   const type = draft?.type ?? {}
