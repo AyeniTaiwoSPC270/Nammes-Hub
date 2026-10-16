@@ -10,6 +10,17 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>NAMMES Hub</title>
     <meta name="description" content="The digital resource center for NAMMES, University of Lagos — course outlines, event records, resources, news, and opportunities." />
+    <!-- Baseline Open Graph tags, so every link that is not a quiz stops previewing as a bare "NAMMES Hub". Quiz links
+         get a better card from /api/og (rewritten onto api/system.js), which is the only place that knows a session. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NAMMES Hub" />
+    <meta property="og:title" content="NAMMES Hub" />
+    <meta property="og:description" content="Course outlines, event records, resources, news, opportunities and live quizzes for NAMMES, University of Lagos." />
+    <meta property="og:image" content="/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NAMMES Hub" />
+    <meta name="twitter:description" content="Course outlines, event records, resources, news, opportunities and live quizzes for NAMMES, University of Lagos." />
+    <meta name="twitter:image" content="/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />

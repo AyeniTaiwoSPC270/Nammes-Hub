@@ -102,7 +102,62 @@ describe('what the browser gets', () => {
   it('has no answer key, only the shuffled options', () => {
     const q = mc(1, { explanation: 'because', accepted_answers: ['x'], numeric_answer: 5 })
     const shown = publicQuestion(q, [3, 2, 1, 0])
-    expect(shown).toEqual({ id: 'q1', type: 'multiple', text: 'Question 1?', options: ['d', 'c', 'b', 'a'] })
+    // `unit` is on every question and null on the ones that have none, so the browser reads one field rather than
+    // guessing whether a missing key means "no unit" or "an older server".
+    expect(shown).toEqual({ id: 'q1', type: 'multiple', text: 'Question 1?', options: ['d', 'c', 'b', 'a'], unit: null })
+  })
+
+  it('tells the student what unit a number answer carries', () => {
+    const q = { ...mc(1), type: 'numeric', options: [], numeric_answer: 2.5, numeric_unit: 'kN' }
+    expect(publicQuestion(q, null).unit).toBe('kN')
+  })
+
+  it('shows an ordering question its steps, which are shuffled like any other set of options', () => {
+    const q = { id: 'o1', type: 'order', text: 'Order these', options: ['a', 'b', 'c', 'd'] }
+    expect(publicQuestion(q, [3, 2, 1, 0]).options).toEqual(['d', 'c', 'b', 'a'])
+  })
+})
+
+describe('an ordering question in an exam', () => {
+  const steps = { id: 'o1', type: 'order', text: 'Order these', options: ['a', 'b', 'c', 'd'] }
+  const shown = [3, 2, 1, 0]
+
+  it('maps the tapped sequence back to stored positions', () => {
+    expect(readAnswer(steps, shown, { order: [0, 1, 2, 3] })).toEqual({ order_answer: [3, 2, 1, 0] })
+  })
+
+  it('refuses a sequence that is not a permutation of every step', () => {
+    expect(readAnswer(steps, shown, { order: [0, 1, 2] })).toBeNull()
+    expect(readAnswer(steps, shown, { order: [0, 1, 2, 2] })).toBeNull()
+    expect(readAnswer(steps, shown, { order: [0, 1, 2, 9] })).toBeNull()
+    expect(readAnswer(steps, shown, {})).toBeNull()
+  })
+
+  it('marks the authored order right and anything else wrong', () => {
+    expect(markAnswer(steps, { order_answer: [0, 1, 2, 3] })).toBe(true)
+    expect(markAnswer(steps, { order_answer: [1, 0, 2, 3] })).toBe(false)
+  })
+
+  it('scores all-or-nothing, so a percentage still means the fraction of questions right', () => {
+    const { score, total } = gradeAttempt([steps], { o1: { order_answer: [1, 0, 2, 3] } })
+    expect(score).toBe(0)
+    expect(total).toBe(1)
+  })
+
+  it('puts the two sequences side by side in the review', () => {
+    const review = reviewQuestion(steps, shown, { order_answer: [0, 1, 2, 3] })
+    expect(review.chosenOrder).toEqual([3, 2, 1, 0])
+    expect(review.correctText).toBe('1. a   2. b   3. c   4. d')
+  })
+})
+
+describe('a unit question in an exam', () => {
+  const q = { id: 'n1', type: 'numeric', text: 'Force?', options: [], numeric_answer: 2.5, numeric_unit: 'kN' }
+
+  it('marks the declared unit right and a bare number wrong', () => {
+    expect(markAnswer(q, { answer_text: '2.5 kN' })).toBe(true)
+    expect(markAnswer(q, { answer_text: '2.5 N' })).toBe(false)
+    expect(markAnswer(q, { answer_text: '2.5' })).toBe(false)
   })
 })
 

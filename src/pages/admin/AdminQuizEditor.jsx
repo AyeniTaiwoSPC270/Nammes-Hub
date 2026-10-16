@@ -53,6 +53,7 @@ export default function AdminQuizEditor() {
   const [teamSettings, setTeamSettings] = useState(DEFAULT_TEAM_SETTINGS)
 const [practiceEnabled, setPracticeEnabled] = useState(false)
 const [battleEnabled, setBattleEnabled] = useState(false)
+const [showExplanations, setShowExplanations] = useState(true)
 const [bank, setBank] = useState(NEW_BANK_SETTINGS)
 const [dialog, setDialog] = useState(null) // 'import' or 'bank'
 
@@ -69,6 +70,8 @@ const [dialog, setDialog] = useState(null) // 'import' or 'bank'
     })
     setPracticeEnabled(Boolean(quizQuery.data.practice_enabled))
     setBattleEnabled(Boolean(quizQuery.data.battle_enabled))
+    // Not-null with a default of true, so an older row that predates the column still wants explanations on.
+    setShowExplanations(quizQuery.data.show_explanations !== false)
     setBank({
       ...bankSettingsFromRow(quizQuery.data),
       battleQuestionCount: quizQuery.data.battle_question_count == null ? '' : String(quizQuery.data.battle_question_count),
@@ -78,7 +81,7 @@ const [dialog, setDialog] = useState(null) // 'import' or 'bank'
   }, [id, quizQuery.data, loaded])
 
   const saveMutation = useMutation({
-    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled, battleEnabled, ...saveBankSettings(bank, questions.length) }),
+    mutationFn: () => saveQuiz({ id, title, questions, maxPlayers: Number(maxPlayers), gameOptions, tags: cleanTags(tags), teamSettings, practiceEnabled, battleEnabled, showExplanations, ...saveBankSettings(bank, questions.length) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quizzes'] })
       toast.success('Quiz saved.')
@@ -166,6 +169,21 @@ const [dialog, setDialog] = useState(null) // 'import' or 'bank'
           </fieldset>
 
           <TeamSettings settings={teamSettings} onChange={setTeamSettings} />
+
+          <fieldset className="rounded-lg border border-hairline bg-surface p-4">
+            <legend className="px-1 text-sm font-bold text-ink-900">Explanations</legend>
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" className="mt-1 h-5 w-5" checked={showExplanations} onChange={(e) => setShowExplanations(e.target.checked)} />
+              <span>
+                <span className="block font-semibold text-ink-900">Show explanations on the reveal</span>
+                <span className="block text-sm text-ink-muted">
+                  Each question&rsquo;s explanation appears on the projector and on every phone once the answer is up.
+                  Questions without one show nothing. Frozen when the game starts, so changing this cannot restyle a game
+                  already running.
+                </span>
+              </span>
+            </label>
+          </fieldset>
 
           <BankSettings settings={bank} onChange={setBank} questionCount={questions.length} />
 

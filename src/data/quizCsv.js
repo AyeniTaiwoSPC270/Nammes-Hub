@@ -1,5 +1,6 @@
 import { blankQuestion, cleanQuestion, validateQuestion, TIME_LIMIT_CHOICES, POINT_CHOICES, MAX_QUESTIONS } from './quizQuestions'
 import { parseNumber } from '../../api/_lib/quizGrading.js'
+import { resolveTypeAlias } from '../../api/_lib/quizTypes.js'
 
 // Spreadsheet import and export for quizzes. One question per row:
 //   type, question, option_a, option_b, option_c, option_d, correct, seconds, points
@@ -7,9 +8,15 @@ import { parseNumber } from '../../api/_lib/quizGrading.js'
 // accepted answers separated by | for typed text. A sheet with no header row and just question + four answers + a
 // letter also works, so a simple list pasted from Excel imports as multiple choice.
 
-export const CSV_COLUMNS = ['type', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct', 'seconds', 'points']
-// Extra columns used by CBT exams, read by name when the sheet has a header row.
-export const CBT_COLUMNS = [...CSV_COLUMNS, 'explanation', 'topic', 'no_shuffle']
+export const OPTION_COLUMNS = ['option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'option_f', 'option_g', 'option_h', 'option_i', 'option_j', 'option_k', 'option_l']
+// An ordering question can have up to twelve steps, so a sheet that contains one gets twelve option columns. A sheet
+// with none keeps the four it has always had: that export is byte-for-byte what it was, and a multiple choice question
+// still stops at four, enforced by the column constraint rather than by the file format.
+const FOUR_OPTIONS = OPTION_COLUMNS.slice(0, 4)
+export const CSV_COLUMNS = ['type', 'question', ...FOUR_OPTIONS, 'correct', 'seconds', 'points', 'explanation', 'unit', 'unit_aliases']
+// Extra columns used by CBT exams, read by name when the sheet has a header row. `explanation` is no longer one of them:
+// it is authored on live quiz questions too, so a quiz exported to a spreadsheet must not lose it.
+export const CBT_COLUMNS = [...CSV_COLUMNS, 'topic', 'no_shuffle']
 export const CSV_MAX_BYTES = 1024 * 1024
 
 const INJECTION_START = /^[=+\-@]/
@@ -68,13 +75,8 @@ function nearest(value, choices, fallback) {
   return choices.reduce((best, c) => (Math.abs(c - n) < Math.abs(best - n) ? c : best), choices[0])
 }
 
-const TYPE_ALIASES = {
-  '': 'multiple', multiple: 'multiple', mc: 'multiple', choice: 'multiple', 'multiple choice': 'multiple',
-  truefalse: 'truefalse', 'true/false': 'truefalse', 'true false': 'truefalse', tf: 'truefalse', boolean: 'truefalse',
-  numeric: 'numeric', number: 'numeric', numerical: 'numeric',
-  text: 'text', typed: 'text', short: 'text', 'short answer': 'text',
-  poll: 'poll', survey: 'poll',
-}
+// Which question type a row means. The spellings a spreadsheet actually uses live in the shared list now, so a new
+// type is importable as soon as it is authorable.
 
 // Turns parsed rows into editor questions. Returns the good ones and a list of problems ({ line, message }) for the rest.
 export function questionsFromRows(rows, { max = MAX_QUESTIONS } = {}) {
@@ -84,8 +86,11 @@ export function questionsFromRows(rows, { max = MAX_QUESTIONS } = {}) {
 
   const head = rows[0].map((c) => c.trim().toLowerCase())
   const hasHeader = head.includes('question')
-  const index = Object.fromEntries(CBT_COLUMNS.map((name) => [name, head.indexOf(name)]))
-  // With no header the columns are: question, four answers, correct letter.
+  // Built from the full set of column names, not from CBT_COLUMNS: a sheet with an ordering question has twelve option
+// columns and the reader has to be able to name all twelve even when it is reading an exam bank.
+const index = Object.fromEntries([...new Set([...CSV_COLUMNS, ...OPTION_COLUMNS, 'topic', 'no_shuffle'])].map((name) => [name, head.indexOf(name)]))
+  // With no header the columns are: question, four answers, correct letter. A headerless sheet predates every type
+  // added after multiple choice, so it is read as the four-option layout it was written as.
   const headerless = { question: 0, option_a: 1, option_b: 2, option_c: 3, option_d: 4, correct: 5 }
   const col = (row, name) => {
     const at = hasHeader ? index[name] : headerless[name]
@@ -97,8 +102,7 @@ export function questionsFromRows(rows, { max = MAX_QUESTIONS } = {}) {
 
   body.slice(0, max).forEach((row, i) => {
     const line = i + (hasHeader ? 2 : 1)
-    const typeName = col(row, 'type').toLowerCase()
-    const type = TYPE_ALIASES[typeName]
+    const type = resolveTypeAlias(col(row, 'type'))
     if (!type) {
       problems.push({ line, message: `Unknown question type "${col(row, 'type')}".` })
       return
@@ -109,12 +113,18 @@ export function questionsFromRows(rows, { max = MAX_QUESTIONS } = {}) {
       time_limit_seconds: nearest(col(row, 'seconds'), TIME_LIMIT_CHOICES, 20),
       points: nearest(col(row, 'points'), POINT_CHOICES, 1000),
       explanation: col(row, 'explanation'),
+      // Draft field names, not the column names: rows are pushed as authored and cleaned on save, so a row read from a
+      // sheet goes through exactly the same cleanQuestion as one typed into the editor.
+      numeric_unit: col(row, 'unit'),
+      // One cell, pipe-separated, for the same reason the typed answers are: a newline inside a CSV cell is quoted, and a
+// quoted newline is the one thing a hand-edited sheet breaks first.
+numeric_unit_aliases: col(row, 'unit_aliases').split('|').map((a) => a.trim()).filter(Boolean).join('\n'),
       topic: col(row, 'topic'),
       no_shuffle: ['yes', 'true', '1', 'y'].includes(col(row, 'no_shuffle').toLowerCase()),
     }
     const correct = col(row, 'correct')
     if (type === 'multiple' || type === 'poll') {
-      q.options = ['option_a', 'option_b', 'option_c', 'option_d'].map((name) => col(row, name))
+      q.options = OPTION_COLUMNS.slice(0, 4).map((name) => col(row, name))
       if (type === 'multiple') {
         const at = 'abcd'.indexOf(correct.toLowerCase())
         if (correct.length !== 1 || at < 0) {
@@ -130,11 +140,15 @@ export function questionsFromRows(rows, { max = MAX_QUESTIONS } = {}) {
         return
       }
       q.correct_index = c === 'true' || c === 'a' || c === 't' ? 0 : 1
+    } else if (type === 'order') {
+      // Every step, in the order the columns appear. There is no correct_answer letter to read: the authored order of
+      // these cells IS the answer, so the column is written and never checked.
+      q.options = OPTION_COLUMNS.map((name) => col(row, name))
     } else if (type === 'numeric') {
       const [answer, margin = ''] = correct.split('|').map((x) => x.trim())
       q.numeric_answer = answer
       q.numeric_tolerance = margin === '' ? '0' : margin
-    } else {
+    } else if (type === 'text') {
       q.accepted_text = correct.split('|').map((x) => x.trim()).filter(Boolean).join('\n')
     }
     const problem = validateQuestion(q, line)
@@ -158,16 +172,41 @@ function escapeCell(value) {
 
 // A quiz's questions as CSV text (what import reads back).
 export function questionsToCsv(questions, { cbt = false } = {}) {
-  const rows = [cbt ? CBT_COLUMNS : CSV_COLUMNS]
+  const ordered = (Array.isArray(questions) ? questions : [questions]).some((q) => (q?.type ?? 'multiple') === 'order')
+  const head = ordered
+    ? ['type', 'question', ...OPTION_COLUMNS, 'correct', 'seconds', 'points', 'explanation', 'unit', 'unit_aliases']
+    : CSV_COLUMNS
+  const width = ordered ? 12 : 4
+  const rows = [cbt ? [...head, 'topic', 'no_shuffle'] : head]
   for (const raw of questions) {
     const q = cleanQuestion(raw)
-    const options = [...q.options, '', '', '', ''].slice(0, 4)
+    // An ordering question writes its steps into the option cells, in authored order, because that order is the answer.
+// Everything else leaves the cells empty rather than putting the answer somewhere that would read back differently.
+const cells = q.type === 'multiple' || q.type === 'poll' || q.type === 'order'
+      ? [...q.options, ...Array(width).fill('')].slice(0, width)
+      : Array(width).fill('')
     let correct = ''
     if (q.type === 'multiple') correct = 'ABCD'[q.correct_index] ?? ''
     else if (q.type === 'truefalse') correct = q.correct_index === 0 ? 'True' : 'False'
     else if (q.type === 'numeric') correct = q.numeric_tolerance > 0 ? `${q.numeric_answer}|${q.numeric_tolerance}` : String(q.numeric_answer)
     else if (q.type === 'text') correct = q.accepted_answers.join('|')
-    rows.push([q.type, q.text, ...(q.type === 'numeric' || q.type === 'text' || q.type === 'truefalse' ? ['', '', '', ''] : options), correct, q.time_limit_seconds, q.points, ...(cbt ? [q.explanation ?? '', q.topic ?? '', q.no_shuffle ? 'yes' : ''] : [])])
+    // A diagram question's regions are not in the sheet: they are geometry on an uploaded picture, and a cell of
+    // coordinates would import back as something that does not grade the same. The row exports its text and its unit of
+    // measure, and importing it reports that the picture is missing rather than producing a question that grades every
+    // tap wrong - a loud round-trip failure instead of a quiet one. Its cells stay blank, which `blanks` above already
+    // arranges, because diagram is not a choice type.
+    rows.push([
+      q.type,
+      q.text,
+      ...cells,
+      correct,
+      q.time_limit_seconds,
+      q.points,
+      q.explanation ?? '',
+      q.numeric_unit ?? '',
+      q.numeric_unit_aliases?.join('|') ?? '',
+      ...(cbt ? [q.topic ?? '', q.no_shuffle ? 'yes' : ''] : []),
+    ])
   }
   return rows.map((r) => r.map(escapeCell).join(',')).join('\r\n')
 }

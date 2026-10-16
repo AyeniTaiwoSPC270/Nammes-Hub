@@ -1,6 +1,7 @@
 // CBT practice exams: the rules that do not need a database. Cleaning exam settings, drawing and shuffling a paper, and
 // grading an attempt. The handler (handlers/quiz-cbt.js) puts these together with the clock and the tables.
 import { gradeAnswer, isChoiceType, correctText, ANSWER_TEXT_MAX } from './quizGrading.js'
+import { originalOrder } from './quizDraw.js'
 import { clampInt, buildQuestionSet } from './quizDraw.js'
 
 // Drawing, shuffling and the answer-order guard moved to quizDraw.js when quizzes grew question banks, so the live quiz,
@@ -58,11 +59,16 @@ export function buildAttempt(bank, settings, rand = Math.random) {
 // A question as the student's browser gets it: no answer key, answers in the order they will see them.
 export function publicQuestion(question, optionOrder) {
   const type = question.type ?? 'multiple'
+  // An ordering question is not a choice type but it still has steps to show, so it reads the same options. Diagram is
+  // not in the exam allow-list at all, which is why there is no picture branch here.
+  const showOptions = isChoiceType(type) || type === 'order'
   return {
     id: question.id,
     type,
     text: question.text,
-    options: isChoiceType(type) ? (optionOrder ?? question.options.map((_, i) => i)).map((i) => question.options[i]) : [],
+    options: showOptions ? (optionOrder ?? question.options.map((_, i) => i)).map((i) => question.options[i]) : [],
+    // The unit a number answer has to carry. Without it the student cannot know whether to type "2.5" or "2500".
+    unit: type === 'numeric' ? question.numeric_unit ?? null : null,
   }
 }
 
@@ -76,6 +82,13 @@ export function readAnswer(question, optionOrder, sent) {
     const order = optionOrder ?? question.options.map((_, i) => i)
     if (sent.choice < 0 || sent.choice >= order.length) return null
     return { chosen_index: order[sent.choice] }
+  }
+  if (type === 'order') {
+    // The student sends the steps in the order they tapped them, which is the order they were shown. Mapped back to
+    // stored positions here, because cbt_attempts.answers is a jsonb blob rather than a relational row that could be
+    // re-read and corrected later.
+    const stored = originalOrder(optionOrder, sent.order, (question.options ?? []).length)
+    return stored ? { order_answer: stored } : null
   }
   const text = typeof sent.text === 'string' ? sent.text.replace(/[\u0000-\u001f\u007f]/g, '').trim() : ''
   if (!text || text.length > ANSWER_TEXT_MAX) return null
@@ -97,7 +110,11 @@ export function readAnswers(questions, optionOrders, sent) {
 export function markAnswer(question, stored) {
   if (!stored) return null
   const type = question.type ?? 'multiple'
-  const graded = gradeAnswer(question, isChoiceType(type) ? { chosenIndex: stored.chosen_index } : { answerText: stored.answer_text })
+  // Partial credit is deliberately not used here. An exam's score is a count of questions answered correctly, and a
+  // half-right permutation would quietly change what a percentage means to every past paper.
+  const graded = isChoiceType(type)
+    ? gradeAnswer(question, { chosenIndex: stored.chosen_index })
+    : gradeAnswer(question, type === 'order' ? { order: stored.order_answer } : { answerText: stored.answer_text })
   return graded.ok ? graded.correct === true : false
 }
 
@@ -120,6 +137,21 @@ export function reviewQuestion(question, optionOrder, stored, { flagged = false,
   if (isChoiceType(type)) {
     if (answered) chosen = order.indexOf(stored.chosen_index)
     correctIndex = order.indexOf(question.correct_index)
+  } else if (type === 'order') {
+    // Shown back in the student's own order, so the review can print the two sequences side by side.
+    const storedOrder = answered ? stored.order_answer : null
+    return {
+      ...base,
+      answered,
+      correct,
+      flagged,
+      chosen: null,
+      chosenOrder: Array.isArray(storedOrder) ? storedOrder.map((i) => order.indexOf(i)) : null,
+      answerText: null,
+      correctIndex: null,
+      correctText: correctText(question),
+      explanation: explanations ? question.explanation ?? null : null,
+    }
   } else if (answered) answerText = stored.answer_text
   return {
     ...base,

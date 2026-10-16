@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { supabase } from '../../../lib/supabaseClient'
 import { OPTION_STYLES, TIME_LIMIT_CHOICES, POINT_CHOICES, QUESTION_TYPE_INFO, blankQuestion } from '../../../data/quiz'
 import { IMAGE_BUCKET, IMAGE_ALT_MAX } from '../../../../api/_lib/quizImage.js'
+import { EXPLANATION_MAX, letterboxRect, toNormalized, ORDER_STEPS_MAX, DIAGRAM_TARGETS_MAX } from '../../../../api/_lib/quizGrading.js'
 import { processQuizImage, checkImageFile } from '../../../lib/quizImage'
 import { hasMath } from '../../../lib/mathText'
 import MathText from '../../quiz/MathText'
@@ -97,6 +98,173 @@ function ImagePicker({ question, onChange }) {
   )
 }
 
+// Marks the correct regions on a picture, and captures the picture's own shape with each one.
+//
+// `ar` is not decoration. A normalised circle only exists if you know whether the picture is wider than it is tall,
+// and this is the only moment the real width and height are both known: the server grades the tap and never opens the
+// image. Without it every region on a landscape diagram is accepted twice as far across as it is drawn.
+function DiagramRegions({ question, onChange }) {
+  const wrapRef = useRef(null)
+  const [natural, setNatural] = useState({ width: 0, height: 0 })
+  const [box, setBox] = useState({ width: 0, height: 0 })
+  const targets = question.diagram_targets ?? []
+  const url = imageUrl(question)
+
+  function place(event) {
+    if (!natural.width || !wrapRef.current) return
+    const rect = wrapRef.current.getBoundingClientRect()
+    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    const mapped = toNormalized(point, letterboxRect({ width: rect.width, height: rect.height }, natural), natural)
+    // The grey bar beside the picture is not part of the picture, so a click there places nothing.
+    if (mapped.x < 0 || mapped.x > 1 || mapped.y < 0 || mapped.y > 1) return
+    if (targets.length >= DIAGRAM_TARGETS_MAX) return
+    onChange({ ...question, diagram_targets: [...targets, { x: mapped.x, y: mapped.y, r: 0.12, ar: natural.width / natural.height }] })
+  }
+
+  function resize(index, r) {
+    onChange({ ...question, diagram_targets: targets.map((t, i) => (i === index ? { ...t, r } : t)) })
+  }
+
+  const rect = natural.width ? letterboxRect(box, natural) : null
+  const w = box.width || 1
+  const h = box.height || 1
+
+  if (!url) {
+    return (
+      <p className="mt-4 rounded-lg border border-dashed border-hairline p-4 text-sm text-ink-muted">
+        Upload a picture first. A diagram question is answered by tapping a region of it, so there is nothing to mark
+        until there is a picture to mark on.
+      </p>
+    )
+  }
+
+  return (
+    <div className="mt-4">
+      <div
+        ref={wrapRef}
+        onClick={place}
+        className="relative mx-auto flex h-72 max-w-lg cursor-crosshair items-center justify-center rounded-lg border border-hairline bg-surface-low"
+      >
+        <img
+          src={url}
+          alt=""
+          onLoad={(e) => {
+            setNatural({ width: e.target.naturalWidth, height: e.target.naturalHeight })
+            const el = wrapRef.current
+            if (el) setBox({ width: el.clientWidth, height: el.clientHeight })
+          }}
+          className="max-h-72 w-auto max-w-full rounded-lg object-contain"
+        />
+        {rect && targets.map((t, i) => {
+          const diameter = 2 * t.r * Math.min(rect.width, rect.height)
+          return (
+            <span
+              key={i}
+              aria-hidden="true"
+              className="pointer-events-none absolute rounded-full border-2 border-green-600"
+              style={{
+                left: `${((rect.left + t.x * rect.width) / w) * 100}%`,
+                top: `${((rect.top + t.y * rect.height) / h) * 100}%`,
+                width: `${(diameter / w) * 100}%`,
+                height: `${(diameter / h) * 100}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          )
+        })}
+      </div>
+
+      <p className="mt-2 text-center text-xs text-ink-muted">
+        Click each region a tap should count as correct. Any one of them is enough. {targets.length} of {DIAGRAM_TARGETS_MAX}.
+      </p>
+
+      {targets.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-2">
+          {targets.map((t, i) => (
+            <li key={i} className="flex items-center gap-3 rounded-md border border-hairline p-2">
+              <span className="font-semibold text-ink-900">Region {i + 1}</span>
+              <label className="flex flex-1 items-center gap-2 text-xs text-ink-muted">
+                Size
+                <input
+                  type="range"
+                  min="0.05"
+                  max="0.4"
+                  step="0.01"
+                  value={t.r}
+                  onChange={(e) => resize(i, Number(e.target.value))}
+                  className="flex-1"
+                  aria-label={`Size of region ${i + 1}`}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => onChange({ ...question, diagram_targets: targets.filter((_, k) => k !== i) })}
+                className="shrink-0 text-xs font-bold text-danger"
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// An ordering question's answer is the order the steps were typed in, so the editor numbers them and says so. The
+// shuffle happens per game on the frozen draw, not here: the authored order is the answer and has to stay readable.
+function OrderSteps({ question, onChange }) {
+  const steps = question.options ?? []
+  function setStep(index, value) {
+    const options = [...steps]
+    options[index] = value
+    onChange({ ...question, options })
+  }
+
+  return (
+    <div className="mt-4">
+      <ol className="flex flex-col gap-2">
+        {steps.map((step, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-orange-500 text-sm font-bold text-white">
+              {i + 1}
+            </span>
+            <input
+              type="text"
+              value={step}
+              maxLength={100}
+              onChange={(e) => setStep(i, e.target.value)}
+              placeholder={`Step ${i + 1}`}
+              aria-label={`Step ${i + 1}`}
+              className={`${inputClass} flex-1`}
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...question, options: steps.filter((_, k) => k !== i) })}
+              className="shrink-0 text-xs font-bold text-ink-muted"
+              aria-label={`Remove step ${i + 1}`}
+            >
+              Remove
+            </button>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-1 text-xs text-ink-muted">
+        This order is the answer. Players are shown these steps shuffled and put them back in this sequence.
+      </p>
+      {steps.length < ORDER_STEPS_MAX && (
+        <button
+          type="button"
+          onClick={() => onChange({ ...question, options: [...steps, ''] })}
+          className="mt-2 rounded-md border border-hairline px-3 py-2 text-sm font-semibold text-ink-900"
+        >
+          Add a step
+        </button>
+      )}
+    </div>
+  )
+}
+
 function Answers({ question, onChange }) {
   const type = question.type
   function setOption(index, value) {
@@ -124,10 +292,33 @@ function Answers({ question, onChange }) {
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <FormField label="Correct answer" value={question.numeric_answer} onChange={(e) => onChange({ ...question, numeric_answer: e.target.value })} placeholder="3.14  or  -2  or  1/2" />
         <FormField label="Allowed margin (plus or minus)" value={question.numeric_tolerance} onChange={(e) => onChange({ ...question, numeric_tolerance: e.target.value })} placeholder="0" />
-        <p className="text-xs text-ink-muted sm:col-span-2">Put units in the question, not the answer. Players type just the number.</p>
+        <FormField
+          label="Unit (optional)"
+          value={question.numeric_unit ?? ''}
+          onChange={(e) => onChange({ ...question, numeric_unit: e.target.value })}
+          placeholder="kN"
+          maxLength={12}
+        />
+        <div className="sm:col-span-2">
+          <FormField
+            label="Other spellings of that unit (one per line, optional)"
+            type="textarea"
+            rows={2}
+            value={question.numeric_unit_aliases ?? ''}
+            onChange={(e) => onChange({ ...question, numeric_unit_aliases: e.target.value })}
+            placeholder={'kiloNewton\nkilonewton'}
+          />
+        </div>
+        <p className="text-xs text-ink-muted sm:col-span-2">
+          The player types just the number. Spelling, spacing and case in the unit do not matter &mdash; but the prefix does, so
+          a question answered in kN is never accepted for an answer of N. Leave the unit empty for a plain number question.
+        </p>
       </div>
     )
   }
+
+  if (type === 'order') return <OrderSteps question={question} onChange={onChange} />
+  if (type === 'diagram') return <DiagramRegions question={question} onChange={onChange} />
 
   if (type === 'text') {
     return (
@@ -214,6 +405,9 @@ export default function QuestionCard({ question, number, total, onChange, onMove
       imageExt: question.imageExt,
       imagePreview: question.imagePreview,
       removeImage: question.removeImage,
+      // The explanation belongs to the question, not to the answer format, so changing from number to multiple
+      // choice must not throw away why the answer was right.
+      explanation: question.explanation,
       options: next === 'multiple' || next === 'poll' ? question.options.map((o) => (type === 'truefalse' ? '' : o)) : fresh.options,
     })
   }
@@ -253,6 +447,17 @@ export default function QuestionCard({ question, number, total, onChange, onMove
 
       <ImagePicker question={question} onChange={onChange} />
       <Answers question={question} onChange={onChange} />
+
+      {/* Not inside the picture block: most explanations explain a calculation or a definition, not a diagram. */}
+      <FormField
+        label={`Explanation shown on the reveal (${(question.explanation ?? '').length}/${EXPLANATION_MAX})`}
+        type="textarea"
+        rows={2}
+        maxLength={EXPLANATION_MAX}
+        value={question.explanation ?? ''}
+        onChange={(e) => onChange({ ...question, explanation: e.target.value })}
+        placeholder="Why this is the right answer, in a sentence or two."
+      />
 
       <div className="mt-4 flex flex-wrap items-end gap-4">
         <label className={labelClass}>

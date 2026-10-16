@@ -1,4 +1,5 @@
 import MathText from '../quiz/MathText'
+import { OrderPick } from '../quiz/PickAnswer'
 
 // One question on the exam screen: the text, then either answer buttons or a box to type in.
 // `feedback` (study mode only) marks the right and wrong answers once the student has checked.
@@ -46,10 +47,18 @@ export default function QuestionView({ question, index, total, answer, onAnswer,
             )
           })}
         </div>
-      ) : (
+      ) : question.type === 'order' ? (
+      // No partial credit in an exam: the sequence is either the authored order or it is not, because the score is a
+      // count of questions right and a fraction would quietly change what every percentage means.
+      <OrderPick steps={question.options} disabled={locked || checking} onSubmit={(order) => onAnswer({ order })} />
+    ) : (
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-ink-muted">{question.type === 'numeric' ? 'Type a number' : 'Type your answer'}</span>
+            <span className="text-sm font-semibold text-ink-muted">
+                {question.type === 'numeric'
+                  ? (question.unit ? `Type the number and the unit (${question.unit})` : 'Type a number')
+                  : 'Type your answer'}
+              </span>
             <input
               value={answer?.text ?? ''}
               onChange={(e) => onAnswer({ text: e.target.value })}
