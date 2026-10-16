@@ -155,6 +155,27 @@ describe('shownOptions and the index maps', () => {
     expect(shownOptions({ type: 'text', options: [], text: 'x' }, [0, 1])).toEqual([])
   })
 
+  // An ordering question's steps live in the same column and are shown through the same shuffle. `shownOptions` used
+  // to refuse it as "not a choice type" and return [], which handed the phone a question with nothing to arrange while
+  // the projector numbered the authored order - which is the answer - across the room.
+  it('shows an ordering question its steps in the drawn order', () => {
+    const ordering = { type: 'order', options: ['add', 'multiply', 'subtract', 'divide'] }
+    expect(shownOptions(ordering, [3, 2, 1, 0])).toEqual(['divide', 'subtract', 'multiply', 'add'])
+    expect(shownOptions(ordering, null)).toEqual(ordering.options)
+  })
+
+  it('freezes a step order for an ordering question so every player sees the same sequence', () => {
+    const bank = [mc(1, { type: 'order', options: ['a', 'b', 'c'] }), mc(2)]
+    const { optionOrders } = buildQuestionSet(bank, { shuffleOptions: true }, () => 0.25)
+    expect(optionOrders[bank[0].id]).toHaveLength(3)
+    expect([...optionOrders[bank[0].id]].sort()).toEqual([0, 1, 2])
+  })
+
+  it('still refuses to show options for a type that has none', () => {
+    expect(shownOptions({ type: 'numeric', options: ['stale'], text: 'x' }, [0])).toEqual([])
+    expect(shownOptions({ type: 'diagram', options: ['stale'], text: 'x' }, [0])).toEqual([])
+  })
+
   it('turns what the player tapped back into what is stored', () => {
     expect(originalIndex(order, 0, 4)).toBe(2)
     expect(originalIndex(order, 3, 4)).toBe(1)

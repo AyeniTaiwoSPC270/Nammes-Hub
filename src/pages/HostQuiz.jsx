@@ -3,8 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, preserveSessionTheme, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
-import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
-import { shownQuestion, shownAnswer, shownSlots } from '../../api/_lib/quizDraw.js'
+import { isChoiceType, normaliseText, cleanDiagramTargets } from '../../api/_lib/quizGrading.js'
+import { shownQuestion, shownAnswer, shownSlots, shownOptions } from '../../api/_lib/quizDraw.js'
+import { DiagramTap } from '../components/quiz/DiagramTap'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
@@ -319,12 +320,16 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
 }
 
 // What the audience needs to know about a question row (the host reads the full row, including the answer).
-function toView(question) {
+function toView(question, optionOrder = null) {
   return {
     text: question.text,
     imageUrl: question.image_path ? supabase.storage.from('quiz-images').getPublicUrl(question.image_path).data.publicUrl : null,
     imageAlt: question.image_alt ?? '',
     multiplier: question.points_multiplier ?? 1,
+    // The projector renders a diagram question as its picture, not as a list of options, and an ordering question as
+    // its steps in the order they were DRAWN - not the order they were authored, which is the answer.
+    type: question.type ?? 'multiple',
+    options: shownOptions(question, optionOrder),
   }
 }
 
@@ -360,7 +365,7 @@ function SkipButton({ onSkip, disabled }) {
   )
 }
 
-function QuestionScreen({ title, question, index, total, remaining, answered, playerCount, onEnd, busy, paused, onTogglePause, onExtend, canExtend, onSkip }) {
+function QuestionScreen({ title, question, optionOrder, index, total, remaining, answered, playerCount, onEnd, busy, paused, onTogglePause, onExtend, canExtend, onSkip }) {
   const share = playerCount > 0 ? Math.round((answered / playerCount) * 100) : 0
   const type = question.type ?? 'multiple'
   return (
@@ -402,7 +407,7 @@ function QuestionScreen({ title, question, index, total, remaining, answered, pl
         </div>
       )}
 
-      <QuestionHeading question={toView(question)} />
+      <QuestionHeading question={toView(question, optionOrder)} />
 
       {isChoiceType(type) ? (
         <AnswerTiles question={question}>
@@ -419,6 +424,32 @@ function QuestionScreen({ title, question, index, total, remaining, answered, pl
             </div>
           )}
         </AnswerTiles>
+      ) : type === 'diagram' ? (
+        // The picture and nothing else. The regions are the answer, so the projector does not draw them here - it
+        // draws them on the reveal. A diagram answer is a position on this exact picture, so marking it early would be
+        // marking the answer in front of everyone in the room.
+        <div className="mx-auto w-full max-w-4xl">
+          <DiagramTap src={toView(question).imageUrl} alt={toView(question).imageAlt} disabled />
+          <p className="mt-3 text-center text-2xl font-bold text-ink-muted">Tap the correct region on your phone</p>
+        </div>
+      ) : type === 'order' ? (
+        // Shuffled on the projector too, for the same reason as every other question: the steps are handed to the
+        // phones in the order they were drawn, and the projector has to show that same order or "the third one" means
+        // something different in the hall than on a handset.
+        <ol className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+          {toView(question, optionOrder).options.map((option, i) => (
+            <li
+              key={i}
+              className="qz-rise flex min-h-[90px] items-center gap-5 rounded-3xl bg-orange-500 p-6 text-white shadow-lg"
+              style={{ animationDelay: `${120 + i * 80}ms` }}
+            >
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-3xl font-bold">
+                {i + 1}
+              </span>
+              <span className="text-2xl font-bold leading-snug sm:text-4xl"><MathText>{option}</MathText></span>
+            </li>
+          ))}
+        </ol>
       ) : (
         <div className="qz-rise mx-auto flex w-full max-w-3xl items-center gap-5 rounded-3xl border-2 border-dashed border-orange-500 bg-surface p-8 shadow-md">
           <span className="material-symbols-outlined text-6xl text-orange-500" aria-hidden="true">text_fields</span>
@@ -539,6 +570,34 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
             )
           }}
         </AnswerTiles>
+      ) : type === 'diagram' ? (
+        // Now the regions are drawn, because the answer is public. Same picture, same mapping, so what the room is shown
+        // is exactly what a tap was graded against.
+        <div className="mx-auto w-full max-w-4xl">
+          <DiagramTap
+            src={toView(question).imageUrl}
+            alt={toView(question).imageAlt}
+            targets={cleanDiagramTargets(question.diagram_targets)}
+            marked={revealed}
+            disabled
+          />
+          {revealed && <p className="mt-3 text-center text-2xl font-bold text-ink-muted">The regions a tap was graded against</p>}
+        </div>
+      ) : type === 'order' ? (
+        // The authored order IS the answer, so the reveal walks the steps in the order they had to be put in - the
+        // opposite of the open question, which shows them in the order they were drawn.
+        <ol className="mx-auto flex w-full max-w-4xl flex-col gap-3">
+          {(question.options ?? []).map((step, i) => (
+            <li
+              key={i}
+              className={`qz-rise flex min-h-16 items-center gap-5 rounded-3xl p-5 shadow-lg ${revealed ? 'bg-green-700 text-white' : 'bg-surface text-ink-900'}`}
+              style={{ animationDelay: `${120 + i * 80}ms` }}
+            >
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-2xl font-bold">{i + 1}</span>
+              <span className="text-xl font-bold leading-snug sm:text-3xl"><MathText>{step}</MathText></span>
+            </li>
+          ))}
+        </ol>
       ) : (
         <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-2">
           {revealed ? (
@@ -1391,6 +1450,7 @@ rightShareRef.current = rightShare
       <QuestionScreen
         {...shared}
         question={question}
+        optionOrder={optionOrders[question.id] ?? null}
         remaining={remaining}
         answered={answers.length}
         playerCount={players.length}

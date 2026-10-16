@@ -8,6 +8,7 @@ import { CharacterCastContext } from '../components/quiz/characterCastContext.js
 import CharacterPicker from '../components/quiz/CharacterPicker'
 import { randomCastId } from '../components/quiz/characterPickerUtils.js'
 import MathText from '../components/quiz/MathText'
+import { OrderPick, DiagramPick } from '../components/quiz/PickAnswer'
 import ResultCardModal from '../components/quiz/ResultCardModal'
 import { duelCardUrl, cardFilename } from '../lib/quizCard'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
@@ -330,6 +331,12 @@ function ShareBox({ code }) {
 
 // Options or a typed box, the same for a challenge and a duel.
 function QuestionPanel({ question, disabled, onAnswer, typed, setTyped }) {
+  if (question.type === 'order') {
+    return <OrderPick steps={question.options} disabled={disabled} onSubmit={(order) => onAnswer({ order })} />
+  }
+  if (question.type === 'diagram') {
+    return <DiagramPick src={question.imageUrl} alt={question.imageAlt} disabled={disabled} onSubmit={(tap) => onAnswer({ tap })} />
+  }
   if (isChoiceType(question.type)) {
     return (
       <div className={`grid flex-1 auto-rows-fr gap-3 ${question.options.length === 2 ? 'grid-cols-1' : 'grid-cols-2'}`}>
@@ -687,6 +694,12 @@ export default function PlayBattle() {
           <h1 className="text-4xl font-bold text-white">{r.mine.correct ? 'Correct!' : r.mine.timedOut ? "Time's up" : 'Not quite'}</h1>
           {r.mine.correct && <p className="rounded-full bg-white px-6 py-2 text-3xl font-bold text-green-700">+{formatScore(r.mine.pointsAwarded)}</p>}
           {label && <p className="w-full rounded-2xl bg-white/15 p-3 text-xl font-bold">Answer: <MathText>{label}</MathText></p>}
+          {r.mine.explanation && (
+            <div className="w-full rounded-2xl bg-black/25 p-3 text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">Why</p>
+              <p className="mt-1 break-words text-base leading-snug text-white"><MathText>{r.mine.explanation}</MathText></p>
+            </div>
+          )}
           <p className="rounded-full bg-black/20 px-5 py-2 font-semibold">
             {view.opponent.nickname}: {r.theirs.answered ? (r.theirs.correct ? `right, +${formatScore(r.theirs.pointsAwarded)}` : 'wrong') : 'no answer'}
           </p>
@@ -721,6 +734,12 @@ export default function PlayBattle() {
             <div className="w-full rounded-2xl bg-white/15 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">The answer was</p>
               <p className="mt-1 break-words text-2xl font-bold"><MathText>{label}</MathText></p>
+            </div>
+          )}
+          {result.explanation && (
+            <div className="w-full rounded-2xl bg-black/25 p-4 text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">Why</p>
+              <p className="mt-1 break-words text-lg leading-snug text-white"><MathText>{result.explanation}</MathText></p>
             </div>
           )}
           <p className="rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">{formatScore(view.me.score)} pts · question {view.index + 1} of {view.total}</p>

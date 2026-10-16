@@ -80,6 +80,7 @@ const AdminQuizReport = lazyRetry(() => import('./pages/admin/AdminQuizReport'))
 const AdminBattles = lazyRetry(() => import('./pages/admin/AdminBattles'))
 const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
 const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
+const PlayLow = lazyRetry(() => import('./pages/PlayLow'))
 const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
 const PlayBattle = lazyRetry(() => import('./pages/PlayBattle'))
 const PracticeList = lazyRetry(() => import('./pages/PracticeList'))
@@ -142,6 +143,16 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <PlayQuiz />
+              </Suspense>
+            }
+          />
+          {/* The light client. Its own page rather than a mode of /play on purpose: sharing a component is how the
+              look system gets back in, and the whole point is that it is not here. */}
+          <Route
+            path="play/low"
+            element={
+              <Suspense fallback={null}>
+                <PlayLow />
               </Suspense>
             }
           />

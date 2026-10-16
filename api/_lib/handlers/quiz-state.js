@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
-import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeback, isChoiceType, correctText, fiftyFiftyHidden, POWERUPS } from '../quiz.js'
+import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeback, isChoiceType, correctText, cleanDiagramTargets, fiftyFiftyHidden, POWERUPS } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
 import { rankTeams } from '../quizTeams.js'
@@ -18,7 +18,10 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { token } = req.body ?? {}
+    // A phone that opted into low data says so on every state call. Honoured only to omit things it cannot use; it is
+// never allowed to change what a player sees about the game itself.
+const { token, low } = req.body ?? {}
+const saveData = low === 1 || low === true || low === '1'
     if (typeof token !== 'string' || !token) {
       res.status(400).json({ error: 'token is required' })
       return
@@ -107,7 +110,7 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
         const optionCount = (question.options ?? []).length
         const { data: answer } = await supabaseAdmin
           .from('quiz_answers')
-          .select('chosen_index, points_awarded, bonus_points, answer_text, correct')
+          .select('chosen_index, points_awarded, bonus_points, answer_text, correct, credit, order_answer')
           .eq('player_id', player.id)
           .eq('question_id', question.id)
           .maybeSingle()
@@ -141,6 +144,12 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
             : [],
           powerupsLeft,
         }
+        // A unit question needs its unit and aliases on the phone so the student knows what to type, and the reveal
+        // can print the answer back in the form it asked for. Both are null on every other type.
+        if (type === 'numeric' && question.numeric_unit) {
+          out.question.unit = question.numeric_unit
+          out.question.unitAliases = question.numeric_unit_aliases ?? []
+        }
         if (session.state === 'question' && gameOptions.comeback) {
           // Standing when the question opened: totals minus what this question has awarded so far.
           const { data: answered } = await supabaseAdmin.from('quiz_answers').select('player_id, points_awarded').eq('question_id', question.id)
@@ -156,7 +165,23 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
             answerText: answer ? answer.answer_text : null,
             correct: answer ? answer.correct : null,
             pointsAwarded: answer ? answer.points_awarded : 0,
+            // Null on every single-answer question. The reveal prints "4 of 6 steps in the right place" from this, and
+            // it is stored rather than derived because the speed scaling, streak, comeback and multiplier have all
+            // already changed points_awarded by the time anything could read it back.
+            credit: answer ? answer.credit ?? null : null,
+            orderAnswer: answer ? answer.order_answer ?? null : null,
             bonusPoints: answer ? answer.bonus_points ?? 0 : 0,
+            // The answer is already public here, so the prose that goes with it can be too. Gated the same way CBT
+            // gates it (cbt.js:30): the setting defaults on, and the column is not null, so only an explicit false
+            // hides it. A quiz with no explanations is unchanged from before.
+            // A phone in low-data mode never asked for it, so it is not sent: trimming text the client is going to
+            // ignore still costs the student the bytes, which is the only thing this flag is for.
+            ...(saveData ? {} : { explanation: session.show_explanations !== false ? question.explanation ?? null : null }),
+            // The regions ARE the answer, so they are never part of the open question: a phone holding them before it
+            // has tapped has been handed the mark, and grading happens on the server, so nothing on the client needs
+            // them early. They go out with the reveal, where the picture is redrawn with the regions the tap was graded
+            // against - the same picture and the same mapping, so what the student is shown is what was marked.
+            ...(type === 'diagram' ? { diagramTargets: cleanDiagramTargets(question.diagram_targets) } : {}),
           }
         }
       }
@@ -165,8 +190,10 @@ export function createQuizStateHandler(getClient, { now = () => Date.now(), base
     if (session.team_mode && (session.state === 'leaderboard' || session.state === 'finished')) {
       out.teams = rankTeams({ teams: teamRows, players: players ?? [], scoring: session.team_scoring })
     }
-    // Phones fetch the next picture while the leaderboard is up, so the next question does not wait on it.
-    if (session.state === 'leaderboard') {
+    // Phones fetch the next picture while the leaderboard is up, so the next question does not wait on it. A low-data
+    // phone already has the question's own bytes and does not re-download the whole route for one more, so it is told
+    // the next question is not preloaded and fetches it when it arrives.
+    if (session.state === 'leaderboard' && !saveData) {
       const nextId = questionIds[session.current_question_index + 1] ?? null
       const { data: upcoming } = nextId
         ? await supabaseAdmin.from('quiz_questions').select('image_path').eq('id', nextId).maybeSingle()

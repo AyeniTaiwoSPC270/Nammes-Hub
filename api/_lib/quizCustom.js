@@ -1,7 +1,8 @@
 // Community question sets: anyone can import their own questions (no account) and play them in practice and battles.
 // Everything a stranger sends is cleaned here before it is stored: only known fields, hard length limits, no blocked
 // words. The server runs this on every set; the browser can run it too to show problems before sending.
-import { parseNumber, ANSWER_TEXT_MAX, ACCEPTED_ANSWERS_MAX } from './quizGrading.js'
+import { parseNumber, ANSWER_TEXT_MAX, ACCEPTED_ANSWERS_MAX, EXPLANATION_MAX } from './quizGrading.js'
+import { CUSTOM_QUESTION_TYPES } from './quizTypes.js'
 import { hasBlockedWord } from './quizText.js'
 
 // Ordinary words that contain a blocked word once letters are squashed together ("therapeutic", "grape", "scrape").
@@ -13,14 +14,14 @@ export const CBT_BANK_MAX_QUESTIONS = 500
 export const CUSTOM_TOPIC_MAX = 60
 export const CUSTOM_DAYS = 30
 export const CUSTOM_DAY_CHOICES = [30, 90, 180]
-export const CUSTOM_EXPLANATION_MAX = 500
+export const CUSTOM_EXPLANATION_MAX = EXPLANATION_MAX
 export const CUSTOM_TITLE_MIN = 3
 export const CUSTOM_TITLE_MAX = 60
 export const CUSTOM_TEXT_MAX = 300
 export const CUSTOM_OPTION_MAX = 100
 const TIME_LIMITS = [10, 20, 30, 60]
 const POINTS = [500, 1000, 2000]
-const TYPES = ['multiple', 'truefalse', 'numeric', 'text']
+const TYPES = CUSTOM_QUESTION_TYPES
 
 // Strips control characters and squeezes spaces, so pasted text cannot carry invisible junk.
 export function cleanLine(value) {

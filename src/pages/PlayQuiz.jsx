@@ -13,7 +13,11 @@ import { randomCastId } from '../components/quiz/characterPickerUtils.js'
 import { useCountUp } from '../lib/useCountUp'
 import { quizSound, buzz } from '../lib/quizSound'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
+import { OrderPicker } from '../components/quiz/OrderPicker'
+import { DiagramTap } from '../components/quiz/DiagramTap'
 import { teamStyle } from '../data/quizTeams'
+import { storeKey, readStore, writeStore, forgetSession, rememberNickname, knownNicknames } from '../lib/quizPlayerStorage'
+import { useLowData, setLowData, playerPollMs } from '../data/lowData'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
 import { personalCardUrl, cardFilename } from '../lib/quizCard'
@@ -23,34 +27,20 @@ import { castIds, characterSpec } from '../../api/_lib/quizCharacterArt.js'
 // browser tab. The token is sent with every call, and the server decides what this phone is allowed to see
 // (the correct answer only arrives once the host reveals it). Spec: docs/superpowers/specs/2026-09-30-live-quiz-design.md
 
-const STORAGE_KEY = 'nammes-quiz-player'
-const POLL_MS = 4000
+const BACKOFF_MAX_MS = 30000
 const MEDALS = ['🥇', '🥈', '🥉']
-
-function loadSaved() {
-  try {
-    return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) ?? null
-  } catch {
-    return null
-  }
-}
-
-function saveSaved(value) {
-  try {
-    if (value) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(value))
-    else sessionStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // private mode: the game still works, but a page reload means rejoining
-  }
-}
 
 // Standard phone screen: slim bar (with the player's name and score once they are in) and a centred column.
 function Phone({ me, cast, children }) {
+  const low = useLowData()
   return (
     <CharacterCastContext.Provider value={cast}>
+      {/* Low data makes the backdrop a flat surface: it is what puts quizCharacterArt's SVG strings and the motion
+          layers on the critical path, and it is decoration. That is most of why the setting exists. */}
       <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
-        <QuizBackdrop />
+        {low ? null : <QuizBackdrop />}
         <QuizTopBar compact>
+          <LowDataToggle />
           {me && (
             <span className="flex items-center gap-2 rounded-full border border-hairline bg-surface py-1 pl-1 pr-3 text-sm font-bold">
               <Avatar name={me.nickname} avatarId={me.avatarId} className="h-8 w-8" />
@@ -121,7 +111,9 @@ function JoinForm({ onJoined, notice }) {
   const [params] = useSearchParams()
   const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
   const [code, setCode] = useState(initialCode)
-  const [nickname, setNickname] = useState('')
+  // Prefilled from the nickname index, and never from a guess: the stored token is what turns this from "pick another
+  // nickname" into a resume, and it is sent below. A name on its own gets the student nothing but a convenience.
+  const [nickname, setNickname] = useState(() => knownNicknames()[0] ?? '')
   const [avatarId, setAvatarId] = useState(() => randomCastId(undefined))
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -137,7 +129,10 @@ function JoinForm({ onJoined, notice }) {
     setBusy(true)
     setError('')
     try {
-      const joined = await callQuiz('join', { code, nickname, avatarId, ...(teamId ? { teamId } : {}) })
+      // The stored token belongs to this room only. Without it a returning player is an ordinary new join and gets a
+      // 409 from the nickname index -- so it is the difference between a seat and an apology.
+      const saved = readStore(storeKey(code))
+      const joined = await callQuiz('join', { code, nickname, avatarId, token: saved?.token, ...(teamId ? { teamId } : {}) })
       onJoined({ ...joined, code })
     } catch (e) {
       if (e.data?.needsTeam) setTeams(e.data.teams)
@@ -245,6 +240,21 @@ function JoinForm({ onJoined, notice }) {
 }
 
 // The player's total ticking up by the points they just earned.
+function LowDataToggle() {
+  const low = useLowData()
+  return (
+    <button
+      type="button"
+      onClick={() => setLowData(!low)}
+      className={`rounded-full border px-3 py-1 text-xs font-bold ${low ? 'border-orange-500 bg-orange-500/15 text-orange-500' : 'border-hairline text-ink-muted'}`}
+      aria-pressed={low}
+      title="Save data: fewer downloads, no backdrop or characters"
+    >
+      {low ? 'Low data on' : 'Low data'}
+    </button>
+  )
+}
+
 function CountingScore({ from, to }) {
   const value = useCountUp(from, to, { durationMs: 900, delayMs: 500 })
   return <span className="tabular-nums">{formatScore(value)}</span>
@@ -261,18 +271,26 @@ function WaitingDots() {
 }
 
 // Team standings on a phone: one row per team, the player's own team highlighted.
-function TeamList({ teams, myTeamId }) {
+function TeamList({ teams, myTeamId, scoring }) {
+  // HostQuiz threads `scoring` through to the host's own leaderboard; the phone's copy was given the same prop and
+  // never destructured it, so a game set to average scoring showed a bare number with nothing saying what it meant.
+  const averaged = scoring === 'average'
   return (
-    <ol className="flex flex-col gap-2" aria-label="Team standings">
-      {teams.map((t) => (
-        <li key={t.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${t.id === myTeamId ? 'border-orange-500 bg-orange-500/12' : 'border-hairline bg-surface'}`}>
-          <span className="w-8 text-center text-xl font-bold">{MEDALS[t.rank - 1] ?? t.rank}</span>
-          <span className={`h-8 w-2 rounded-full ${teamStyle(t.color).bg}`} aria-hidden="true" />
-          <span className="min-w-0 flex-1 truncate text-lg font-semibold">{t.name}{t.id === myTeamId ? ' (you)' : ''}</span>
-          <span className="text-lg font-bold tabular-nums">{formatScore(t.score)}</span>
-        </li>
-      ))}
-    </ol>
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+        {averaged ? 'Average score per player' : 'Total team score'}
+      </p>
+      <ol className="flex flex-col gap-2" aria-label={averaged ? 'Team standings by average score' : 'Team standings by total score'}>
+        {teams.map((t) => (
+          <li key={t.id} className={`flex items-center gap-3 rounded-2xl border p-3 ${t.id === myTeamId ? 'border-orange-500 bg-orange-500/12' : 'border-hairline bg-surface'}`}>
+            <span className="w-8 text-center text-xl font-bold">{MEDALS[t.rank - 1] ?? t.rank}</span>
+            <span className={`h-8 w-2 rounded-full ${teamStyle(t.color).bg}`} aria-hidden="true" />
+            <span className="min-w-0 flex-1 truncate text-lg font-semibold">{t.name}{t.id === myTeamId ? ' (you)' : ''}</span>
+            <span className="text-lg font-bold tabular-nums">{formatScore(t.score)}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
   )
 }
 
@@ -296,16 +314,23 @@ export default function PlayQuiz() {
   )
 }
 
+// Keyed by the join code, because that is the one identifier the URL carries: the browser cannot know the session id
+// until it has already joined, which is exactly too late to look the token up.
 function PlayQuizGame({ onTheme }) {
   const theme = useQuizTheme()
-  const [saved, setSaved] = useState(loadSaved)
-  const castQuery = useCastQuery({ code: saved?.code ?? null })
+  const [code] = useState(() => new URLSearchParams(window.location.search).get('code') ?? '')
+  const [saved, setSaved] = useState(() => (code ? readStore(storeKey(code)) : null))
+  const castQuery = useCastQuery({ code: saved?.code ?? code ?? null })
   const cast = castQuery.data
   const [game, setGame] = useState(null)
   const [offset, setOffset] = useState(0) // server clock minus this phone's clock
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [picked, setPicked] = useState(null) // what this phone just sent for this question ({ index } or { text }), so the screen reacts at once
   const [typed, setTyped] = useState('')
+  // Drafts rather than answers: an ordering question and a diagram tap are both "pick" interactions, and `answer` only
+  // fires on the button, so the student's half-finished state has to survive a re-render.
+  const [orderDraft, setOrderDraft] = useState([])
+  const [diagramDraft, setDiagramDraft] = useState(null)
   const [notice, setNotice] = useState('')
   const [zoomed, setZoomed] = useState(false)
   const inGame = useRef(false)
@@ -321,38 +346,76 @@ function PlayQuizGame({ onTheme }) {
   const [message, setMessage] = useState('')
   const [cardOpen, setCardOpen] = useState(false)
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
+  const failures = useRef(0) // consecutive failed polls, for the backoff
 
   const token = saved?.token
   const sessionId = saved?.sessionId
+  const low = useLowData()
+  const pollMs = playerPollMs(low)
 
+  // Returns whether the phone is still in the game, so the poll loop can back off. A 401/404 is not a connection
+  // problem: the phone is out, and the caller stops asking.
   const refresh = useCallback(async () => {
-    if (!token) return
+    if (!token) return false
     try {
-      const data = await callQuiz('state', { token })
+      // `low` is the one thing the server can act on: it drops the explanation and an unused picture from the payload
+      // rather than leaving the client to discard bytes it has already paid for.
+      const data = await callQuiz('state', { token, ...(low ? { low: 1 } : {}) })
       setOffset(data.serverNow - Date.now())
       setGame(data)
       inGame.current = true
+      failures.current = 0
       setMessage('')
+      return true
     } catch (e) {
       if (e.status === 401 || e.status === 404) {
         // A 401 for a phone that was in the game means the host removed it.
         if (inGame.current && e.status === 401) setNotice('You were removed from this game. You can join again with the code if the host lets you.')
         inGame.current = false
-        saveSaved(null)
+        // The seat is gone for good (kicked, or the game finished and cleaned up), so this phone's token is dead
+        // weight. Dropping it here is the whole of the client-side pruning the spec asks for.
+        forgetSession(saved?.code ?? code)
         setSaved(null)
         setGame(null)
-      } else {
-        setMessage('Connection problem. Trying again…')
+        return false
       }
+      failures.current += 1
+      setMessage('Connection problem. Trying again…')
+      return false
     }
-  }, [token])
+  }, [token, saved?.code, code, low])
 
   useEffect(() => {
     if (!token) return undefined
-    refresh()
-    const timer = setInterval(refresh, POLL_MS)
-    return () => clearInterval(timer)
-  }, [token, refresh])
+    let stopped = false
+    let timer = null
+
+    const tick = async () => {
+      if (stopped) return
+      const alive = await refresh()
+      if (stopped) return
+      const delay = alive ? pollMs : Math.min(pollMs * 2 ** Math.max(0, failures.current - 1), BACKOFF_MAX_MS)
+      timer = setTimeout(tick, delay)
+    }
+
+    // Coming back online cancels the wait instead of sitting it out. That is worth more than the backoff itself: a
+    // student whose signal has just returned should not spend the rest of a penalty levied for a problem that has
+    // already gone away, which is exactly what a flat retry timer makes them do.
+    const back = () => {
+      clearTimeout(timer)
+      failures.current = 0
+      tick()
+    }
+
+    failures.current = 0
+    tick()
+    window.addEventListener('online', back)
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+      window.removeEventListener('online', back)
+    }
+  }, [token, refresh, pollMs])
 
   // The host moving the game on wakes every phone; a small random delay spreads the requests out.
   useEffect(() => {
@@ -413,14 +476,27 @@ function PlayQuizGame({ onTheme }) {
   }, [game])
 
   function handleJoined(joined) {
-    const next = { token: joined.token, sessionId: joined.sessionId, nickname: joined.nickname }
-    saveSaved(next)
+    const next = {
+      token: joined.token,
+      sessionId: joined.sessionId,
+      code: joined.code ?? code,
+      nickname: joined.nickname,
+      // A resume hands these back so a returning phone can show its standing on the very first paint rather than
+      // sitting at zero until the next poll lands. A fresh join has neither, and the state call fills them in.
+      ...(joined.score !== undefined ? { score: joined.score } : {}),
+      ...(joined.streak !== undefined ? { streak: joined.streak } : {}),
+      ...(joined.resumed ? { resumed: true } : {}),
+    }
+    writeStore(storeKey(next.code), next)
+    rememberNickname(joined.nickname)
     setNotice('')
     setSaved(next)
   }
 
+  // Deliberately keeps the stored token. Leaving the game is not the same as losing the seat, and the whole point of
+  // the durable token is that tapping "join again" walks straight back in. Only a 401/404 -- the host removed them, or
+  // the game was cleaned up -- clears it, which is what forgetSession above is for.
   function leave() {
-    saveSaved(null)
     setSaved(null)
     setGame(null)
   }
@@ -599,9 +675,14 @@ function PlayQuizGame({ onTheme }) {
     const canDouble = question.powerupsLeft.includes('double') && type !== 'poll' && question.multiplier !== 2
     const canFifty = question.powerupsLeft.includes('fifty') && type === 'multiple' && question.options.length === 4
     const blocked = sending || remaining === 0 || session.paused
+    const isOrder = type === 'order'
+    const isDiagram = type === 'diagram'
+    // A unit is a hint about the shape of the answer, not a value: it is shown in the placeholder and echoed back on the
+    // reveal so the student can see what was asked for.
+    const unitHint = type === 'numeric' && question.unit ? ` with ${question.unit}` : ''
     return (
       <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
-        <QuizBackdrop />
+        {low ? null : <QuizBackdrop />}
         <QuizTopBar compact>
           <span className="rounded-full bg-orange-500 px-4 py-2 text-sm font-bold text-white">Q{session.index + 1} of {session.questionCount}</span>
           <CountdownRing seconds={remaining} total={ringTotal} size={52} stroke={6} />
@@ -649,7 +730,42 @@ function PlayQuizGame({ onTheme }) {
           </div>
         )}
 
-        {choice ? (
+        {isOrder ? (
+          <div className="mx-auto flex w-full max-w-md flex-1 flex-col p-4">
+            <OrderPicker
+              steps={question.options}
+              value={orderDraft}
+              onChange={setOrderDraft}
+              disabled={blocked}
+            />
+            <button
+              type="button"
+              disabled={blocked || orderDraft.length !== question.options.length}
+              onClick={() => !blocked && answer({ order: orderDraft }, { order: orderDraft })}
+              className="mt-4 flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Lock in order
+            </button>
+          </div>
+        ) : isDiagram ? (
+          <div className="mx-auto w-full max-w-md flex-1 p-4">
+            <DiagramTap
+              src={question.imageUrl}
+              alt={question.imageAlt}
+              preview={diagramDraft}
+              onTap={(tap) => setDiagramDraft(tap)}
+              disabled={blocked}
+            />
+            <button
+              type="button"
+              disabled={blocked || !diagramDraft}
+              onClick={() => !blocked && answer({ tap: diagramDraft }, { tap: diagramDraft })}
+              className="mt-3 flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-6 text-xl font-bold text-white shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Lock in answer
+            </button>
+          </div>
+        ) : choice ? (
           <div className={`mx-auto grid w-full max-w-md flex-1 auto-rows-fr gap-3 p-4 ${twoOptions ? 'grid-cols-1' : 'grid-cols-2'}`}>
             {question.options.map((option, i) => {
               const hidden = question.hidden.includes(i)
@@ -685,7 +801,7 @@ function PlayQuizGame({ onTheme }) {
               autoCorrect="off"
               spellCheck={false}
               aria-label="Your answer"
-              placeholder={type === 'numeric' ? 'A number, like 3.14 or 1/2' : 'Type your answer'}
+              placeholder={type === 'numeric' ? `A number${unitHint}, like 3.14 or 1/2` : 'Type your answer'}
               className="min-h-16 rounded-2xl border-2 border-hairline bg-surface px-4 text-2xl font-bold text-ink-900 placeholder:text-base placeholder:font-normal placeholder:text-ink-muted focus:border-orange-500 focus:outline-none"
             />
             <button
@@ -713,15 +829,30 @@ function PlayQuizGame({ onTheme }) {
     const correct = reveal.correct === true
     const tone = poll ? 'neutral' : correct ? 'good' : answered ? 'bad' : 'neutral'
     const answerLabel = reveal.correctText ?? (question && reveal.correctIndex !== null ? question.options[reveal.correctIndex] : null)
+    // An ordering answer is the first type that can be partly right, so the headline and the credit are separate: the
+    // score line says what was earned, this says how close the ordering was.
+    const credit = reveal.credit
+    const orderClose = question?.type === 'order' && credit !== null && credit !== undefined
     return (
       <ResultScreen tone={tone}>
-        <div className="qz-pop h-40 w-40 rounded-full bg-white/20 p-3">
-          <Character id={me.avatarId} mood={poll ? 'wave' : correct ? 'dance' : 'sad'} />
-        </div>
+        {/* Low-data skips the cast picture here too: it is the largest single SVG on the screen and it redraws on every reveal. */}
+        {low ? null : (
+          <div className="qz-pop h-40 w-40 rounded-full bg-white/20 p-3">
+            <Character id={me.avatarId} mood={poll ? 'wave' : correct ? 'dance' : 'sad'} />
+          </div>
+        )}
         <h1 className="qz-rise text-5xl font-bold text-white">
           {poll ? (answered ? 'Vote counted' : "Time's up") : correct ? 'Correct!' : answered ? 'Not quite' : "Time's up"}
         </h1>
-        {correct && <p className="qz-pop rounded-full bg-white px-6 py-2 text-4xl font-bold text-green-700">+{formatScore(reveal.pointsAwarded)}</p>}
+        {orderClose && !correct && (
+      <p className="qz-pop rounded-full bg-white/20 px-5 py-2 text-lg font-bold text-white">
+        {Math.round(credit * question.options.length)} of {question.options.length} steps in the right place
+      </p>
+    )}
+    {correct && <p className="qz-pop rounded-full bg-white px-6 py-2 text-4xl font-bold text-green-700">+{formatScore(reveal.pointsAwarded)}</p>}
+    {reveal.pointsAwarded > 0 && !correct && (
+      <p className="qz-pop rounded-full bg-white/20 px-5 py-2 text-xl font-bold text-white">+{formatScore(reveal.pointsAwarded)}</p>
+    )}
         {correct && reveal.bonusPoints > 0 && (
           <p className="-mt-2 text-sm font-semibold text-white/90">
             includes +{formatScore(reveal.bonusPoints)} from streak, power-up or bonus round{me.streak >= 2 ? ` · 🔥 ${me.streak} in a row` : ''}
@@ -731,6 +862,14 @@ function PlayQuizGame({ onTheme }) {
           <div className="w-full rounded-2xl bg-white/15 p-4">
             <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">The answer was</p>
             <p className="mt-1 break-words text-2xl font-bold"><MathText>{answerLabel}</MathText></p>
+          </div>
+        )}
+        {/* The phone is the copy a student screenshots into the class group, which is why this is the surface the
+            explanation was worth adding for. 500 characters is what keeps it inside a reveal that auto-advances. */}
+        {reveal.explanation && (
+          <div className="w-full rounded-2xl bg-black/25 p-4 text-left">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">Why</p>
+            <p className="mt-1 break-words text-lg leading-snug text-white"><MathText>{reveal.explanation}</MathText></p>
           </div>
         )}
         {game.session.bracket && <div className="w-full"><BracketCard bracket={game.session.bracket} /></div>}
@@ -796,7 +935,7 @@ function PlayQuizGame({ onTheme }) {
           <p className="mt-2 text-2xl font-semibold">{formatScore(me.score)} points</p>
         </section>
         {game.session.bracket && <BracketCard bracket={game.session.bracket} />}
-        {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} />}
+        {game.teams?.length > 0 && <TeamList teams={game.teams} myTeamId={me.team?.id} scoring={game.session.teamScoring} />}
         <ol className="flex flex-col gap-2">
           {(top ?? []).slice(0, 3).map((p) => (
             <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface p-3">
@@ -827,6 +966,7 @@ function PlayQuizGame({ onTheme }) {
         {cardOpen && token && sessionId && (
           <ResultCardModal
             url={personalCardUrl({ sessionId, token })}
+          sessionId={sessionId}
             filename={cardFilename(me.nickname)}
             shareTitle={`I placed ${me.rank} in this quiz`}
             onClose={() => setCardOpen(false)}

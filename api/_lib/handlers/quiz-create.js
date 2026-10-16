@@ -60,7 +60,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
     // so later edits never change a running game.
     const { data: quiz, error: quizError } = await supabaseAdmin
       .from('quizzes')
-      .select('max_players, theme, card, game_options, team_mode, team_scoring, team_presets, draw_settings, cast_mode')
+      .select('max_players, theme, card, game_options, team_mode, team_scoring, team_presets, draw_settings, cast_mode, show_explanations')
       .eq('id', quizId)
       .maybeSingle()
     if (quizError) {
@@ -136,6 +136,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
             card,
             characters,
             game_options: gameOptions,
+            show_explanations: quiz?.show_explanations ?? true,
             team_mode: useTeams,
             team_scoring: scoring,
             question_ids: questionIds,

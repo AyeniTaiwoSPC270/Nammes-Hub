@@ -8,6 +8,7 @@ import { CharacterCastContext } from '../components/quiz/characterCastContext.js
 import CharacterPicker from '../components/quiz/CharacterPicker'
 import { randomCastId } from '../components/quiz/characterPickerUtils.js'
 import MathText from '../components/quiz/MathText'
+import { OrderPick, DiagramPick } from '../components/quiz/PickAnswer'
 import ResultCardModal from '../components/quiz/ResultCardModal'
 import { practiceCardUrl, cardFilename } from '../lib/quizCard'
 import { isChoiceType } from '../../api/_lib/quizGrading.js'
@@ -393,6 +394,12 @@ export default function PlayPractice() {
               <p className="mt-1 break-words text-2xl font-bold"><MathText>{label}</MathText></p>
             </div>
           )}
+          {result.explanation && (
+            <div className="w-full rounded-2xl bg-black/25 p-4 text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-white/80">Why</p>
+              <p className="mt-1 break-words text-lg leading-snug text-white"><MathText>{result.explanation}</MathText></p>
+            </div>
+          )}
           <p className="rounded-full bg-black/20 px-5 py-2 text-lg font-semibold">{formatScore(run.score)} pts · question {run.index + 1} of {run.total}</p>
           <RaceBoard name={run.nickname} avatarId={run.avatarId} score={run.score} race={run.race} onDark />
           {error && <p role="alert" className="text-sm">{error}</p>}
@@ -421,7 +428,20 @@ export default function PlayPractice() {
         {question.multiplier === 2 && <span className="mx-auto rounded-full bg-orange-500 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-white">Double points</span>}
         {question.imageUrl && <img src={question.imageUrl} alt={question.imageAlt} className="mx-auto max-h-40 w-auto max-w-full rounded-2xl bg-white object-contain p-1 shadow-sm ring-1 ring-black/10" />}
         <p className="text-center text-lg font-bold leading-snug"><MathText>{question.text}</MathText></p>
-        {choice ? (
+        {question.type === 'order' ? (
+              <OrderPick
+                steps={question.options}
+                disabled={busy || remaining === 0}
+                onSubmit={(order) => answer({ order })}
+              />
+            ) : question.type === 'diagram' ? (
+              <DiagramPick
+                src={question.imageUrl}
+                alt={question.imageAlt}
+                disabled={busy || remaining === 0}
+                onSubmit={(tap) => answer({ tap })}
+              />
+            ) : choice ? (
           <div className={`grid flex-1 auto-rows-fr gap-3 ${question.options.length === 2 ? 'grid-cols-1' : 'grid-cols-2'}`}>
             {question.options.map((option, i) => (
               <button

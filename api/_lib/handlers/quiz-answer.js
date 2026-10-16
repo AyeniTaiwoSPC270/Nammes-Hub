@@ -4,7 +4,7 @@ import {
   gradeAnswer, computeAward, isComeback, sanitizeGameOptions, fiftyFiftyHidden,
 } from '../quiz.js'
 import { currentQuestion, optionOrderFor } from '../quizSessionQuestions.js'
-import { originalIndex } from '../quizDraw.js'
+import { originalIndex, originalOrder } from '../quizDraw.js'
 
 // A player submits an answer. Points come from the server's own clock and the reply never says whether the
 // answer was right: correctness is only revealed once the host moves the game to the reveal step.
@@ -16,7 +16,7 @@ export function createQuizAnswerHandler(getClient, { now = () => Date.now(), all
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { token, chosenIndex, answerText } = req.body ?? {}
+    const { token, chosenIndex, answerText, order, tap } = req.body ?? {}
     if (typeof token !== 'string' || !token) {
       res.status(400).json({ error: 'token is required' })
       return
@@ -67,7 +67,12 @@ export function createQuizAnswerHandler(getClient, { now = () => Date.now(), all
     // before grading. Refused here rather than graded against whatever happened to land there.
     const optionOrder = optionOrderFor(session, question.id)
     const sentIndex = originalIndex(optionOrder, chosenIndex, (question.options ?? []).length)
-    const graded = gradeAnswer(question, { chosenIndex: sentIndex ?? chosenIndex, answerText })
+    // An ordering answer is a sequence of the options the player was SHOWN, so it is turned back into stored
+    // positions before grading, exactly as a single tap is above. Grading against what was displayed would score a
+    // correctly-ordered list wrong whenever the shuffle was not the identity.
+    const graded = question.type === 'order'
+      ? gradeAnswer(question, { answerText, order: originalOrder(optionOrder, order, (question.options ?? []).length) })
+      : gradeAnswer(question, { chosenIndex: sentIndex ?? chosenIndex, answerText, tap })
     if (!graded.ok) {
       res.status(400).json({ error: graded.error })
       return
@@ -120,6 +125,7 @@ export function createQuizAnswerHandler(getClient, { now = () => Date.now(), all
     const award = computeAward({
       correct: graded.correct,
       base,
+      credit: graded.credit ?? 1,
       streakBefore: player.streak ?? 0,
       multiplier: question.points_multiplier ?? 1,
       powerup,
@@ -140,6 +146,8 @@ export function createQuizAnswerHandler(getClient, { now = () => Date.now(), all
       p_powerup: powerup,
       p_streak: award.streakAfter,
       p_elapsed: Math.round(elapsedMs),
+      p_order: graded.order ?? null,
+      p_credit: graded.credit ?? null,
     })
     if (error) {
       console.error('quiz-answer: record failed', error)

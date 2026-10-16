@@ -60,7 +60,12 @@ export function buildQuestionSet(bank, settings, rand = Math.random) {
   const ordered = settings.shuffleQuestions ? shuffled(chosen, rand) : chosen
   const optionOrders = {}
   for (const q of ordered) {
-    if (!isChoiceType(q.type ?? 'multiple')) continue
+    // An ordering question needs a frozen step order for the same reason a choice question needs a frozen answer order:
+    // every player in the game has to be shown the same steps in the same sequence, and the projector has to be showing
+    // the sequence the phones were given. Freezing it here is what keeps "the third one" meaning the same thing in the
+    // hall and on thirty handsets.
+    const type = q.type ?? 'multiple'
+    if (!isChoiceType(type) && type !== 'order') continue
     const identity = (q.options ?? []).map((_, i) => i)
     optionOrders[q.id] = settings.shuffleOptions && !keepsOptionOrder(q) ? shuffled(identity, rand) : identity
   }
@@ -68,11 +73,17 @@ export function buildQuestionSet(bank, settings, rand = Math.random) {
 }
 
 // The options of one question, in the order they are shown. A missing order means answers as typed.
+//
+// An ordering question's steps live in the same column as a choice question's answers and are shown through the same
+// shuffle, so `order` is served here too. It used to be refused as "not a choice type", which returned an empty array:
+// the phone was handed a question with no steps to arrange and the projector numbered the steps in their authored order,
+// which is the answer. Everything else stays refused, because a text question carrying a stale options array must not
+// have that array shown as if it were answers.
 export function shownOptions(question, optionOrder) {
   const type = question.type ?? 'multiple'
-  if (!isChoiceType(type)) return []
+  if (!isChoiceType(type) && type !== 'order') return []
   const order = optionOrder ?? (question.options ?? []).map((_, i) => i)
-  return order.map((i) => question.options[i])
+  return order.map((i) => question.options?.[i])
 }
 
 // Which answer was shown at `shown`, as the position it is stored under. Null when it is not one of this question's
@@ -81,6 +92,22 @@ export function originalIndex(optionOrder, shown, optionCount) {
   const order = optionOrder ?? Array.from({ length: optionCount }, (_, i) => i)
   if (!Number.isInteger(shown) || shown < 0 || shown >= order.length) return null
   return order[shown]
+}
+
+// An ordering answer is the whole list, not one index, so originalIndex applied per position is the only way to map it
+// back. Null if the sequence is not a permutation of exactly the options shown, so a short list or a repeated step is
+// refused rather than graded as a partially-correct ordering of something else.
+export function originalOrder(optionOrder, shown, optionCount) {
+  const order = optionOrder ?? Array.from({ length: optionCount }, (_, i) => i)
+  if (!Array.isArray(shown) || shown.length !== order.length) return null
+  const out = []
+  for (const at of shown) {
+    const stored = originalIndex(optionOrder, at, optionCount)
+    if (stored === null) return null
+    out.push(stored)
+  }
+  if (new Set(out).size !== out.length) return null
+  return out
 }
 
 // Where a stored answer sits in the order it was shown, for sending back a player's own pick or the right answer.
