@@ -120,9 +120,41 @@ function JoinForm({ onJoined, notice }) {
   const [teams, setTeams] = useState(null) // the teams to choose from, once the game says it is a team game
   const castQuery = useCastQuery({ code: code.length === 6 ? code : null })
   const cast = castQuery.data
-  // Read once, when the form mounts: it is a localStorage walk and the answer only changes when this device rejoins,
-  // which reloads the page anyway. Reading it on every render would make the button jump as the student typed.
-  const [seats, setSeats] = useState(rememberedSeats)
+  // Filled after the server answers which of the remembered rooms are still open. A record on this device has no idea
+  // that its game ended, so it cannot be trusted to be offered: `quiz-join` refuses a finished session, and a cleaned-up
+  // one is gone. Rendering the list from storage first is how three finished games sat above the code box until they
+  // aged out a day later. Stays empty when there is nothing stored, which is the common case.
+  const [seats, setSeats] = useState([])
+
+  useEffect(() => {
+    const remembered = rememberedSeats()
+    if (!remembered.length) return undefined
+    let cancelled = false
+    // One read for every room, against a table that is public for exactly this kind of pre-join question. The rule is
+    // the one `quiz-join` applies: a session that is not `finished` still has a door. A seat it does not answer for is
+    // dropped from storage as well, so the list heals itself instead of waiting for a tap that can only 404.
+    supabase
+      .from('quiz_sessions')
+      .select('join_code, state')
+      .in('join_code', remembered.map((seat) => seat.code))
+      .then(({ data, error }) => {
+        if (cancelled) return
+        // A failed check is not evidence of a dead room. Offline still offers the list; tapping one settles it.
+        if (error) {
+          setSeats(remembered)
+          return
+        }
+        const open = new Set((data ?? []).filter((row) => row.state !== 'finished').map((row) => row.join_code))
+        for (const seat of remembered) if (!open.has(seat.code)) forgetSeat(seat.code)
+        setSeats(remembered.filter((seat) => open.has(seat.code)))
+      })
+      .catch(() => {
+        if (!cancelled) setSeats(remembered)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
@@ -170,7 +202,8 @@ function JoinForm({ onJoined, notice }) {
 
       {/* Offered only when the device already holds a seat, and only as a shortcut: the token is still what resumes,
           and the server verifies it. Without this a phone that refreshed on a bare /play was left holding a seat it had
-          no way back to, and had to be told the code it had just been in. */}
+          no way back to, and had to be told the code it had just been in. Every entry here was checked against its
+          session a moment ago, so a game that has finished is not on the list. */}
       {seats.length > 0 && code.length !== 6 && (
         <div className="qz-rise flex flex-col gap-2" style={{ animationDelay: '50ms' }}>
           {seats.slice(0, 3).map((seat) => (
