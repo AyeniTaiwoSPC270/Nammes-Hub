@@ -3,6 +3,7 @@ import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import { useOwnAdminRowQuery } from '../data/admins'
 import { useAuth } from '../lib/AuthContext'
 import Badge from '../components/ui/Badge'
+import AdminNotificationBell from '../components/admin/AdminNotificationBell'
 
 export const ADMIN_SECTIONS = [
   {
@@ -194,13 +195,16 @@ export default function Admin() {
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold text-ink-900">Admin Dashboard</h1>
-        <p className="max-w-2xl text-ink-muted">
-          Exco-only workspace for managing news, events, resources, opportunities, excos, outlines,
-          timetables, and student submissions.
-        </p>
-      </header>
+      <div className="flex items-start justify-between gap-4">
+        <header className="flex flex-col gap-1">
+          <h1 className="text-3xl font-bold text-ink-900">Admin Dashboard</h1>
+          <p className="max-w-2xl text-ink-muted">
+            Exco-only workspace for managing news, events, resources, opportunities, excos, outlines,
+            timetables, and student submissions.
+          </p>
+        </header>
+        <AdminNotificationBell />
+      </div>
 
       <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {visibleSections.map((s) => (
