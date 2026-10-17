@@ -56,6 +56,37 @@ describe('botDecision', () => {
     expect(d.correct).toBeNull()
     expect([0, 1]).toContain(d.submission.chosenIndex)
   })
+  // An ordering and a diagram question used to fall through to the typed branch and submit answerText: 'not sure',
+  // which the answer handler refused, so every bot sat the question out and the host watched "0 of 11 answered" on a
+  // question their own phones could answer. A test bot that cannot answer is not a test bot.
+  it('answers an ordering question with a permutation of the steps it was shown', () => {
+    const order = { id: 'o', type: 'order', options: ['Start', 'Isolate', 'Test', 'Issue'], correct_index: null, points: 500 }
+    for (let i = 0; i < 50; i++) {
+      const d = botDecision({ botId: `o${i}`, skill: 'average', question: order, limitMs: 20000 })
+      const sent = d.submission.order
+      expect(Array.isArray(sent), `bot ${i} sent no ordering answer`).toBe(true)
+      // A permutation of every step exactly once: a repeated or missing step is refused by the handler, not graded.
+      expect([...sent].sort((a, b) => a - b)).toEqual([0, 1, 2, 3])
+      expect(sent.join() === '0,1,2,3').toBe(d.correct)
+    }
+  })
+  it('answers a diagram question with a point inside the picture', () => {
+    const diagram = {
+      id: 'd', type: 'diagram', options: [], correct_index: null, points: 500,
+      diagram_targets: [{ x: 0.5, y: 0.25, r: 0.08, ar: 1.5 }],
+    }
+    for (let i = 0; i < 50; i++) {
+      const d = botDecision({ botId: `d${i}`, skill: 'average', question: diagram, limitMs: 20000 })
+      const tap = d.submission.tap
+      expect(tap, `bot ${i} sent no tap`).toBeTruthy()
+      expect(Number.isFinite(tap.x) && tap.x >= 0 && tap.x <= 1).toBe(true)
+      expect(Number.isFinite(tap.y) && tap.y >= 0 && tap.y <= 1).toBe(true)
+      // Right when it landed on a marked region. Only one direction is asserted: a bot that was wrong taps a random point,
+// and on a small region that point can still land inside by chance, which is a legitimately lucky miss rather than a bug.
+const inRegion = Math.hypot(tap.x - 0.5, tap.y - 0.25) <= 0.08
+      if (d.correct) expect(inRegion, `bot ${i} was right but missed the region`).toBe(true)
+    }
+  })
 })
 
 describe('skillForBot', () => {
