@@ -74,3 +74,33 @@ export function knownNicknames() {
     return []
   }
 }
+
+// Every room this device still holds a seat in, newest first. The join screen uses it to offer a one-tap way back
+// instead of making a returning student remember a six-digit code: the seat was stored under the code, and a phone that
+// arrived at a bare /play could not read it back, so a refresh put them on this form holding a token they could not use.
+// The server has the final say -- the token is verified on resume -- so a stale entry here costs one failed tap.
+export function rememberedSeats() {
+  try {
+    const prefix = `${STORAGE_KEY}:`
+    const seats = []
+    for (const key of Object.keys(localStorage)) {
+      if (!key.startsWith(prefix) || key === INDEX_KEY) continue
+      const record = readStore(key)
+      if (!record) continue
+      seats.push({
+        code: record.code ?? key.slice(prefix.length),
+        nickname: typeof record.nickname === 'string' ? record.nickname : '',
+        at: Number(record.at) || 0,
+      })
+    }
+    return seats.sort((a, b) => b.at - a.at).slice(0, INDEX_LIMIT)
+  } catch {
+    return []
+  }
+}
+
+// Stamped on write so `rememberedSeats` can show the most recent room first. Ignored on read, so a record written by an
+// older build (which had no timestamp) still resumes -- it just sorts last.
+export function stampSeat(record) {
+  return record ? { ...record, at: Date.now() } : record
+}

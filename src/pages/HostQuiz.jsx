@@ -206,6 +206,12 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
               Go to <span className="text-orange-100">{window.location.host}/play</span> and enter
             </p>
             {theme.tagline && <p className="mt-3 text-xl text-white/80">{theme.tagline}</p>}
+            {/* Shown on the projector, so the host can put a struggling phone on the light client without asking a
+                student to type a second address. The toggle on /play cannot help a first load -- 263 KB of backdrop
+                has arrived by then -- which is the whole reason the second client exists. */}
+            <p className="mt-4 text-sm text-orange-100/70">
+              Slow connection? <span className="text-orange-100">{window.location.host}/play/low</span>
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3" aria-label={`Game code ${digits.join(' ')}`}>
             {digits.map((d, i) => (
@@ -280,39 +286,46 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             Waiting for the first player to join…
           </p>
         ) : (
-          <div className="mt-5 flex flex-wrap gap-3">
+<ul className="mt-4 flex flex-wrap gap-2" aria-label="Players">
             {orderedPlayers.map((p) => (
-              <span key={p.id} className="qz-pop relative inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
-                <Avatar name={p.nickname} avatarId={p.avatar_id} mood={players.length > 16 ? 'static' : 'idle'} className="h-12 w-12" />
-                {p.nickname}
-                {teamById.get(p.team_id) && (
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
-                  aria-label={`Manage ${p.nickname}`}
-                  aria-expanded={menuFor === p.id}
-                  className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-ink-muted hover:bg-surface-low hover:text-ink-900"
-                >
-                  <span className="material-symbols-outlined text-xl" aria-hidden="true">edit</span>
-                </button>
+              <li key={p.id} className="qz-pop relative">
+                <span className="inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
+                  <Avatar name={p.nickname} avatarId={p.avatar_id} mood={players.length > 16 ? 'static' : 'idle'} className="h-12 w-12" />
+                  <span className="max-w-40 truncate">{p.nickname}</span>
+                  {teamById.get(p.team_id) && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
+                    aria-label={`Manage ${p.nickname}`}
+                    aria-expanded={menuFor === p.id}
+                    className="ml-1 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted hover:bg-surface-low hover:text-ink-900"
+                  >
+                    <span className="material-symbols-outlined text-2xl" aria-hidden="true">edit</span>
+                  </button>
+                </span>
+                {/* On the <li>, not inside the pill: the pill is an inline-flex that shrinks to its text, so a panel
+                    anchored to it inherited that width and rendered at the nickname's width with its items wrapped into
+                    an unreadable column. The row is the real block box, so the panel gets its own width and is allowed
+                    to run past the pill's edge. `right-0` on a left-to-right row keeps it on screen for the last
+                    player in a line rather than hanging off the right of the projector. */}
                 {menuFor === p.id && (
-                  <span role="menu" className="absolute left-0 top-full z-20 mt-2 flex min-w-56 flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl">
-                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onRename(p) }}>
+                  <span role="menu" className="absolute right-0 top-full z-30 mt-2 flex w-64 flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl">
+                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onRename(p) }}>
                       Rename to &quot;Player ###&quot;
                     </button>
-                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, false) }}>
+                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, false) }}>
                       Remove from game
                     </button>
-                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left text-red-600 hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, true) }}>
+                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left text-red-600 hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, true) }}>
                       Remove and block this name
                     </button>
                   </span>
                 )}
-              </span>
+              </li>
             ))}
-          </div>
+</ul>
         )}
       </section>
     </Stage>

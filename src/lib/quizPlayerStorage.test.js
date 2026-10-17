@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { storeKey, readStore, writeStore, forgetSession, rememberNickname, knownNicknames, STORAGE_KEY } from './quizPlayerStorage'
+import { storeKey, readStore, writeStore, forgetSession, rememberNickname, knownNicknames, rememberedSeats, stampSeat, STORAGE_KEY } from './quizPlayerStorage'
 
 // A localStorage that can be made hostile, because two of these behaviours only exist in the failure path: private
 // mode, and a device that has played far more games than the server still has rows for.
@@ -131,5 +131,50 @@ forgetSession('code-39')
     for (let i = 0; i < 8; i += 1) writeStore(storeKey(`code-${i}`), { token: `t-${i}` })
     forgetSession('code-0')
     expect(ls._keys()).toHaveLength(7)
+  })
+})
+describe('rememberedSeats', () => {
+  it('lists the rooms this device still holds a seat in, newest first', () => {
+withStorage()
+    // Fake timers because two joins in the same millisecond are indistinguishable by timestamp, and the point of the
+    // ordering is that the room a student is in right now is the one at the top.
+    vi.useFakeTimers()
+    try {
+      vi.setSystemTime(1_000)
+      writeStore(storeKey('111111'), stampSeat({ token: 'a', code: '111111', nickname: 'Ada' }))
+      vi.setSystemTime(2_000)
+      writeStore(storeKey('222222'), stampSeat({ token: 'b', code: '222222', nickname: 'Bisi' }))
+    } finally {
+      vi.useRealTimers()
+    }
+    const seats = rememberedSeats()
+    expect(seats.map((s) => s.code)).toEqual(['222222', '111111'])
+    expect(seats[0].nickname).toBe('Bisi')
+  })
+
+  it('recovers the code from the key when the record itself never stored one', () => {
+    // A record written by an older build has no `code`, and the key it lives under IS the code.
+    withStorage()
+    writeStore(storeKey('654321'), stampSeat({ token: 'tok' }))
+    expect(rememberedSeats()[0].code).toBe('654321')
+  })
+
+  it('skips a record with no usable token rather than offering a dead seat', () => {
+    // The nickname index is stored under the same prefix and is not a room; a half-written record is not a seat.
+    withStorage()
+    rememberNickname('Ada')
+    writeStore(storeKey('999999'), { nickname: 'NoToken' })
+    expect(rememberedSeats()).toEqual([])
+  })
+
+  it('still lists a record written before timestamps existed', () => {
+    withStorage()
+    writeStore(storeKey('333333'), { token: 'tok', code: '333333', nickname: 'Cee' })
+    expect(rememberedSeats().map((s) => s.code)).toEqual(['333333'])
+  })
+
+it('is empty, not a crash, when storage is unavailable', () => {
+    withStorage({ throws: true })
+    expect(rememberedSeats()).toEqual([])
   })
 })
