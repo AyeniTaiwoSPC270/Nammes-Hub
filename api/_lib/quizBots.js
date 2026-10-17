@@ -65,6 +65,29 @@ export function botDecision({ botId, skill, question, limitMs }) {
     const off = Math.abs(Number(question.numeric_tolerance ?? 0)) + 1 + pick(5)
     return { thinkMs, correct, submission: { answerText: String(correct ? target : target + off) } }
   }
+  // Ordering and a diagram tap both fall through to the typed branch if nothing handles them here, and 'not sure' is
+  // refused by the answer handler -- so every bot sat the question out and the host watched "0 of 11 answered" on a
+  // question the room's own phones could answer. Both submit the shape the handler accepts.
+  if (type === 'order') {
+    const steps = question.options.map((_, i) => i)
+    if (correct) return { thinkMs, correct, submission: { order: steps } }
+    // A wrong order still has to be a permutation: swapping two neighbouring steps is what a person who half-remembers
+    // the procedure submits, and it is graded as partial credit rather than refused.
+    const at = pick(Math.max(1, steps.length - 1))
+    const wrong = [...steps]
+    ;[wrong[at], wrong[at + 1]] = [wrong[at + 1], wrong[at]]
+    return { thinkMs, correct, submission: { order: wrong } }
+  }
+  if (type === 'diagram') {
+    const regions = question.diagram_targets ?? []
+    // Every region on the picture is an answer, so a bot that is right taps one of them and a bot that is wrong taps
+    // somewhere else on the same picture. Points are normalised within the image's own box, which is what a tap is.
+    if (correct && regions.length > 0) {
+      const target = regions[pick(regions.length)]
+      return { thinkMs, correct, submission: { tap: { x: target.x, y: target.y } } }
+    }
+    return { thinkMs, correct, submission: { tap: { x: seeded(key, 5), y: seeded(key, 6) } } }
+  }
   const accepted = question.accepted_answers ?? []
   return { thinkMs, correct, submission: { answerText: correct && accepted.length > 0 ? accepted[0] : 'not sure' } }
 }

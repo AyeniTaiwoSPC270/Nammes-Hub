@@ -231,7 +231,7 @@ export function useQuizQuery(id) {
 // Saves a quiz and its questions. New questions carry a client-made uuid, so one upsert covers new,
 // edited and reordered questions; questions the admin removed are deleted first. Pictures are uploaded first
 // (under a fresh name, so phones never show a stale cached copy) and the old files are removed afterwards.
-export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled, battleEnabled, drawSettings, battleQuestionCount }) {
+export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_PLAYERS, gameOptions = {}, tags = [], teamSettings = null, practiceEnabled, battleEnabled, drawSettings, battleQuestionCount, showExplanations }) {
   const cleaned = questions.map(cleanQuestion)
   const teamFields = teamSettings
     ? {
@@ -248,6 +248,9 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
     ...teamFields,
     ...(practiceEnabled === undefined ? {} : { practice_enabled: Boolean(practiceEnabled) }),
     ...(battleEnabled === undefined ? {} : { battle_enabled: Boolean(battleEnabled) }),
+    // A column rather than a game_option, because the game snapshots it at creation like the theme: editing the quiz
+    // must not change whether a running game shows explanations.
+    ...(showExplanations === undefined ? {} : { show_explanations: showExplanations !== false }),
     // Question banks. Undefined means "leave it alone" (some callers save a quiz without touching these), so only the
     // editor, which always has the whole form, writes them.
     ...(drawSettings === undefined ? {} : { draw_settings: drawSettings }),
@@ -307,6 +310,10 @@ export async function saveQuiz({ id, title, questions, maxPlayers = DEFAULT_MAX_
       points: q.points,
       points_multiplier: q.points_multiplier,
       difficulty: q.difficulty ?? null,
+      explanation: q.explanation ?? null,
+      numeric_unit: q.numeric_unit ?? null,
+      numeric_unit_aliases: q.numeric_unit_aliases ?? [],
+      diagram_targets: q.diagram_targets ?? [],
       image_path: imagePath,
       image_alt: imagePath ? String(q.image_alt ?? '').trim().slice(0, IMAGE_ALT_MAX) : null,
       no_shuffle: q.no_shuffle === true,

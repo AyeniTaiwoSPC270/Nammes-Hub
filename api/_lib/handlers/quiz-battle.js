@@ -2,8 +2,8 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { isUuid } from '../validate.js'
 import { logError } from '../logError.js'
 import {
-  validateNickname, isAvatarId, newPlayerToken, hashToken, createRateLimiter, clientIp, gradeAnswer, isChoiceType, correctText,
-  ANSWER_GRACE_MS,
+validateNickname, isAvatarId, newPlayerToken, hashToken, createRateLimiter, clientIp, gradeAnswer, awardPoints, isChoiceType, correctText,
+ANSWER_GRACE_MS,
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
@@ -13,7 +13,7 @@ import {
   BATTLE_CHALLENGE_DAYS, DUEL_START_DELAY_MS, DUEL_NEXT_DELAY_MS, DUEL_OPEN_TTL_MS, eloUpdate, RATING_START,
   battleQuestionCount, battleWeight, pointsOnOffer,
 } from '../quizBattle.js'
-import { shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
+import { shownOptions, shownIndex, originalIndex, originalOrder } from '../quizDraw.js'
 import { readQuizCast } from '../castStore.js'
 import { castIds } from '../quizCharacterArt.js'
 
@@ -46,7 +46,7 @@ export function createQuizBattleHandler(
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { op, quizId, code, token, nickname, avatarId = 0, mode, vsBot, botSkill = 'average', tag, chosenIndex, answerText, period = 'all' } = req.body ?? {}
+    const { op, quizId, code, token, nickname, avatarId = 0, mode, vsBot, botSkill = 'average', tag, chosenIndex, answerText, order: submittedOrder, tap, period = 'all' } = req.body ?? {}
     if (!OPS.includes(op)) {
       res.status(400).json({ error: 'Unknown request' })
       return
@@ -131,14 +131,21 @@ export function createQuizBattleHandler(
         answerText: answer.answer_text ?? null,
         correctIndex: isChoiceType(type) ? shownIndex(optionOrder, q.correct_index, count) : null,
         correctText: correctText(q),
+        // Sent on the reveal, when the answer is already public.
+        explanation: q.explanation ?? null,
         timedOut: answer.chosen_index == null && answer.answer_text == null,
       }
     }
 
     // Records the answer a side gives (or a miss, when `graded` is null) with points from the server clock.
     async function record({ battle, side, question, graded, elapsedMs }) {
-      const correct = graded ? graded.correct === true : false
-      const points = correct ? battleQuestionPoints(question, elapsedMs) : 0
+      // Partial credit scales the points here rather than being recomputed on the way out: the speed curve is the only
+      // thing that varies per side, and everything downstream reads one integer.
+const credit = graded?.credit ?? 1
+    const correct = graded ? graded.correct === true : false
+    // Partial credit scales the points here rather than being recomputed on the way out: the speed curve is the only
+    // thing that varies per side, and everything downstream reads one integer.
+    const points = awardPoints(battleQuestionPoints(question, elapsedMs), graded)
       const { data, error } = await supabaseAdmin.rpc('quiz_battle_record', {
         p_battle: battle.id,
         p_slot: side.slot,
@@ -148,6 +155,8 @@ export function createQuizBattleHandler(
         p_correct: correct,
         p_points: points,
         p_elapsed: Math.max(0, Math.round(elapsedMs)),
+        p_order: graded?.order ?? null,
+        p_credit: graded ? credit : null,
       })
       return { error, recorded: data === true, correct, points }
     }
@@ -355,7 +364,7 @@ export function createQuizBattleHandler(
         const theirs = theirAnswers.find((x) => x.question_id === q.id)
         const order = battleOptionOrder(battle, q.id)
         out.reveal = {
-          mine: mine ? resultFor(q, mine, order) : { correct: false, pointsAwarded: 0, chosenIndex: null, answerText: null, correctIndex: isChoiceType(q.type ?? 'multiple') ? shownIndex(order, q.correct_index, (q.options ?? []).length) : null, correctText: correctText(q), timedOut: true },
+          mine: mine ? resultFor(q, mine, order) : { correct: false, pointsAwarded: 0, chosenIndex: null, answerText: null, correctIndex: isChoiceType(q.type ?? 'multiple') ? shownIndex(order, q.correct_index, (q.options ?? []).length) : null, correctText: correctText(q), explanation: q.explanation ?? null, timedOut: true },
           theirs: { correct: theirs?.correct === true, pointsAwarded: theirs?.points_awarded ?? 0, answered: Boolean(theirs) },
         }
       }
@@ -809,7 +818,9 @@ export function createQuizBattleHandler(
       // grading, and refused rather than graded against whatever happens to be there.
       const order = battleOptionOrder(battle, question.id)
       const storedIndex = originalIndex(order, chosenIndex, (question.options ?? []).length)
-      const graded = gradeAnswer(question, { chosenIndex: storedIndex ?? chosenIndex, answerText })
+      const graded = question.type === 'order'
+        ? gradeAnswer(question, { answerText, order: originalOrder(order, submittedOrder, (question.options ?? []).length) })
+        : gradeAnswer(question, { chosenIndex: storedIndex ?? chosenIndex, answerText, tap })
       if (!graded.ok) {
         res.status(400).json({ error: graded.error })
         return

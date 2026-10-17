@@ -86,7 +86,7 @@ describe('what this device remembers', () => {
 describe('spreadsheets for CBT banks', () => {
   const header = CBT_COLUMNS.join(',')
   it('reads explanation, topic and no_shuffle columns', () => {
-    const { questions, problems } = questionsFromCsv(`${header}\nmultiple,Capital of Ghana?,Lagos,Accra,Kumasi,All of the above,B,20,1000,Accra is the capital.,Geography,yes`)
+    const { questions, problems } = questionsFromCsv(`${header}\nmultiple,Capital of Ghana?,Lagos,Accra,Kumasi,All of the above,B,20,1000,Accra is the capital.,,,Geography,yes`)
     expect(problems).toEqual([])
     expect(questions[0]).toMatchObject({ explanation: 'Accra is the capital.', topic: 'Geography', no_shuffle: true })
   })
@@ -103,7 +103,7 @@ describe('spreadsheets for CBT banks', () => {
   })
 
   it('round-trips through export and import with the extras kept', () => {
-    const text = `${header}\nmultiple,Q one?,A1,B1,C1,D1,C,20,1000,Because C.,Algebra,yes\ntext,Capital of France?,,,,,Paris|paris,20,1000,,,`
+    const text = `${header}\nmultiple,Q one?,A1,B1,C1,D1,C,20,1000,Because C.,,,Algebra,yes\ntext,Capital of France?,,,,,Paris|paris,20,1000,,,,,`
     const { questions } = questionsFromCsv(text)
     const out = questionsToCsv(questions, { cbt: true })
     expect(out.split('\r\n')[0]).toBe(header)
@@ -113,10 +113,10 @@ describe('spreadsheets for CBT banks', () => {
   })
 
   it('checks admin banks with the trusted rules (no word filter) and names problems by row', () => {
-    const ok = bankFromText(`${header}\ntruefalse,Is the sun a star (shit happens)?,,,,,True,10,500,Yes.,Astro,`)
+    const ok = bankFromText(`${header}\ntruefalse,Is the sun a star (shit happens)?,,,,,True,10,500,Yes.,,,Astro,`)
     expect(ok.problems).toEqual([])
     expect(ok.rows[0]).toMatchObject({ explanation: 'Yes.', topic: 'Astro' })
-    const bad = bankFromText(`${header}\nmultiple,No right answer?,a,b,,,Z,20,1000,,,`)
+    const bad = bankFromText(`${header}\nmultiple,No right answer?,a,b,,,Z,20,1000,,,,,`)
     expect(bad.problems[0].line).toBe(2)
   })
 })

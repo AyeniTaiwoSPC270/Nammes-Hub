@@ -87,3 +87,38 @@ describe('question difficulty (used by test bots)', () => {
     expect(cleanQuestion({ ...q, difficulty: 'impossible' }).difficulty).toBeNull()
   })
 })
+
+describe('explanations (shown on the live reveal)', () => {
+  it('starts empty, survives a save and reload, and comes back null rather than blank', () => {
+    expect(blankQuestion().explanation).toBe('')
+    const row = { id: 'a', text: 'Q', options: ['a', 'b'], time_limit_seconds: 20, points: 1000, explanation: 'Because pi is irrational.' }
+    expect(questionFromRow(row).explanation).toBe('Because pi is irrational.')
+    expect(questionFromRow({ ...row, explanation: null }).explanation).toBe('')
+    expect(cleanQuestion(q({ explanation: 'Because pi is irrational.' })).explanation).toBe('Because pi is irrational.')
+    // Absent and blank are the same state, so the reveal has one "nothing to show" and not two.
+    expect(cleanQuestion(q({ explanation: '' })).explanation).toBeNull()
+    expect(cleanQuestion(q({ explanation: '   ' })).explanation).toBeNull()
+    expect(cleanQuestion(q({ explanation: undefined })).explanation).toBeNull()
+  })
+
+  it('belongs to the question, so changing the answer type does not throw it away', () => {
+    for (const type of ['multiple', 'truefalse', 'numeric', 'text', 'poll']) {
+      expect(cleanQuestion(q({ type, explanation: 'Still here.' })).explanation, type).toBe('Still here.')
+    }
+  })
+
+  it('is capped at 500 characters and says so, rather than quietly losing the tail', () => {
+    const atLimit = 'x'.repeat(500)
+    const withOptions = (explanation) => q({ options: ['a', 'b'], explanation })
+    expect(validateQuestion(withOptions(atLimit))).toBeNull()
+    expect(validateQuestion(withOptions(`${atLimit}y`))).toMatch(/500 characters at most/)
+    // Nothing truncates on the way through, which is what lets the check above fire at all.
+    expect(cleanQuestion(withOptions('y'.repeat(600))).explanation).toHaveLength(600)
+  })
+
+  it('never lets a control character into the reveal', () => {
+    const cleaned = cleanQuestion(q({ explanation: `line one${String.fromCharCode(0)}line two` }))
+    expect(cleaned.explanation).not.toContain(String.fromCharCode(0))
+    expect(cleaned.explanation).toBe('line one line two')
+  })
+})

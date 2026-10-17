@@ -150,6 +150,26 @@ describe('quiz-host: botsPlay', () => {
     const res = await host(db, { op: 'botsPlay', expectedState: 'question', expectedIndex: 0 }, { anonymous: true })
     expect(res.statusCode).toBe(401)
   })
+
+  // quiz_record_answer was recreated with p_order and p_credit, and the old twelve-argument overload was dropped, so
+  // a payload missing either is not a payload Postgres still has a function for. The other three call sites were
+  // updated and this one was not: bots went silent on every question, and only the server log said why.
+  it('record answers with the argument list the current RPC actually has', async () => {
+    const db = running({ max_players: 30 })
+    await withBots(db, 8)
+    const sent = []
+    const rpc = db.rpc.bind(db)
+    db.rpc = async (name, args) => {
+      if (name === 'quiz_record_answer') sent.push(args)
+      return rpc(name, args)
+    }
+    await play(db, START + 19500)
+    expect(sent.length).toBeGreaterThan(0)
+    for (const args of sent) {
+      expect(args).toHaveProperty('p_order')
+      expect(args).toHaveProperty('p_credit')
+    }
+  })
 })
 
 describe('quiz-host: end the game now', () => {

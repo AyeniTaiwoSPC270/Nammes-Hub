@@ -178,6 +178,84 @@ data module, and that is deliberate — do not merge them into one shared "prese
   and `success`/`warning`/`danger` are dim in dark. This is the site's existing position, shared with the calendar studio — do
   not "fix" it here, because adding tokens to the `.dark` block changes every page.
 
+## Quiz question types
+
+`api/_lib/quizTypes.js` is the only list of question types. The five hand-synced copies that used to exist
+(`quizGrading.js`, `quizCustom.js`, `quizQuestions.js`, `cbt/ExamEditor.jsx`, `quizCsv.js`) all read it, and
+`quizTypes.test.js` asserts they still agree. **Add a type there first**, then let the failure tell you the consumers.
+
+- **A type needs a branch on every surface it claims to support.** `quizTypeRenderers.test.js` source-scans the five
+  renderers, the same shape as the `index.css` keyframe scan. A type that grades differently from a single index —
+  currently `order` and `diagram` — must appear literally in each renderer that draws it. `multiple`, `truefalse`
+  and `poll` are reached through `isChoiceType`, and `numeric`/`text` fall through to the typed box, so they do not.
+- **`cbt: false` and `custom: false` are decisions, not omissions.** `diagram` is out of CBT because the exam question
+  view renders no images at all, and both `order` and `diagram` are out of a community set because an ordering answer
+  needs a scored round the host decides and a diagram needs an upload the importer has nowhere to put.
+- **An ordering question has no answer column.** The authored order of `options text[]` *is* the answer, presented
+  shuffled through the existing `optionOrder`. A `correct_order` column would duplicate state that already exists and
+  could disagree with it. Credit is positional — a step counts only if it is in the right place — and stored in
+  `credit` at grading time, because `points_awarded` has by then been through speed, streak, comeback and multiplier
+  and cannot be read back as a fraction.
+- **`computeAward` rounds partial credit explicitly.** `points_awarded` is an integer column and `points_multiplier`
+  is `check (in (1, 2))`, so a third of a question at 2× does not divide evenly. The test asserts the rounding rather
+  than tolerating whatever it produces.
+- **Units are per-question aliases, never a global registry.** `normaliseUnit` folds case, spacing and `µ`/`μ` to `u`,
+  but it does *not* strip prefixes: `N` and `kN` stay distinct strings, so they cannot match. A registry that
+  canonicalised `kN` to `N` is how `2500 N` ends up accepted against an answer of `2.5 kN`. Aliases never scale a
+  value — the number is graded bare, which is also what keeps the existing tolerance code working unchanged.
+- **Diagram coordinates are normalised, not pixels, and carry the picture's shape.** `processQuizImage` downscales to
+  1280px on upload, so a stored pixel does not survive a re-upload at a different size. `letterboxRect`/`toNormalized`/
+  `toRenderedPoint` are the one mapping, used by the editor, the full client and `/play/low`; get it wrong and every diagram
+  grades wrong on every handset while looking right in the editor. A normalised **circle** additionally needs to know
+  whether the picture is wider than it is tall, which is why each region stores `ar` (width/height, captured by
+  `QuestionCard` when the marker is placed): without it `hypot(dx, dy)` accepts a region twice as far across as it is
+  drawn on any landscape image, and every square test still passes. `quizGrading.test.js` round-trips the letterbox
+  through both a wide and a tall box and grades one landscape and one portrait picture.
+- **A diagram's regions are the answer, so they leave only with the reveal.** `quiz-state.js` must never put
+  `diagramTargets` on an open question: grading is server-side, so a phone holding the regions before it has tapped is
+  holding the mark. The projector draws them on the reveal and not before, for the same reason. The one thing `low: 1`
+  may never subtract is this too.
+- **An ordering question's steps are shown through the same shuffle as its answers.** `shownOptions` serves `order`
+  (not just choice types) and `buildQuestionSet` freezes a step order for it; when either was missing, the phone was sent
+  `options: []` — an unanswerable question — while the projector numbered the authored order, which is the answer.
+- **One `awardPoints`, three surfaces.** The hosted game, practice and battle each rolled their own arithmetic and
+  drifted: two of them gated the base on `correct`, so a partially-right ordering scored nothing there and full credit in
+  a hosted game. `awardPoints(full, graded)` is the only place that decides it — `credit` is the fraction of the question
+  that landed, and a type that cannot be partial reports 1 for a graded answer, so a partial answer is exactly the case
+  where credit sits strictly between 0 and 1.
+- **The three record RPCs carry `p_order smallint[]` and `p_credit numeric`.** A submission that changed one of their
+  signatures needs `drop function if exists` for the old one, or Postgres keeps the old overload and the new columns
+  are silently never written.
+- **Widening a signature breaks every caller, and a bot caller breaks quietly.** `quiz_record_answer` had **four** call
+  sites, not the three the migration names: `quiz-answer`, `quiz-battle`, `quiz-practice` and the hosted bots in
+  `quiz-host.js`. Three were updated and the fourth was not, so after the migration bots stopped answering *every*
+  question in *every* quiz while real players carried on working — the only symptom was `answered: 0` on a poll nobody
+  reads and a line in a server log. Postgres matches a call by argument name and count, so a payload missing one of the
+  new arguments is not a call it can resolve: it is an error the handler swallows, not a wrong answer.
+  `RECORD_RPC_SIGNATURES` in `api/_lib/quizTestKit.js` declares the real signatures and the fake now rejects a short
+  payload with a `PGRST202`, so the *next* caller to drift fails in the test suite instead of in a hosted game. It
+  immediately found a second instance nobody had noticed: practice's timed-out path (`quiz-practice.js`, the
+  `state`-on-expiry and `next` branches) also called `quiz_practice_record` with six arguments, so a question that ran
+  out of time was never recorded and `next` answered 409 "Answer this question first" for the rest of the run. When a
+  migration touches an RPC, grep every `rpc(` call site, not the handlers the migration names.
+
+## Rejoin and low data
+
+- **Resume is allowed past `locked` and `full`, but never past a blocked nickname.** The first two are about new
+  arrivals; the third is the host looking at a name in a room full of people and removing it. Token comparison is
+  `safeEqual` (`timingSafeEqual`), because `quiz-join` is now the one endpoint that answers "is this token mine?".
+- **`left_at` is inert.** The rejoin migration adds it and a partial index, but **nothing writes it** — `kick` still
+  deletes. Durable rejoin is the `localStorage` token plus resume, nothing else. Making `left_at` meaningful means
+  turning `kick` into a soft delete, and the delete is exactly what fails a kicked player's token lookup, so every
+  roster, player-count, team and CSV query would then need `left_at is null`. That is a separate change.
+- **The low-data flag may only ever subtract.** `low: 1` on `quiz-state` drops the explanation and the next-picture
+  preload, and stops the backdrop and the reveal character on the phone. It must never change what a player knows
+  about the game; `quiz-state.test.js` asserts the answer and score still arrive.
+- **`/play/low` is a second client, not a mode of `/play`.** It shares the server and the pure grading module and
+  nothing else — no backdrop, no cast, no sounds, no theme. `playLow.test.js` source-scans it for exactly that and
+  fails the first time somebody imports something to make it nicer. Measured at 32.6 KB gzipped against the 60 KB
+  target, with `/play` at 8.8 KB for its own chunk plus a much larger shared one.
+
 ## Known open bugs
 
 Both predate the calendar, are out of scope, and are still open:

@@ -332,6 +332,7 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
         const award = computeAward({
           correct: graded.correct,
           base,
+          credit: graded.credit ?? 1,
           streakBefore: bot.streak ?? 0,
           multiplier: question.points_multiplier ?? 1,
           comeback: Boolean(before && graded.correct && isComeback(before, bot.id)),
@@ -350,6 +351,11 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
           p_powerup: null,
           p_streak: award.streakAfter,
           p_elapsed: decision.thinkMs,
+          // The same two arguments the three human-facing call sites send. quiz_record_answer has one signature, and a
+          // payload that omits either of these is not one it can resolve at all, so a bot left out here does not score
+          // badly, it does not score at all.
+          p_order: graded.order ?? null,
+          p_credit: graded.credit ?? null,
         })
         if (error) console.error('quiz-host: bot answer failed', error)
         return !error && recorded === true

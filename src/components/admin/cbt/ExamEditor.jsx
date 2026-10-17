@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { cbtTypeLabel } from '../../../../api/_lib/quizTypes.js'
 import { useToast } from '../../../lib/ToastContext'
 import Button from '../../ui/Button'
 import Toggle from '../../ui/Toggle'
@@ -13,7 +14,6 @@ import { fetchBank, fetchStats, updateExam, deleteExam, importBank, deleteBankQu
 
 // Everything for one exam: its settings, its question bank (import, export, remove), how students are doing, and its link.
 
-const TYPE_LABEL = { multiple: 'Multiple choice', truefalse: 'True/false', numeric: 'Number', text: 'Typed' }
 const input = 'min-h-11 w-full rounded-md border border-hairline bg-surface px-3 py-2 text-base text-ink-900 focus:border-brand focus:outline-none'
 const label = 'flex flex-col gap-1 text-sm font-semibold text-ink-900'
 
@@ -169,7 +169,7 @@ function Bank({ exam, bank, refetch }) {
               <span className="w-8 shrink-0 text-ink-muted">{i + 1}.</span>
               <span className="min-w-0 flex-1">
                 <span className="block text-ink-900"><MathText>{q.text}</MathText></span>
-                <span className="text-xs text-ink-muted">{TYPE_LABEL[q.type] ?? q.type}{q.topic ? ` · ${q.topic}` : ''}{q.explanation ? ' · has explanation' : ''}</span>
+                <span className="text-xs text-ink-muted">{cbtTypeLabel(q.type)}{q.topic ? ` · ${q.topic}` : ''}{q.explanation ? ' · has explanation' : ''}</span>
               </span>
               <button type="button" onClick={() => del.mutate(q.id)} className="shrink-0 text-xs font-semibold text-danger underline">Remove</button>
             </li>

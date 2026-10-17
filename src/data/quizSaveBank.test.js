@@ -47,6 +47,30 @@ const questions = (n) => Array.from({ length: n }, (_, i) => ({
 
 const bank = (over = {}) => ({ drawCount: '', battleQuestionCount: '', shuffleQuestions: false, shuffleOptions: false, ...over })
 
+// saveQuiz builds each quiz_questions row by naming its columns. A column that exists, is cleaned, is rendered in the
+// editor and is graded on the reveal, but is missing from that list, is dropped by the upsert: the save reports success,
+// the editor reloads an empty field, and nothing anywhere says why. This asserts the row carries every authored field,
+// so the next column added to cleanQuestion cannot be left out of the write.
+describe('the question rows saveQuiz writes', () => {
+  it('carries the explanation an admin typed on the question', async () => {
+    await saveQuiz({ id: QUIZ, title: 'Maths', maxPlayers: 40, questions: [{ ...blankQuestion('multiple'), id: 'q0', text: 'Why?', options: ['a', 'b'], correct_index: 0, explanation: 'Because it is.' }] })
+    expect(spy.questionRows[0].explanation).toBe('Because it is.')
+  })
+  it('writes an emptied explanation as null rather than dropping the key', async () => {
+    await saveQuiz({ id: QUIZ, title: 'Maths', maxPlayers: 40, questions: [{ ...blankQuestion('multiple'), id: 'q0', text: 'Why?', options: ['a', 'b'], correct_index: 0, explanation: '   ' }] })
+    expect(spy.questionRows[0]).toHaveProperty('explanation', null)
+  })
+  it('carries the unit columns a numeric question needs to grade', async () => {
+    await saveQuiz({ id: QUIZ, title: 'Maths', maxPlayers: 40, questions: [{ ...blankQuestion('numeric'), id: 'q0', text: 'How much force?', numeric_answer: 2500, numeric_unit: 'N', numeric_unit_aliases: ['newton', 'newtons'] }] })
+    expect(spy.questionRows[0].numeric_unit).toBe('N')
+    expect(spy.questionRows[0].numeric_unit_aliases).toEqual(['newton', 'newtons'])
+  })
+  it('carries a diagram question targets, or the marks are gone before grading', async () => {
+    await saveQuiz({ id: QUIZ, title: 'Maths', maxPlayers: 40, questions: [{ ...blankQuestion('diagram'), id: 'q0', text: 'Tap the peak', diagram_targets: [{ x: 0.5, y: 0.25, r: 0.08, ar: 1.5 }] }] })
+    expect(spy.questionRows[0].diagram_targets).toHaveLength(1)
+  })
+})
+
 async function save(over, bankSettings = {}) {
   spy.updates = []
   await saveQuiz({

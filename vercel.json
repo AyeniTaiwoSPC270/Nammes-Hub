@@ -33,6 +33,10 @@
       "destination": "/api/system?action=calendar-reminders"
     },
     {
+      "source": "/api/og",
+      "destination": "/api/system?action=og"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

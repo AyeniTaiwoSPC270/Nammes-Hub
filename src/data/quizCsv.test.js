@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { parseCsv, questionsFromCsv, questionsToCsv, CSV_COLUMNS } from './quizCsv'
 import { blankQuestion, cleanQuestion } from './quizQuestions'
+import { gradeAnswer } from '../../api/_lib/quizGrading.js'
 
 const BOM = String.fromCharCode(0xfeff)
 const HEADER = CSV_COLUMNS.join(',')
@@ -78,6 +79,54 @@ describe('questionsFromCsv', () => {
   })
 })
 
+describe('the engineering types through a spreadsheet', () => {
+  it('round trips a unit question with its accepted spellings', () => {
+    const q = cleanQuestion({
+      ...blankQuestion('numeric'),
+      text: 'Resultant force?',
+      numeric_answer: '2500',
+      numeric_tolerance: '0',
+      numeric_unit: 'N',
+      // Two spellings that survive normalisation as themselves, which is what an alias is for. "KN" against a unit of
+      // "N" would be a different question, not an alias, and the cleaner drops it rather than storing a trap.
+      numeric_unit_aliases: 'newton\nNewtons',
+    })
+    const { questions, problems } = questionsFromCsv(questionsToCsv([q]))
+    expect(problems).toEqual([])
+    expect(questions[0]).toMatchObject({ type: 'numeric', numeric_answer: '2500', numeric_unit: 'N' })
+    expect(questions[0].numeric_unit_aliases).toBe('newton\nNewtons')
+    const cleaned = cleanQuestion(questions[0])
+    expect(cleaned).toMatchObject({ numeric_answer: 2500, numeric_unit: 'N', numeric_unit_aliases: ['newton', 'Newtons'] })
+    expect(gradeAnswer(cleaned, { answerText: '2500 newtons' }).correct).toBe(true)
+    // The whole point survives the round trip: the alias never scales the number.
+    expect(gradeAnswer(cleaned, { answerText: '2.5 newtons' }).correct).toBe(false)
+    expect(gradeAnswer(cleaned, { answerText: '2.5 kN' }).correct).toBe(false)
+  })
+
+  it('round trips an ordering question with every step in its authored place', () => {
+    const q = cleanQuestion({ ...blankQuestion('order'), text: 'Steps', options: ['mix', 'bake', 'serve', 'cool'] })
+    const again = questionsFromCsv(questionsToCsv([q]))
+    expect(again.problems).toEqual([])
+    // The order of these cells IS the answer, so a shuffle that survived the round trip would silently change it.
+    expect(cleanQuestion(again.questions[0]).options).toEqual(['mix', 'bake', 'serve', 'cool'])
+  })
+
+  it('keeps twelve steps rather than truncating at four', () => {
+    const steps = Array.from({ length: 12 }, (_, i) => `step ${i + 1}`)
+    const q = cleanQuestion({ ...blankQuestion('order'), text: 'Twelve', options: steps })
+    const again = questionsFromCsv(questionsToCsv([q]))
+    expect(again.problems).toEqual([])
+    expect(cleanQuestion(again.questions[0]).options).toEqual(steps)
+  })
+
+  it('reports a diagram row as missing its picture instead of importing a question that grades every tap wrong', () => {
+    const q = cleanQuestion({ ...blankQuestion('diagram'), text: 'Which region?', image_path: 'q/x.webp', image_alt: 'A curve', diagram_targets: [{ x: 0.5, y: 0.5, r: 0.1 }] })
+    const { problems } = questionsFromCsv(questionsToCsv([q]))
+    expect(problems).toHaveLength(1)
+    expect(problems[0].message).toContain('picture')
+  })
+})
+
 describe('export and import round trip', () => {
   const make = (over) => ({ ...blankQuestion(), text: 'Q', options: ['a', 'b', '', ''], ...over })
   it('gives back the same questions', () => {
@@ -108,5 +157,37 @@ describe('export and import round trip', () => {
     const { questions } = questionsFromCsv(csv)
     expect(questions[0].text).toBe('=SUM(A1:A9)')
     expect(questions[0].options).toEqual(['+1', '-2', '@x', '=3'])
+  })
+  it('round trips an explanation on a live quiz sheet, which is why it left the CBT-only columns', () => {
+    const csv = questionsToCsv([make({ text: 'Why?', explanation: 'Because, and also "quoted", with a comma.' })])
+    expect(csv.split('\r\n')[0]).toContain('explanation')
+    const { questions } = questionsFromCsv(csv)
+    expect(questions[0].explanation).toBe('Because, and also "quoted", with a comma.')
+  })
+  // The unit columns sit after explanation, so a sheet that fills them is the case where a positional read of the
+  // explanation would slide: without a header this is unreadable anyway, and with one the name decides.
+  it('reads an explanation that sits between points and the unit columns', () => {
+    const csv = [
+      'type,question,option_a,option_b,option_c,option_d,correct,seconds,points,explanation,unit,unit_aliases',
+      'multiple,Which course covers eigenvalues?,MTH 204,STA 201,CSC 211,,a,20,1000,Av = lambda v,rad,radian|rad',
+    ].join('\n')
+    const { questions, problems } = questionsFromCsv(csv)
+    expect(problems).toEqual([])
+    expect(questions[0].explanation).toBe('Av = lambda v')
+    expect(questions[0].numeric_unit).toBe('rad')
+    expect(questions[0].numeric_unit_aliases).toBe('radian\nrad')
+  })
+  it('leaves an explanation out of a sheet that never had one, rather than writing an empty column of noise', () => {
+    const { questions } = questionsFromCsv(questionsToCsv([make({ text: 'No explanation here' })]))
+    expect(questions[0].explanation).toBe('')
+  })
+  it('still round trips the CBT columns after explanation moved out of them', () => {
+    const csv = questionsToCsv([make({ text: 'CBT?', explanation: 'Explains it.', topic: 'Forces', no_shuffle: true })], { cbt: true })
+    expect(csv.split('\r\n')[0]).toContain('explanation')
+    expect(csv.split('\r\n')[0]).toContain('topic')
+    const { questions } = questionsFromCsv(csv, { cbt: true })
+    expect(questions[0].explanation).toBe('Explains it.')
+    expect(questions[0].topic).toBe('Forces')
+    expect(questions[0].no_shuffle).toBe(true)
   })
 })

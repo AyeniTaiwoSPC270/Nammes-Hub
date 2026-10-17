@@ -169,6 +169,7 @@ export default function AdminQuizReport() {
         <ResultCardModal
           url={boardCardUrl(session.id)}
           admin
+          sessionId={session.id}
           filename={cardFilename(title, 'quiz-results')}
           shareTitle={title}
           onClose={() => setCardOpen(false)}

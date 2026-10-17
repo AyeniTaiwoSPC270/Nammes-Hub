@@ -3,8 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
 import { hostAction, hostOp, deleteQuizSession, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, rankPlayers, formatScore, autoSecondsLeft, preserveSessionTheme, AUTO_ADVANCE_MS, FULL_LOBBY_COUNTDOWN_MS } from '../data/quiz'
-import { isChoiceType, normaliseText } from '../../api/_lib/quizGrading.js'
-import { shownQuestion, shownAnswer, shownSlots } from '../../api/_lib/quizDraw.js'
+import { isChoiceType, normaliseText, cleanDiagramTargets } from '../../api/_lib/quizGrading.js'
+import { shownQuestion, shownAnswer, shownSlots, shownOptions } from '../../api/_lib/quizDraw.js'
+import { DiagramTap } from '../components/quiz/DiagramTap'
 import { rankTeams, teamStyle } from '../data/quizTeams'
 import MathText from '../components/quiz/MathText'
 import { useCountUp } from '../lib/useCountUp'
@@ -205,6 +206,12 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
               Go to <span className="text-orange-100">{window.location.host}/play</span> and enter
             </p>
             {theme.tagline && <p className="mt-3 text-xl text-white/80">{theme.tagline}</p>}
+            {/* Shown on the projector, so the host can put a struggling phone on the light client without asking a
+                student to type a second address. The toggle on /play cannot help a first load -- 263 KB of backdrop
+                has arrived by then -- which is the whole reason the second client exists. */}
+            <p className="mt-4 text-sm text-orange-100/70">
+              Slow connection? <span className="text-orange-100">{window.location.host}/play/low</span>
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3" aria-label={`Game code ${digits.join(' ')}`}>
             {digits.map((d, i) => (
@@ -279,39 +286,46 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             Waiting for the first player to join…
           </p>
         ) : (
-          <div className="mt-5 flex flex-wrap gap-3">
+<ul className="mt-4 flex flex-wrap gap-2" aria-label="Players">
             {orderedPlayers.map((p) => (
-              <span key={p.id} className="qz-pop relative inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
-                <Avatar name={p.nickname} avatarId={p.avatar_id} mood={players.length > 16 ? 'static' : 'idle'} className="h-12 w-12" />
-                {p.nickname}
-                {teamById.get(p.team_id) && (
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
-                  aria-label={`Manage ${p.nickname}`}
-                  aria-expanded={menuFor === p.id}
-                  className="ml-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-ink-muted hover:bg-surface-low hover:text-ink-900"
-                >
-                  <span className="material-symbols-outlined text-xl" aria-hidden="true">edit</span>
-                </button>
+              <li key={p.id} className="qz-pop relative">
+                <span className="inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
+                  <Avatar name={p.nickname} avatarId={p.avatar_id} mood={players.length > 16 ? 'static' : 'idle'} className="h-12 w-12" />
+                  <span className="max-w-40 truncate">{p.nickname}</span>
+                  {teamById.get(p.team_id) && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
+                    aria-label={`Manage ${p.nickname}`}
+                    aria-expanded={menuFor === p.id}
+                    className="ml-1 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted hover:bg-surface-low hover:text-ink-900"
+                  >
+                    <span className="material-symbols-outlined text-2xl" aria-hidden="true">edit</span>
+                  </button>
+                </span>
+                {/* On the <li>, not inside the pill: the pill is an inline-flex that shrinks to its text, so a panel
+                    anchored to it inherited that width and rendered at the nickname's width with its items wrapped into
+                    an unreadable column. The row is the real block box, so the panel gets its own width and is allowed
+                    to run past the pill's edge. `right-0` on a left-to-right row keeps it on screen for the last
+                    player in a line rather than hanging off the right of the projector. */}
                 {menuFor === p.id && (
-                  <span role="menu" className="absolute left-0 top-full z-20 mt-2 flex min-w-56 flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl">
-                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onRename(p) }}>
+                  <span role="menu" className="absolute right-0 top-full z-30 mt-2 flex w-64 flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl">
+                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onRename(p) }}>
                       Rename to &quot;Player ###&quot;
                     </button>
-                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, false) }}>
+                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, false) }}>
                       Remove from game
                     </button>
-                    <button role="menuitem" type="button" className="cursor-pointer rounded-xl px-3 py-2 text-left text-red-600 hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, true) }}>
+                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left text-red-600 hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, true) }}>
                       Remove and block this name
                     </button>
                   </span>
                 )}
-              </span>
+              </li>
             ))}
-          </div>
+</ul>
         )}
       </section>
     </Stage>
@@ -319,12 +333,16 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
 }
 
 // What the audience needs to know about a question row (the host reads the full row, including the answer).
-function toView(question) {
+function toView(question, optionOrder = null) {
   return {
     text: question.text,
     imageUrl: question.image_path ? supabase.storage.from('quiz-images').getPublicUrl(question.image_path).data.publicUrl : null,
     imageAlt: question.image_alt ?? '',
     multiplier: question.points_multiplier ?? 1,
+    // The projector renders a diagram question as its picture, not as a list of options, and an ordering question as
+    // its steps in the order they were DRAWN - not the order they were authored, which is the answer.
+    type: question.type ?? 'multiple',
+    options: shownOptions(question, optionOrder),
   }
 }
 
@@ -360,7 +378,7 @@ function SkipButton({ onSkip, disabled }) {
   )
 }
 
-function QuestionScreen({ title, question, index, total, remaining, answered, playerCount, onEnd, busy, paused, onTogglePause, onExtend, canExtend, onSkip }) {
+function QuestionScreen({ title, question, optionOrder, index, total, remaining, answered, playerCount, onEnd, busy, paused, onTogglePause, onExtend, canExtend, onSkip }) {
   const share = playerCount > 0 ? Math.round((answered / playerCount) * 100) : 0
   const type = question.type ?? 'multiple'
   return (
@@ -402,7 +420,7 @@ function QuestionScreen({ title, question, index, total, remaining, answered, pl
         </div>
       )}
 
-      <QuestionHeading question={toView(question)} />
+      <QuestionHeading question={toView(question, optionOrder)} />
 
       {isChoiceType(type) ? (
         <AnswerTiles question={question}>
@@ -419,6 +437,32 @@ function QuestionScreen({ title, question, index, total, remaining, answered, pl
             </div>
           )}
         </AnswerTiles>
+      ) : type === 'diagram' ? (
+        // The picture and nothing else. The regions are the answer, so the projector does not draw them here - it
+        // draws them on the reveal. A diagram answer is a position on this exact picture, so marking it early would be
+        // marking the answer in front of everyone in the room.
+        <div className="mx-auto w-full max-w-4xl">
+          <DiagramTap src={toView(question).imageUrl} alt={toView(question).imageAlt} disabled />
+          <p className="mt-3 text-center text-2xl font-bold text-ink-muted">Tap the correct region on your phone</p>
+        </div>
+      ) : type === 'order' ? (
+        // Shuffled on the projector too, for the same reason as every other question: the steps are handed to the
+        // phones in the order they were drawn, and the projector has to show that same order or "the third one" means
+        // something different in the hall than on a handset.
+        <ol className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+          {toView(question, optionOrder).options.map((option, i) => (
+            <li
+              key={i}
+              className="qz-rise flex min-h-[90px] items-center gap-5 rounded-3xl bg-orange-500 p-6 text-white shadow-lg"
+              style={{ animationDelay: `${120 + i * 80}ms` }}
+            >
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-3xl font-bold">
+                {i + 1}
+              </span>
+              <span className="text-2xl font-bold leading-snug sm:text-4xl"><MathText>{option}</MathText></span>
+            </li>
+          ))}
+        </ol>
       ) : (
         <div className="qz-rise mx-auto flex w-full max-w-3xl items-center gap-5 rounded-3xl border-2 border-dashed border-orange-500 bg-surface p-8 shadow-md">
           <span className="material-symbols-outlined text-6xl text-orange-500" aria-hidden="true">text_fields</span>
@@ -446,7 +490,10 @@ function typedGroups(answers) {
   return [...groups.values()].sort((x, y) => y.count - x.count).slice(0, 6)
 }
 
-function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto, holdMs = 0 }) {
+// Exported so hostRevealExplanation.test.jsx can render it for real. A source scan cannot catch a ReferenceError: the
+// first version of that test asserted the exact wrong identifier was present and passed on a screen that crashed the
+// whole projector.
+export function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto, holdMs = 0, explanation }) {
   const type = question.type ?? 'multiple'
   const choice = isChoiceType(type)
   const isPoll = type === 'poll'
@@ -539,6 +586,34 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
             )
           }}
         </AnswerTiles>
+      ) : type === 'diagram' ? (
+        // Now the regions are drawn, because the answer is public. Same picture, same mapping, so what the room is shown
+        // is exactly what a tap was graded against.
+        <div className="mx-auto w-full max-w-4xl">
+          <DiagramTap
+            src={toView(question).imageUrl}
+            alt={toView(question).imageAlt}
+            targets={cleanDiagramTargets(question.diagram_targets)}
+            marked={revealed}
+            disabled
+          />
+          {revealed && <p className="mt-3 text-center text-2xl font-bold text-ink-muted">The regions a tap was graded against</p>}
+        </div>
+      ) : type === 'order' ? (
+        // The authored order IS the answer, so the reveal walks the steps in the order they had to be put in - the
+        // opposite of the open question, which shows them in the order they were drawn.
+        <ol className="mx-auto flex w-full max-w-4xl flex-col gap-3">
+          {(question.options ?? []).map((step, i) => (
+            <li
+              key={i}
+              className={`qz-rise flex min-h-16 items-center gap-5 rounded-3xl p-5 shadow-lg ${revealed ? 'bg-green-700 text-white' : 'bg-surface text-ink-900'}`}
+              style={{ animationDelay: `${120 + i * 80}ms` }}
+            >
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-black/20 text-2xl font-bold">{i + 1}</span>
+              <span className="text-xl font-bold leading-snug sm:text-3xl"><MathText>{step}</MathText></span>
+            </li>
+          ))}
+        </ol>
       ) : (
         <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-2">
           {revealed ? (
@@ -571,6 +646,18 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
               </ul>
             )}
           </div>
+        </div>
+      )}
+
+      {/* The explanation goes on the wall as well as the phones, and it is held back with the answer rather than shown
+          early: it explains the right answer, so putting it on screen while the drum roll is still spinning would give
+          the room the reasoning before it has the question's verdict. */}
+      {explanation && (
+        <div className="mx-auto w-full max-w-4xl rounded-3xl border border-hairline bg-surface p-6 shadow-md">
+          <p className="mb-2 text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">Why</p>
+          <p className={`break-words text-2xl leading-snug text-ink-900 ${revealed ? '' : 'opacity-40'}`}>
+            <MathText>{explanation}</MathText>
+          </p>
         </div>
       )}
 
@@ -1391,6 +1478,7 @@ rightShareRef.current = rightShare
       <QuestionScreen
         {...shared}
         question={question}
+        optionOrder={optionOrders[question.id] ?? null}
         remaining={remaining}
         answered={answers.length}
         playerCount={players.length}
@@ -1417,6 +1505,7 @@ rightShareRef.current = rightShare
         isLast={isLast}
         auto={auto}
         holdMs={holdMs}
+        explanation={question.explanation || null}
       />
     )
   } else if (session.state === 'leaderboard') {

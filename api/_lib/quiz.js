@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt } from 'node:crypto'
+import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto'
 import { BUILTIN_COUNT, allowedAvatarIds } from './quizCharacterArt.js'
 
 // Pure game rules for the live quiz. No database access here so every rule can be tested on its own.
@@ -44,6 +44,16 @@ export function newPlayerToken() {
 
 export function hashToken(token) {
   return createHash('sha256').update(String(token)).digest('hex')
+}
+
+// Comparing two hashes with === is a timing oracle on a public endpoint that now answers "is this my token?". The
+// attacker already controls their own candidate and learns nothing about the stored one from a rejected insert, but
+// this is the one place a guessed token is compared against a real row, so it gets a constant-time compare.
+export function safeEqual(a, b) {
+  const left = Buffer.from(String(a ?? ''), 'utf8')
+  const right = Buffer.from(String(b ?? ''), 'utf8')
+  if (left.length !== right.length) return false
+  return timingSafeEqual(left, right)
 }
 
 export { hasBlockedWord } from './quizText.js'

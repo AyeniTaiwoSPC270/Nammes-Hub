@@ -3,13 +3,13 @@ import { isUuid } from '../validate.js'
 import { logError } from '../logError.js'
 import {
   validateNickname, isAvatarId, newPlayerToken, hashToken, createRateLimiter, clientIp, scoreAnswer, ANSWER_GRACE_MS,
-  gradeAnswer, isChoiceType, correctText, generatePracticeShareCode,
+  gradeAnswer, awardPoints, isChoiceType, correctText, generatePracticeShareCode,
 } from '../quiz.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { sanitizeCard } from '../quizCard.js'
 import { publicImageUrl } from '../quizImage.js'
 import { botDecision, botNicknames, skillForBot, seeded, BOT_SKILL_CHOICES } from '../quizBots.js'
-import { cleanDrawSettings, buildQuestionSet, shownOptions, shownIndex, originalIndex } from '../quizDraw.js'
+import { cleanDrawSettings, buildQuestionSet, shownOptions, shownIndex, originalIndex, originalOrder } from '../quizDraw.js'
 import { readQuizCast } from '../castStore.js'
 import { castIds } from '../quizCharacterArt.js'
 
@@ -56,7 +56,7 @@ export function createQuizPracticeHandler(
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { op, quizId, token, nickname, avatarId = 0, chosenIndex, answerText, race = 'none', raceSkill = 'mixed' } = req.body ?? {}
+    const { op, quizId, token, nickname, avatarId = 0, chosenIndex, answerText, order: submittedOrder, tap, race = 'none', raceSkill = 'mixed' } = req.body ?? {}
     if (!OPS.includes(op)) {
       res.status(400).json({ error: 'Unknown request' })
       return
@@ -169,8 +169,10 @@ export function createQuizPracticeHandler(
       const elapsed = now() - new Date(run.question_started_at).getTime()
       let score = run.total_score
       if (!answer && elapsed > question.time_limit_seconds * 1000 + ANSWER_GRACE_MS) {
-        // The time ran out with no answer: it counts as a miss and the answer is shown.
-        await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0 })
+        // The time ran out with no answer: it counts as a miss and the answer is shown. p_order and p_credit are named
+        // even though both are null, because the function this calls takes them: leave them off and the call does not
+        // resolve, the miss is never written, and the run is then stuck on a question it can neither answer nor leave.
+        await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0, p_order: null, p_credit: null })
         answer = { chosen_index: null, answer_text: null, correct: false, points_awarded: 0 }
       }
       const type = question.type ?? 'multiple'
@@ -211,6 +213,8 @@ export function createQuizPracticeHandler(
         answerText: answer.answer_text ?? null,
         correctIndex: isChoiceType(type) ? shownIndex(order, question.correct_index, count) : null,
         correctText: correctText(question),
+        // A practice run is self-paced, so the answer is already public by the time this is sent.
+        explanation: question.explanation ?? null,
         timedOut: answer.chosen_index == null && answer.answer_text == null,
       }
     }
@@ -383,7 +387,9 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
       // A player answers the option they were shown, so a shuffled question is turned back into its stored position before
       // grading, and refused rather than graded against whatever happens to be there.
       const storedIndex = originalIndex(run.option_orders?.[question.id] ?? null, chosenIndex, (question.options ?? []).length)
-      const graded = gradeAnswer(question, { chosenIndex: storedIndex ?? chosenIndex, answerText })
+      const graded = question.type === 'order'
+      ? gradeAnswer(question, { answerText, order: originalOrder(run.option_orders?.[question.id] ?? null, submittedOrder, (question.options ?? []).length) })
+      : gradeAnswer(question, { chosenIndex: storedIndex ?? chosenIndex, answerText, tap })
       if (!graded.ok) {
         res.status(400).json({ error: graded.error })
         return
@@ -391,8 +397,14 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
       const elapsedMs = now() - new Date(run.question_started_at).getTime()
       const late = elapsedMs > question.time_limit_seconds * 1000 + ANSWER_GRACE_MS
       const correct = !late && graded.correct === true
-      const base = correct ? scoreAnswer({ correct, points: question.points, timeLimitSeconds: question.time_limit_seconds, elapsedMs }) : 0
-      const points = base * (correct && question.points_multiplier === 2 ? 2 : 1)
+      // An ordering answer can be wrong overall and still have steps in the right place, so the base asked for here is
+      // what the answer would be worth WHOLLY right - after the speed curve and the double-points round - and
+      // `awardPoints` decides how much of it lands. Gating the base on `correct` instead is what made a four-out-of-six
+      // ordering score zero in practice and in battle while the hosted game credited it.
+      // practice has no streak, comeback or power-up, so that is the only scaling there is.
+      const full = scoreAnswer({ correct: true, points: question.points, timeLimitSeconds: question.time_limit_seconds, elapsedMs })
+      const points = late ? 0 : awardPoints(full * (question.points_multiplier === 2 ? 2 : 1), graded)
+      const credit = graded?.credit ?? 1
       const { data: recorded, error } = await supabaseAdmin.rpc('quiz_practice_record', {
         p_run: run.id,
         p_question: question.id,
@@ -400,6 +412,8 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
         p_text: late ? null : graded.answerText,
         p_correct: correct,
         p_points: points,
+        p_order: late ? null : graded.order ?? null,
+        p_credit: late ? null : credit,
       })
       if (error) return fail(error, 'Could not save your answer')
       if (!recorded) {
@@ -420,7 +434,7 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
       return
     }
     if (!answered) {
-      await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0 })
+      await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0, p_order: null, p_credit: null })
     }
     const last = run.current_index + 1 >= questions.length
     const patch = last

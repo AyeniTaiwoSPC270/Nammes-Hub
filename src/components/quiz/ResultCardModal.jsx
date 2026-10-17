@@ -3,14 +3,14 @@ import Button from '../ui/Button'
 import ErrorState from '../ui/ErrorState'
 import { useBodyScrollLock } from '../../lib/useBodyScrollLock'
 import { fetchCardBlob } from '../../lib/quizCard'
-import { saveCardBlob, shareOrDownloadBlob } from '../../lib/shareCard'
+import { saveCardBlob, shareOrDownloadBlob, shareLink } from '../../lib/shareCard'
 
 // Preview a rendered result card, then share or save it. One component for every quiz mode: it takes a URL, an
 // optional admin flag for the board card, and the filename to save under.
 //
 // It renders as a sibling of whatever layout it sits in, never inside Phone/Stage/Shell: those are fixed-size frames,
 // and a position-fixed overlay inside a zoomed one gets anchored to that element instead of the screen.
-export default function ResultCardModal({ url, admin = false, filename, shareTitle, onClose }) {
+export default function ResultCardModal({ url, admin = false, filename, shareTitle, sessionId, onClose }) {
   const [blob, setBlob] = useState(null)
   const [preview, setPreview] = useState(null)
   const [error, setError] = useState('')
@@ -97,6 +97,15 @@ export default function ResultCardModal({ url, admin = false, filename, shareTit
             <span className="material-symbols-outlined" aria-hidden="true">share</span>
             Share
           </Button>
+          {/* The picture share needs navigator.canShare({files}), which most Android browsers do not have. The link is what
+              actually reaches a phone, and it previews as the board rather than as a blurry PNG. Only shown when the
+              caller passed a real page route: the card URL above carries the player's token and must never be shared. */}
+          {sessionId && (
+            <Button variant="secondary" onClick={() => shareLink(`${window.location.origin}/api/og?type=result&session=${encodeURIComponent(sessionId)}`, shareTitle)} className="flex-1">
+              <span className="material-symbols-outlined" aria-hidden="true">link</span>
+              Share link
+            </Button>
+          )}
           <Button variant="secondary" onClick={save} disabled={!blob} className="flex-1">
             <span className="material-symbols-outlined" aria-hidden="true">download</span>
             Save
