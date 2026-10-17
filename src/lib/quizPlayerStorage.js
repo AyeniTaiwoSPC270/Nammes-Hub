@@ -12,6 +12,9 @@ export const STORAGE_KEY = 'nammes-quiz-player'
 const INDEX_KEY = `${STORAGE_KEY}:index`
 const INDEX_LIMIT = 6
 const ROOM_LIMIT = 24
+// How long a seat is offered on the join screen. A day is generous: it covers a student who closes the tab mid-game and
+// comes back to it, and stops yesterday's game from sitting above today's code box.
+const SEAT_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 // Keyed by the join code, because that is the one identifier the URL carries: a browser cannot know the session id
 // until it has already joined, which is exactly too late to look the token up. The code is also what a student types
@@ -78,8 +81,12 @@ export function knownNicknames() {
 // Every room this device still holds a seat in, newest first. The join screen uses it to offer a one-tap way back
 // instead of making a returning student remember a six-digit code: the seat was stored under the code, and a phone that
 // arrived at a bare /play could not read it back, so a refresh put them on this form holding a token they could not use.
-// The server has the final say -- the token is verified on resume -- so a stale entry here costs one failed tap.
-export function rememberedSeats() {
+//
+// A finished game is not offered. The server refuses a join to one ("No game found with that code"), so a dead seat on
+// this list is a button that cannot work -- and a list of them trains a student to stop trusting the list. Anything older
+// than a day is dropped on the same reasoning: a student who played a game yesterday and is joining today is joining a
+// different one, and a stale button above a fresh code box is worse than no button.
+export function rememberedSeats({ maxAgeMs = SEAT_MAX_AGE_MS, now = Date.now() } = {}) {
   try {
     const prefix = `${STORAGE_KEY}:`
     const seats = []
@@ -87,16 +94,28 @@ export function rememberedSeats() {
       if (!key.startsWith(prefix) || key === INDEX_KEY) continue
       const record = readStore(key)
       if (!record) continue
+      const at = Number(record.at) || 0
+      // No timestamp means a record from a build that predates them. Kept, because a seat is the only way back into a
+      // game and it may well be live; it just sorts last.
+      if (at > 0 && now - at > maxAgeMs) continue
       seats.push({
         code: record.code ?? key.slice(prefix.length),
         nickname: typeof record.nickname === 'string' ? record.nickname : '',
-        at: Number(record.at) || 0,
+        at,
       })
     }
     return seats.sort((a, b) => b.at - a.at).slice(0, INDEX_LIMIT)
   } catch {
     return []
   }
+}
+
+// Drops one room's seat. Called when the server says the room is gone, so a finished game removes itself from the list
+// instead of waiting to be aged out -- otherwise the list fills with buttons that cannot work and the student has to
+// learn to ignore the one thing that was meant to help them.
+export function forgetSeat(code) {
+  if (!code) return
+  forgetSession(code)
 }
 
 // Stamped on write so `rememberedSeats` can show the most recent room first. Ignored on read, so a record written by an

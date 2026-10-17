@@ -16,7 +16,7 @@ import { isChoiceType } from '../../api/_lib/quizGrading.js'
 import { OrderPicker } from '../components/quiz/OrderPicker'
 import { DiagramTap } from '../components/quiz/DiagramTap'
 import { teamStyle } from '../data/quizTeams'
-import { storeKey, readStore, writeStore, forgetSession, rememberNickname, knownNicknames, rememberedSeats, stampSeat } from '../lib/quizPlayerStorage'
+import { storeKey, readStore, writeStore, forgetSession, forgetSeat, rememberNickname, knownNicknames, rememberedSeats, stampSeat } from '../lib/quizPlayerStorage'
 import { useLowData, setLowData, playerPollMs } from '../data/lowData'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
@@ -122,7 +122,7 @@ function JoinForm({ onJoined, notice }) {
   const cast = castQuery.data
   // Read once, when the form mounts: it is a localStorage walk and the answer only changes when this device rejoins,
   // which reloads the page anyway. Reading it on every render would make the button jump as the student typed.
-  const [seats] = useState(rememberedSeats)
+  const [seats, setSeats] = useState(rememberedSeats)
 
   useEffect(() => {
     if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
@@ -139,7 +139,16 @@ function JoinForm({ onJoined, notice }) {
       onJoined({ ...joined, code })
     } catch (e) {
       if (e.data?.needsTeam) setTeams(e.data.teams)
-      else setError(e.message)
+      else {
+        // A 404 means the room is gone -- finished, or cleaned up. The seat for it is dead weight, so it is dropped and
+        // the list on this screen updates: a dead room offered as "back into game" is a button that cannot work, and a
+        // list of those teaches a student to ignore the one thing meant to help them.
+        if (e.status === 404) {
+          forgetSeat(code)
+          setSeats((list) => list.filter((seat) => seat.code !== code))
+        }
+        setError(e.message)
+      }
       setBusy(false)
     }
   }

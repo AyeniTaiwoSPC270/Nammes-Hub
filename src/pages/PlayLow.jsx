@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { callQuiz } from '../data/quiz'
 import { letterboxRect, toNormalized } from '../../api/_lib/quizGrading.js'
+import { storeKey, readStore, writeStore, forgetSeat, stampSeat } from '../lib/quizPlayerStorage'
 
 // The low-data phone client. Same API as /play, none of the look system.
 //
@@ -191,7 +192,15 @@ function Question({ question, reveal, locked, onAnswer }) {
 }
 
 export default function PlayLow() {
-  const [token, setToken] = useState(() => new URLSearchParams(window.location.search).get('token') ?? '')
+  const [token, setToken] = useState(() => {
+    // The URL first, because that is how the host's link arrives and how a refresh gets here. Then the seat this
+    // device stored, because a student on the worst connection in the building is also the one most likely to have the
+    // tab closed on them -- and losing the seat there means retyping a code they may not have written down.
+    const fromUrl = new URLSearchParams(window.location.search).get('token')
+    if (fromUrl) return fromUrl
+    const code = new URLSearchParams(window.location.search).get('code')
+    return code ? (readStore(storeKey(code))?.token ?? '') : ''
+  })
   const [nickname, setNickname] = useState('')
   const [code, setCode] = useState(() => new URLSearchParams(window.location.search).get('code') ?? '')
   const [joining, setJoining] = useState(false)
@@ -202,11 +211,17 @@ export default function PlayLow() {
     event.preventDefault()
     setJoining(true)
     try {
-      const joined = await callQuiz('join', { code, nickname })
+      // The stored token is what turns this from a new join into a resume, and a new join with a name already on the
+      // roster is a 409. Same reason the full client sends it.
+      const saved = readStore(storeKey(code))
+      const joined = await callQuiz('join', { code, nickname, token: saved?.token })
+      writeStore(storeKey(code), stampSeat({ token: joined.token, code, nickname: joined.nickname ?? nickname }))
       window.history.replaceState(null, '', `?token=${joined.token}`)
       setToken(joined.token)
       setNickname('')
     } catch (e) {
+      // The room is gone (finished, or cleaned up): drop the dead seat so it cannot be offered again.
+      if (e.status === 404) forgetSeat(code)
       setError(e.message)
     } finally {
       setJoining(false)
