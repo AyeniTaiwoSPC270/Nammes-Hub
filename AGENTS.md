@@ -226,6 +226,18 @@ data module, and that is deliberate — do not merge them into one shared "prese
 - **The three record RPCs carry `p_order smallint[]` and `p_credit numeric`.** A submission that changed one of their
   signatures needs `drop function if exists` for the old one, or Postgres keeps the old overload and the new columns
   are silently never written.
+- **Widening a signature breaks every caller, and a bot caller breaks quietly.** `quiz_record_answer` had **four** call
+  sites, not the three the migration names: `quiz-answer`, `quiz-battle`, `quiz-practice` and the hosted bots in
+  `quiz-host.js`. Three were updated and the fourth was not, so after the migration bots stopped answering *every*
+  question in *every* quiz while real players carried on working — the only symptom was `answered: 0` on a poll nobody
+  reads and a line in a server log. Postgres matches a call by argument name and count, so a payload missing one of the
+  new arguments is not a call it can resolve: it is an error the handler swallows, not a wrong answer.
+  `RECORD_RPC_SIGNATURES` in `api/_lib/quizTestKit.js` declares the real signatures and the fake now rejects a short
+  payload with a `PGRST202`, so the *next* caller to drift fails in the test suite instead of in a hosted game. It
+  immediately found a second instance nobody had noticed: practice's timed-out path (`quiz-practice.js`, the
+  `state`-on-expiry and `next` branches) also called `quiz_practice_record` with six arguments, so a question that ran
+  out of time was never recorded and `next` answered 409 "Answer this question first" for the rest of the run. When a
+  migration touches an RPC, grep every `rpc(` call site, not the handlers the migration names.
 
 ## Rejoin and low data
 

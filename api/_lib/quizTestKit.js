@@ -4,6 +4,23 @@ export const QUIZ = '11111111-1111-4111-8111-111111111111'
 export const ADMIN = '22222222-2222-4222-8222-222222222222'
 export const SESSION = '33333333-3333-4333-8333-333333333333'
 
+// Postgres matches a function call by argument name and count, so a call missing one of these is not a call it can
+// resolve: it fails, the handler logs it, and the caller is quietly dropped from the round. The engineering-types
+// migration added p_order and p_credit to all three record RPCs, and one of the four call sites was missed for exactly
+// this long. The signatures are declared here so a future change to the migration that a caller has not caught up
+// with fails here instead of in a hosted game.
+const RECORD_RPC_SIGNATURES = {
+  quiz_record_answer: ['p_session', 'p_player', 'p_question', 'p_index', 'p_chosen', 'p_points', 'p_bonus', 'p_correct', 'p_text', 'p_powerup', 'p_streak', 'p_elapsed', 'p_order', 'p_credit'],
+  quiz_practice_record: ['p_run', 'p_question', 'p_chosen', 'p_text', 'p_correct', 'p_points', 'p_order', 'p_credit'],
+  quiz_battle_record: ['p_battle', 'p_slot', 'p_question', 'p_chosen', 'p_text', 'p_correct', 'p_points', 'p_elapsed', 'p_order', 'p_credit'],
+}
+
+function missingRpcArguments(name, a) {
+  const wanted = RECORD_RPC_SIGNATURES[name]
+  if (!wanted) return []
+  return wanted.filter((k) => a[k] === undefined)
+}
+
 export function fakeRes() {
   const res = { statusCode: null, body: null, headers: {} }
   res.status = (c) => { res.statusCode = c; return res }
@@ -147,6 +164,10 @@ const match = (r) =>
     auth: { getUser: async (t) => (t === 'good' ? { data: { user: { id: ADMIN } }, error: null } : { data: null, error: { message: 'bad' } }) },
     from: (t) => query(t),
     rpc: async (name, a) => {
+      const missing = missingRpcArguments(name, a)
+      if (missing.length) {
+        return { data: null, error: { message: `${name} has no function accepting these arguments: missing ${missing.join(', ')}`, code: 'PGRST202' } }
+      }
       if (name === 'quiz_assign_auto_team') {
         const teams = tables.quiz_teams.filter((t) => t.session_id === a.p_session).sort((x, y) => x.position - y.position)
         const count = (t) => tables.quiz_players.filter((p) => p.team_id === t.id && p.id !== a.p_player).length
