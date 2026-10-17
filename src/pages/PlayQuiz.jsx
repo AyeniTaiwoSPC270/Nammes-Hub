@@ -16,7 +16,7 @@ import { isChoiceType } from '../../api/_lib/quizGrading.js'
 import { OrderPicker } from '../components/quiz/OrderPicker'
 import { DiagramTap } from '../components/quiz/DiagramTap'
 import { teamStyle } from '../data/quizTeams'
-import { storeKey, readStore, writeStore, forgetSession, rememberNickname, knownNicknames } from '../lib/quizPlayerStorage'
+import { storeKey, readStore, writeStore, forgetSession, rememberNickname, knownNicknames, rememberedSeats, stampSeat } from '../lib/quizPlayerStorage'
 import { useLowData, setLowData, playerPollMs } from '../data/lowData'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
@@ -120,6 +120,9 @@ function JoinForm({ onJoined, notice }) {
   const [teams, setTeams] = useState(null) // the teams to choose from, once the game says it is a team game
   const castQuery = useCastQuery({ code: code.length === 6 ? code : null })
   const cast = castQuery.data
+  // Read once, when the form mounts: it is a localStorage walk and the answer only changes when this device rejoins,
+  // which reloads the page anyway. Reading it on every render would make the button jump as the student typed.
+  const [seats] = useState(rememberedSeats)
 
   useEffect(() => {
     if (cast && !castIds(cast).includes(avatarId)) setAvatarId(randomCastId(cast))
@@ -155,6 +158,29 @@ function JoinForm({ onJoined, notice }) {
         <p className="text-ink-muted">Enter the code on the big screen to get in.</p>
         <Link to="/battle" className="text-sm font-semibold text-orange-500">Want to challenge a friend instead? Battle mode</Link>
       </div>
+
+      {/* Offered only when the device already holds a seat, and only as a shortcut: the token is still what resumes,
+          and the server verifies it. Without this a phone that refreshed on a bare /play was left holding a seat it had
+          no way back to, and had to be told the code it had just been in. */}
+      {seats.length > 0 && code.length !== 6 && (
+        <div className="qz-rise flex flex-col gap-2" style={{ animationDelay: '50ms' }}>
+          {seats.slice(0, 3).map((seat) => (
+            <button
+              key={seat.code}
+              type="button"
+              onClick={() => setCode(seat.code)}
+              className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-orange-500 bg-orange-500/10 px-4 text-left font-semibold text-ink-900"
+            >
+              <span>
+                <span className="block text-lg">{seat.nickname || 'Your seat'}</span>
+                <span className="block text-xs font-normal text-ink-muted">Back into game {seat.code}</span>
+              </span>
+              <span className="material-symbols-outlined text-orange-500" aria-hidden="true">login</span>
+            </button>
+          ))}
+          <p className="text-center text-xs text-ink-muted">Already in a game? Tap to fill its code.</p>
+        </div>
+      )}
 
       <form onSubmit={submit} className="qz-rise mt-2 flex flex-col gap-5 rounded-3xl border border-hairline bg-surface p-5 shadow-md" style={{ animationDelay: '100ms' }}>
         <div className="flex flex-col gap-2">
@@ -234,6 +260,16 @@ function JoinForm({ onJoined, notice }) {
           {busy ? 'Joining…' : teams ? 'Join with another team' : 'Join game'}
           {!busy && <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>}
         </button>
+        {/* The one door to /play/low. It was a working route with no door leading to it, so the students who most need
+            it -- the ones on a weak connection who just sat through 263 KB of backdrop -- had no way to find it. This
+            is below the fold on purpose: it is for someone already struggling, not an advert for everyone. */}
+        <Link
+          to={`/play/low${initialCode ? `?code=${initialCode}` : ''}`}
+          className="mt-1 flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-hairline px-4 text-center text-sm font-semibold text-ink-muted"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">network_cell</span>
+          Slow connection? Use the light version
+        </Link>
       </form>
     </Phone>
   )
@@ -487,8 +523,16 @@ function PlayQuizGame({ onTheme }) {
       ...(joined.streak !== undefined ? { streak: joined.streak } : {}),
       ...(joined.resumed ? { resumed: true } : {}),
     }
-    writeStore(storeKey(next.code), next)
+    writeStore(storeKey(next.code), stampSeat(next))
     rememberNickname(joined.nickname)
+    // Put the code in the address bar. The seat is stored under the code and the code is the only thing this page can
+    // read it back with, so a phone that joined by typing the code -- which is what the host's own instructions tell
+    // students to do -- held a seat it could not find again. Refreshing dropped the player onto the join form with
+    // their token still saved, looking like a lost game. A browser's back button must not walk into the lobby either,
+    // so this replaces rather than pushes.
+    if (next.code && new URLSearchParams(window.location.search).get('code') !== next.code) {
+      window.history.replaceState(null, '', `/play?code=${encodeURIComponent(next.code)}`)
+    }
     setNotice('')
     setSaved(next)
   }
