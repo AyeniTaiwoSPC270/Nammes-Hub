@@ -169,8 +169,10 @@ export function createQuizPracticeHandler(
       const elapsed = now() - new Date(run.question_started_at).getTime()
       let score = run.total_score
       if (!answer && elapsed > question.time_limit_seconds * 1000 + ANSWER_GRACE_MS) {
-        // The time ran out with no answer: it counts as a miss and the answer is shown.
-        await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0 })
+        // The time ran out with no answer: it counts as a miss and the answer is shown. p_order and p_credit are named
+        // even though both are null, because the function this calls takes them: leave them off and the call does not
+        // resolve, the miss is never written, and the run is then stuck on a question it can neither answer nor leave.
+        await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0, p_order: null, p_credit: null })
         answer = { chosen_index: null, answer_text: null, correct: false, points_awarded: 0 }
       }
       const type = question.type ?? 'multiple'
@@ -432,7 +434,7 @@ for (const q of (quizzes ?? []).filter((x) => !x.archived_at && !x.is_custom)) {
       return
     }
     if (!answered) {
-      await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0 })
+      await supabaseAdmin.rpc('quiz_practice_record', { p_run: run.id, p_question: question.id, p_chosen: null, p_text: null, p_correct: false, p_points: 0, p_order: null, p_credit: null })
     }
     const last = run.current_index + 1 >= questions.length
     const patch = last
