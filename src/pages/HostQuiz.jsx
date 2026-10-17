@@ -477,7 +477,7 @@ function typedGroups(answers) {
   return [...groups.values()].sort((x, y) => y.count - x.count).slice(0, 6)
 }
 
-function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto, holdMs = 0 }) {
+function RevealScreen({ title, question, index, total, counts, answers, playersById, questionStartedAt, playerCount, onNext, busy, isLast, auto, holdMs = 0, explanation }) {
   const type = question.type ?? 'multiple'
   const choice = isChoiceType(type)
   const isPoll = type === 'poll'
@@ -630,6 +630,18 @@ function RevealScreen({ title, question, index, total, counts, answers, playersB
               </ul>
             )}
           </div>
+        </div>
+      )}
+
+      {/* The explanation goes on the wall as well as the phones, and it is held back with the answer rather than shown
+          early: it explains the right answer, so putting it on screen while the drum roll is still spinning would give
+          the room the reasoning before it has the question's verdict. */}
+      {reveal.explanation && (
+        <div className="mx-auto w-full max-w-4xl rounded-3xl border border-hairline bg-surface p-6 shadow-md">
+          <p className="mb-2 text-sm font-bold uppercase tracking-[0.1em] text-ink-muted">Why</p>
+          <p className={`break-words text-2xl leading-snug text-ink-900 ${revealed ? '' : 'opacity-40'}`}>
+            <MathText>{reveal.explanation}</MathText>
+          </p>
         </div>
       )}
 
@@ -1477,6 +1489,7 @@ rightShareRef.current = rightShare
         isLast={isLast}
         auto={auto}
         holdMs={holdMs}
+        explanation={question.explanation || null}
       />
     )
   } else if (session.state === 'leaderboard') {
