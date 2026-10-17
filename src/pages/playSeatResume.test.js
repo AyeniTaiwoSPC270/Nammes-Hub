@@ -30,6 +30,20 @@ describe('a joined phone can find its own seat again', () => {
   })
 })
 
+describe('a finished game stops being offered', () => {
+  // quiz-join refuses `state = 'finished'`, so a finished seat is a button that cannot work. The phone is the only
+  // thing that knows the game ended -- there is no cheap server call for "is this code still open" -- so it flags the
+  // seat when the final state arrives.
+  it('flags the seat as finished on both clients when the game ends', () => {
+    expect(play).toMatch(/data\.session\.state === 'finished'[\s\S]{0,200}finishSeat\(/)
+    expect(low).toContain('finishSeat(code)')
+  })
+
+  it('drops the seat when the player presses Play again, since the game cannot be re-entered', () => {
+    expect(play).toMatch(/forgetSeat\(saved\?\.code \?\? code\)/)
+  })
+})
+
 describe('the light client is reachable', () => {
   it('is linked from the join form, so a student on a weak connection can find it', () => {
     // It was a working route with no door leading to it. The students who most need it are the ones who just sat

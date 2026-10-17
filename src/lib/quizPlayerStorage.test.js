@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
-import { storeKey, readStore, writeStore, forgetSession, forgetSeat, rememberNickname, knownNicknames, rememberedSeats, stampSeat, STORAGE_KEY } from './quizPlayerStorage'
+import { storeKey, readStore, writeStore, forgetSession, forgetSeat, finishSeat, rememberNickname, knownNicknames, rememberedSeats, stampSeat, STORAGE_KEY } from './quizPlayerStorage'
 
 // A localStorage that can be made hostile, because two of these behaviours only exist in the failure path: private
 // mode, and a device that has played far more games than the server still has rows for.
@@ -179,14 +179,40 @@ it('is empty, not a crash, when storage is unavailable', () => {
     expect(rememberedSeats()).toEqual([])
   })
 
-  it('does not offer a game that finished, because the server refuses to join one', () => {
+  it('drops a seat from another day, which no longer has a game behind it', () => {
     // quiz-join excludes `state = 'finished'`, so a dead room on this list is a button that cannot work -- and a list
-    // of those teaches a student to stop trusting the one thing meant to help them.
+    // of those teaches a student to stop trusting the one thing meant to help them. The day cutoff is the backstop for
+    // a game the phone never saw end; `finishSeat` is the precise signal.
     withStorage()
     const now = 10 * 24 * 60 * 60 * 1000
     writeStore(storeKey('111111'), { token: 'a', code: '111111', nickname: 'Ada', at: now - 60_000 })
     writeStore(storeKey('222222'), { token: 'b', code: '222222', nickname: 'Bisi', at: now - 3 * 24 * 60 * 60 * 1000 })
     expect(rememberedSeats({ now }).map((s) => s.code)).toEqual(['111111'])
+  })
+
+  it('stops offering a game the phone watched finish, while the other rooms stay', () => {
+    // Three finished games used to sit above the code box until they aged out a day later, each one a button that
+    // answers "No game found with that code".
+    withStorage()
+    writeStore(storeKey('111111'), stampSeat({ token: 'a', code: '111111', nickname: 'Ada' }))
+    writeStore(storeKey('222222'), stampSeat({ token: 'b', code: '222222', nickname: 'Bisi' }))
+    finishSeat('111111')
+    expect(rememberedSeats().map((s) => s.code)).toEqual(['222222'])
+  })
+
+  it('flags a finished seat instead of deleting it, because the result screen is drawn from its token', () => {
+    // The token is still what a reload of /play?code=... uses to paint the final result and the result card. Only the
+    // "back into game" button has to go.
+    withStorage()
+    writeStore(storeKey('111111'), stampSeat({ token: 'a', code: '111111', nickname: 'Ada' }))
+    finishSeat('111111')
+    expect(readStore(storeKey('111111'))).toMatchObject({ token: 'a', code: '111111', finished: true })
+  })
+
+  it('does nothing for a room this device holds no seat in', () => {
+    withStorage()
+    expect(() => finishSeat('999999')).not.toThrow()
+    expect(readStore(storeKey('999999'))).toBeNull()
   })
 
   it('keeps a seat with no timestamp, because it may well be live', () => {

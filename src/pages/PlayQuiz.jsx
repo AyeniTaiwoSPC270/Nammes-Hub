@@ -16,7 +16,7 @@ import { isChoiceType } from '../../api/_lib/quizGrading.js'
 import { OrderPicker } from '../components/quiz/OrderPicker'
 import { DiagramTap } from '../components/quiz/DiagramTap'
 import { teamStyle } from '../data/quizTeams'
-import { storeKey, readStore, writeStore, forgetSession, forgetSeat, rememberNickname, knownNicknames, rememberedSeats, stampSeat } from '../lib/quizPlayerStorage'
+import { storeKey, readStore, writeStore, forgetSession, forgetSeat, finishSeat, rememberNickname, knownNicknames, rememberedSeats, stampSeat } from '../lib/quizPlayerStorage'
 import { useLowData, setLowData, playerPollMs } from '../data/lowData'
 import MathText from '../components/quiz/MathText'
 import ResultCardModal from '../components/quiz/ResultCardModal'
@@ -391,6 +391,7 @@ function PlayQuizGame({ onTheme }) {
   const [message, setMessage] = useState('')
   const [cardOpen, setCardOpen] = useState(false)
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
+  const finishedSeat = useRef('') // the code already flagged as over, so a poll on the final screen writes storage once
   const failures = useRef(0) // consecutive failed polls, for the backoff
 
   const token = saved?.token
@@ -408,6 +409,14 @@ function PlayQuizGame({ onTheme }) {
       const data = await callQuiz('state', { token, ...(low ? { low: 1 } : {}) })
       setOffset(data.serverNow - Date.now())
       setGame(data)
+      // The game is over as far as other people are concerned: its seat can never be joined again, so the join form must
+      // stop advertising it. Flagging rather than forgetting keeps the token, which is what repaints this final screen
+      // (and its result card) if the phone reloads.
+      const seatCode = saved?.code ?? code
+      if (data.session.state === 'finished' && seatCode && finishedSeat.current !== seatCode) {
+        finishedSeat.current = seatCode
+        finishSeat(seatCode)
+      }
       inGame.current = true
       failures.current = 0
       setMessage('')
@@ -546,10 +555,13 @@ function PlayQuizGame({ onTheme }) {
     setSaved(next)
   }
 
-  // Deliberately keeps the stored token. Leaving the game is not the same as losing the seat, and the whole point of
-  // the durable token is that tapping "join again" walks straight back in. Only a 401/404 -- the host removed them, or
-  // the game was cleaned up -- clears it, which is what forgetSession above is for.
+  // Play again is only reachable from the finished screen, and a finished game cannot be re-entered: `quiz-join`
+  // refuses it until the row is cleaned up. So the seat goes with the button, rather than being left on the join form
+  // as "back into game" where it could only answer "No game found with that code". The code goes out of the address bar
+  // for the same reason -- it was put there to be reloaded into a game that no longer accepts players.
   function leave() {
+    forgetSeat(saved?.code ?? code)
+    if (new URLSearchParams(window.location.search).get('code')) window.history.replaceState(null, '', '/play')
     setSaved(null)
     setGame(null)
   }

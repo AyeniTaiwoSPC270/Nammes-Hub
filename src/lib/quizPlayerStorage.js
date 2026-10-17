@@ -83,9 +83,10 @@ export function knownNicknames() {
 // arrived at a bare /play could not read it back, so a refresh put them on this form holding a token they could not use.
 //
 // A finished game is not offered. The server refuses a join to one ("No game found with that code"), so a dead seat on
-// this list is a button that cannot work -- and a list of them trains a student to stop trusting the list. Anything older
-// than a day is dropped on the same reasoning: a student who played a game yesterday and is joining today is joining a
-// different one, and a stale button above a fresh code box is worse than no button.
+// this list is a button that cannot work -- and a list of them trains a student to stop trusting the list. The phone
+// flags the seat with `finishSeat` the moment it sees the game end, because nothing on this side can tell a live room
+// from a dead one; the day-old cutoff is the backstop for a game the player abandoned before it ended, on the same
+// reasoning: a student who played a game yesterday and is joining today is joining a different one.
 export function rememberedSeats({ maxAgeMs = SEAT_MAX_AGE_MS, now = Date.now() } = {}) {
   try {
     const prefix = `${STORAGE_KEY}:`
@@ -94,6 +95,9 @@ export function rememberedSeats({ maxAgeMs = SEAT_MAX_AGE_MS, now = Date.now() }
       if (!key.startsWith(prefix) || key === INDEX_KEY) continue
       const record = readStore(key)
       if (!record) continue
+      // Seen finishing on this device. The token stays (a reload of the game's own URL still lands on the result), it
+      // just stops being advertised as somewhere to go back to.
+      if (record.finished === true) continue
       const at = Number(record.at) || 0
       // No timestamp means a record from a build that predates them. Kept, because a seat is the only way back into a
       // game and it may well be live; it just sorts last.
@@ -116,6 +120,16 @@ export function rememberedSeats({ maxAgeMs = SEAT_MAX_AGE_MS, now = Date.now() }
 export function forgetSeat(code) {
   if (!code) return
   forgetSession(code)
+}
+
+// Marks a room as over instead of deleting it. `quiz-join` refuses `state = 'finished'`, so the seat can never be used
+// to get back into that game -- but the token is still what a reload of `/play?code=<that code>` uses to paint the final
+// result, and what the result card is drawn from. Deleting it would take that screen away; flagging it takes only the
+// button that cannot work.
+export function finishSeat(code) {
+  if (!code) return
+  const record = readStore(storeKey(code))
+  if (record) writeStore(storeKey(code), { ...record, finished: true })
 }
 
 // Stamped on write so `rememberedSeats` can show the most recent room first. Ignored on read, so a record written by an

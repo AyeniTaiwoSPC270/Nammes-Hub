@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { callQuiz } from '../data/quiz'
 import { letterboxRect, toNormalized } from '../../api/_lib/quizGrading.js'
-import { storeKey, readStore, writeStore, forgetSeat, stampSeat } from '../lib/quizPlayerStorage'
+import { storeKey, readStore, writeStore, forgetSeat, finishSeat, stampSeat } from '../lib/quizPlayerStorage'
 
 // The low-data phone client. Same API as /play, none of the look system.
 //
@@ -206,6 +206,14 @@ export default function PlayLow() {
   const [joining, setJoining] = useState(false)
   const [sending, setSending] = useState(false)
   const { state, error, refresh } = useSession(token)
+
+  // A finished game is flagged as over, not forgotten, so its token can still paint the result after a reload while the
+  // full client's join form stops offering a code that cannot be joined. Both routes share this storage, so both have to
+  // flag the end.
+  const finished = state?.session?.state === 'finished'
+  useEffect(() => {
+    if (finished && code) finishSeat(code)
+  }, [finished, code])
 
   async function join(event) {
     event.preventDefault()
