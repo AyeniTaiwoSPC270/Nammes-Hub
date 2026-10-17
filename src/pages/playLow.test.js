@@ -42,6 +42,21 @@ describe('the light client stays light', () => {
     expect(low).toContain('forgetSeat(code)')
   })
 
+  it('reports a failed request instead of throwing inside its own catch', () => {
+    // `setError` was called by join() and answer() but never declared or returned by useSession, so every 400, 403 or
+    // 429 became `ReferenceError: setError is not defined` inside the catch and the screen showed nothing at all. This
+    // is the client a student on a bad connection is told to use, so a failure it cannot show is the worst place for it.
+    expect(low).toMatch(/const \{ state, error, setError, refresh \} = useSession\(token\)/)
+    expect(low).toMatch(/return \{ state, error, setError, refresh \}/)
+  })
+
+  it('sends a bare six-digit code, so a code copied off the projector is not a 400', () => {
+    // "281·479" is what a code looks like on the big screen. `isJoinCode` wants six digits, so the box strips the rest
+    // and Join stays disabled until six are there -- the alternative is a dead button with a console error behind it.
+    expect(low).toMatch(/replace\(\/\\D\/g, ''\)\.slice\(0, 6\)/)
+    expect(low).toContain('code.length !== 6')
+  })
+
   it('speaks the same server contract as the full client, including the low flag', () => {
     expect(low).toContain("callQuiz('state'")
     expect(low).toContain('low: 1')
