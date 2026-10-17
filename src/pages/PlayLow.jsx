@@ -43,7 +43,10 @@ function useSession(token) {
     return () => { alive.current = false; clearInterval(timer) }
   }, [refresh])
 
-  return { state, error, refresh }
+  // `setError` has to come out with the error. Both request failure paths in PlayLow report through it, and when it
+  // was left out of this object every one of them threw `ReferenceError: setError is not defined` inside its own catch:
+  // a 400 or a 429 reached the student as a join button that did nothing at all.
+  return { state, error, setError, refresh }
 }
 
 // Ordering by tapping, in sequence. Same interaction as the full client on purpose: a student who has used one has used
@@ -202,10 +205,10 @@ export default function PlayLow() {
     return code ? (readStore(storeKey(code))?.token ?? '') : ''
   })
   const [nickname, setNickname] = useState('')
-  const [code, setCode] = useState(() => new URLSearchParams(window.location.search).get('code') ?? '')
+  const [code, setCode] = useState(() => (new URLSearchParams(window.location.search).get('code') ?? '').replace(/\D/g, '').slice(0, 6))
   const [joining, setJoining] = useState(false)
   const [sending, setSending] = useState(false)
-  const { state, error, refresh } = useSession(token)
+  const { state, error, setError, refresh } = useSession(token)
 
   // A finished game is flagged as over, not forgotten, so its token can still paint the result after a reload while the
   // full client's join form stops offering a code that cannot be joined. Both routes share this storage, so both have to
@@ -218,6 +221,7 @@ export default function PlayLow() {
   async function join(event) {
     event.preventDefault()
     setJoining(true)
+    setError(null)
     try {
       // The stored token is what turns this from a new join into a resume, and a new join with a name already on the
       // roster is a 409. Same reason the full client sends it.
@@ -239,6 +243,7 @@ export default function PlayLow() {
   async function answer(payload) {
     if (sending) return
     setSending(true)
+    setError(null)
     try {
       await callQuiz('answer', { token, ...payload })
     } catch (e) {
@@ -255,9 +260,12 @@ export default function PlayLow() {
         <h1 className="text-2xl font-bold">Join a quiz</h1>
         <p className="text-slate-600">This is the light version. Fewer images, less scrolling.</p>
         <form onSubmit={join} className="flex flex-col gap-3">
-          <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" aria-label="Quiz code" placeholder="6-digit code" className="rounded-xl border-2 border-slate-300 p-4 text-xl" />
+          {/* Digits only, the same as the full client's code entry. A code copied off the projector arrives formatted
+              -- "281 479", "281·479" -- and sending that verbatim is a 400 from `isJoinCode` before the room is even
+              looked up, which is exactly the dead-looking Join button this client used to give. */}
+          <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" aria-label="Quiz code" placeholder="6-digit code" className="rounded-xl border-2 border-slate-300 p-4 text-xl" />
           <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} aria-label="Your name" placeholder="Your name" className="rounded-xl border-2 border-slate-300 p-4 text-xl" />
-          <button type="submit" disabled={joining || !code || !nickname.trim()} className="rounded-xl bg-orange-600 p-4 text-lg font-bold text-white disabled:opacity-50">
+          <button type="submit" disabled={joining || code.length !== 6 || !nickname.trim()} className="rounded-xl bg-orange-600 p-4 text-lg font-bold text-white disabled:opacity-50">
             {joining ? 'Joining...' : 'Join'}
           </button>
         </form>
