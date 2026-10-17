@@ -153,9 +153,11 @@ as $$ ... $$;
 }
 ```
 
-- `outstanding` is the **all-time** count of work not yet resolved (pending submissions, pending
-  reviews, all messages, all responses, all errors, all announcements) — not the 30-day window.
-  It is the "there is still work" number; `items` is the "what happened recently" list.
+- `outstanding` is the **all-time** count of work not yet resolved, and only two sources have
+  that state: pending submissions and pending owner reviews. Messages, responses, errors and
+  announcements are never "resolved", so they report `0` rather than a number that can never be
+  cleared — a to-do that grows forever is not a to-do. `items` is the "what happened recently"
+  list; `outstanding` is the "there is still work" number.
 - `seenAt` is `null` for a category never opened, which makes every returned item unread.
 
 Source summaries (the `detail` column, which is plain text and rendered as text):
