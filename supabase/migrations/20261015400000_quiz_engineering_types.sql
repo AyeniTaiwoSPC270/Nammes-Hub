@@ -35,6 +35,16 @@ comment on column public.quiz_answers.credit is
   'fraction of the answer that was correct, stored at grading time; null for a single-answer question';
 
 -- ---- The shape constraint ----
+-- The column-level check from 20261001110000 is still installed: Postgres named that inline
+-- `check (type in (...))` quiz_questions_type_check, and the row has to satisfy it as well as this one. It was left
+-- listing five types, so an ordering or diagram question was refused by that constraint even though the shape below
+-- allows it, and the editor reported only a toast. Widened to the same seven types the row-level check below uses.
+alter table public.quiz_questions drop constraint if exists quiz_questions_type_check;
+alter table public.quiz_questions
+  add constraint quiz_questions_type_check check (
+    type in ('multiple', 'truefalse', 'poll', 'numeric', 'text', 'order', 'diagram')
+  );
+
 -- Rebuilt rather than widened: quiz_questions_shape is a single check over the whole row, and an ordering question
 -- with no options or a diagram question with no picture would otherwise be accepted by the old constraint.
 alter table public.quiz_questions drop constraint if exists quiz_questions_shape;
