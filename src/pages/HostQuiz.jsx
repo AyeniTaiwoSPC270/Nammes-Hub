@@ -1,4 +1,5 @@
-import { useCallback, useEffect, memo, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useLayoutEffect, memo, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { supabase } from '../lib/supabaseClient'
@@ -141,8 +142,121 @@ function ControlButton({ icon, label, onClick, disabled, active }) {
   )
 }
 
+// Where the manage-a-player panel goes, given the button's box and the panel's own size.
+//
+// Extracted so it can be tested without a browser. Which side has room depends on where the player row wrapped, so
+// there is no single answer CSS could have given us, and the previous attempt -- anchoring right -- sent the panel off the
+// left of the screen for a player near the start of a row. Every position below is clamped to the viewport, so a panel
+// cannot hang off any edge no matter where the button is.
+export function placePlayerMenu({ anchor, panel, viewport, gap = 8 }) {
+  const fitsRight = anchor.left + panel.width + gap <= viewport.width - gap
+  const left = fitsRight ? anchor.left + gap : Math.max(gap, anchor.right - panel.width - gap)
+  const below = anchor.bottom + gap
+  const top = below + panel.height + gap <= viewport.height ? below : Math.max(gap, anchor.top - panel.height - gap)
+  return { left, top, opensRight: fitsRight, opensUp: below + panel.height + gap > viewport.height }
+}
+
+// The manage-a-player menu, placed by measuring the button rather than by anchoring to it.
+//
+// It used to be an absolutely-positioned panel inside the player's pill, which cannot work: the pill is inline-flex and
+// shrink-to-fit, so the panel inherited the pill's width and wrapped its three items into an unreadable column. Anchoring
+// it right instead moved the failure -- a player near the left edge then pushed a 16rem panel off the side of the screen.
+//
+// So it is measured: rendered into a portal on the body (which also escapes the `zoom` useProjectorFit puts on <main>,
+// where a fixed child would be scaled and misplaced) and clamped to the viewport. Every edge case is then the same case.
+function PlayerMenu({ anchor, player, onRename, onKick, onClose }) {
+  const ref = useRef(null)
+  const [place, setPlace] = useState(null)
+
+  useLayoutEffect(() => {
+    if (!anchor || typeof window === 'undefined') return undefined
+    const position = () => {
+      const rect = anchor.getBoundingClientRect()
+      const panel = ref.current
+      setPlace(
+        placePlayerMenu({
+          anchor: { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom },
+          panel: {
+            width: panel?.offsetWidth || MENU_WIDTH_PX,
+            height: panel?.offsetHeight || MENU_HEIGHT_PX,
+          },
+          viewport: { width: window.innerWidth, height: window.innerHeight },
+        }),
+      )
+    }
+    position()
+    // The projector screen re-renders several times a second, and this menu must not drift with the countdown.
+    window.addEventListener('resize', position)
+    window.addEventListener('scroll', position, true)
+    return () => {
+      window.removeEventListener('resize', position)
+      window.removeEventListener('scroll', position, true)
+    }
+  }, [anchor])
+
+  // Escape closes it, and so does a click anywhere outside both the button and the panel. Without this the only way out
+  // was to hit the pencil again, which on a projector mid-game is a hunt.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    const onDown = (e) => {
+      if (ref.current?.contains(e.target) || anchor?.contains(e.target)) return
+      onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onDown)
+    }
+  }, [anchor, onClose])
+
+  const items = [
+    { label: 'Rename to "Player ###"', run: () => onRename(player) },
+    { label: 'Remove from game', run: () => onKick(player, false) },
+    { label: 'Remove and block this name', run: () => onKick(player, true), danger: true },
+  ]
+
+  return createPortal(
+    <div
+      ref={ref}
+      role="menu"
+      aria-label={`Manage ${player.nickname}`}
+      // Invisible until measured: painting at 0,0 first is the flash of a panel in the top-left corner.
+      style={{ position: 'fixed', left: place?.left ?? -9999, top: place?.top ?? -9999, width: MENU_WIDTH_PX, zIndex: 60 }}
+      className="flex flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl"
+    >
+      {items.map((item) => (
+        <button
+          key={item.label}
+          role="menuitem"
+          type="button"
+          onClick={() => {
+            onClose()
+            item.run()
+          }}
+          className={`min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low ${item.danger ? 'text-red-600' : ''}`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>,
+    document.body,
+  )
+}
+
+// The panel's real width, needed to place it before it has painted. Matches Tailwind's w-64.
+const MENU_WIDTH_PX = 256
+// Only a fallback for the first measurement; the panel reports its own height as soon as it has rendered.
+const MENU_HEIGHT_PX = 168
+
 function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots, onSetBracket }) {
   const [menuFor, setMenuFor] = useState(null)
+  // One map of pencil buttons rather than a `useRef` per row: a hook cannot be called from inside the player list,
+  // because the list grows and shrinks as people join and React requires the hook order to be identical every render.
+  // The menu measures this button to decide which side of it has room.
+  const menuAnchors = useRef(new Map())
   const [botsOpen, setBotsOpen] = useState(false)
   const [bracketOpen, setBracketOpen] = useState(false)
   const botCount = players.filter((p) => p.bot_skill).length
@@ -286,9 +400,9 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             Waiting for the first player to join…
           </p>
         ) : (
-<ul className="mt-4 flex flex-wrap gap-2" aria-label="Players">
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="Players">
             {orderedPlayers.map((p) => (
-              <li key={p.id} className="qz-pop relative">
+              <li key={p.id} className="qz-pop">
                 <span className="inline-flex items-center gap-2 rounded-full border border-hairline bg-paper py-1 pl-1.5 pr-2 text-lg font-semibold">
                   <Avatar name={p.nickname} avatarId={p.avatar_id} mood={players.length > 16 ? 'static' : 'idle'} className="h-12 w-12" />
                   <span className="max-w-40 truncate">{p.nickname}</span>
@@ -296,6 +410,12 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold text-white ${teamStyle(teamById.get(p.team_id).color).bg}`}>{teamById.get(p.team_id).name}</span>
                   )}
                   <button
+                    ref={(el) => {
+                      // Null on unmount (and briefly on every re-render, because this callback is not stable), so the
+                      // map is kept in step rather than left holding a detached node that would measure as 0x0.
+                      if (el) menuAnchors.current.set(p.id, el)
+                      else menuAnchors.current.delete(p.id)
+                    }}
                     type="button"
                     onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
                     aria-label={`Manage ${p.nickname}`}
@@ -305,27 +425,18 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
                     <span className="material-symbols-outlined text-2xl" aria-hidden="true">edit</span>
                   </button>
                 </span>
-                {/* On the <li>, not inside the pill: the pill is an inline-flex that shrinks to its text, so a panel
-                    anchored to it inherited that width and rendered at the nickname's width with its items wrapped into
-                    an unreadable column. The row is the real block box, so the panel gets its own width and is allowed
-                    to run past the pill's edge. `right-0` on a left-to-right row keeps it on screen for the last
-                    player in a line rather than hanging off the right of the projector. */}
                 {menuFor === p.id && (
-                  <span role="menu" className="absolute right-0 top-full z-30 mt-2 flex w-64 flex-col rounded-2xl border border-hairline bg-surface p-2 text-base shadow-xl">
-                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onRename(p) }}>
-                      Rename to &quot;Player ###&quot;
-                    </button>
-                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, false) }}>
-                      Remove from game
-                    </button>
-                    <button role="menuitem" type="button" className="min-h-12 cursor-pointer whitespace-nowrap rounded-xl px-3 py-2 text-left text-red-600 hover:bg-surface-low" onClick={() => { setMenuFor(null); onKick(p, true) }}>
-                      Remove and block this name
-                    </button>
-                  </span>
+                  <PlayerMenu
+                    anchor={menuAnchors.current.get(p.id)}
+                    player={p}
+                    onRename={onRename}
+                    onKick={onKick}
+                    onClose={() => setMenuFor(null)}
+                  />
                 )}
               </li>
             ))}
-</ul>
+          </ul>
         )}
       </section>
     </Stage>
