@@ -42,6 +42,16 @@ describe('a finished game stops being offered', () => {
   it('drops the seat when the player presses Play again, since the game cannot be re-entered', () => {
     expect(play).toMatch(/forgetSeat\(saved\?\.code \?\? code\)/)
   })
+
+  it('only offers a room the server would still let this phone into', () => {
+    // A seat written before its game ended has no way to know that. `finishSeat` catches the games this phone watched
+    // end, but a seat from before that existed -- or from a game the host ended after the phone was closed -- is only
+    // settled by asking. One read against quiz_sessions (public to anon for exactly this) applies `quiz-join`'s own
+    // rule, and every code it does not answer for is forgotten rather than left as a button that 404s.
+    expect(play).toMatch(/from\('quiz_sessions'\)[\s\S]{0,200}in\('join_code'/)
+    expect(play).toContain("row.state !== 'finished'")
+    expect(play).toContain('forgetSeat(seat.code)')
+  })
 })
 
 describe('the light client is reachable', () => {
