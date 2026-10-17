@@ -164,6 +164,19 @@ describe('export and import round trip', () => {
     const { questions } = questionsFromCsv(csv)
     expect(questions[0].explanation).toBe('Because, and also "quoted", with a comma.')
   })
+  // The unit columns sit after explanation, so a sheet that fills them is the case where a positional read of the
+  // explanation would slide: without a header this is unreadable anyway, and with one the name decides.
+  it('reads an explanation that sits between points and the unit columns', () => {
+    const csv = [
+      'type,question,option_a,option_b,option_c,option_d,correct,seconds,points,explanation,unit,unit_aliases',
+      'multiple,Which course covers eigenvalues?,MTH 204,STA 201,CSC 211,,a,20,1000,Av = lambda v,rad,radian|rad',
+    ].join('\n')
+    const { questions, problems } = questionsFromCsv(csv)
+    expect(problems).toEqual([])
+    expect(questions[0].explanation).toBe('Av = lambda v')
+    expect(questions[0].numeric_unit).toBe('rad')
+    expect(questions[0].numeric_unit_aliases).toBe('radian\nrad')
+  })
   it('leaves an explanation out of a sheet that never had one, rather than writing an empty column of noise', () => {
     const { questions } = questionsFromCsv(questionsToCsv([make({ text: 'No explanation here' })]))
     expect(questions[0].explanation).toBe('')
