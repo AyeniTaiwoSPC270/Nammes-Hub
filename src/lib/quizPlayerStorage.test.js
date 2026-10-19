@@ -148,7 +148,9 @@ it('lists the rooms this device still holds a seat in, newest first', () => {
     } finally {
       vi.useRealTimers()
     }
-    const seats = rememberedSeats()
+    // `now` is pinned to the same instant the seats were stamped at. Reading the real clock here would age both seats
+    // out once the wall clock moved a day past the fixture, and the test would fail on its own calendar date.
+    const seats = rememberedSeats({ now: new Date('2026-10-17T12:01:00Z').getTime() })
     expect(seats.map((s) => s.code)).toEqual(['222222', '111111'])
     expect(seats[0].nickname).toBe('Bisi')
   })
