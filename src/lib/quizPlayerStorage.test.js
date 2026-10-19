@@ -233,4 +233,20 @@ it('is empty, not a crash, when storage is unavailable', () => {
     expect(readStore(storeKey('111111'))).toBeNull()
     expect(readStore(storeKey('222222'))).not.toBeNull()
   })
+
+  it('can include finished seats, which is the whole audience of the history page', () => {
+    withStorage()
+    writeStore(storeKey('111111'), { token: 'a', code: '111111', nickname: 'Ada', at: 1000 })
+    writeStore(storeKey('222222'), { token: 'b', code: '222222', nickname: 'Bisi', at: 2000 })
+    finishSeat('111111')
+    expect(rememberedSeats({ includeFinished: true, now: 5000 }).map((s) => s.code)).toEqual(['222222', '111111'])
+    // The default stays as it was, so the join form still never offers a dead room.
+    expect(rememberedSeats({ now: 5000 }).map((s) => s.code)).toEqual(['222222'])
+  })
+
+  it('returns the token and session id a history row fetches and draws its card with', () => {
+    withStorage()
+    writeStore(storeKey('111111'), stampSeat({ token: 'tok', sessionId: 'sess', code: '111111' }))
+    expect(rememberedSeats()[0]).toMatchObject({ token: 'tok', sessionId: 'sess', finished: false })
+  })
 })

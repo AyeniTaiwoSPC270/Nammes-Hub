@@ -227,7 +227,9 @@ export default function PlayLow() {
       // roster is a 409. Same reason the full client sends it.
       const saved = readStore(storeKey(code))
       const joined = await callQuiz('join', { code, nickname, token: saved?.token })
-      writeStore(storeKey(code), stampSeat({ token: joined.token, code, nickname: joined.nickname ?? nickname }))
+      // `sessionId` is written too: the results history uses it to build this game's card, and a record that lacks it
+      // can never grow one after the fact.
+      writeStore(storeKey(code), stampSeat({ token: joined.token, sessionId: joined.sessionId ?? null, code, nickname: joined.nickname ?? nickname }))
       window.history.replaceState(null, '', `?token=${joined.token}`)
       setToken(joined.token)
       setNickname('')
