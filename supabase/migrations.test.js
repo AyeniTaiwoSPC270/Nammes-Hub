@@ -67,3 +67,39 @@ describe('the quiz_questions type constraints accept every type the app can auth
     expect(all, 'no migration re-adds quiz_questions_type_check').toContain('add constraint quiz_questions_type_check')
   })
 })
+
+// A rebuild is "history, then migrations", so a guard that reads one half cannot prove it works. The original
+// page_banners rows and the outlines table both live in supabase/history.
+const history = readdirSync('supabase/history').filter((f) => f.endsWith('.sql'))
+const allTrackedSql = [
+  ...history.map((f) => readFileSync(`supabase/history/${f}`, 'utf8').replace(/\r\n/g, '\n').replace(/--[^\n]*/g, '')),
+  ...migrations.map(readSql),
+].join('\n')
+
+describe('every editable page has a banner row a rebuild would seed', () => {
+  it('the admin editor\'s page list matches the insert statements', () => {
+    // Update-only is the right save path, so the row is the only thing that makes a page editable. Every key the
+    // editor offers must therefore come from tracked SQL; one that does not fails silently in production.
+    const source = readFileSync('src/pages/admin/AdminPageBanners.jsx', 'utf8').replace(/\r\n/g, '\n')
+    const pages = [...(source.match(/const PAGES = \[([\s\S]*?)\]/)?.[1] ?? '').matchAll(/\{\s*key:\s*'([^']+)'/g)].map((m) => m[1])
+    expect(pages.length, 'the PAGES array could not be read').toBeGreaterThan(0)
+
+    const inserts = [...allTrackedSql.matchAll(/insert\s+into\s+public\.page_banners[\s\S]*?;/gi)].map((m) => m[0])
+    const seeded = new Set(inserts.flatMap((block) => [...block.matchAll(/\(\s*'([a-z_]+)'\s*,/g)].map((m) => m[1])))
+
+    for (const page of pages) expect(seeded, `no tracked SQL inserts a page_banners row for "${page}"`).toContain(page)
+  })
+})
+
+describe('every outlines column the app reads has DDL', () => {
+  it('the two name columns are created by tracked SQL', () => {
+    // These are read by src/lib/outlinePdf.js, src/pages/outlines/OutlineDetail.jsx and
+    // src/pages/admin/config/outlinesAdminConfig.js but were added through the dashboard, so a rebuild produced a
+    // table the editor writes to and PostgREST rejects. The list is explicit rather than scanned out of the JSX: an
+    // incidental property would fail a scan without being a column.
+    for (const column of ['past_questions_name', 'lecturer_notes_name']) {
+      const ddl = new RegExp(`add column (?:if not exists )?${column}\\b`)
+      expect(allTrackedSql, `no tracked SQL creates outlines.${column}`).toMatch(ddl)
+    }
+  })
+})
