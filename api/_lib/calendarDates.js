@@ -4,6 +4,17 @@
 // only safe way to build one from a day key is `new Date(year, monthIndex, day)`.
 const pad2 = (n) => String(n).padStart(2, '0')
 
+// The pre-timestamp `events.date` column: human text, sometimes with an ordinal on it ("3rd August 2026").
+//
+// It lives here rather than in src/data/events.js because the ICS feed's handler needs it on the server, and
+// events.js pulls the Supabase browser client in at module load. events.js re-exports it, so there is still one
+// implementation: this one.
+export function parseEventDate(value) {
+  if (!value) return new Date(NaN)
+  const cleaned = String(value).replace(/\b(\d+)(st|nd|rd|th)\b/gi, '$1')
+  return new Date(cleaned)
+}
+
 // A day key is the local calendar day as 'YYYY-MM-DD'. Read the parts off the Date rather than using
 // toISOString(), which would give the UTC day and shift every event by a day west of Greenwich.
 export function toDayKey(date) {

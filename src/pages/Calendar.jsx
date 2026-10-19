@@ -6,6 +6,7 @@ import ErrorState from '../components/ui/ErrorState'
 import { SkeletonText } from '../components/ui/Skeleton'
 import AgendaList from '../components/calendar/AgendaList'
 import CalendarLegend from '../components/calendar/CalendarLegend'
+import CalendarSubscribe from '../components/calendar/CalendarSubscribe'
 import DaySheet from '../components/calendar/DaySheet'
 import MonthGrid from '../components/calendar/MonthGrid'
 import NextUpStrip from '../components/calendar/NextUpStrip'
@@ -205,7 +206,10 @@ export default function Calendar() {
               </button>
             ))}
           </div>
-          <SourceFilter selected={sources} onToggle={toggleSource} />
+          <div className="flex flex-wrap items-center gap-2">
+            <SourceFilter selected={sources} onToggle={toggleSource} />
+            <CalendarSubscribe />
+          </div>
         </div>
 
         {session && (
