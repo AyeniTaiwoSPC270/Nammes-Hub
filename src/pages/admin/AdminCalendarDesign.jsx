@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { fromDayKey, toDayKey } from '../../../api/_lib/calendarDates.js'
 import { mergeCalendarSources } from '../../../api/_lib/calendarMerge.js'
 import { DEFAULT_THEME, sanitizeTheme, themeVars } from '../../../api/_lib/calendarTheme.js'
+import { selectNextUp } from '../../lib/calendarNextUp.js'
 import {
   useAcademicCalendarQuery,
   useCalendarLooksQuery,
@@ -179,6 +180,19 @@ export function CalendarDesignBody() {
     )
   }
 
+  // The Home strip is a settings row, not a design, so it is saved on press. Reading it back from `settingsQuery`
+  // rather than from the draft is what stops a saved look from showing a switch position Home does not honour.
+  function setHomeNextUp(nextUpOnHome) {
+    settingsMutation.mutate(
+      { next_up_on_home: nextUpOnHome },
+      {
+        onSuccess: () =>
+          toast.success(nextUpOnHome ? 'Next up will appear on Home.' : 'Next up is off on Home.'),
+        onError: (error) => toast.error(error.message),
+      },
+    )
+  }
+
   // ---- preview ----
 
   // Both sources, merged by the same module the public page merges them with. No window: the studio is showing what a
@@ -206,7 +220,7 @@ export function CalendarDesignBody() {
     [merged.tba, theme.defaults.sources, theme.defaults.kinds],
   )
   const nextUp = useMemo(
-    () => (theme.highlight.nextUp ? shownItems.filter((item) => item.endsAt >= todayKey).slice(0, NEXT_UP_COUNT) : []),
+    () => selectNextUp(shownItems, todayKey, { enabled: theme.highlight.nextUp, limit: NEXT_UP_COUNT }),
     [shownItems, todayKey, theme.highlight.nextUp],
   )
 
@@ -378,7 +392,12 @@ export function CalendarDesignBody() {
             </section>
 
             <div className="min-w-0 overflow-hidden rounded-lg border border-hairline bg-surface">
-              <CalendarDesignControls draft={draft} onChange={setDraft} />
+              <CalendarDesignControls
+                draft={draft}
+                onChange={setDraft}
+                homeNextUp={Boolean(settingsQuery.data?.next_up_on_home)}
+                onHomeNextUpChange={isOwner ? setHomeNextUp : undefined}
+              />
             </div>
 
             <section className="min-w-0">

@@ -21,6 +21,7 @@ const SETTINGS_FIELDS = [
   'default_sources',
   'reminder_enabled',
   'reminder_default_days',
+  'next_up_on_home',
 ]
 
 // The entry columns the admin form owns. `id` is included because a save is an upsert (an admin adding a row
