@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchTable } from '../lib/supabaseQueries'
+import { parseEventDate } from '../../api/_lib/calendarDates.js'
+
+// Re-exported from the pure shared module so the ICS handler can read a legacy `date` without importing this
+// file's Supabase client. Existing call sites keep importing it from here.
+export { parseEventDate }
 
 export function fetchEvents() {
   return fetchTable('events', { orderBy: { column: 'created_at', ascending: true } })
@@ -11,14 +16,6 @@ export function useEventsQuery() {
 
 export function getEventById(list, id) {
   return list.find((e) => String(e.id) === id)
-}
-
-// Strips ordinal suffixes ("3rd", "21st") so human-typed dates like
-// "3rd August 2026" parse the same as "3 August 2026".
-export function parseEventDate(value) {
-  if (!value) return new Date(NaN)
-  const cleaned = String(value).replace(/\b(\d+)(st|nd|rd|th)\b/gi, '$1')
-  return new Date(cleaned)
 }
 
 // The instant an event is judged by. `starts_at` wins when it is there (20261009090000_calendar.sql:44) and the

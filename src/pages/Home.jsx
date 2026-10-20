@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react'
 import Button from '../components/ui/Button'
@@ -8,15 +8,23 @@ import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
 import { ContentFeed, ContentGrid, EventCard, NewsCard, NewsFeatureCard, staggerDelay } from '../components/content/ContentCards'
+import NextUpStrip from '../components/calendar/NextUpStrip'
 import { useNewsQuery, getNews } from '../data/news'
 import { useExcosQuery } from '../data/excos'
 import { useEventsQuery, groupEventsByTime } from '../data/events'
+import { useAcademicCalendarQuery, useCalendarFlag, useCalendarSettingsQuery } from '../data/calendar'
 import { useSiteContentQuery } from '../data/siteContent'
 import { usePageLook } from '../data/contentLooks'
 import { defaultTheme } from '../../api/_lib/contentTheme.js'
+import { addMonths, toDayKey } from '../../api/_lib/calendarDates.js'
+import { mergeCalendarSources } from '../../api/_lib/calendarMerge.js'
 import { linkifyText } from '../lib/linkify'
+import { selectNextUp } from '../lib/calendarNextUp.js'
 import { useHolidayTheme } from '../lib/HolidayThemeProvider'
 import { holidayImageUrl } from '../data/holidays'
+
+// The same four the calendar page's strip shows. Home has more blocks below it, so there is no reason to grow it.
+const NEXT_UP_COUNT = 4
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -33,6 +41,34 @@ export default function Home() {
   const contentQuery = useSiteContentQuery()
   const content = contentQuery.data
   const reducedMotion = useReducedMotion()
+
+  // Two conditions, both required: the calendar's kill switch, and the admin's per-block opt-in. The academic query
+  // is gated on the pair, so a visitor on a site that never turned this on pays for no extra calendar request.
+  const calendarEnabled = useCalendarFlag()
+  const calendarSettingsQuery = useCalendarSettingsQuery()
+  const showNextUp = calendarEnabled && Boolean(calendarSettingsQuery.data?.next_up_on_home)
+  const academicQuery = useAcademicCalendarQuery(calendarSettingsQuery.data?.active_session, showNextUp)
+
+  // Read off the local clock rather than toISOString(), for the same reason /calendar does: the browser's day is
+  // the day the reader is living in, and two blocks on one page disagreeing about it would be worse than the edge.
+  const today = useMemo(() => new Date(), [])
+  const todayKey = toDayKey(today)
+  const nextUpRange = useMemo(
+    () => ({ from: todayKey, to: toDayKey(addMonths(today, 12)) }),
+    [today, todayKey],
+  )
+  const mergedCalendar = useMemo(
+    () =>
+      mergeCalendarSources(
+        { academic: academicQuery.data ?? [], events: eventsQuery.data ?? [] },
+        nextUpRange,
+      ),
+    [academicQuery.data, eventsQuery.data, nextUpRange],
+  )
+  const nextUp = useMemo(
+    () => selectNextUp(mergedCalendar.items, todayKey, { enabled: showNextUp, limit: NEXT_UP_COUNT }),
+    [mergedCalendar.items, todayKey, showNextUp],
+  )
 
   // Read on BOTH pages, and only ever applied to this page's own block. Home also renders awards,
   // opportunities and announcements, and an accent that spread to those would be a bug report rather than a
@@ -161,7 +197,17 @@ export default function Home() {
         </div>
       </Reveal>
 
-      {/* 4. Upcoming events */}
+      {/* 4. Next up -- additive, so it renders nothing when there is nothing to say. The empty "nothing on"
+          sentence belongs to Upcoming Events below, not here. */}
+      {nextUp.length > 0 && (
+        <Reveal as="section" className="w-full bg-surface pt-16">
+          <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
+            <NextUpStrip items={nextUp} todayKey={todayKey} />
+          </div>
+        </Reveal>
+      )}
+
+      {/* 5. Upcoming events */}
       <Reveal as="section" className="w-full bg-surface py-16">
         <div className="mx-auto max-w-[1200px] px-5 sm:px-6">
           <div className="mb-8 flex items-baseline justify-between gap-4">
@@ -183,9 +229,8 @@ export default function Home() {
             <EmptyState
               icon="event_busy"
               title="No upcoming events"
-              // Scoped to what Home knows. Home queries only `events`, so the old sentence claimed a calendar
-              // was empty -- which stopped being true the moment /calendar shipped. The next lecture is not
-              // printed here either; that is NextUpStrip, and surfacing it on Home is deferred (spec §10).
+              // Scoped to what this block shows. Home copies only the `events` table here; the calendar's own
+              // dates, when the admin opts them in, are the NextUpStrip above this block.
               description="Lectures, exams and registration dates are on the calendar."
             />
           ) : (

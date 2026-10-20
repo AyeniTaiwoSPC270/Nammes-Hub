@@ -6,6 +6,7 @@ import ErrorState from '../components/ui/ErrorState'
 import { SkeletonText } from '../components/ui/Skeleton'
 import AgendaList from '../components/calendar/AgendaList'
 import CalendarLegend from '../components/calendar/CalendarLegend'
+import CalendarSubscribe from '../components/calendar/CalendarSubscribe'
 import DaySheet from '../components/calendar/DaySheet'
 import MonthGrid from '../components/calendar/MonthGrid'
 import NextUpStrip from '../components/calendar/NextUpStrip'
@@ -23,6 +24,7 @@ import { usePageBanner } from '../data/pageBanners'
 import { useMediaQuery } from '../lib/useMediaQuery'
 import { addMonths, fromDayKey, toDayKey } from '../../api/_lib/calendarDates.js'
 import { mergeCalendarSources } from '../../api/_lib/calendarMerge.js'
+import { selectNextUp } from '../lib/calendarNextUp.js'
 import { CALENDAR_VIEWS, KIND_ORDER, SOURCE_ORDER, sanitizeTheme, themeVars } from '../../api/_lib/calendarTheme.js'
 
 // How much slack to keep either side of the dates that are actually on file.
@@ -127,11 +129,9 @@ export default function Calendar() {
     [merged.tba, sources, kinds],
   )
 
-  // mergeCalendarSources already orders by start, so filtering preserves the order. `endsAt >= today` rather
-  // than `startsAt >= today`, because a three-week exam block that opened last week is the single most
-  // useful thing this strip could say today.
+  // The rule lives in src/lib/calendarNextUp.js so the studio and Home cannot drift from this page.
   const nextUp = useMemo(
-    () => (theme.highlight.nextUp ? shown.filter((item) => item.endsAt >= todayKey).slice(0, NEXT_UP_COUNT) : []),
+    () => selectNextUp(shown, todayKey, { enabled: theme.highlight.nextUp, limit: NEXT_UP_COUNT }),
     [shown, todayKey, theme.highlight.nextUp],
   )
 
@@ -205,7 +205,10 @@ export default function Calendar() {
               </button>
             ))}
           </div>
-          <SourceFilter selected={sources} onToggle={toggleSource} />
+          <div className="flex flex-wrap items-center gap-2">
+            <SourceFilter selected={sources} onToggle={toggleSource} />
+            <CalendarSubscribe />
+          </div>
         </div>
 
         {session && (
