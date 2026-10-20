@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import { useOwnAdminRowQuery } from '../data/admins'
 import { useAuth } from '../lib/AuthContext'
+import { useHolidayFlag } from '../data/holidays'
 import Badge from '../components/ui/Badge'
 import AdminNotificationBell from '../components/admin/AdminNotificationBell'
 
@@ -183,6 +184,19 @@ export const ADMIN_SECTIONS = [
     description: 'Approve or reject pending News, Events, and Awards edits.',
     ownerOnly: true,
   },
+  // Owner-only like the calendar's design side: a holiday theme repaints the whole site for every
+  // visitor, and it also decides what every quiz host sees offered in the studio's saved looks.
+  // Flag-gated too — the `holidays` kill switch hides the tile along with everything else, one row
+  // flipping the whole feature off without a deploy.
+  {
+    path: '/admin/holidays',
+    label: 'Holiday Themes',
+    icon: 'palette',
+    category: 'Content',
+    description: 'Dress the site for a season — palette, greeting, snow — with a matching quiz look.',
+    ownerOnly: true,
+    flag: 'holidays',
+  },
 ]
 
 export default function Admin() {
@@ -191,7 +205,12 @@ export default function Admin() {
   const pendingCount = pendingCountQuery.data ?? 0
   const adminRowQuery = useOwnAdminRowQuery(user?.id)
   const isOwner = Boolean(adminRowQuery.data?.is_owner)
-  const visibleSections = ADMIN_SECTIONS.filter((s) => !s.ownerOnly || isOwner)
+  // The holidays kill switch fails open (useHolidayFlag), so the tile is there until the flag row
+  // actually says otherwise — the same posture the calendar nav item takes.
+  const holidaysEnabled = useHolidayFlag()
+  const visibleSections = ADMIN_SECTIONS.filter(
+    (s) => (!s.ownerOnly || isOwner) && (!s.flag || holidaysEnabled),
+  )
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">

@@ -20,6 +20,8 @@ import { addMonths, toDayKey } from '../../api/_lib/calendarDates.js'
 import { mergeCalendarSources } from '../../api/_lib/calendarMerge.js'
 import { linkifyText } from '../lib/linkify'
 import { selectNextUp } from '../lib/calendarNextUp.js'
+import { useHolidayTheme } from '../lib/HolidayThemeProvider'
+import { holidayImageUrl } from '../data/holidays'
 
 // The same four the calendar page's strip shows. Home has more blocks below it, so there is no reason to grow it.
 const NEXT_UP_COUNT = 4
@@ -79,6 +81,11 @@ export default function Home() {
   const newsTheme = newsLook.onHome ? newsLook.theme : DEFAULT_LOOKS.news
   const eventsTheme = eventsLook.onHome ? eventsLook.theme : DEFAULT_LOOKS.events
 
+  // The live holiday theme's art band: below the navbar (which Layout owns), above the hero — the exact
+  // placement the spec pins. Nothing else on Home changes for a holiday; the palette repaint is global.
+  const holiday = useHolidayTheme()
+  const holidayBandUrl = holiday?.imagery?.band ? holidayImageUrl(holiday.imagery.band) : null
+
   const heroRef = useRef(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const heroImageY = useTransform(scrollYProgress, [0, 1], reducedMotion ? [0, 0] : [0, 60])
@@ -93,6 +100,7 @@ export default function Home() {
 
   return (
     <div>
+      {holidayBandUrl && <img src={holidayBandUrl} alt="" className="h-24 w-full object-cover sm:h-32" />}
       {/* 1. Hero */}
       <section ref={heroRef} className="relative w-full min-h-[420px] sm:min-h-[560px] flex items-center overflow-hidden bg-green-900">
         {content?.hero_image_url && (

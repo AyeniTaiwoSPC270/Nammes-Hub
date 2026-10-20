@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuizLooksQuery, useSaveQuizLookMutation, useDeleteQuizLookMutation } from '../../../data/quiz'
+import { applyHolidayLook } from '../../../data/holidays'
 import { brandingPaths } from '../../../data/quizBranding'
 import { sanitizeTheme } from '../../../../api/_lib/quizTheme.js'
 import { generateId } from '../../../lib/adminFields'
@@ -112,16 +113,24 @@ export default function SavedLooks({ quizId, draft, dirty, onApply }) {
     )
   }
 
-  function handleApply(look) {
+  async function handleApply(look) {
     if (dirty && !window.confirm(`Replace your unsaved changes with “${look.name}”?`)) return
-    // The one judgement of what a look means on THIS quiz. Everything else about the design is carried over untouched;
-    // only the pictures are at risk, and only because they point at another quiz's folder.
-    const applied = sanitizeTheme(look.design, { quizId })
-    const lost = brandingPaths(look.design).length > 0 && brandingPaths(applied).length === 0
+    // A holiday look carries its backdrop picture in the holiday bucket, not in this quiz's folder — so
+    // it is copied into `<quizId>/` here, BEFORE the one judgement of what a look means on THIS quiz
+    // (sanitizeTheme drops foreign paths on purpose, and this honours that rule rather than weakening it).
+    // A non-holiday look takes the ordinary path untouched, and a failed copy simply settles to a
+    // patternless backdrop instead of pointing at a folder the quiz does not own.
+    const holiday = await applyHolidayLook(look, quizId).catch(() => null)
+    const applied = holiday ? holiday.theme : sanitizeTheme(look.design, { quizId })
+    const lost = holiday
+      ? holiday.imageFailed
+      : brandingPaths(look.design).length > 0 && brandingPaths(applied).length === 0
     onApply(applied)
     toast.success(
       lost
-        ? `“${look.name}” applied. Its uploaded picture belongs to another quiz, so that part was left out.`
+        ? holiday
+          ? `“${look.name}” applied. Its backdrop picture could not be copied over, so the plain backdrop is shown.`
+          : `“${look.name}” applied. Its uploaded picture belongs to another quiz, so that part was left out.`
         : `“${look.name}” applied. Press “Save look” to keep it on this quiz.`,
     )
   }
