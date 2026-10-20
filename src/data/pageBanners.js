@@ -18,6 +18,11 @@ export function usePageBanner(pageKey) {
 
 export async function updatePageBanner(pageKey, fields) {
   const { data, error } = await supabase.from('page_banners').update(fields).eq('page_key', pageKey).select().single()
-  if (error) throw error
+  if (error) {
+    // `.single()` answers PGRST116 when the update matched no row. A page key that was never seeded is the only way
+    // to get here, and a PostgREST code is not something the admin can act on.
+    if (error.code === 'PGRST116') throw new Error('This page has no banner row yet.')
+    throw error
+  }
   return data
 }
