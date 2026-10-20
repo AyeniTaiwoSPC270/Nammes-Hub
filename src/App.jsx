@@ -81,6 +81,7 @@ const AdminBattles = lazyRetry(() => import('./pages/admin/AdminBattles'))
 const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
 const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
 const PlayLow = lazyRetry(() => import('./pages/PlayLow'))
+const PlayHistory = lazyRetry(() => import('./pages/PlayHistory'))
 const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
 const PlayBattle = lazyRetry(() => import('./pages/PlayBattle'))
 const PracticeList = lazyRetry(() => import('./pages/PracticeList'))
@@ -153,6 +154,15 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <PlayLow />
+              </Suspense>
+            }
+          />
+          {/* The games this phone has played. No token, no query parameters and no game running. */}
+          <Route
+            path="play/history"
+            element={
+              <Suspense fallback={null}>
+                <PlayHistory />
               </Suspense>
             }
           />

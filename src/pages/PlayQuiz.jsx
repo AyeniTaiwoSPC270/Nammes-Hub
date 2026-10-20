@@ -221,6 +221,11 @@ function JoinForm({ onJoined, notice }) {
             </button>
           ))}
           <p className="text-center text-xs text-ink-muted">Already in a game? Tap to fill its code.</p>
+          {/* History is the one thing a finished seat is good for, and it is not offered above. It sits inside the
+              seat block, so it never pushes the code box further down than the chips already did. */}
+          <Link to="/play/history" className="text-center text-xs font-semibold text-orange-500">
+            See your past results
+          </Link>
         </div>
       )}
 
@@ -1052,6 +1057,13 @@ function PlayQuizGame({ onTheme }) {
           <span className="material-symbols-outlined" aria-hidden="true">share</span>
           Share my result
         </button>
+        <Link
+          to="/play/history"
+          className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-hairline bg-surface px-6 text-lg font-bold text-ink-900 shadow-sm active:scale-[0.98]"
+        >
+          <span className="material-symbols-outlined" aria-hidden="true">task_alt</span>
+          My past results
+        </Link>
         <button
           type="button"
           onClick={leave}
