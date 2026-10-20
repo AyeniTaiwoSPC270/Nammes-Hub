@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
+import { HolidayBanner } from '../site/HolidayDecor'
 
 export default function AdminLayout() {
   return (
@@ -12,6 +13,7 @@ export default function AdminLayout() {
           Back to dashboard
         </Link>
       </div>
+      <HolidayBanner />
       <Outlet />
     </div>
   )

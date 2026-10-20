@@ -332,3 +332,94 @@
     will-change: auto;
   }
 }
+
+/* ---------- Holiday decor (api/_lib/holidayTheme.js HOLIDAY_PARTICLES) ----------
+   One fixed overlay of CSS-animated particles, drawn only on public and admin pages and never on the
+   quiz screens, which own their own look system. Each effect binds its OWN keyframes in its own rule —
+   the backdrop-motion lesson (a shared property group can carry `duration` and still leave
+   animation-name at `none`), and a source-scan test fails the build if an effect has no keyframes.
+   Duration and delay come from the component per span (inline custom properties), so the keyframes stay
+   duration-free and every flake falls at its own pace. */
+.holiday-particles {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  overflow: hidden;
+  pointer-events: none;
+}
+.holiday-particle {
+  position: absolute;
+  top: -6vh;
+  border-radius: var(--radius-full);
+  will-change: transform, opacity;
+}
+/* Snow: soft white flakes with a faint cool shadow so they still read on a light paper background. */
+.holiday-p--snow {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 3px rgba(90, 120, 150, 0.55);
+  animation: holiday-p-snow var(--holiday-fall, 14s) linear infinite;
+}
+@keyframes holiday-p-snow {
+  0% { transform: translate3d(0, -6vh, 0); opacity: 0; }
+  6% { opacity: 1; }
+  50% { transform: translate3d(14px, 52vh, 0); opacity: 1; }
+  100% { transform: translate3d(-10px, 108vh, 0); opacity: 0.85; }
+}
+/* Petals: rose-pink, wider than tall, swaying as they fall. */
+.holiday-p--petals {
+  background: #f7b6c9;
+  border-radius: 60% 40% 55% 45%;
+  animation: holiday-p-petals var(--holiday-fall, 16s) linear infinite;
+}
+@keyframes holiday-p-petals {
+  0% { transform: translate3d(0, -6vh, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: 0.95; }
+  25% { transform: translate3d(26px, 26vh, 0) rotate(120deg); }
+  50% { transform: translate3d(-18px, 54vh, 0) rotate(240deg); }
+  75% { transform: translate3d(22px, 82vh, 0) rotate(360deg); }
+  100% { transform: translate3d(0, 108vh, 0) rotate(440deg); opacity: 0.9; }
+}
+/* Sparks: gold, staying put and pulsing — the one effect that does not fall. */
+.holiday-p--sparks {
+  background: #ffd166;
+  box-shadow: 0 0 6px rgba(255, 209, 102, 0.8);
+  animation: holiday-p-sparks var(--holiday-fall, 5s) ease-in-out infinite;
+}
+@keyframes holiday-p-sparks {
+  0%, 100% { transform: translateY(0) scale(0.6); opacity: 0; }
+  50% { transform: translateY(-14px) scale(1); opacity: 1; }
+}
+/* Confetti: the fall again, but tumbling and multi-coloured through the nth-child cycle. */
+.holiday-p--confetti {
+  border-radius: 2px;
+  animation: holiday-p-confetti var(--holiday-fall, 12s) linear infinite;
+}
+.holiday-p--confetti:nth-child(4n + 1) { background: #e03131; }
+.holiday-p--confetti:nth-child(4n + 2) { background: #2f9e44; }
+.holiday-p--confetti:nth-child(4n + 3) { background: #f08c00; }
+.holiday-p--confetti:nth-child(4n) { background: #1971c2; }
+@keyframes holiday-p-confetti {
+  0% { transform: translate3d(0, -6vh, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: 1; }
+  50% { transform: translate3d(-16px, 52vh, 0) rotate(300deg); }
+  100% { transform: translate3d(12px, 108vh, 0) rotate(620deg); opacity: 0.9; }
+}
+/* Leaves: amber, a wider sway than petals so the two never read as the same effect recoloured. */
+.holiday-p--leaves {
+  background: #d9a441;
+  border-radius: 70% 30% 60% 40%;
+  animation: holiday-p-leaves var(--holiday-fall, 18s) linear infinite;
+}
+@keyframes holiday-p-leaves {
+  0% { transform: translate3d(0, -6vh, 0) rotate(0deg); opacity: 0; }
+  6% { opacity: 0.95; }
+  25% { transform: translate3d(-30px, 26vh, 0) rotate(-90deg); }
+  50% { transform: translate3d(24px, 54vh, 0) rotate(-200deg); }
+  75% { transform: translate3d(-20px, 82vh, 0) rotate(-300deg); }
+  100% { transform: translate3d(0, 108vh, 0) rotate(-380deg); opacity: 0.9; }
+}
+/* A frozen flake sits at the top edge behind the fold — always a presentable still, same reasoning as
+   the backdrop styles above. */
+@media (prefers-reduced-motion: reduce) {
+  .holiday-particle { animation: none; opacity: 0.5; will-change: auto; }
+}

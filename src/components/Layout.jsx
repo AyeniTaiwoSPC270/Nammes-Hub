@@ -2,6 +2,7 @@ import { Suspense, useEffect } from 'react'
 import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Navbar from './Navbar'
+import { HolidayBanner } from './site/HolidayDecor'
 import Footer from './Footer'
 import WelcomeCarousel from './tour/WelcomeCarousel'
 import SpotlightOverlay from './tour/SpotlightOverlay'
@@ -64,6 +65,9 @@ export default function Layout() {
   return (
     <div className="min-h-svh flex flex-col bg-paper">
       {!bare && <Navbar />}
+      {/* The holiday greeting sits under the navbar exactly as the spec places it — this is why it is
+          rendered here and not by the provider, which wraps routes that have no navbar. */}
+      {!bare && <HolidayBanner />}
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <motion.div

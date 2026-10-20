@@ -5,7 +5,7 @@ choosing or building a theme that repaints everything visitors, admins and quiz 
 to normal afterwards. This is the design record: what a theme contains, how one becomes live, and how the
 quiz half reaches the existing quiz design system without inventing a second one.
 
-**Status:** approved by owner, not yet implemented. **Date:** 2026-10-20.
+**Status:** approved by owner, implemented — phases 1 and 2, as built. **Date:** 2026-10-20.
 
 ---
 
@@ -45,6 +45,7 @@ Confirmed requirement by requirement:
 | Quiz backdrop + `sanitizeTheme` | The holiday backdrop lives in `holiday-themes/<id>/…`; **applying the look to a quiz copies the object into that quiz's own `quiz-images/<quizId>/` folder first** | `sanitizeTheme(look.design, { quizId })` strips storage paths outside the quiz's folder — the AGENTS.md rule that keeps a quiz's pictures inside the quiz. Copying at apply time honours the rule instead of weakening it |
 | Quiz delivery | The theme's quiz mapping is synced into a `quiz_looks` row named after the theme; the theme stores that row's id | The studio's saved-looks picker then shows the holiday look through today's code path. A second picker, a `kind` column on `quiz_looks`, or any merging of the five preset tables was rejected per AGENTS.md — `calendar_looks` is the model, and each studio keeps its own table |
 | Quiz application | Host picks the look in the quiz studio like any saved look; it saves to the quiz's draft and snapshots into `quiz_sessions.theme` at game start | The approved "studio picker only" answer, and the existing snapshot rule: editing a theme never restyles a game already running |
+| Who may read a theme | Owner-write; reads reach owner and admin, anon only through the RPC | The "owner only" answer above is about who MANAGES a theme, and writes stay owner. But the quiz studio is an admin surface: applying a holiday look there reads the `quiz` mapping as whichever admin is in the studio, and an owner-only read silently dropped the backdrop picture for every non-owner admin (found in review, fixed as built). The row is presentation the same RPC already paints for anon, so a wider read exposes nothing new |
 | Kill switch | `feature_flags` key `holidays` | The calendar precedent: nav tile, provider and RPC all honour it. One row flips the whole feature off without a deploy |
 | Admin screen | `/admin/holidays`, owner-gated, behind the flag | One route, one tile on the Admin home, like Calendar |
 | Presets | Migration seeds four editable themes: Christmas/New Year, Easter, Valentine's, Nigeria Independence Day — each with a light+dark palette, a decor suggestion, empty imagery, and a quiz mapping in `DEFAULT_THEME` vocabulary | "Starter presets, editable": the owner tweaks and saves, or builds from blank. Seeded rows are ordinary rows — editing one is not special |

@@ -6,6 +6,8 @@ import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import { useCalendarFlag } from '../data/calendar'
+import { useHolidayTheme } from '../lib/HolidayThemeProvider'
+import { holidayImageUrl } from '../data/holidays'
 import { useBodyScrollLock } from '../lib/useBodyScrollLock'
 import { useMediaQuery } from '../lib/useMediaQuery'
 import UserMenu from './UserMenu'
@@ -194,6 +196,10 @@ export default function Navbar() {
   // The kill switch behind the /calendar nav item. Fails open, so the item is there while the query is in
   // flight and only disappears if the flag row actually says the feature is off.
   const calendarEnabled = useCalendarFlag()
+  // A holiday theme may swap the whole logo; the site's own mark is the fallback for every state in
+  // which no festive one is live.
+  const holiday = useHolidayTheme()
+  const holidayLogoUrl = holiday?.imagery?.logo ? holidayImageUrl(holiday.imagery.logo) : null
 
   const groups = useMemo(
     () =>
@@ -232,7 +238,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-30 border-b border-hairline bg-surface">
       <div className="flex items-center justify-between gap-6 px-4 py-3.5 sm:px-8">
         <NavLink to="/" className="inline-flex items-center gap-2 whitespace-nowrap no-underline">
-          <img src="/logo-small.png" alt="" width="32" height="32" className="h-8 w-8" />
+          <img src={holidayLogoUrl ?? '/logo-small.png'} alt="" width="32" height="32" className="h-8 w-8" />
           <span className="font-display text-xl font-bold text-ink-900">NAMMES Hub</span>
         </NavLink>
 
