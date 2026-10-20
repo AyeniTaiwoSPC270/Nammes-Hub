@@ -118,8 +118,19 @@ function IconPicker({ value, onPick }) {
   )
 }
 
-/** Every calendar setting, grouped into tabs. `draft` in, a new `draft` out; nothing is written to the database here. */
-export default function CalendarDesignControls({ draft, onChange }) {
+/**
+ * Every calendar setting, grouped into tabs. `draft` in, a new `draft` out; nothing is written to the database here.
+ *
+ * `homeNextUp` is the one exception: it lives on `calendar_settings`, not in the design, so it is passed in and
+ * written by its own handler rather than folded into the draft. `onHomeNextUpChange` is omitted for a non-owner, who
+ * can still read the current value.
+ */
+export default function CalendarDesignControls({
+  draft,
+  onChange,
+  homeNextUp = false,
+  onHomeNextUpChange,
+}) {
   const [tab, setTab] = useState('accents')
   const [advanced, setAdvanced] = useState({})
 
@@ -267,6 +278,21 @@ export default function CalendarDesignControls({ draft, onChange }) {
                 label="Show the “Next up” strip"
                 description="The few items running or coming up, above the grid."
               />
+              {/* A separate setting from the strip above, and separate from the design: turning the calendar's
+                  strip off must not silently remove a Home block. It is a settings-row write, so it takes effect
+                  on press rather than on Save design. */}
+              {onHomeNextUpChange ? (
+                <Toggle
+                  checked={homeNextUp}
+                  onChange={onHomeNextUpChange}
+                  label="Show “Next up” on Home"
+                  description="An additive strip above Upcoming Events. Takes effect immediately."
+                />
+              ) : (
+                <p className="text-xs text-ink-muted">
+                  Home “Next up” is {homeNextUp ? 'on' : 'off'}. Only the owner can change it.
+                </p>
+              )}
             </ControlSection>
           </>
         )}
