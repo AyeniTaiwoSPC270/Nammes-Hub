@@ -3,6 +3,7 @@ import systemTest from './_lib/handlers/system-test.js'
 import emailWorker from './_lib/handlers/email-worker.js'
 import handbookBuild from './_lib/handlers/handbook-build.js'
 import calendarReminders from './_lib/handlers/calendar-reminders.js'
+import calendarIcs from './_lib/handlers/calendar-ics.js'
 // The named export, not the default: og.js's default is the already-built handler, so importing it and calling it
 // would fire the handler with no request.
 import { createOgHandler } from './_lib/handlers/og.js'
@@ -19,6 +20,7 @@ const ACTIONS = {
   'email-worker': emailWorker,
   'handbook-build': handbookBuild,
   'calendar-reminders': calendarReminders,
+  'calendar-ics': calendarIcs,
   og: createOgHandler(),
 }
 
