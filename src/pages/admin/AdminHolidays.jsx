@@ -32,6 +32,7 @@ function blankTheme() {
     palette: { light: {}, dark: {} },
     decor: { particles: 'off', banner: '' },
     imagery: { band: null, logo: null },
+    background: { enabled: false, image: null },
     quiz: BLANK_QUIZ,
   }
 }
@@ -395,7 +396,13 @@ export default function AdminHolidays() {
               <div className="mt-3 flex flex-wrap gap-8">
                 <ImageSlot label="Homepage band" themeId={draft.id} kind="band" path={draft.imagery.band} onPath={(p) => { queueReplace(draft.imagery.band, p); patch({ imagery: { ...draft.imagery, band: p } }) }} onClear={() => { queueReplace(draft.imagery.band, null); patch({ imagery: { ...draft.imagery, band: null } }) }} />
                 <ImageSlot label="Logo swap" themeId={draft.id} kind="logo" path={draft.imagery.logo} onPath={(p) => { queueReplace(draft.imagery.logo, p); patch({ imagery: { ...draft.imagery, logo: p } }) }} onClear={() => { queueReplace(draft.imagery.logo, null); patch({ imagery: { ...draft.imagery, logo: null } }) }} />
+                <ImageSlot label="Page background" themeId={draft.id} kind="background" path={draft.background.image} onPath={(p) => { queueReplace(draft.background.image, p); patch({ background: { ...draft.background, image: p } }) }} onClear={() => { queueReplace(draft.background.image, null); patch({ background: { ...draft.background, image: null } }) }} />
               </div>
+              <label className="mt-4 flex w-fit cursor-pointer items-center gap-2 text-sm text-ink-900">
+                <input type="checkbox" checked={draft.background.enabled} onChange={(e) => patch({ background: { ...draft.background, enabled: e.target.checked } })} />
+                Use as page background — paints the whole site behind the content while this theme is live
+              </label>
+              <p className="mt-1 text-sm text-ink-muted">No picture above? The page falls back to a soft gradient from this theme's palette. Quiz screens keep their own look either way.</p>
             </section>
 
             <section className="rounded-xl border border-hairline bg-surface p-5">

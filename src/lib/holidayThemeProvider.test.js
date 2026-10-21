@@ -50,10 +50,13 @@ describe('decor placement', () => {
 
   it('decor never renders on the quiz surfaces — they own their own look system', () => {
     const decor = source('src/components/site/HolidayDecor.jsx')
+    // The list itself lives in src/lib/quizSurface.js so HolidayBackground's exclusion cannot drift
+    // from it; what decor owes is the call.
+    const surface = source('src/lib/quizSurface.js')
     for (const prefix of ['/host', '/play', '/battle', '/practice']) {
-      expect(decor, `decor has no exclusion for ${prefix}`).toContain(`'${prefix}'`)
+      expect(surface, `quizSurface has no prefix for ${prefix}`).toContain(`'${prefix}'`)
     }
-    expect(decor).toContain('QUIZ_PREFIXES')
+    expect(decor).toContain('isQuizPath(pathname)')
   })
 
   it('Home draws the band through the shared bucket helper', () => {
@@ -86,6 +89,51 @@ describe('kill switch wiring', () => {
   it('the RPC — the painting half — checks the flag itself', () => {
     const sql = source('supabase/migrations/20261020120000_holiday_themes.sql')
     expect(sql).toContain("from public.feature_flags where key = 'holidays'")
+  })
+})
+
+describe('page background wiring', () => {
+  const bg = source('src/components/site/HolidayBackground.jsx')
+
+  it('both shells mount the layer, and Layout drops its bg-paper only while one is live', () => {
+    expect(source('src/components/Layout.jsx')).toContain('<HolidayBackground />')
+    expect(source('src/components/admin/AdminLayout.jsx')).toContain('<HolidayBackground />')
+    // The wrapper's bg-paper is what would hide the layer on public pages, so the swap has to be
+    // driven by the same hook the layer renders from — a hard-coded bg-paper makes the picture
+    // invisible, and dropping it unconditionally makes every non-holiday day colourless.
+    expect(source('src/components/Layout.jsx')).toContain("${holidayBg ? '' : ' bg-paper'}")
+  })
+
+  it('never renders on the quiz screens — the same quiz-surface list HolidayDecor uses', () => {
+    // One list, not two: a prefix added to the decor exclusion and forgotten here would put a
+    // festive page under a live game, exactly the bug the decor rule exists to prevent. The rule is
+    // enforced through the hook the shells also read — a shell drops bg-paper only when the layer
+    // will actually render.
+    const hook = source('src/lib/useHolidayPageBackground.js')
+    expect(hook).toContain("from './quizSurface'")
+    expect(hook).toContain('isQuizPath(pathname)')
+    expect(bg).toContain('useHolidayPageBackground()')
+    expect(source('src/components/Layout.jsx')).toContain('useHolidayPageBackground')
+  })
+
+  it('the wash flips with the reader\'s mode — one picture serves both', () => {
+    expect(bg).toContain('useTheme()')
+    expect(bg).toMatch(/light: 'rgba\(255, 255, 255,/)
+    expect(bg).toMatch(/dark: 'rgba\(10, 10, 10,/)
+  })
+
+  it('with no picture it paints the palette gradient, and the option defaults off', () => {
+    expect(bg).toContain('linear-gradient(160deg, var(--color-surface-low), var(--color-paper))')
+    // The toggle is a real boolean in the sanitizer, so a junk row can never switch it on.
+    expect(source('api/_lib/holidayTheme.js')).toContain('enabled: b.enabled === true')
+  })
+
+  it('the studio offers the toggle and a background upload slot', () => {
+    const admin = source('src/pages/admin/AdminHolidays.jsx')
+    expect(admin).toContain('kind="background"')
+    expect(admin).toContain('Use as page background')
+    // The saved column must be one the studio actually writes, or the toggle saves nowhere.
+    expect(source('src/data/holidays.js')).toContain("'background'")
   })
 })
 
