@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useHolidayTheme } from '../../lib/HolidayThemeProvider'
+import { isQuizPath } from '../../lib/quizSurface'
 
 // The festive half of a holiday theme: a fixed layer of CSS-animated particles (keyframes in
 // src/index.css, one rule per effect, disabled under prefers-reduced-motion) and the optional greeting
@@ -9,8 +10,7 @@ import { useHolidayTheme } from '../../lib/HolidayThemeProvider'
 // Decor reaches public and admin pages and NEVER the quiz screens. The projector and the phones own
 // their own look system (quiz_looks, five studios), a phone obeys the low-data rule, and snow over a
 // live game would be a bug report rather than festivity — so these prefixes render no overlay at all.
-const QUIZ_PREFIXES = ['/host', '/play', '/battle', '/practice', '/make', '/set', '/cbt']
-
+// The prefix list lives in src/lib/quizSurface.js so HolidayBackground's exclusion cannot drift from it.
 const PARTICLE_COUNT = 26
 
 // Deterministic spread, the backdrop-scatter reasoning: positions and pacing come from the index, so a
@@ -31,7 +31,7 @@ export default function HolidayDecor() {
   const { pathname } = useLocation()
   const effect = theme?.decor?.particles
   if (!effect || effect === 'off') return null
-  if (QUIZ_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return null
+  if (isQuizPath(pathname)) return null
   return (
     <div className="holiday-particles" aria-hidden="true">
       {Array.from({ length: PARTICLE_COUNT }, (_, i) => (

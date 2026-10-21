@@ -22,12 +22,15 @@ const UPLOAD_SIZES = {
   band: { maxEdge: 1600, maxBytes: 1500 * 1024 },
   logo: { maxEdge: 600, maxBytes: 500 * 1024 },
   quiz: { maxEdge: 1600, maxBytes: 1500 * 1024 },
+  // The page background is the largest image the site draws (it covers the viewport), so it gets the
+  // largest cap — still the same processQuizImage pipeline, still a webp/jpg under 2.5 MB.
+  background: { maxEdge: 1920, maxBytes: 2500 * 1024 },
 }
 
 // The columns the studio writes. Anything else in a payload is dropped here rather than handed to the
 // database — `created_at` is absent so a re-save cannot rewrite when a theme was added, and the touch
 // trigger owns `updated_at`.
-const THEME_FIELDS = ['id', 'name', 'palette', 'decor', 'imagery', 'quiz', 'starts_on', 'ends_on', 'enabled']
+const THEME_FIELDS = ['id', 'name', 'palette', 'decor', 'imagery', 'background', 'quiz', 'starts_on', 'ends_on', 'enabled']
 const SETTINGS_FIELDS = ['mode', 'active_theme_id']
 
 const THEMES_KEY = ['holiday_themes']

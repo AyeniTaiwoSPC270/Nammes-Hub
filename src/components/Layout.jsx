@@ -3,6 +3,8 @@ import { useLocation, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Navbar from './Navbar'
 import { HolidayBanner } from './site/HolidayDecor'
+import HolidayBackground from './site/HolidayBackground'
+import { useHolidayPageBackground } from '../lib/useHolidayPageBackground'
 import Footer from './Footer'
 import WelcomeCarousel from './tour/WelcomeCarousel'
 import SpotlightOverlay from './tour/SpotlightOverlay'
@@ -53,6 +55,9 @@ export default function Layout() {
   const outlet = useOutlet()
   const { decision } = useChrome()
   const chromeFree = isChromeFreePath(location.pathname)
+  // When a live holiday paints the page background, the layer fills the role this wrapper's bg-paper
+  // holds — the wrapper drops it or the layer behind it could never show.
+  const holidayBg = useHolidayPageBackground()
 
   // The page answers for itself where it can; until it has, a route that may go bare starts bare so
   // the navbar never paints and then vanishes while the page decides.
@@ -63,7 +68,8 @@ export default function Layout() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-svh flex flex-col bg-paper">
+    <div className={`min-h-svh flex flex-col${holidayBg ? '' : ' bg-paper'}`}>
+      {holidayBg && <HolidayBackground />}
       {!bare && <Navbar />}
       {/* The holiday greeting sits under the navbar exactly as the spec places it — this is why it is
           rendered here and not by the provider, which wraps routes that have no navbar. */}

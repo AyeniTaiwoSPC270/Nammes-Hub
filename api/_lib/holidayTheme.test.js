@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import {
   HOLIDAY_PARTICLES, HOLIDAY_TOKENS, BANNER_MAX,
   isHolidayImagePath, isThemeId,
-  sanitizePalette, sanitizeDecor, sanitizeImagery, sanitizeQuizTheme, sanitizeHolidayTheme,
+  sanitizePalette, sanitizeDecor, sanitizeImagery, sanitizeBackground, sanitizeQuizTheme, sanitizeHolidayTheme,
   resolveActiveHoliday, holidayThemeVars, todayLagos,
 } from './holidayTheme.js'
 
@@ -58,6 +58,21 @@ describe('image paths', () => {
     const out = sanitizeImagery({ band: PATH, logo: PATH.replace('christmas-2026', 'easter-2027') }, { themeId: 'christmas-2026' })
     expect(out.band).toBe(PATH)
     expect(out.logo).toBeNull()
+  })
+
+  it('sanitizeBackground keeps a picture in the theme folder and drops a foreign one', () => {
+    // The option and the picture are judged separately: a theme can carry a picture with the toggle
+    // off (band today, background later) and can go festive with no picture at all (the gradient).
+    expect(sanitizeBackground({ enabled: true, image: PATH }, { themeId: 'christmas-2026' })).toEqual({ enabled: true, image: PATH })
+    expect(sanitizeBackground({ enabled: true, image: PATH.replace('christmas-2026', 'easter-2027') }, { themeId: 'christmas-2026' }).image).toBeNull()
+  })
+
+  it('sanitizeBackground settles junk to the feature off with no picture', () => {
+    for (const bad of [undefined, null, 'yes', 12, [], { enabled: 'yes', image: '../etc/passwd' }]) {
+      expect(sanitizeBackground(bad), JSON.stringify(bad)).toEqual({ enabled: false, image: null })
+    }
+    // Truthy-but-not-true must not switch the feature on — the box is checked by a real boolean.
+    expect(sanitizeBackground({ enabled: 'true' }).enabled).toBe(false)
   })
 })
 

@@ -96,6 +96,22 @@ export function sanitizeImagery(input, { themeId } = {}) {
 }
 
 /**
+ * The page-background half: { enabled, image }.
+ *
+ * `enabled` is the per-theme option the owner asked for — a theme can carry a picture and still leave
+ * the page plain. `image` follows the band/logo rule: it must sit in this theme's own folder, or it is
+ * nothing. With no picture the layer paints a gradient from the theme's own palette instead, so every
+ * seeded preset goes festive the moment the box is ticked.
+ */
+export function sanitizeBackground(input, { themeId } = {}) {
+  const b = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  return {
+    enabled: b.enabled === true,
+    image: isHolidayImagePath(b.image, themeId) ? b.image.toLowerCase() : null,
+  }
+}
+
+/**
  * The quiz half: { design, image, look_id }.
  *
  * `design` is judged by quizTheme's own sanitizeTheme — one judge, not two — and deliberately carries
@@ -124,6 +140,7 @@ export function sanitizeHolidayTheme(row) {
     palette: sanitizePalette(r.palette),
     decor: sanitizeDecor(r.decor),
     imagery: sanitizeImagery(r.imagery, { themeId: id }),
+    background: sanitizeBackground(r.background, { themeId: id }),
     quiz: sanitizeQuizTheme(r.quiz, { themeId: id }),
     starts_on: cleanDate(r.starts_on),
     ends_on: cleanDate(r.ends_on),
