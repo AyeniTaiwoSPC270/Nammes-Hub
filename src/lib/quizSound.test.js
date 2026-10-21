@@ -293,7 +293,7 @@ describe('the applause', () => {
 
 describe('what the studio offers', () => {
   it('lists the music styles, silence first', () => {
-    expect(MUSIC_STYLES).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic'])
+    expect(MUSIC_STYLES).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'christmas', 'valentine', 'easter', 'independence'])
   })
   it('can play every style the studio offers, so the two lists cannot drift apart', () => {
     // 'off' is silence and 'custom' is the admin's own clip, so neither has a generated loop behind it; both are
@@ -310,8 +310,8 @@ describe('what the studio offers', () => {
       expect(MUSIC_NOTES[key]).toBeTruthy()
     }
   })
-  it('keeps the two original loops and takes the three newer ones', () => {
-    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'custom'])
+  it('keeps the original loops in order and takes the newer ones after them', () => {
+    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'christmas', 'valentine', 'easter', 'independence', 'custom'])
   })
   it('offers the admin their own track as a style, but cannot generate one', () => {
     // 'custom' is the one style with no generated loop behind it: it is a clip from the library on one device, so

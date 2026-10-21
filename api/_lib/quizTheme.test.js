@@ -137,7 +137,7 @@ describe('sound settings', () => {
     }
   })
   it('knows an effect for every style of music, and lists custom music as a style', () => {
-    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'custom'])
+    expect(Object.keys(THEME_MUSIC)).toEqual(['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'christmas', 'valentine', 'easter', 'independence', 'custom'])
   })
 })
 

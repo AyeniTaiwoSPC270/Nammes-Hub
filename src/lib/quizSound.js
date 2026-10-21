@@ -3,7 +3,7 @@
 // allow sound after the person has clicked or tapped once, so nothing plays until unlock() has been called from such a
 // click. If audio is missing or blocked every call quietly does nothing and the game is exactly the same without it.
 
-export const MUSIC_STYLES = ['off', 'chill', 'hype', 'afro', 'disco', 'cinematic']
+export const MUSIC_STYLES = ['off', 'chill', 'hype', 'afro', 'disco', 'cinematic', 'christmas', 'valentine', 'easter', 'independence']
 
 // How far the music bus is turned down while a question is on screen, and how long a stopped loop takes to fade
 // out before its bus is cut.
@@ -259,6 +259,15 @@ const DISCO_ROOTS = [110.0, 87.31, 130.81, 98.0]
 // The cinematic one keeps its sub bass an octave below the chords, or the whole thing turns to mud.
 const EPIC_SUB = [73.42, 65.41, 58.27, 55.0]
 const EPIC_ROOTS = [146.83, 130.81, 116.54, 110.0]
+// The four holiday loops' chord roots, one bar each, in the same register as disco's so the bass sits
+// under the melody rather than fighting it: C G Am F (Christmas), C F G C (Valentine's), C Am F G
+// (Easter), Am F G C (Independence) — each loops back to its own tonic.
+const HOLIDAY_ROOTS = {
+  christmas: [130.81, 98.0, 110.0, 87.31],
+  valentine: [130.81, 87.31, 98.0, 130.81],
+  easter: [130.81, 110.0, 87.31, 98.0],
+  independence: [110.0, 87.31, 98.0, 130.81],
+}
 // Chord shapes in semitones above the root. The minor seventh is what keeps the pads from sounding like a test tone.
 const MINOR_SEVENTH = [0, 3, 7, 10]
 const MAJOR_SEVENTH = [0, 4, 7, 9]
@@ -299,6 +308,50 @@ const STYLES = {
     bass: { wave: 'sine', gain: 0.11, durMul: 14, bassEvery: 16, roots: EPIC_SUB },
     pads: { wave: 'sawtooth', gain: 0.03, intervals: MINOR_SEVENTH, roots: EPIC_ROOTS, attack: 0.7, barMul: 1.25, detune: 9, lowpass: 1500 },
     drums: { kick: [0], cymbal: [0] },
+  },
+
+  // Christmas: high sine plucks like a music box, a soft kick and a hat shimmering on every offbeat —
+  // the sleigh-bell part, since the engine's drum kit has no bell voice of its own.
+  christmas: {
+    bpm: 96,
+    steps: 16,
+    scale: PENTA_MAJOR,
+    lead: { wave: 'sine', gain: 0.05, durMul: 1.1, pattern: [4, -1, 3, 2, 0, -1, 2, 3, 4, -1, 5, 4, 3, -1, 2, -1] },
+    bass: { wave: 'sine', gain: 0.07, durMul: 3.2, roots: HOLIDAY_ROOTS.christmas },
+    pads: { wave: 'triangle', gain: 0.028, intervals: MAJOR_SEVENTH, roots: HOLIDAY_ROOTS.christmas, attack: 0.5, barMul: 1.15 },
+    drums: { kick: [0, 8], hat: [2, 6, 10, 14] },
+  },
+
+  // Valentine's: the one holiday loop with no drums at all — a slow sine line over swelling chords,
+  // the bass hit twice a bar. Made to sit under a lobby where nobody is shouting yet.
+  valentine: {
+    bpm: 70,
+    steps: 16,
+    scale: PENTA_MAJOR,
+    lead: { wave: 'sine', gain: 0.05, durMul: 2.8, pattern: [2, -1, -1, -1, 4, -1, 3, -1, 5, -1, -1, -1, 4, 3, 2, -1] },
+    bass: { wave: 'sine', gain: 0.07, durMul: 8, bassEvery: 8, roots: HOLIDAY_ROOTS.valentine },
+    pads: { wave: 'triangle', gain: 0.032, intervals: MAJOR_SEVENTH, roots: HOLIDAY_ROOTS.valentine, attack: 0.7, barMul: 1.2, detune: 8 },
+  },
+
+  // Easter: bouncy staccato plucks over a square bass, kick on one and three, clap on the backbeat.
+  easter: {
+    bpm: 118,
+    steps: 16,
+    scale: PENTA_MAJOR,
+    lead: { wave: 'triangle', gain: 0.05, durMul: 0.9, pattern: [0, -1, 2, -1, 4, -1, 2, 3, 4, -1, 5, -1, 4, 2, 0, -1] },
+    bass: { wave: 'square', gain: 0.05, durMul: 1.8, roots: HOLIDAY_ROOTS.easter, lowpass: 1200 },
+    drums: { kick: [0, 8], hat: [2, 6, 10, 14], clap: [4, 12] },
+  },
+
+  // Independence: highlife flavour — a bass that slides into each new chord like afrobeat's, bright
+  // square stabs instead of a guitar line, and the kick landing off the beat under the clap.
+  independence: {
+    bpm: 110,
+    steps: 16,
+    scale: PENTA_MAJOR,
+    lead: { wave: 'square', gain: 0.028, durMul: 1.4, pattern: [4, -1, 3, 2, -1, 4, -1, 5, 4, -1, 2, 3, -1, 2, 0, -1] },
+    bass: { wave: 'sine', gain: 0.08, durMul: 2.6, roots: HOLIDAY_ROOTS.independence, slide: true },
+    drums: { kick: [0, 6, 10], hat: [2, 6, 10, 14], clap: [4, 12] },
   },
 }
 
