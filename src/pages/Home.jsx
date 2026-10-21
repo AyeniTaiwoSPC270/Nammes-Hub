@@ -7,6 +7,7 @@ import WelcomeMessage from '../components/WelcomeMessage'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
 import { SkeletonCard, SkeletonText } from '../components/ui/Skeleton'
+import SlideshowLayer from '../components/SlideshowLayer'
 import { ContentFeed, ContentGrid, EventCard, NewsCard, NewsFeatureCard, staggerDelay } from '../components/content/ContentCards'
 import NextUpStrip from '../components/calendar/NextUpStrip'
 import { useNewsQuery, getNews } from '../data/news'
@@ -19,6 +20,7 @@ import { defaultTheme } from '../../api/_lib/contentTheme.js'
 import { addMonths, toDayKey } from '../../api/_lib/calendarDates.js'
 import { mergeCalendarSources } from '../../api/_lib/calendarMerge.js'
 import { linkifyText } from '../lib/linkify'
+import { heroImages } from '../lib/heroImages'
 import { selectNextUp } from '../lib/calendarNextUp.js'
 import { useHolidayTheme } from '../lib/HolidayThemeProvider'
 import { holidayImageUrl } from '../data/holidays'
@@ -40,6 +42,7 @@ export default function Home() {
   const eventsQuery = useEventsQuery()
   const contentQuery = useSiteContentQuery()
   const content = contentQuery.data
+  const heroSlides = heroImages(content)
   const reducedMotion = useReducedMotion()
 
   // Two conditions, both required: the calendar's kill switch, and the admin's per-block opt-in. The academic query
@@ -103,18 +106,16 @@ export default function Home() {
       {holidayBandUrl && <img src={holidayBandUrl} alt="" className="h-24 w-full object-cover sm:h-32" />}
       {/* 1. Hero */}
       <section ref={heroRef} className="relative w-full min-h-[420px] sm:min-h-[560px] flex items-center overflow-hidden bg-green-900">
-        {content?.hero_image_url && (
-          <motion.img
-            src={content.hero_image_url}
-            alt=""
-            style={{ y: heroImageY }}
-            initial={reducedMotion ? false : { opacity: 0, scale: 1.18 }}
-            animate={{ opacity: 1, scale: 1.1 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="absolute inset-0 z-0 h-full w-full object-cover"
-          />
+        {heroSlides.length > 0 && (
+          <motion.div style={{ y: heroImageY }} className="absolute inset-0 z-0">
+            <SlideshowLayer
+              images={heroSlides}
+              transition={content?.hero_transition ?? 'fade'}
+              intervalSeconds={content?.hero_interval_seconds ?? 5}
+            />
+          </motion.div>
         )}
-        {content?.hero_image_url && <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />}
+        {heroSlides.length > 0 && <div className="absolute inset-0 z-10 bg-green-900 opacity-80" />}
         <motion.div
           className="relative z-20 max-w-[1200px] w-full mx-auto px-5 py-14 sm:px-8 sm:py-0"
           initial={reducedMotion ? false : { opacity: 0, y: 16 }}

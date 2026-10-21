@@ -4,14 +4,19 @@ import { useSiteContentQuery, updateSiteContent } from '../../data/siteContent'
 import FormField from '../../components/ui/FormField'
 import Button from '../../components/ui/Button'
 import HomeContentImageUploadField from '../../components/admin/HomeContentImageUploadField'
+import PageBannerImagesField from '../../components/admin/PageBannerImagesField'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
+import { heroImages } from '../../lib/heroImages'
 
 const EMPTY_FORM = {
   hero_title: '',
   hero_subtitle: '',
   hero_image_url: '',
+  hero_image_urls: [],
+  hero_transition: 'fade',
+  hero_interval_seconds: 5,
   president_name: '',
   president_role: '',
   president_message: '',
@@ -25,7 +30,15 @@ export default function AdminHomeContent() {
   const [form, setForm] = useState(EMPTY_FORM)
 
   useEffect(() => {
-    if (contentQuery.data) setForm({ ...EMPTY_FORM, ...contentQuery.data })
+    if (!contentQuery.data) return
+    const row = contentQuery.data
+    setForm({
+      ...EMPTY_FORM,
+      ...row,
+      hero_image_urls: heroImages(row),
+      hero_transition: row.hero_transition ?? 'fade',
+      hero_interval_seconds: row.hero_interval_seconds ?? 5,
+    })
   }, [contentQuery.data])
 
   const saveMutation = useMutation({
@@ -46,7 +59,12 @@ export default function AdminHomeContent() {
 
   function handleSubmit(event) {
     event.preventDefault()
-    saveMutation.mutate(form)
+    const urls = form.hero_image_urls ?? []
+    saveMutation.mutate({
+      ...form,
+      hero_image_url: urls[0] ?? '',
+      hero_image_urls: urls,
+    })
   }
 
   if (contentQuery.isError && !contentQuery.data) {
@@ -72,11 +90,36 @@ export default function AdminHomeContent() {
             <legend className="px-1 text-sm font-bold text-ink-900">Hero banner</legend>
             <FormField label="Title" {...field('hero_title')} required />
             <FormField label="Subtitle" type="textarea" {...field('hero_subtitle')} required />
-            <HomeContentImageUploadField
-              label="Background image"
-              url={form.hero_image_url}
-              onChange={(url) => setForm((f) => ({ ...f, hero_image_url: url }))}
+            <PageBannerImagesField
+              label="Background images"
+              bucket="home-content"
+              urls={form.hero_image_urls}
+              onChange={(urls) => setForm((f) => ({ ...f, hero_image_urls: urls }))}
             />
+            {form.hero_image_urls.length >= 2 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5 font-body">
+                  <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">Transition</span>
+                  <select
+                    value={form.hero_transition}
+                    onChange={(e) => setForm((f) => ({ ...f, hero_transition: e.target.value }))}
+                    className="rounded-md border border-hairline bg-surface px-3 py-2.5 text-base text-ink focus:outline-none focus:border-brand"
+                  >
+                    <option value="fade">Fade</option>
+                    <option value="slide">Slide</option>
+                    <option value="zoom">Zoom</option>
+                  </select>
+                </label>
+                <FormField
+                  label="Seconds per slide"
+                  type="number"
+                  value={form.hero_interval_seconds}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, hero_interval_seconds: Math.max(1, Number(e.target.value) || 1) }))
+                  }
+                />
+              </div>
+            )}
           </fieldset>
 
           <fieldset className="flex flex-col gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">

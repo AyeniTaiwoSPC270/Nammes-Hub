@@ -57,7 +57,13 @@ function BannerImageRow({ url, index, total, onRemove, onMove }) {
   )
 }
 
-export default function PageBannerImagesField({ label, urls, onChange }) {
+export default function PageBannerImagesField({
+  label,
+  urls,
+  onChange,
+  bucket = 'page-banners',
+  helper = 'JPEG, PNG up to 5MB. Add 2 or more to enable the slideshow.',
+}) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
@@ -76,14 +82,14 @@ export default function PageBannerImagesField({ label, urls, onChange }) {
     setError('')
     setUploading(true)
     const path = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`
-    const { error: uploadError } = await supabase.storage.from('page-banners').upload(path, file)
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file)
     setUploading(false)
     e.target.value = ''
     if (uploadError) {
       setError(uploadError.message)
       return
     }
-    const { data } = supabase.storage.from('page-banners').getPublicUrl(path)
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path)
     onChange([...urls, data.publicUrl])
   }
 
@@ -131,7 +137,7 @@ export default function PageBannerImagesField({ label, urls, onChange }) {
       <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-hairline bg-surface-low p-6 text-center transition-colors hover:bg-hairline/20">
         <span className="material-symbols-outlined text-3xl text-ink-muted">add_photo_alternate</span>
         <span className="text-sm font-semibold text-ink-muted">{uploading ? 'Uploading…' : 'Click to add an image'}</span>
-        <span className="text-xs text-ink-muted">JPEG, PNG up to 5MB. Add 2 or more to enable the slideshow.</span>
+        <span className="text-xs text-ink-muted">{helper}</span>
         <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="hidden" />
       </label>
       {error && <span className="text-xs text-danger">{error}</span>}
