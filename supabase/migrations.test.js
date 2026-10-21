@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { QUESTION_TYPES } from '../api/_lib/quizTypes.js'
+import { THEME_MUSIC } from '../api/_lib/quizTheme.js'
+import { hasMusicStyle } from '../src/lib/quizSound.js'
 
 // Postgres checks every constraint on a row, not just the newest one. `quiz_questions` carries two: a column-level
 // `check (type in (...))` added inline when the column was introduced, and the row-level `quiz_questions_shape` that
@@ -100,6 +102,32 @@ describe('every outlines column the app reads has DDL', () => {
     for (const column of ['past_questions_name', 'lecturer_notes_name']) {
       const ddl = new RegExp(`add column (?:if not exists )?${column}\\b`)
       expect(allTrackedSql, `no tracked SQL creates outlines.${column}`).toMatch(ddl)
+    }
+  })
+})
+
+describe('every holiday preset\'s music id is a loop the studio offers', () => {
+  it('the seeded and re-pointed presets only name styles the engine can play', () => {
+    // A preset naming a music id the studio does not offer is not an error the admin sees: sanitizeTheme settles
+    // it to 'off' the moment the row is read, so the holiday theme silently ships with no track. The list moves
+    // in THEME_MUSIC, so the migration text is checked against the live list rather than a copy of it.
+    const seeded = [...allTrackedSql.matchAll(/"music":\s*"([a-z-]+)"/g)].map((m) => m[1])
+    expect(seeded.length, 'no preset music ids were found in the migrations').toBeGreaterThan(0)
+    for (const id of new Set(seeded)) {
+      expect(Object.hasOwn(THEME_MUSIC, id), `no preset may name "${id}": it is not in THEME_MUSIC`).toBe(true)
+      expect(hasMusicStyle(id), `no preset may name "${id}": the engine cannot generate it`).toBe(true)
+    }
+  })
+
+  it('the preset re-point migration only moves a row still holding the seeded value', () => {
+    // The guard is what stops a re-apply from overwriting music the owner chose. Each update's WHERE clause has to
+    // carry both the row id and the value 20261020120000 seeded, or the re-run is an unconditional overwrite.
+    const file = read('20261021103000_holiday_preset_music.sql').replace(/--[^\n]*/g, '')
+    const updates = [...file.matchAll(/update\s+public\.holiday_themes[\s\S]*?;/gi)].map((m) => m[0])
+    expect(updates.length, 'the re-point migration has no update statements').toBe(4)
+    for (const sql of updates) {
+      expect(sql, 'an update is missing its guarded value').toMatch(/quiz\s*#>>\s*'\{design,sound,music\}'\s*=\s*'/)
+      expect(sql, 'an update is missing its row id').toMatch(/where id = '[a-z0-9-]+'/)
     }
   })
 })

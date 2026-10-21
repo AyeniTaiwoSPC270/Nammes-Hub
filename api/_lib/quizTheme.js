@@ -313,6 +313,10 @@ export const THEME_MUSIC = {
   afro: 'Afrobeat',
   disco: 'Disco',
   cinematic: 'Cinematic',
+  christmas: 'Christmas Bells',
+  valentine: "Valentine's",
+  easter: 'Easter Bounce',
+  independence: 'Independence',
   custom: 'My music',
 }
 
@@ -320,10 +324,14 @@ export const THEME_MUSIC = {
 // played from a file, so an admin can only pick one by hearing it: this is the card under each Play button.
 export const MUSIC_NOTES = {
   chill: 'Soft and slow. Good for a quiet lobby or a long quiz.',
-  hype: 'Fast and driving. The most energy of the five.',
+  hype: 'Fast and driving. The most energy of any of them.',
   afro: 'Warm, syncopated and groovy. The one people tap along to.',
   disco: 'Four to the floor with a bright bass. Bright and playful.',
   cinematic: 'Slow swelling chords and one big boom a bar. Made to sit under people talking.',
+  christmas: 'Music-box plucks over warm chords, with a sleigh-shimmer hat. December in a lobby.',
+  valentine: 'Slow and soft, with no drums at all. A love song for a waiting room.',
+  easter: 'Bouncy, plucky and bright. Spring has arrived and it is in a hurry.',
+  independence: 'Highlife flavour: a sliding bass, bright stabs and claps on the backbeat.',
   custom: 'A track you imported on this computer. It loops all game and stays on the device that imported it.',
 }
 
