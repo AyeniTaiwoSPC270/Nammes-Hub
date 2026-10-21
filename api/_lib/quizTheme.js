@@ -328,10 +328,10 @@ export const MUSIC_NOTES = {
   afro: 'Warm, syncopated and groovy. The one people tap along to.',
   disco: 'Four to the floor with a bright bass. Bright and playful.',
   cinematic: 'Slow swelling chords and one big boom a bar. Made to sit under people talking.',
-  christmas: 'Music-box plucks over warm chords, with a sleigh-shimmer hat. December in a lobby.',
-  valentine: 'Slow and soft, with no drums at all. A love song for a waiting room.',
-  easter: 'Bouncy, plucky and bright. Spring has arrived and it is in a hurry.',
-  independence: 'Highlife flavour: a sliding bass, bright stabs and claps on the backbeat.',
+  christmas: 'A carol-shaped bell melody over sleigh bells, with a music-box sparkle. An original tune, not a real carol.',
+  valentine: 'A slow love-ballad line with a harp arpeggio and no drums. C Am F G, made for a waiting room.',
+  easter: 'A bright, hopping tune with a glockenspiel ping, kick and clap. Spring has arrived and it is in a hurry.',
+  independence: 'Highlife: a sliding bass, a palm-wine guitar figure and a broad, anthem-shaped melody.',
   custom: 'A track you imported on this computer. It loops all game and stays on the device that imported it.',
 }
 

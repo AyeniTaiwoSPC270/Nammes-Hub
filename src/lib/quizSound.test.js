@@ -13,6 +13,7 @@ import {
   layersFor,
   styleFor,
   rootIndexAt,
+  leadIndexAt,
   rollTimes,
   applauseSamples,
   DRUMROLL_HIT_MS,
@@ -217,6 +218,69 @@ describe('what a style resolves to', () => {
   it('resolves every style the studio offers', () => {
     for (const key of MUSIC_STYLES.filter((k) => k !== 'off')) {
       expect(layersFor(styleFor(key))).not.toBeNull()
+    }
+  })
+
+  it('writes each holiday loop as a four-bar tune inside its scale', () => {
+    // The holiday loops are the only styles with a melody longer than a bar. A note outside the scale would clash with
+    // the chords, and a phrase shorter than the progression would never reach its turnaround.
+    for (const name of ['christmas', 'valentine', 'easter', 'independence']) {
+      const style = styleFor(name)
+      const layers = layersFor(style)
+      expect(style.lead.pattern, name).toHaveLength(style.steps * 4)
+      for (const note of style.lead.pattern) {
+        expect(note, name).toBeGreaterThanOrEqual(-1)
+        expect(note, name).toBeLessThan(layers.scale.length)
+      }
+    }
+  })
+
+  it('loops a phrase on its own length, so a four-bar tune is not cut to its first bar', () => {
+    // The scheduler used `beatIndex % steps`, so every note after the first bar was thrown away and the tune repeated
+    // only its opening. The phrase now advances with the phrase, not with the bar grid.
+    const layers = layersFor(styleFor('christmas'))
+    expect(leadIndexAt(layers, 0)).toBe(0)
+    expect(leadIndexAt(layers, 15)).toBe(15)
+    expect(leadIndexAt(layers, 16)).toBe(16)
+    expect(leadIndexAt(layers, 63)).toBe(63)
+    expect(leadIndexAt(layers, 64)).toBe(0)
+  })
+
+  it('resolves an arpeggio with its defaults, and leaves it out when a style has none', () => {
+    const style = {
+      bpm: 100,
+      steps: 16,
+      lead: { wave: 'sine', gain: 0.1, pattern: [0] },
+      bass: { wave: 'sine', gain: 0.1 },
+      arp: { pattern: [0, -1], degrees: [0, 7] },
+    }
+    expect(layersFor(style).arp).toEqual({
+      wave: 'triangle',
+      gain: 0.02,
+      durMul: 0.6,
+      lowpass: 0,
+      octave: 1,
+      degrees: [0, 7],
+      pattern: [0, -1],
+    })
+    expect(layersFor(styleFor('afro')).arp).toBeNull()
+  })
+
+  it('uses a minor chord on the bars a holiday progression visits the relative minor', () => {
+    // Valentine's is C Am F G and Easter is C G Am F. A major triad on that bar would put a C# under an A minor, which
+    // is the one note the melody is written against.
+    expect(styleFor('valentine').pads.qualities[1]).toEqual([0, 3, 7])
+    expect(styleFor('easter').pads.qualities[2]).toEqual([0, 3, 7])
+  })
+
+  it('keeps each holiday bass on the chord the pads are holding, bar by bar', () => {
+    for (const name of ['christmas', 'valentine', 'easter', 'independence']) {
+      const style = styleFor(name)
+      const layers = layersFor(style)
+      expect(style.pads.roots, name).toEqual(style.bass.roots)
+      for (let bar = 0; bar < 4; bar += 1) {
+        expect(rootIndexAt(layers, bar * layers.steps), `${name} bar ${bar}`).toBe(bar)
+      }
     }
   })
 })
