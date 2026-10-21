@@ -251,6 +251,9 @@ const BASS_NOTES = [65.41, 65.41, 98.0, 87.31]
 const PENTA_A_MINOR = [220.0, 261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33]
 const PENTA_MAJOR = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25]
 const PENTA_D_MINOR = [293.66, 349.23, 392.0, 440.0, 523.25, 587.33, 698.46, 783.99]
+// The holiday loops are written as tunes rather than mood patterns, and a pentatonic cannot cadence: a carol needs the
+// fourth and the leading note (F and B in C) to sound like one. Full C major, C4 to A5.
+const MAJOR_SCALE = [261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.0]
 // Chord roots, one bar each: Am F G Em for afrobeat, Am F C G for disco, Dm Cm Bbm Am for the cinematic one. The
 // bass stays on the root for the same bar, so the two always agree on what the chord is.
 const AFRO_ROOTS = [110.0, 87.31, 98.0, 82.41]
@@ -260,17 +263,21 @@ const DISCO_ROOTS = [110.0, 87.31, 130.81, 98.0]
 const EPIC_SUB = [73.42, 65.41, 58.27, 55.0]
 const EPIC_ROOTS = [146.83, 130.81, 116.54, 110.0]
 // The four holiday loops' chord roots, one bar each, in the same register as disco's so the bass sits
-// under the melody rather than fighting it: C G Am F (Christmas), C F G C (Valentine's), C Am F G
-// (Easter), Am F G C (Independence) — each loops back to its own tonic.
+// under the melody rather than fighting it. Each is a four-bar phrase that walks home: C F G C (Christmas),
+// C Am F G (Valentine's), C G Am F (Easter), C F G C (Independence).
 const HOLIDAY_ROOTS = {
-  christmas: [130.81, 98.0, 110.0, 87.31],
-  valentine: [130.81, 87.31, 98.0, 130.81],
-  easter: [130.81, 110.0, 87.31, 98.0],
-  independence: [110.0, 87.31, 98.0, 130.81],
+  christmas: [130.81, 87.31, 98.0, 130.81],
+  valentine: [130.81, 110.0, 87.31, 98.0],
+  easter: [130.81, 98.0, 110.0, 87.31],
+  independence: [130.81, 87.31, 98.0, 130.81],
 }
 // Chord shapes in semitones above the root. The minor seventh is what keeps the pads from sounding like a test tone.
 const MINOR_SEVENTH = [0, 3, 7, 10]
 const MAJOR_SEVENTH = [0, 4, 7, 9]
+// A holiday progression visits its relative minor (Valentine's second bar), so a pad that stamps a major seventh on
+// every root puts an F# under a G chord and a G# under an Am. Plain triads, one quality per bar, stay in the key.
+const MAJOR_TRIAD = [0, 4, 7]
+const MINOR_TRIAD = [0, 3, 7]
 
 const STYLES = {
   chill: { bpm: 84, wave: 'triangle', gain: 0.05, bass: 'sine', bassGain: 0.08, pattern: [0, 2, 4, 2, 3, 1, 4, 2] },
@@ -310,48 +317,148 @@ const STYLES = {
     drums: { kick: [0], cymbal: [0] },
   },
 
-  // Christmas: high sine plucks like a music box, a soft kick and a hat shimmering on every offbeat —
-  // the sleigh-bell part, since the engine's drum kit has no bell voice of its own.
+  // ---- Holiday loops ----
+  // These four are written as songs rather than moods, because a holiday is recognised in the first bar: a repeated
+  // bell note that falls in steps, a sentimental leap and a suspension, a hop, a highlife guitar. None of them quotes
+  // a real carol, anthem or pop song — the melodies are original — but each borrows the rhythm and cadence that makes
+  // the season identifiable on a laptop speaker. A phrase is 64 steps, four bars, so the tune can leave home and come
+  // back instead of looping one bar forever.
+
+  // Christmas: sleigh bells on every eighth, a soft kick, and a bell melody with a repeated note and a stepwise fall —
+  // the shape the ear files under "carol" without quoting one. A high arpeggio adds the music-box sparkle.
   christmas: {
     bpm: 96,
     steps: 16,
-    scale: PENTA_MAJOR,
-    lead: { wave: 'sine', gain: 0.05, durMul: 1.1, pattern: [4, -1, 3, 2, 0, -1, 2, 3, 4, -1, 5, 4, 3, -1, 2, -1] },
-    bass: { wave: 'sine', gain: 0.07, durMul: 3.2, roots: HOLIDAY_ROOTS.christmas },
-    pads: { wave: 'triangle', gain: 0.028, intervals: MAJOR_SEVENTH, roots: HOLIDAY_ROOTS.christmas, attack: 0.5, barMul: 1.15 },
-    drums: { kick: [0, 8], hat: [2, 6, 10, 14] },
+    scale: MAJOR_SCALE,
+    lead: {
+      wave: 'sine',
+      gain: 0.05,
+      durMul: 1.4,
+      pattern: [
+        4, -1, 4, 4, -1, 4, 5, -1, 4, 2, 1, -1, 0, -1, -1, -1,
+        3, -1, 3, 3, -1, 3, 5, -1, 4, 3, 1, -1, 3, -1, -1, -1,
+        4, -1, 5, 4, -1, 3, 2, -1, 4, 5, 4, -1, 2, -1, -1, -1,
+        0, -1, 2, 4, -1, 5, 4, -1, 2, 1, 0, -1, 0, -1, -1, -1,
+      ],
+    },
+    arp: {
+      wave: 'sine',
+      gain: 0.012,
+      durMul: 1.5,
+      octave: 2,
+      degrees: [12, 16, 19, 24],
+      pattern: [0, -1, -1, -1, 2, -1, -1, -1, 1, -1, -1, -1, 3, -1, -1, -1],
+    },
+    bass: { wave: 'sine', gain: 0.075, durMul: 3.4, roots: HOLIDAY_ROOTS.christmas },
+    pads: { wave: 'triangle', gain: 0.03, intervals: MAJOR_TRIAD, roots: HOLIDAY_ROOTS.christmas, attack: 0.45, barMul: 1.05 },
+    drums: { kick: [0, 8], kickGain: 0.15, hat: [0, 2, 4, 6, 8, 10, 12, 14], hatGain: 0.03, hatCentre: 9500, hatDur: 0.04 },
   },
 
-  // Valentine's: the one holiday loop with no drums at all — a slow sine line over swelling chords,
-  // the bass hit twice a bar. Made to sit under a lobby where nobody is shouting yet.
+  // Valentine's: the one holiday loop with no drums at all. A slow sine line with a suspension that resolves, over
+  // C Am F G — the progression every love ballad uses — and a harp-like arpeggio under it.
   valentine: {
     bpm: 70,
     steps: 16,
-    scale: PENTA_MAJOR,
-    lead: { wave: 'sine', gain: 0.05, durMul: 2.8, pattern: [2, -1, -1, -1, 4, -1, 3, -1, 5, -1, -1, -1, 4, 3, 2, -1] },
+    scale: MAJOR_SCALE,
+    lead: {
+      wave: 'sine',
+      gain: 0.05,
+      durMul: 3,
+      pattern: [
+        7, -1, -1, -1, 9, -1, -1, -1, 7, -1, 5, -1, 4, -1, -1, -1,
+        5, -1, -1, -1, 7, -1, -1, -1, 9, -1, 7, -1, 6, -1, -1, -1,
+        3, -1, -1, -1, 5, -1, -1, -1, 7, -1, 5, -1, 3, -1, -1, -1,
+        4, -1, -1, -1, 6, -1, -1, -1, 7, -1, 6, -1, 4, -1, 2, -1,
+      ],
+    },
+    arp: {
+      wave: 'triangle',
+      gain: 0.012,
+      durMul: 1.4,
+      degrees: [0, 7, 12, 16],
+      pattern: [0, -1, -1, -1, 1, -1, -1, -1, 2, -1, -1, -1, 1, -1, -1, -1],
+    },
     bass: { wave: 'sine', gain: 0.07, durMul: 8, bassEvery: 8, roots: HOLIDAY_ROOTS.valentine },
-    pads: { wave: 'triangle', gain: 0.032, intervals: MAJOR_SEVENTH, roots: HOLIDAY_ROOTS.valentine, attack: 0.7, barMul: 1.2, detune: 8 },
+    pads: {
+      wave: 'triangle',
+      gain: 0.032,
+      intervals: MAJOR_TRIAD,
+      qualities: [MAJOR_TRIAD, MINOR_TRIAD, MAJOR_TRIAD, MAJOR_TRIAD],
+      roots: HOLIDAY_ROOTS.valentine,
+      attack: 0.9,
+      barMul: 1.3,
+      detune: 8,
+    },
   },
 
-  // Easter: bouncy staccato plucks over a square bass, kick on one and three, clap on the backbeat.
+  // Easter: bright, hopping staccato over C G Am F, with a glockenspiel ping above it, kick on one and three, and a
+  // clap on the backbeat. The hops are the rests: a note, a gap, a note.
   easter: {
     bpm: 118,
     steps: 16,
-    scale: PENTA_MAJOR,
-    lead: { wave: 'triangle', gain: 0.05, durMul: 0.9, pattern: [0, -1, 2, -1, 4, -1, 2, 3, 4, -1, 5, -1, 4, 2, 0, -1] },
+    scale: MAJOR_SCALE,
+    lead: {
+      wave: 'triangle',
+      gain: 0.05,
+      durMul: 1,
+      pattern: [
+        0, -1, 2, 4, -1, 5, -1, 4, 2, -1, 4, -1, 7, -1, -1, -1,
+        4, -1, 5, 6, -1, 7, -1, 6, 4, -1, 6, -1, 7, -1, -1, -1,
+        5, -1, 4, 2, -1, 4, -1, 2, 0, -1, 2, -1, 4, -1, -1, -1,
+        3, -1, 2, 0, -1, 2, -1, 3, 5, -1, 4, -1, 2, -1, -1, -1,
+      ],
+    },
+    arp: {
+      wave: 'sine',
+      gain: 0.014,
+      durMul: 1.2,
+      octave: 2,
+      degrees: [12, 16, 19, 24],
+      pattern: [0, -1, -1, -1, 1, -1, -1, -1, 2, -1, -1, -1, 1, -1, -1, -1],
+    },
     bass: { wave: 'square', gain: 0.05, durMul: 1.8, roots: HOLIDAY_ROOTS.easter, lowpass: 1200 },
-    drums: { kick: [0, 8], hat: [2, 6, 10, 14], clap: [4, 12] },
+    pads: {
+      wave: 'triangle',
+      gain: 0.028,
+      intervals: MAJOR_TRIAD,
+      qualities: [MAJOR_TRIAD, MAJOR_TRIAD, MINOR_TRIAD, MAJOR_TRIAD],
+      roots: HOLIDAY_ROOTS.easter,
+      attack: 0.35,
+      barMul: 1,
+    },
+    drums: { kick: [0, 8], kickGain: 0.16, hat: [2, 6, 10, 14], hatCentre: 8200, clap: [4, 12], clapGain: 0.07 },
   },
 
-  // Independence: highlife flavour — a bass that slides into each new chord like afrobeat's, bright
-  // square stabs instead of a guitar line, and the kick landing off the beat under the clap.
+  // Independence: highlife. A sliding bass, a palm-wine guitar arpeggio on the offbeats, and a broad square melody
+  // that rises through the third bar and comes home — the shape of an anthem without being one. The kick lands off the
+  // beat under the clap, which is what makes it read as highlife rather than a march.
   independence: {
     bpm: 110,
     steps: 16,
-    scale: PENTA_MAJOR,
-    lead: { wave: 'square', gain: 0.028, durMul: 1.4, pattern: [4, -1, 3, 2, -1, 4, -1, 5, 4, -1, 2, 3, -1, 2, 0, -1] },
-    bass: { wave: 'sine', gain: 0.08, durMul: 2.6, roots: HOLIDAY_ROOTS.independence, slide: true },
-    drums: { kick: [0, 6, 10], hat: [2, 6, 10, 14], clap: [4, 12] },
+    scale: MAJOR_SCALE,
+    lead: {
+      wave: 'square',
+      gain: 0.028,
+      durMul: 1.4,
+      pattern: [
+        4, -1, 4, 5, 4, -1, 2, -1, 0, -1, 2, 4, -1, 5, -1, -1,
+        3, -1, 3, 4, 3, -1, 1, -1, 3, -1, 4, 5, -1, 4, -1, -1,
+        4, -1, 6, 4, 6, -1, 7, -1, 9, -1, 7, 6, -1, 4, -1, -1,
+        0, -1, 4, 2, 0, -1, 2, -1, 4, -1, 5, 4, -1, 0, -1, -1,
+      ],
+    },
+    arp: {
+      wave: 'square',
+      gain: 0.018,
+      durMul: 0.55,
+      lowpass: 1500,
+      octave: 2,
+      degrees: [0, 7, 12, 16, 19],
+      pattern: [0, -1, 1, 2, 0, -1, 2, 1, 0, -1, 1, 2, 3, -1, 2, 1],
+    },
+    bass: { wave: 'sine', gain: 0.085, durMul: 2.8, roots: HOLIDAY_ROOTS.independence, slide: true },
+    pads: { wave: 'triangle', gain: 0.026, intervals: MAJOR_TRIAD, roots: HOLIDAY_ROOTS.independence, attack: 0.4, barMul: 1 },
+    drums: { kick: [0, 6, 10], kickGain: 0.17, hat: [2, 6, 10, 14], clap: [4, 12], clapGain: 0.08 },
   },
 }
 
@@ -363,11 +470,16 @@ export function layersFor(style) {
   if (!style || typeof style !== 'object') return null
   const bass = typeof style.bass === 'object' && style.bass !== null ? style.bass : { wave: style.bass, gain: style.bassGain }
   const lead = style.lead ?? { wave: style.wave, gain: style.gain, pattern: style.pattern }
+  // An arpeggio is a third layer, not part of the lead: it keeps its own short notes and its own voice under a melody
+  // that is holding a long one. Its degrees are semitones above the bar's chord root, so a guitar figure stays inside
+  // whatever chord the pads are on instead of fighting it. Styles that do not declare one simply have none.
+  const arp = style.arp ? { wave: 'triangle', gain: 0.02, durMul: 0.6, lowpass: 0, octave: 1, degrees: [0, 7, 12], ...style.arp } : null
   const steps = style.steps ?? lead.pattern.length
   // How many steps pass between bass hits. The original styles hit every four, as always.
   const every = bass.bassEvery ?? 4
   return {
     lead,
+    arp,
     bass,
     scale: style.scale ?? PENTATONIC,
     roots: bass.roots ?? BASS_NOTES,
@@ -387,6 +499,12 @@ export function layersFor(style) {
 // against the chord the pads are holding without needing an AudioContext.
 export function rootIndexAt(layers, beatIndex) {
   return Math.floor(beatIndex / layers.rootEvery) % layers.roots.length
+}
+
+// Which note of the melody is playing at this step. A phrase loops on its own length, not on the bar grid: the holiday
+// tunes are four bars long over a four-bar progression, so a one-bar grid would cut every one of them to its first bar.
+export function leadIndexAt(layers, beatIndex) {
+  return beatIndex % layers.lead.pattern.length
 }
 
 // Whether the engine can actually play a music style or an effect. The studio lists what it offers and the server
@@ -733,13 +851,27 @@ function scheduleMusic() {
   const style = STYLES[musicStyle]
   const layers = layersFor(style)
   if (!layers || !ctx) return
-  const { lead, bass, scale, roots, every, steps, stepDur } = layers
+  const { lead, arp, bass, scale, roots, every, steps, stepDur } = layers
   while (nextBeat < ctx.currentTime + 0.35) {
     const step = beatIndex % steps
     const start = Math.max(0, nextBeat - ctx.currentTime)
-    const note = lead.pattern[step]
+    const note = lead.pattern[leadIndexAt(layers, beatIndex)]
     if (note >= 0) {
       tone({ freq: scale[note % scale.length], start, dur: stepDur * (lead.durMul ?? 1.6), type: lead.wave, gain: lead.gain }, musicGain)
+    }
+    if (arp) {
+      const degree = arp.pattern[beatIndex % arp.pattern.length]
+      if (degree >= 0) {
+        const root = roots[rootIndexAt(layers, beatIndex)]
+        tone({
+          freq: root * 2 ** (arp.degrees[degree % arp.degrees.length] / 12) * arp.octave,
+          start,
+          dur: stepDur * arp.durMul,
+          type: arp.wave,
+          gain: arp.gain,
+          lowpass: arp.lowpass,
+        }, musicGain)
+      }
     }
     if (step % every === 0) {
       const root = roots[rootIndexAt(layers, beatIndex)]
@@ -756,11 +888,14 @@ function scheduleMusic() {
       }, musicGain)
     }
     if (style.pads && step === 0) {
-      const root = style.pads.roots[Math.floor(beatIndex / steps) % style.pads.roots.length]
+      const bar = Math.floor(beatIndex / steps)
+      const root = style.pads.roots[bar % style.pads.roots.length]
+      // A progression with a minor chord names the shape for that bar; without one, every bar uses the same triad.
+      const intervals = style.pads.qualities?.[bar % style.pads.qualities.length] ?? style.pads.intervals
       const dur = stepDur * steps * (style.pads.barMul ?? 1.1)
       const attack = style.pads.attack ?? 0.4
       const lowpass = style.pads.lowpass ?? 0
-      for (const semis of style.pads.intervals) {
+      for (const semis of intervals) {
         const freq = root * 2 ** (semis / 12)
         tone({ freq, start, dur, type: style.pads.wave, gain: style.pads.gain, attack, lowpass }, musicGain)
         // A second voice a few cents sharp makes a chord breathe instead of sounding like one flat synth tone.
@@ -770,7 +905,9 @@ function scheduleMusic() {
     if (style.drums) {
       const d = style.drums
       if (d.kick?.includes(step)) kick(start, d.kickGain ?? 0.2, musicGain)
-      if (d.hat?.includes(step)) noise({ start, dur: 0.05, gain: d.hatGain ?? 0.045, centre: 7000, type: 'highpass', q: 0.7 }, musicGain)
+      if (d.hat?.includes(step)) {
+        noise({ start, dur: d.hatDur ?? 0.05, gain: d.hatGain ?? 0.045, centre: d.hatCentre ?? 7000, type: 'highpass', q: 0.7 }, musicGain)
+      }
       if (d.clap?.includes(step)) clap(start, d.clapGain ?? 0.08, musicGain)
       if (d.cymbal?.includes(step)) noise({ start, dur: d.cymbalDur ?? 1.1, gain: d.cymbalGain ?? 0.05, centre: 5000, type: 'highpass', q: 0.5, attack: 0.003 }, musicGain)
     }
