@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
+import { useAuth } from '../../lib/AuthContext'
+import { useOwnAdminRowQuery } from '../../data/admins'
 import { useContactMessagesQuery, deleteContactMessage } from '../../data/contactMessages'
 import Table from '../../components/ui/Table'
 import Button from '../../components/ui/Button'
@@ -14,6 +16,9 @@ export default function AdminMessages() {
   const messagesQuery = useContactMessagesQuery()
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { user } = useAuth()
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRowQuery.data?.is_owner)
   const messages = messagesQuery.data ?? []
 
   const deleteMutation = useMutation({
@@ -57,16 +62,20 @@ export default function AdminMessages() {
               <p key="message" className="max-w-[420px] whitespace-pre-wrap break-words">
                 {m.message}
               </p>,
-              <Button
-                key="actions"
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  if (confirm('Delete this message? This can\u2019t be undone.')) deleteMutation.mutate(m.id)
-                }}
-              >
-                Delete
-              </Button>,
+              isOwner ? (
+                <Button
+                  key="actions"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    if (confirm('Delete this message? This can\u2019t be undone.')) deleteMutation.mutate(m.id)
+                  }}
+                >
+                  Delete
+                </Button>
+              ) : (
+                <span key="actions" className="text-xs text-ink-muted">Owner only</span>
+              ),
             ])}
           />
         </div>

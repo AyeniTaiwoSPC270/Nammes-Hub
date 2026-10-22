@@ -1,15 +1,10 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { logError } from '../logError.js'
+import { getCaller, bearerToken } from '../authz.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' })
-    return
-  }
-
-  const token = (req.headers.authorization || '').replace('Bearer ', '')
-  if (!token) {
-    res.status(401).json({ error: 'Missing bearer token' })
     return
   }
 
@@ -21,23 +16,19 @@ export default async function handler(req, res) {
 
   const supabaseAdmin = getSupabaseAdmin()
 
-  const { data: callerData, error: callerError } = await supabaseAdmin.auth.getUser(token)
-  if (callerError || !callerData?.user) {
-    res.status(401).json({ error: 'Invalid session' })
+  // getCaller, not a hand-rolled lookup: it also applies the owner's two-factor gate, which this
+  // handler used to skip while every other admin route honoured it.
+  const caller = await getCaller(supabaseAdmin, bearerToken(req))
+  if (caller.error) {
+    res.status(caller.error[0]).json({ error: caller.error[1] })
     return
   }
-
-  const { data: callerAdminRow } = await supabaseAdmin
-    .from('admins')
-    .select('is_owner')
-    .eq('user_id', callerData.user.id)
-    .maybeSingle()
-  if (!callerAdminRow?.is_owner) {
+  if (!caller.isOwner) {
     res.status(403).json({ error: 'Only the owner can delete accounts' })
     return
   }
 
-  if (userId === callerData.user.id) {
+  if (userId === caller.user.id) {
     res.status(400).json({ error: "You can't delete your own account" })
     return
   }

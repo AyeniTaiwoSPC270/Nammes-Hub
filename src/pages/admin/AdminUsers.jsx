@@ -124,7 +124,7 @@ export default function AdminUsers() {
                     Remove admin
                   </Button>
                 )}
-                {u.user_id !== user.id && !u.isOwner && (
+                {u.user_id !== user.id && !u.isOwner && (!u.isAdmin || me?.isOwner) && (
                   <Button
                     variant={u.is_disabled ? 'secondary' : 'destructive'}
                     size="sm"

@@ -41,8 +41,8 @@ export async function fetchAllPendingRequests() {
   return data
 }
 
-export function useAllPendingRequestsQuery() {
-  return useQuery({ queryKey: ['change_requests', 'pending', 'all'], queryFn: fetchAllPendingRequests })
+export function useAllPendingRequestsQuery(enabled = true) {
+  return useQuery({ queryKey: ['change_requests', 'pending', 'all'], queryFn: fetchAllPendingRequests, enabled })
 }
 
 export async function approveChangeRequest(id) {

@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
+import { identityChanged, queryClient } from './queryClient'
 
 const AuthContext = createContext(undefined)
 
@@ -22,10 +23,19 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const lastUserId = useRef(undefined)
 
   useEffect(() => {
+    // Runs before the new session is published, so no admin screen can mount against the previous
+    // account's cache. Signing out and signing in as someone else both pass through here.
+    function reconcileCache(userId) {
+      if (identityChanged(lastUserId.current, userId)) queryClient.clear()
+      lastUserId.current = userId
+    }
+
     supabase.auth.getSession().then(async ({ data }) => {
       const nextSession = data.session
+      reconcileCache(nextSession?.user?.id ?? null)
       if (nextSession) {
         const disabled = await signOutIfDisabled(nextSession.user.id, navigate)
         if (disabled) {
@@ -42,6 +52,7 @@ export function AuthProvider({ children }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      reconcileCache(newSession?.user?.id ?? null)
       if (newSession) {
         const disabled = await signOutIfDisabled(newSession.user.id, navigate)
         if (disabled) {
