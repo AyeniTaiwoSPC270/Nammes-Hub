@@ -7,7 +7,6 @@
 // dates it is about to add before it adds them.
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
 import PreviewViewport from '../../components/admin/PreviewViewport'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
@@ -346,8 +345,8 @@ export function CalendarPasteBody() {
             {report.failed.length === 1 ? 'was' : 'were'} refused
           </h2>
           <p className="mt-1 text-sm text-danger">
-            The queued {report.queued === 1 ? 'row is' : 'rows are'} on the reviews screen and have not touched the
-            public calendar. The refused ones are still listed below — nothing was written either way.
+            The queued {report.queued === 1 ? 'row is' : 'rows are'} waiting for the owner to review and have not
+            touched the public calendar. The refused ones are still listed below — nothing was written either way.
           </p>
           <ul className="mt-3 flex flex-col gap-2">
             {report.failed.map((entry) => (
@@ -357,11 +356,6 @@ export function CalendarPasteBody() {
               </li>
             ))}
           </ul>
-          <div className="mt-3">
-            <Link to="/admin/reviews" className="text-sm font-semibold text-brand hover:underline">
-              See the queued requests
-            </Link>
-          </div>
         </section>
       )}
 
@@ -540,11 +534,8 @@ export function CalendarPasteBody() {
 
           {gated && (
             <p className="mb-4 text-sm text-ink-muted">
-              Your account is not the owner, so each row is sent to the{' '}
-              <Link to="/admin/reviews" className="font-semibold text-brand hover:underline">
-                review queue
-              </Link>{' '}
-              instead of being written. The owner approves them there, one at a time.
+              Your account is not the owner, so each row is sent to the owner's review queue instead of being
+              written. The owner approves them one at a time.
             </p>
           )}
 

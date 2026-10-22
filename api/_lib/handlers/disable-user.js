@@ -45,6 +45,12 @@ export function createDisableUserHandler(getClient) {
       res.status(400).json({ error: 'The owner cannot be disabled' })
       return
     }
+    // Admins may moderate members, but not each other: a regular admin disabling a peer is a
+    // lateral privilege nobody elected them to have.
+    if (targetAdmin && !caller.isOwner) {
+      res.status(403).json({ error: 'Only the owner can disable an admin' })
+      return
+    }
 
     const { error: profileError } = await supabaseAdmin
       .from('profiles')

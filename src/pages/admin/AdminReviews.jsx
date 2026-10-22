@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabaseClient'
 import { useAllPendingRequestsQuery, approveChangeRequest, rejectChangeRequest, computeFieldDiff } from '../../data/changeRequests'
+import { useOwnAdminRowQuery } from '../../data/admins'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
+import { useAuth } from '../../lib/AuthContext'
 
 const TABLE_BY_ENTITY = { news: 'news', events: 'events', award_season: 'award_seasons', academic_calendar: 'academic_calendar' }
 
@@ -82,8 +84,11 @@ function ReviewCard({ request, onApprove, onReject, busy }) {
 export default function AdminReviews() {
   const queryClient = useQueryClient()
   const toast = useToast()
-  const pendingQuery = useAllPendingRequestsQuery()
-  const requests = pendingQuery.data ?? []
+  const { user } = useAuth()
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRowQuery.data?.is_owner)
+  const pendingQuery = useAllPendingRequestsQuery(isOwner)
+  const requests = isOwner ? (pendingQuery.data ?? []) : []
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: ['change_requests'] })
@@ -108,6 +113,25 @@ export default function AdminReviews() {
     },
     onError: (error) => toast.error(error.message),
   })
+
+  if (adminRowQuery.isLoading) {
+    return (
+      <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
+        <SkeletonTable columns={2} rows={3} />
+      </div>
+    )
+  }
+
+  // The tile is hidden for non-owners, but the route is reachable by URL and the query cache is
+  // shared, so the page itself has to refuse them as well as the database.
+  if (!isOwner) {
+    return (
+      <div className="mx-auto max-w-[900px] px-5 py-12 sm:px-6">
+        <h1 className="text-3xl font-bold text-ink-900">Review queue</h1>
+        <p className="mt-2 text-ink-muted">Only the owner can review changes.</p>
+      </div>
+    )
+  }
 
   if (pendingQuery.isError && !pendingQuery.data) {
     return (

@@ -19,6 +19,7 @@ import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
 import { useAuth } from '../../lib/AuthContext'
+import { useOwnAdminRowQuery } from '../../data/admins'
 import { BROADCAST_TEMPLATES, DEFAULT_BROADCAST_TEMPLATE_HTML } from '../../../api/_lib/emailTemplateHtml.js'
 import { legacyToBlocks, newBlock, normalizeBlocks, normalizeDesign, presetDesign } from '../../../api/_lib/emailDesign.js'
 import { buildEmailPreviewHtml } from '../../lib/emailPreviewHtml'
@@ -42,6 +43,8 @@ export default function AdminBroadcasts() {
   const [styleName, setStyleName] = useState('')
   const toast = useToast()
   const { user } = useAuth()
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRowQuery.data?.is_owner)
   const queryClient = useQueryClient()
   const historyQuery = useBroadcastHistoryQuery()
   const templatesQuery = useEmailTemplatesQuery()
@@ -295,34 +298,40 @@ export default function AdminBroadcasts() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-4">
-            {confirming ? (
+            {isOwner ? (
               <>
-                <Button type="button" variant="primary" loading={sendMutation.isPending} onClick={() => sendMutation.mutate({ testOnly: false })}>
-                  Yes, send to everyone
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={sendMutation.isPending}>
-                  Cancel
+                {confirming ? (
+                  <>
+                    <Button type="button" variant="primary" loading={sendMutation.isPending} onClick={() => sendMutation.mutate({ testOnly: false })}>
+                      Yes, send to everyone
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => setConfirming(false)} disabled={sendMutation.isPending}>
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <Button type="button" variant="primary" disabled={!hasContent || busy} onClick={() => setConfirming(true)}>
+                    Send broadcast
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={!hasContent || busy}
+                  loading={sendMutation.isPending && sendMutation.variables?.testOnly}
+                  onClick={() => sendMutation.mutate({ testOnly: true })}
+                >
+                  Send test to me
                 </Button>
               </>
             ) : (
-              <Button type="button" variant="primary" disabled={!hasContent || busy} onClick={() => setConfirming(true)}>
-                Send broadcast
-              </Button>
+              <p className="text-sm text-ink-muted">Only the owner can send a broadcast. You can still save drafts.</p>
             )}
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={!hasContent || busy}
-              loading={sendMutation.isPending && sendMutation.variables?.testOnly}
-              onClick={() => sendMutation.mutate({ testOnly: true })}
-            >
-              Send test to me
-            </Button>
             <Button type="button" variant="ghost" disabled={busy} loading={draftMutation.isPending} onClick={() => draftMutation.mutate()}>
               {draftId ? 'Update draft' : 'Save draft'}
             </Button>
           </div>
-          {confirming && <p className="-mt-2 text-xs text-ink-muted">This emails every opted-in member and can&rsquo;t be recalled.</p>}
+          {confirming && isOwner && <p className="-mt-2 text-xs text-ink-muted">This emails every opted-in member and can&rsquo;t be recalled.</p>}
         </div>
 
         <div className="lg:sticky lg:top-6">
