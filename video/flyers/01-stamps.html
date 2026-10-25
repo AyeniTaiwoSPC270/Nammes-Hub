@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body {
+    background: #04160c;
+    background-image: radial-gradient(#0b2a18 1.7px, transparent 1.8px);
+    background-size: 28px 28px;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    color: #fcf9f8;
+    position: relative;
+    padding: 84px 80px;
+  }
+  .blob-brown { position: absolute; top: -190px; right: -170px; width: 620px; height: 620px;
+    border-radius: 50%; background: #2e2513; }
+  .blob-green { position: absolute; bottom: -240px; left: -200px; width: 700px; height: 700px;
+    border-radius: 50%; background: #0a381d; }
+  .brand { position: relative; display: flex; align-items: center; gap: 22px; }
+  .brand img { width: 74px; height: 76px; }
+  .brand span { font-weight: 800; letter-spacing: 5px; font-size: 27px; color: #efeae2; }
+  .stamps { position: relative; margin-top: 118px; }
+  .stamp { display: inline-block; font-family: 'Playfair Display', Georgia, serif; font-weight: 900;
+    font-size: 66px; line-height: 1.1; padding: 22px 40px; border-radius: 14px; }
+  .stamp-a { background: #ff5a1f; color: #ffffff; transform: rotate(-3.5deg); }
+  .stamp-b { background: #f4c430; color: #0c1710; transform: rotate(2.5deg); margin: 34px 0 0 96px; }
+  h1 { position: relative; margin-top: 116px; font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900; font-size: 128px; line-height: 1.02; color: #fcf9f8; }
+  h1 em { font-style: normal; color: #ff5a1f; }
+  .sub { position: relative; margin-top: 44px; font-size: 33px; line-height: 1.5; font-weight: 400;
+    color: #e6f0ea; max-width: 860px; }
+  .foot { position: absolute; left: 80px; right: 80px; bottom: 78px; display: flex;
+    align-items: center; justify-content: space-between; }
+  .pill { background: #fcf9f8; color: #0c1710; border: 4px solid #04160c; border-radius: 999px;
+    padding: 22px 46px; font-weight: 800; font-size: 37px;
+    box-shadow: 0 0 0 4px #fcf9f8, 0 14px 34px rgba(0,0,0,.45); }
+  .pill-note { font-size: 27px; font-weight: 600; letter-spacing: 3px; color: #ffb38f; text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div class="blob-brown"></div>
+  <div class="blob-green"></div>
+
+  <div class="brand"><img src="../public/logo.png" alt=""><span>NAMMES HUB</span></div>
+
+  <div class="stamps">
+    <div><span class="stamp stamp-a">Where's the outline?</span></div>
+    <div><span class="stamp stamp-b">When is the exam?</span></div>
+  </div>
+
+  <h1>Stop asking.<br><em>Start here.</em></h1>
+  <p class="sub">Outlines, past questions, timetables, CGPA, events, opportunities and forms — everything for NAMMES, UNILAG chapter, on one site.</p>
+
+  <div class="foot">
+    <div class="pill">nammeshub.com.ng</div>
+    <div class="pill-note">Now live</div>
+  </div>
+</body>
+</html>

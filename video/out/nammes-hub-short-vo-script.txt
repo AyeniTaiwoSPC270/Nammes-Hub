@@ -1,0 +1,99 @@
+NAMMES HUB — SHORT CUT, VOICE-OVER SCRIPT
+==========================================
+
+Picture:  video/out/nammes-hub-explainer-short-16x9.mp4   (1920x1080)
+          video/out/nammes-hub-explainer-short-9x16.mp4   (1080x1920)
+Length:   1:44.65  (104.65s, 30 fps) — both ratios share this one timeline
+Captions: burned in, and they are the lines below. Read them as written and
+          the voice lands with the text on screen. Sidecar SRT:
+          video/out/nammes-hub-explainer-short.srt
+Music:    out/audio-gen/music-short.wav (continuous bed, no internal cuts).
+          It is not ducked — if you mix voice over it, sit the VO on top and
+          pull the bed down around 8 dB.
+
+HOW TO READ IT
+--------------
+- 42 lines in 1:45. Gaps between lines run 0.5-2.5s: fill the gap, do not
+  race to the next one. The picture is doing the selling between lines.
+- Lines marked (chat) are separate people in a group chat — quick, a little
+  stressed, four different voices if you have them, one voice if not.
+- Nothing here is a hard sell. Warm, plain, student-to-student.
+- [SCREEN] lines are context for the reader, never spoken.
+
+
+[0:00 - 0:10.9]  COLD OPEN — chat cards stack in, then two stamps slam in
+                  and hold for two seconds
+  (chat)     Who has the outline?                 0:00.27 - 0:01.97
+  (chat)     Is this the timetable?                0:02.47 - 0:03.97
+  (chat)     Due today?!                           0:04.43 - 0:05.97
+  (stamp)    Where's the outline?                  0:06.47 - 0:07.70
+  (stamp)    When's the exam?                      0:07.93 - 0:10.90
+
+[0:10.9 - 0:14.1]  LOGO — crest and wordmark on the dark backdrop
+  (beat)     NAMMES Hub.                           0:11.17 - 0:12.27
+  (beat)     One address.                          0:12.50 - 0:13.67
+
+[0:14.1 - 0:24.1]  MEET THE HUB — homepage in a browser frame, nav cards
+  Meet NAMMES Hub, the website                     0:14.17 - 0:16.37
+  of NAMMES, UNILAG chapter.                       0:16.60 - 0:18.67
+  Academics, Community, Forms, Contact.            0:19.17 - 0:22.10
+  No more wahala.                                  0:22.30 - 0:23.67
+
+[0:24.1 - 0:29.1]  BROWSING AND SIGN-UP
+  You don't need an account to browse.             0:24.17 - 0:26.43
+  Signing up takes about a minute.                 0:26.67 - 0:28.67
+
+[0:29.1 - 0:46.1]  OUTLINES — level, semester, course, topics, curriculum
+  Pick your level, then semester, then course.     0:29.17 - 0:32.80
+  C is compulsory, E is elective.                  0:33.03 - 0:35.67
+  Open a course for its topics,                    0:36.17 - 0:38.50
+  recommended texts and past questions.            0:38.87 - 0:41.67
+  The official CCMAS curriculum, right there.      0:42.17 - 0:45.67
+
+[0:46.1 - 0:51.1]  TIMETABLES
+  Class and exam timetables.                       0:46.17 - 0:48.47
+  No more asking around.                           0:48.70 - 0:50.67
+
+[0:51.1 - 0:59.1]  CGPA CALCULATOR AND REPORT
+  Punch in your grades and                         0:51.17 - 0:52.87
+  watch your CGPA count up.                        0:53.10 - 0:54.87
+  Sign in to save them,                            0:55.10 - 0:56.60
+  then download your report.                       0:56.83 - 0:58.67
+
+[0:59.1 - 1:04.1]  RESOURCES
+  Resources:                                       0:59.13 - 0:59.97
+  Shared Drive links and                           1:00.20 - 1:01.77
+  materials, one tap away.                         1:02.00 - 1:03.70
+
+[1:04.1 - 1:08.6]  EVENTS
+  Events, with photo galleries so                  1:04.17 - 1:06.30
+  you can relive the day.                          1:06.53 - 1:08.17
+
+[1:08.6 - 1:11.8]  NEWS
+  News, straight from the excos.                   1:08.67 - 1:11.17
+
+[1:11.8 - 1:15.4]  OPPORTUNITIES
+  Opportunities, sorted by soonest deadline.       1:11.80 - 1:15.17
+
+[1:15.4 - 1:20.4]  FORMS — fill one in, share by link or QR
+  Forms:                                           1:15.63 - 1:16.33
+  fill one in, or share                             1:16.57 - 1:18.40
+  it by link or QR.                                 1:18.63 - 1:20.17
+
+[1:20.4 - 1:29.4]  ADMIN DASHBOARD — the excos' side
+  The excos run it                                  1:20.67 - 1:21.83
+  all from one dashboard.                           1:22.07 - 1:23.67
+  Publish news.                                     1:24.13 - 1:26.17
+  Design a form.                                    1:26.67 - 1:29.17
+
+[1:29.4 - 1:35.1]  EXCOS — the AEGIS 26/27 council portrait grid
+  Meet the excos, the AEGIS 26/27 council.          1:29.67 - 1:34.67
+
+[1:35.1 - 1:44.65]  BUILT FOR THE CHAPTER, THEN THE ENDCARD
+  Built by students, for students.                  1:35.17 - 1:38.17
+  NAMMES Hub, at nammeshub.com.ng                   1:38.67 - 1:42.07
+  Grab the Handbook in the footer.                  1:42.20 - 1:44.65
+
+NOT IN THIS CUT (cut with the quiz, poll and awards sections — do not read):
+  the live-quiz lobby, quiz battles, the departmental poll and the
+  awards-stage beat are all removed from this version.

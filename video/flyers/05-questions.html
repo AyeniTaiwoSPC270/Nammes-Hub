@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body {
+    background: #04160c;
+    background-image: radial-gradient(#0b2a18 1.7px, transparent 1.8px);
+    background-size: 28px 28px;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    color: #fcf9f8;
+    position: relative;
+    padding: 84px 80px;
+  }
+  .blob { position: absolute; top: 340px; right: -260px; width: 640px; height: 640px;
+    border-radius: 50%; background: #0a381d; }
+  .tag { position: relative; display: inline-block; background: #ff5a1f; color: #fff;
+    font-weight: 800; letter-spacing: 5px; font-size: 25px; text-transform: uppercase;
+    padding: 16px 34px; border-radius: 999px; box-shadow: 0 0 0 4px #ff5a1f; }
+  .list { position: relative; margin-top: 76px; list-style: none; }
+  .list li { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 62px;
+    line-height: 1.4; color: #efeae2; padding-bottom: 30px; }
+  /* the strike belongs to the question only — the label above it is a header, not a cancelled line */
+  .list li .q { text-decoration: line-through; text-decoration-color: #f4c430;
+    text-decoration-thickness: 7px; }
+  .list li b { display: block; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 25px;
+    letter-spacing: 4px; text-transform: uppercase; color: #ffb38f; margin-bottom: 6px; }
+  h1 { position: relative; margin-top: 84px; font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 900; font-size: 120px; line-height: 1.02; color: #ff5a1f; }
+  h1 span { color: #fcf9f8; display: block; font-size: 66px; margin-top: 20px; }
+  .foot { position: absolute; left: 80px; right: 80px; bottom: 74px; display: flex;
+    align-items: center; justify-content: space-between; }
+  .pill { background: #f4c430; color: #0c1710; border-radius: 999px; padding: 24px 46px;
+    font-weight: 800; font-size: 37px; box-shadow: 0 0 0 4px #f4c430, 0 14px 34px rgba(0,0,0,.45); }
+  .brand { display: flex; align-items: center; gap: 18px; font-weight: 800; letter-spacing: 4px;
+    font-size: 26px; color: #efeae2; }
+  .brand img { width: 64px; height: 66px; }
+</style>
+</head>
+<body>
+  <div class="blob"></div>
+
+  <div class="tag">NAMMES Hub is live</div>
+
+  <ul class="list">
+    <li><b>Outlines</b><span class="q">“Where's the outline?”</span></li>
+    <li><b>Exams</b><span class="q">“When is the exam?”</span></li>
+    <li><b>Grades</b><span class="q">“What's my CGPA again?”</span></li>
+    <li><b>Deadlines</b><span class="q">“Did I miss a form?”</span></li>
+  </ul>
+
+  <h1>Stop asking.<span>Start here.</span></h1>
+
+  <div class="foot">
+    <div class="brand"><img src="../public/logo.png" alt="">NAMMES HUB</div>
+    <div class="pill">nammeshub.com.ng</div>
+  </div>
+</body>
+</html>
