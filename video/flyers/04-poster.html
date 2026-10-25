@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body {
+    background: #fcf9f8;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    color: #0c1710;
+    position: relative;
+    padding: 0 0 176px;
+  }
+  .band { background: #ff5a1f; color: #ffffff; padding: 34px 70px; display: flex;
+    align-items: center; justify-content: space-between; }
+  .band .left { display: flex; align-items: center; gap: 20px; font-weight: 800; letter-spacing: 5px;
+    font-size: 27px; }
+  .band img { width: 60px; height: 61px; }
+  .band .right { font-weight: 800; letter-spacing: 4px; font-size: 25px;
+    background: #04160c; padding: 14px 30px; border-radius: 999px; }
+  /* every size below is fit to the 1350px canvas: six cards must clear the footer */
+  .head { padding: 44px 70px 0; }
+  h1 { font-family: 'Playfair Display', Georgia, serif; font-weight: 900; font-size: 74px;
+    line-height: 1.04; color: #0c4a24; }
+  h1 span { color: #ff5a1f; }
+  .lede { margin-top: 20px; font-size: 27px; line-height: 1.45; color: #0c1710; opacity: .78;
+    max-width: 880px; }
+  .grid { margin: 34px 70px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card { border-radius: 18px; padding: 24px 26px 26px; border: 2px solid rgba(12,23,16,.12); }
+  .card:nth-child(odd) { background: #e6f0ea; }
+  .card:nth-child(even) { background: #fff0e6; }
+  .card h3 { font-size: 30px; font-weight: 800; color: #0c4a24; }
+  .card i { display: block; width: 48px; height: 7px; border-radius: 4px; background: #ff5a1f;
+    margin: 12px 0 12px; }
+  .card p { font-size: 24px; line-height: 1.4; color: #0c1710; opacity: .82; }
+  .foot { position: absolute; left: 0; right: 0; bottom: 0; background: #04160c; color: #fcf9f8;
+    padding: 52px 70px; display: flex; align-items: center; justify-content: space-between; }
+  .domain { font-weight: 800; font-size: 44px; }
+  .domain small { display: block; font-size: 24px; font-weight: 600; letter-spacing: 3px;
+    color: #ffb38f; text-transform: uppercase; margin-top: 10px; }
+  .handbook { background: #f4c430; color: #0c1710; border-radius: 999px; padding: 20px 36px;
+    font-weight: 800; font-size: 29px; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="band">
+    <div class="left"><img src="../public/logo.png" alt="">NAMMES HUB</div>
+    <div class="right">NOW LIVE</div>
+  </div>
+
+  <div class="head">
+    <h1>Everything for the chapter.<br><span>One address.</span></h1>
+    <p class="lede">The NAMMES, UNILAG chapter site — built and run by the excos, free for every member.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card"><h3>Outlines</h3><i></i><p>Topics, recommended texts and past questions.</p></div>
+    <div class="card"><h3>Timetables</h3><i></i><p>Class and exam timetables, one tap away.</p></div>
+    <div class="card"><h3>CGPA</h3><i></i><p>Grades in, CGPA out — with the report.</p></div>
+    <div class="card"><h3>Events</h3><i></i><p>Galleries you can relive, all year.</p></div>
+    <div class="card"><h3>Opportunities</h3><i></i><p>Sorted by soonest deadline.</p></div>
+    <div class="card"><h3>Forms</h3><i></i><p>Fill one in, or share by link or QR.</p></div>
+  </div>
+
+  <div class="foot">
+    <div class="domain">nammeshub.com.ng<small>Grab the Handbook in the footer</small></div>
+    <div class="handbook">Built by students,<br>for students.</div>
+  </div>
+</body>
+</html>
