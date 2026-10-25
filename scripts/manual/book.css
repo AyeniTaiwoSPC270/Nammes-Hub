@@ -126,6 +126,7 @@ ul.checks li::before {
   break-after: page;
   color: #fff;
   background: var(--green-900);
+  max-width: 170mm;
 }
 .cover .rings {
   position: absolute; right: -60mm; top: -40mm;
@@ -215,6 +216,7 @@ ul.checks li::before {
   width: 170mm; height: 240mm; position: relative; overflow: hidden;
   background: var(--green-900); color: #fff;
   break-before: page; break-after: page;
+  max-width: 170mm;
 }
 .opener .rings { position: absolute; right: -50mm; bottom: -50mm; width: 150mm; height: 150mm; border-radius: 50%; background: repeating-radial-gradient(circle at center, transparent 0 8mm, rgba(255,255,255,.06) 8mm 8.4mm); }
 .opener .num {
@@ -321,8 +323,8 @@ figure.shot.narrow img { max-height: 64mm; }
 .side figure.shot { margin: 0; }
 
 /* drawn illustrations */
-figure.mock { margin: 3.4mm 0 4.6mm; break-inside: avoid; }
-.mock .panel { overflow: hidden; border: .3mm solid var(--hairline); border-radius: 2mm; background: var(--paper); padding: 3.6mm; }
+figure.mock { margin: 3.4mm 0 4.6mm; break-inside: avoid; max-width: 100%; }
+.mock .panel { overflow: hidden; border: .3mm solid var(--hairline); border-radius: 2mm; background: var(--paper); padding: 3.6mm; max-width: 100%; }
 .mock-nav { display: flex; align-items: center; gap: 1.4mm; overflow: hidden; background: #fff; border: .3mm solid var(--hairline); border-radius: 1.6mm; padding: 2mm 3mm; font-size: 7pt; font-weight: 700; color: var(--muted); }
 .mock-nav .brand { color: var(--green-900); font-family: 'Playfair Display', serif; font-size: 9.4pt; margin-right: auto; display: flex; align-items: center; gap: 1.6mm; }
 .mock-nav .brand img { width: 5mm; height: 5mm; }
@@ -379,6 +381,7 @@ figure.mock { margin: 3.4mm 0 4.6mm; break-inside: avoid; }
 /* The horizontal inset that @page used to provide. See the note on @page above. `.cover` and `.opener`
    are deliberately absent: they are meant to run to the trim. */
 .plain, .title-page, .copyright, .foreword, .toc, .chapter { padding-left: 22mm; padding-right: 16mm; }
+.chapter { max-width: 132mm; }
 
 body { counter-reset: fig; }
 .appendix td { padding: 1.15mm 2.2mm; font-size: 8.3pt; }

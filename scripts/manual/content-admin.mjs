@@ -537,6 +537,7 @@ ${table(['Problem', 'What to try'], [
   ['Members see "We\'ll be right back"', 'Maintenance mode is on. Switch it off in Site Links.'],
   ['A broadcast is not arriving', 'Delivery takes a minute or two. Check the Email queue tab, and that broadcasts are switched on.'],
   ['A student cannot vote or nominate', 'Their account has no valid department matric number. Fix it as described above.'],
+  ['Calendar ICS feed', 'Subscribe to /api/calendar-ics to get senate dates and departmental events in their calendar app. Added October 2026.', 'yes'],
 ])}
 `,
   },
@@ -558,6 +559,7 @@ ${table(['Page', 'Address', 'Sign in?', 'One-line purpose'], [
   ['Meet the Excos', '/excos', 'No', 'The Executive Council, with contact details.'],
   ['Contact', '/contact', 'No', 'Message the executives.'],
   ['Calendar', '/calendar', 'No', 'Lecture, exam and registration dates plus events.'],
+  ['Calendar ICS feed', '/api/calendar-ics', 'yes', 'Subscribe to get senate dates and departmental events in their calendar app. Added October 2026.'],
   ['Outlines', '/outlines', 'No*', 'Course-by-course outlines. *Sign in to contribute.'],
   ['Curriculum', '/curriculum', 'No', 'The official CCMAS document.'],
   ['Timetable', '/timetable', 'No', 'Class and exam schedules.'],

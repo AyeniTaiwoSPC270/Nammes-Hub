@@ -333,6 +333,8 @@ ${shot('result-card-modal', 'A result card opened from the host screen.', { url:
 <p>A report can be deleted; this removes the game, its players and all their answers for good. Nicknames on a report are whatever players typed, so handle the file with the same care as any attendance list.</p>
 ${adminBox('<p>Reports, rankings and the Live Quiz page are visible to <strong>admins only</strong>. Players never see other people&rsquo;s answers, and there is no public results link.</p>')}
 
+${note('A student can reopen the games this phone played and see final position, score and the card they earned, without an account or a new table. This is the <strong>device-local quiz results history</strong> added in October 2026.')}
+
 <h2>Publishing CBT practice exams</h2>
 ${shot('admin-cbt', 'CBT Exams. Courses at the top, each with its own list of papers.', { url: '/admin/cbt' })}
 <p>Timed practice papers live behind their own Admin tile, <strong>CBT Exams</strong>, and are entirely separate from quizzes. The difference is that a CBT paper is built from a <strong>question bank</strong> and every attempt is clocked and scored against a pass mark, rather than being played live.</p>
