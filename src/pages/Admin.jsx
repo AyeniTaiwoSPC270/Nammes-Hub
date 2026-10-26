@@ -3,10 +3,19 @@ import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
 import { useOwnAdminRowQuery } from '../data/admins'
 import { useAuth } from '../lib/AuthContext'
 import { useHolidayFlag } from '../data/holidays'
+import { useAnalyticsFlag } from '../data/analytics'
 import Badge from '../components/ui/Badge'
 import AdminNotificationBell from '../components/admin/AdminNotificationBell'
 
 export const ADMIN_SECTIONS = [
+  {
+    path: '/admin/analytics',
+    label: 'Analytics',
+    icon: 'insights',
+    category: 'Insights',
+    description: 'Traffic, signups, engagement and what needs attention right now.',
+    flag: 'analytics',
+  },
   {
     path: '/admin/home',
     label: 'Home Page',
@@ -208,8 +217,13 @@ export default function Admin() {
   // The holidays kill switch fails open (useHolidayFlag), so the tile is there until the flag row
   // actually says otherwise — the same posture the calendar nav item takes.
   const holidaysEnabled = useHolidayFlag()
+  // A kill switch hides the tile; it does not make the screen unreachable. The RPC behind it is
+  // admin-gated either way, and the switch's real job -- stopping collection -- happens inside
+  // record_page_view, which is where an unconditional beacon is turned off.
+  const analyticsEnabled = useAnalyticsFlag()
+  const flags = { holidays: holidaysEnabled, analytics: analyticsEnabled }
   const visibleSections = ADMIN_SECTIONS.filter(
-    (s) => (!s.ownerOnly || isOwner) && (!s.flag || holidaysEnabled),
+    (s) => (!s.ownerOnly || isOwner) && (!s.flag || flags[s.flag] !== false),
   )
 
   return (

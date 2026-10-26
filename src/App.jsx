@@ -5,6 +5,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import AdminRoute from './components/AdminRoute'
 import AdminLayout from './components/admin/AdminLayout'
 import AppUpdateNotifier from './components/AppUpdateNotifier'
+import PageViewTracker from './components/PageViewTracker'
 import { useAuth } from './lib/AuthContext'
 import { useOwnAdminRowQuery } from './data/admins'
 import { useSiteContentQuery } from './data/siteContent'
@@ -45,6 +46,7 @@ const Signup = lazyRetry(() => import('./pages/Signup'))
 const ForgotPassword = lazyRetry(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazyRetry(() => import('./pages/ResetPassword'))
 const Admin = lazyRetry(() => import('./pages/Admin'))
+const AdminAnalytics = lazyRetry(() => import('./pages/admin/AdminAnalytics'))
 const AdminNews = lazyRetry(() => import('./pages/admin/AdminNews'))
 const AdminHandbook = lazyRetry(() => import('./pages/admin/AdminHandbook'))
 const AdminOpportunities = lazyRetry(() => import('./pages/admin/AdminOpportunities'))
@@ -119,6 +121,8 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AppUpdateNotifier />
+      {/* One view per path, for every route. Fire-and-forget: a failed beacon is never a page error. */}
+      <PageViewTracker />
       <MaintenanceGate>
         <Routes>
           <Route
@@ -286,6 +290,7 @@ export default function App() {
             <Route element={<AdminRoute />}>
               <Route path="admin" element={<Admin />} />
               <Route element={<AdminLayout />}>
+                <Route path="admin/analytics" element={<AdminAnalytics />} />
                 <Route path="admin/home" element={<AdminHomeContent />} />
                 <Route path="admin/links" element={<AdminSiteLinks />} />
                 <Route path="admin/banners" element={<AdminPageBanners />} />

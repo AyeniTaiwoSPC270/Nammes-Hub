@@ -131,3 +131,50 @@ describe('every holiday preset\'s music id is a loop the studio offers', () => {
     }
   })
 })
+
+describe('the analytics dashboard keeps its gate and its privacy rules', () => {
+  const analyticsFile = () => {
+    const files = migrations.filter((f) => read(f).includes('create or replace function public.admin_analytics'))
+    expect(files.length, 'no migration defines admin_analytics').toBeGreaterThan(0)
+    return readSql(files[files.length - 1])
+  }
+
+  it('admin_analytics is security definer and re-checks is_admin itself', () => {
+    // The function bypasses RLS to read page_views and the owner-gated queues consistently, so the
+    // predicate inside the body is the only access control. A later `create or replace` that drops it
+    // would hand every signed-in account the whole dashboard.
+    const source = analyticsFile()
+    expect(source).toMatch(/security definer/)
+    expect(source).toMatch(/if not public\.is_admin\(\) then/)
+  })
+
+  it('buckets days in Lagos time, not the server\'s UTC clock', () => {
+    expect(analyticsFile()).toMatch(/at time zone 'Africa\/Lagos'/)
+  })
+
+  it('record_page_view drops the admin area, the API and the quiz clients', () => {
+    const files = migrations.filter((f) => read(f).includes('create or replace function public.record_page_view'))
+    expect(files.length, 'no migration defines record_page_view').toBeGreaterThan(0)
+    const source = readSql(files[files.length - 1])
+    expect(source).toMatch(/security definer/)
+    for (const prefix of ['/admin/', '/api/', '/play/']) {
+      expect(source, `record_page_view no longer refuses ${prefix}`).toContain(`'${prefix}%'`)
+    }
+    expect(source, 'the kill switch is no longer checked server-side').toMatch(/feature_flags where key = 'analytics' and not enabled/)
+  })
+
+  it('page_views is readable by admins only and writable by nobody through PostgREST', () => {
+    expect(allSql).toMatch(/revoke all on public\.page_views from anon, authenticated/)
+    expect(allSql).toMatch(/create policy page_views_select_admin on public\.page_views/)
+    expect(allSql, 'page_views must not grant insert to a client').not.toMatch(/grant insert[^;]*page_views/i)
+  })
+
+  it('the purge job also expires page views', () => {
+    // Re-declaring purge_old_data replaces the whole body, so losing this line would silently stop
+    // expiry for every table it touches, not just the new one.
+    const source = analyticsFile()
+    expect(source).toContain('delete from public.contact_messages')
+    expect(source).toContain('delete from public.error_log')
+    expect(source).toContain('delete from public.page_views')
+  })
+})
