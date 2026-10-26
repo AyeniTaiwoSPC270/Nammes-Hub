@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   analyticsCsv,
   csvFilename,
@@ -202,9 +202,23 @@ describe('analyticsCsv', () => {
 })
 
 describe('formatDay', () => {
-  it('formats a day from its own parts, not from a UTC midnight string', () => {
-    expect(formatDay('2026-10-05')).toContain('5')
-    expect(formatDay('2026-10-05')).toContain('Oct')
+  // Exact, not `toContain('Oct')`: the loose version passed on both "5 Oct" and "Oct 5", which is how
+  // a toLocaleDateString formatter reached CI and rendered differently on an en-US runner.
+  it('formats a day from its own parts and does not depend on the machine locale', () => {
+    expect(formatDay('2026-10-05')).toBe('5 Oct')
+    expect(formatDay('2026-01-31')).toBe('31 Jan')
     expect(formatDay('nope')).toBe('')
+  })
+
+  it('never reaches for a locale API, which is what made CI disagree with a local run', () => {
+    // If a formatter is ever reintroduced, this throws instead of silently passing on an en-GB machine.
+    const spy = vi.spyOn(Date.prototype, 'toLocaleDateString').mockImplementation(() => {
+      throw new Error('formatDay must not depend on the machine locale')
+    })
+    try {
+      expect(formatDay('2026-10-05')).toBe('5 Oct')
+    } finally {
+      spy.mockRestore()
+    }
   })
 })

@@ -331,12 +331,18 @@ export function csvFilename(rangeKeyValue) {
   return `nammes-analytics-${rangeKeyValue}-${stamp}.csv`
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// "2026-10-05" -> "5 Oct", from the string's own parts.
+//
+// Two traps avoided here. `new Date('2026-10-05')` is UTC midnight and reads back as the 4th west of
+// Greenwich (the rule in api/_lib/calendarDates.js), and `toLocaleDateString` renders "Sep 26" on an
+// en-US machine and "26 Sep" on an en-GB one -- which is how this passed locally and failed CI. The
+// app is English-only and a chart axis cannot reflow per viewer, so the format is fixed.
 export function formatDay(day) {
   if (!isDay(day)) return ''
-  const [year, month, date] = day.split('-').map(Number)
-  // Built from parts, never `new Date('2026-10-05')`: that string is UTC midnight and renders as the
-  // 4th anywhere west of Greenwich. Same rule as api/_lib/calendarDates.js.
-  return new Date(year, month - 1, date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const [, month, date] = day.split('-').map(Number)
+  return `${date} ${MONTHS[month - 1] ?? ''}`.trim()
 }
 
 export function relativeWhen(value) {
@@ -350,7 +356,8 @@ export function relativeWhen(value) {
   }
   const days = Math.round(diff / DAY_MS)
   if (days < 30) return `${days}d ago`
-  return new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const then = new Date(at)
+  return `${then.getDate()} ${MONTHS[then.getMonth()]}`
 }
 
 export function percentLabel(value) {
