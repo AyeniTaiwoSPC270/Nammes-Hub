@@ -2,7 +2,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useToast } from '../../lib/ToastContext'
 import { useAuth } from '../../lib/AuthContext'
 import { useOwnAdminRowQuery } from '../../data/admins'
-import { useContactMessagesQuery, deleteContactMessage } from '../../data/contactMessages'
+import {
+  useContactMessagesQuery,
+  deleteContactMessage,
+  setContactMessageHandled,
+} from '../../data/contactMessages'
+import Badge from '../../components/ui/Badge'
 import Table from '../../components/ui/Table'
 import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
@@ -25,7 +30,19 @@ export default function AdminMessages() {
     mutationFn: deleteContactMessage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact_messages'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] })
       toast.success('Message deleted.')
+    },
+    onError: (error) => toast.error(error.message),
+  })
+
+  // Marking a message handled is what makes the dashboard's "messages unanswered" count mean something;
+  // without a writer on this screen that number could only ever grow.
+  const handledMutation = useMutation({
+    mutationFn: ({ id, handled }) => setContactMessageHandled(id, handled, user?.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contact_messages'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'analytics'] })
     },
     onError: (error) => toast.error(error.message),
   })
@@ -52,7 +69,7 @@ export default function AdminMessages() {
       ) : (
         <div className="mt-6 overflow-hidden rounded-lg border border-hairline bg-surface shadow-md">
           <Table
-            columns={['Received', 'Name', 'Email', 'Message', 'Actions']}
+            columns={['Received', 'Name', 'Email', 'Message', 'Status', 'Actions']}
             rows={messages.map((m) => [
               formatDateTime(m.created_at),
               m.name,
@@ -62,20 +79,30 @@ export default function AdminMessages() {
               <p key="message" className="max-w-[420px] whitespace-pre-wrap break-words">
                 {m.message}
               </p>,
-              isOwner ? (
+              <Badge key="status" tone={m.handled_at ? 'updated' : 'new'}>
+                {m.handled_at ? 'Handled' : 'New'}
+              </Badge>,
+              <div key="actions" className="flex flex-wrap items-center gap-2">
                 <Button
-                  key="actions"
-                  variant="destructive"
+                  variant="secondary"
                   size="sm"
-                  onClick={() => {
-                    if (confirm('Delete this message? This can\u2019t be undone.')) deleteMutation.mutate(m.id)
-                  }}
+                  disabled={handledMutation.isPending}
+                  onClick={() => handledMutation.mutate({ id: m.id, handled: !m.handled_at })}
                 >
-                  Delete
+                  {m.handled_at ? 'Reopen' : 'Mark handled'}
                 </Button>
-              ) : (
-                <span key="actions" className="text-xs text-ink-muted">Owner only</span>
-              ),
+                {isOwner && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Delete this message? This can\u2019t be undone.')) deleteMutation.mutate(m.id)
+                    }}
+                  >
+                    Delete
+                  </Button>
+                )}
+              </div>,
             ])}
           />
         </div>

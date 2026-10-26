@@ -83,8 +83,8 @@ create index page_views_path_at_idx on public.page_views (path, at);
   `?utm_source=…` cannot split one page into fifty rows.
 - **RLS on, no insert grant.** `record_page_view` is `security definer` and the only writer; select is
   admin-only. Insert is revoked from `anon` and `authenticated` so a client cannot forge rows.
-- **Retention** is added to the existing `purge_old_data()` (13 months, matching the
-  `contact_messages` window) and asserted in `supabase/tests/retention.test.sql`.
+- **Retention** is added to the existing `purge_old_data()` (12 months, the window that function
+  actually uses) and asserted in `supabase/tests/retention.test.sql`.
 
 ### `record_page_view(p_path text, p_visitor text, p_referrer_host text, p_viewer text)`
 
@@ -140,8 +140,9 @@ Server-side validation is the only validation that counts:
 - `attention` is period-independent where the state is a queue (pending, unhandled, failed) and
   period-scoped only for `errors24h`.
 - `activity` is a 12-row union of the newest signup, submission, response, message, finished quiz and
-  published post. Labels are fixed strings, never user-supplied text, so the feed cannot be used to
-  render arbitrary markup.
+  published post. A row may carry a title an admin authored (a submission, a quiz, a news post); it is
+  always rendered as a text node, never as HTML, and `AnalyticsPanels.test.jsx` asserts a title holding
+  `<script>` comes out escaped.
 - The series are dense: every day in the range is present with zeros rather than only days that have
   rows, so the client never has to invent a missing bucket.
 
@@ -159,7 +160,7 @@ Migration adds `handled_at timestamptz` and `handled_by uuid references auth.use
 | `src/lib/analytics.test.js` | all of the above |
 | `src/lib/pageViewTracker.js` (pure) | `shouldTrack(path)`, `readVisitor(storage)`, `referrerHost(ref)` — no `window` at import time |
 | `src/lib/pageViewTracker.test.js` | skip rules, stable visitor per session, failures swallowed |
-| `src/components/PageViewTracker.jsx` | one effect on `useLocation()`; honours the `analytics` feature flag and `navigator.doNotTrack` / `globalPrivacyControl`; `.catch(() => {})` |
+| `src/components/PageViewTracker.jsx` | one effect on `useLocation()`; honours `navigator.doNotTrack` / `globalPrivacyControl`; `.catch(() => {})` |
 | `src/data/analytics.js` | `fetchAnalytics(days)`, `useAnalyticsQuery(days)`, `recordPageView(...)`, `useAnalyticsFlag()` |
 | `src/pages/admin/AdminAnalytics.jsx` | route component, `?range=30d` state, layout |
 | `src/components/admin/analytics/*` | `StatCard`, `TrafficChart`, `SignupChart`, `EngagementChart`, `TopContentList`, `AwardChart`, `EmailReach`, `AttentionPanel`, `ActivityFeed`, `QuickActions`, `RangePicker`, `ExportMenu` |
@@ -168,10 +169,16 @@ Migration adds `handled_at timestamptz` and `handled_by uuid references auth.use
 Reuse rather than rebuild: `useCountUp` for KPI numbers, `downloadTextFile` for CSV, `Card`,
 `Badge`, `Skeleton`, `EmptyState`, `ErrorState`, `Button`, and `lazyRetry` for the route chunk.
 
-A kill switch is seeded in `feature_flags` (`analytics`, enabled), read the way the calendar and
-holiday flags are read — fail-open on a read error, so a missing row cannot silently stop tracking.
-Flipping it off stops the beacon and hides the route without a deploy. `/admin/*` is skipped in the
-client before any request is attempted.
+A kill switch is seeded in `feature_flags` (`analytics`, enabled). It is enforced **inside
+`record_page_view`**, not in the browser: a client-side check would cost every anonymous visitor an
+extra round trip just to decide whether to make another one, and would only stop a beacon that chose
+to obey. A missing row means enabled, so a failed read cannot silently switch tracking off. The tile
+on `/admin` reads the same flag (fail-open, like the calendar and holiday tiles) and disappears when
+the switch is off; `/admin/*` is skipped in the client before any request is attempted.
+
+`page_views` grows on every navigation, so the daily series is downsampled to 90 points in the
+browser (`downsample` in `analytics.js`) — weekly buckets for an all-time range, unchanged for 7/30/90
+days. The SQL always returns one row per day.
 
 ### Page layout
 

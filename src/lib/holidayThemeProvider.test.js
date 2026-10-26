@@ -76,8 +76,10 @@ describe('kill switch wiring', () => {
     const admin = source('src/pages/Admin.jsx')
     expect(admin).toContain("flag: 'holidays'")
     expect(admin).toContain('useHolidayFlag()')
-    // The filter has to honour the flag field, not just carry it.
-    expect(admin).toContain('(!s.flag || holidaysEnabled)')
+    // The filter has to honour the flag field, not just carry it. It reads a keyed map now that a
+    // second flag ('analytics') gates a second tile; holidays must still be the entry it consults.
+    expect(admin).toContain('(!s.flag || flags[s.flag] !== false)')
+    expect(admin).toContain('holidays: holidaysEnabled')
 
     const data = source('src/data/holidays.js')
     expect(data).toContain("queryKey: ['feature_flags', 'holidays']")
