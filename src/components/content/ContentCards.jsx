@@ -9,10 +9,13 @@
 // Which is also the lesson api/_lib/quizCharacterArt.js is built around: one place draws a character, and
 // both the browser and the card parser read it. A design studio whose preview draws its own approximation
 // is the same mistake with a smaller blast radius.
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Badge from '../ui/Badge'
 import BlurredBackdropImage from '../ui/BlurredBackdropImage'
 import { themeVars } from '../../../api/_lib/contentTheme.js'
+import { resolveNewsVideo, useNewsVideoFlag } from '../../data/news'
+import { PREVIEW_SECONDS } from '../../lib/newsVideo'
 
 // The same pair Events.jsx and Home.jsx both used for the reveal cascade.
 export const CARD_STAGGER = 0.06
@@ -141,6 +144,8 @@ export function EventCard({ event, theme }) {
  * /news shows the date instead, so an excerpt prop rather than a guess at which page this is.
  */
 export function NewsCard({ item, theme, excerpt = '' }) {
+  const videoEnabled = useNewsVideoFlag()
+  const video = resolveNewsVideo(item, videoEnabled)
   const tone = TONES[item.tone] ? item.tone : 'neutral'
   const text = TONE_TEXT[tone]
   return (
@@ -148,7 +153,9 @@ export function NewsCard({ item, theme, excerpt = '' }) {
       to={`/news/${item.id}`}
       className={['content-card flex flex-col overflow-hidden border transition-shadow hover:shadow-lg', TONES[tone], text.body].join(' ')}
     >
-      <CardImage theme={theme} src={item.image_url} />
+      <VideoBand video={video} hasCover={Boolean(item.image_url) && theme.card.image !== 'none'} className="content-image w-full shrink-0">
+        <CardImage theme={theme} src={item.image_url} />
+      </VideoBand>
       <div className="content-card-body flex flex-grow flex-col gap-2">
         <div className="flex items-center gap-2">
           {item.category && <span className={[EYEBROW, text.eyebrow].join(' ')}>{item.category}</span>}
@@ -177,14 +184,20 @@ export function NewsCard({ item, theme, excerpt = '' }) {
  * `image-top` is the one that uses `--content-aspect`, because there the image is the card's own band.
  */
 export function NewsFeatureCard({ item, theme }) {
+  const videoEnabled = useNewsVideoFlag()
+  const video = resolveNewsVideo(item, videoEnabled)
   const tone = TONES[item.tone] ? item.tone : 'neutral'
   const text = TONE_TEXT[tone]
   const side = theme.layout.featured === 'image-left'
+  // With a video the band carries the size and the picture fills it; without one the picture carries
+  // the size exactly as it always has, so a video post and a text post lay out identically.
+  const fill = Boolean(video)
+  const bandClass = side ? 'h-64 w-full shrink-0 md:h-auto md:w-1/2' : 'content-image w-full shrink-0'
   const image = item.image_url ? (
     theme.card.image === 'none' ? null : theme.card.image === 'cover' ? (
       <BlurredBackdropImage
         src={item.image_url}
-        className={side ? 'h-64 w-full shrink-0 md:h-auto md:w-1/2' : 'content-image w-full shrink-0'}
+        className={fill ? 'h-full w-full' : bandClass}
       />
     ) : (
       <img
@@ -192,7 +205,7 @@ export function NewsFeatureCard({ item, theme }) {
         loading="lazy"
         decoding="async"
         alt=""
-        className={side ? 'h-64 w-full shrink-0 object-cover md:h-auto md:w-1/2' : 'content-image w-full shrink-0 object-cover'}
+        className={fill ? 'h-full w-full object-cover' : `${bandClass} object-cover`}
       />
     )
   ) : null
@@ -210,7 +223,9 @@ export function NewsFeatureCard({ item, theme }) {
         text.body,
       ].join(' ')}
     >
-      {image}
+      <VideoBand video={video} hasCover={Boolean(item.image_url) && theme.card.image !== 'none'} className={bandClass}>
+        {image}
+      </VideoBand>
       <div className={['content-card-body flex w-full flex-col justify-center gap-2', side ? 'md:w-1/2' : ''].join(' ')}>
         <div className="flex items-center gap-2">
           {item.category && <span className={[EYEBROW, text.eyebrow].join(' ')}>{item.category}</span>}
@@ -233,4 +248,152 @@ function CardImage({ theme, src }) {
     return <img src={src} loading="lazy" decoding="async" alt="" className="content-image w-full shrink-0 object-cover" />
   }
   return <BlurredBackdropImage src={src} className="content-image w-full shrink-0" />
+}
+
+/**
+ * A card's media band for a post that has a video: the cover (or, with no cover, a placeholder tile)
+ * with the VIDEO badge and the preview layer over it.
+ *
+ * A video band is drawn even when the look has `card.image: 'none'`. That switch is the admin saying
+ * these rows have no usable *picture*; the play affordance is the video's own, and a video post that
+ * renders no media at all on the card would be undiscoverable.
+ *
+ * `className` is the band's own size -- the classes the cover would have carried. The wrapper takes
+ * them so the band keeps the aspect ratio and the flex behaviour it had when it was just an <img>,
+ * and the cover inside fills it instead of sizing it. Without them a feature card's half-width panel
+ * would collapse, because the height came from the picture.
+ */
+function VideoBand({ video, hasCover, className = '', children }) {
+  if (!video) return children
+  return (
+    <div className={['relative', className].filter(Boolean).join(' ')}>
+      {children}
+      {!hasCover && <div className="absolute inset-0 bg-ink-900" />}
+      <VideoOverlay video={video} />
+    </div>
+  )
+}
+
+/**
+ * The VIDEO/duration badges and, for an uploaded file, the few-second preview the admin chose for this
+ * post. Always muted and playsInline -- a card that made noise would be a bug report, and autoplay
+ * with sound is blocked by every browser anyway.
+ *
+ * A YouTube post gets badges and no play control: the card is an `<Link>`, and an iframe inside an
+ * anchor is invalid HTML, so the player belongs on the article page where it is one tap away.
+ * `preview: 'none'` likewise renders the glyph without a control -- that card never plays.
+ */
+function VideoOverlay({ video }) {
+  const [playing, setPlaying] = useState(false)
+  const bandRef = useRef(null)
+  const timerRef = useRef(null)
+  const startedRef = useRef(false)
+
+  const stopPreview = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    setPlaying(false)
+  }, [])
+
+  // Starts muted and stops itself after PREVIEW_SECONDS. The cap is what keeps `auto` honest: an
+  // observer that fires on every re-entry would otherwise stream the file every time the reader
+  // scrolls a card past the fold.
+  const startPreview = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setPlaying(true)
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null
+      setPlaying(false)
+    }, PREVIEW_SECONDS * 1000)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
+  // `auto`: play once when the card is mostly on screen, then leave it alone for the rest of the
+  // page load. `startedRef` is the "once"; the observer is disconnected by this cleanup.
+  useEffect(() => {
+    if (video.kind !== 'file' || video.preview !== 'auto') return undefined
+    const node = bandRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') return undefined
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (startedRef.current) return
+        if (entries.some((entry) => entry.isIntersecting)) {
+          startedRef.current = true
+          startPreview()
+        }
+      },
+      { threshold: 0.6 }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [video.kind, video.preview, startPreview])
+
+  const canPlay = video.kind === 'file' && video.preview !== 'none'
+  const badge =
+    'absolute left-2 top-2 z-10 rounded-md bg-black/75 px-2 py-1 text-[10px] font-bold uppercase tracking-[.08em] text-white'
+
+  return (
+    <div
+      ref={bandRef}
+      className="absolute inset-0 z-10"
+      onPointerEnter={(e) => {
+        if (canPlay && video.preview === 'hover' && e.pointerType === 'mouse') startPreview()
+      }}
+      onPointerLeave={() => {
+        if (canPlay && video.preview === 'hover') stopPreview()
+      }}
+    >
+      {playing && (
+        <video
+          src={video.url}
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          playsInline
+          preload="metadata"
+          aria-label="Video preview"
+        />
+      )}
+
+      <span className={badge}>Video</span>
+      {video.duration && (
+        <span className="absolute bottom-2 right-2 z-10 rounded-md bg-black/75 px-2 py-1 text-[11px] font-semibold text-white">
+          {video.duration}
+        </span>
+      )}
+
+      <div className="absolute inset-0 flex items-center justify-center">
+        {canPlay ? (
+          <button
+            type="button"
+            aria-label={playing ? 'Stop preview' : 'Play preview'}
+            // The card is a link; without this the tap would navigate to the article instead of
+            // previewing, which is the whole point of this control.
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (playing) stopPreview()
+              else startPreview()
+            }}
+            className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-ink shadow-md transition-transform hover:scale-105"
+          >
+            <span className="material-symbols-outlined text-2xl" aria-hidden="true">
+              {playing ? 'stop' : 'play_arrow'}
+            </span>
+          </button>
+        ) : (
+          <span aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-white/85 text-ink shadow-md">
+            <span className="material-symbols-outlined text-2xl">play_arrow</span>
+          </span>
+        )}
+      </div>
+    </div>
+  )
 }

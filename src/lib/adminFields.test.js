@@ -130,3 +130,94 @@ describe('buildFormState / buildPayload', () => {
     })
   })
 })
+
+describe('the video field type', () => {
+  const videoFields = [
+    {
+      field: 'video_url',
+      type: 'video',
+      kindField: 'video_kind',
+      previewField: 'video_preview',
+      positionField: 'video_position',
+      durationField: 'video_duration',
+    },
+  ]
+
+  it('seeds preview and position for a new post so a blank never reaches the check constraint', () => {
+    expect(buildFormState(videoFields, undefined)).toEqual({
+      video_url: '',
+      video_kind: '',
+      video_preview: 'tap',
+      video_position: 'top',
+      video_duration: '',
+    })
+  })
+
+  it('reads an existing record back unchanged', () => {
+    const record = {
+      video_url: 'https://x/storage/v1/object/public/news-videos/a.mp4',
+      video_kind: 'file',
+      video_preview: 'hover',
+      video_position: 'bottom',
+      video_duration: '4:12',
+    }
+    expect(buildFormState(videoFields, record)).toEqual(record)
+  })
+
+  it('nulls every companion column when the video is cleared, leaving no orphan kind', () => {
+    const payload = buildPayload(videoFields, {
+      video_url: '',
+      video_kind: 'file',
+      video_preview: 'auto',
+      video_position: 'top',
+      video_duration: '1:05',
+    })
+    expect(payload).toEqual({
+      video_url: null,
+      video_kind: null,
+      video_preview: null,
+      video_position: null,
+      video_duration: null,
+    })
+  })
+
+  it('passes a populated video through, trimmed', () => {
+    const payload = buildPayload(videoFields, {
+      video_url: 'https://youtu.be/abcdefghijk',
+      video_kind: 'youtube',
+      video_preview: 'auto',
+      video_position: 'bottom',
+      video_duration: ' 4:12 ',
+    })
+    expect(payload).toEqual({
+      video_url: 'https://youtu.be/abcdefghijk',
+      video_kind: 'youtube',
+      video_preview: 'auto',
+      video_position: 'bottom',
+      video_duration: '4:12',
+    })
+  })
+
+  it('falls back to the defaults for values outside the enums', () => {
+    const payload = buildPayload(videoFields, {
+      video_url: 'https://youtu.be/abcdefghijk',
+      video_kind: 'youtube',
+      video_preview: 'hoverish',
+      video_position: 'sideways',
+      video_duration: '',
+    })
+    expect(payload.video_preview).toBe('tap')
+    expect(payload.video_position).toBe('top')
+  })
+
+  it('drops a duration that would print verbatim on the public card', () => {
+    const payload = buildPayload(videoFields, {
+      video_url: 'https://youtu.be/abcdefghijk',
+      video_kind: 'youtube',
+      video_preview: 'tap',
+      video_position: 'top',
+      video_duration: '12 minutes',
+    })
+    expect(payload.video_duration).toBeNull()
+  })
+})
