@@ -3,17 +3,33 @@ import { useSearchParams } from 'react-router-dom'
 import AdminResourceManager from '../../components/admin/AdminResourceManager'
 import { CONTENT_TABS, contentTabIds, normalizeContentTab } from '../../lib/adminContentTabs'
 import { newsAdminConfig } from './config/newsAdminConfig'
+import { useNewsVideoFlag } from '../../data/news'
+import { useAuth } from '../../lib/AuthContext'
+import { useOwnAdminRowQuery } from '../../data/admins'
 
 // The same lazy body AdminEvents.jsx loads, for the reason given there: the studio pulls a control panel and a
 // live preview, and the tab an admin lands on is the content list.
 const ContentDesignBody = lazy(() => import('./ContentDesign').then((m) => ({ default: m.ContentDesignBody })))
 
 function ContentBody() {
+  // Two gates, deliberately: the kill switch hides the control from everybody, and ownership keeps video
+  // an owner-only authoring job (spec §Decisions). A non-owner admin still edits text and images through
+  // the review queue -- and because `apply_change_request` guards each video column on the payload
+  // carrying it, a queued edit made without these fields leaves an existing video untouched rather than
+  // writing NULL over it.
+  const { user } = useAuth()
+  const adminRow = useOwnAdminRowQuery(user?.id)
+  const isOwner = Boolean(adminRow.data?.is_owner)
+  const videoEnabled = useNewsVideoFlag()
+  const showVideo = videoEnabled && isOwner
+  const config = showVideo
+    ? newsAdminConfig
+    : { ...newsAdminConfig, fields: newsAdminConfig.fields.filter((f) => f.type !== 'video') }
   return (
     <AdminResourceManager
       table="news"
       title="News"
-      config={newsAdminConfig}
+      config={config}
       orderBy={{ column: 'date', ascending: false }}
       // This shell already provides the page container, so the manager's own would double every gutter.
       bare

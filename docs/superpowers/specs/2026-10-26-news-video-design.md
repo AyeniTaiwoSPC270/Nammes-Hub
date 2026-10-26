@@ -87,9 +87,10 @@ these same components).
     full grid cannot stream indefinitely.
 - Every preview is muted and `playsInline`, with `preload="metadata"`. Eager full-file preload is
   never used.
-- For `youtube`, the four styles only change when the `i.ytimg.com` thumbnail appears; **the iframe
-  loads only after a tap/click**, always, into `youtube-nocookie.com/embed/<id>`. No third-party
-  script runs on the list pages.
+- For `youtube` the card draws the badges and **no play control**: the card is an `<Link>`, and an
+  iframe inside an anchor is invalid HTML, so the player lives on the article page. There the facade
+  shows the cover (or `i.ytimg.com`) and builds the `youtube-nocookie.com/embed/<id>` iframe only on a
+  real click. No third-party request of any kind happens on the list pages.
 
 ### Article page
 

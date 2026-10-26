@@ -2,6 +2,7 @@ import { useState } from 'react'
 import FormField from '../ui/FormField'
 import Button from '../ui/Button'
 import ImageUploadField from './ImageUploadField'
+import VideoUploadField from './VideoUploadField'
 import AvatarUploadField from './AvatarUploadField'
 import EventImageUploadField from './EventImageUploadField'
 import { buildFormState, buildPayload } from '../../lib/adminFields'
@@ -52,6 +53,27 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
           onChange={({ url, widthPct }) => {
             setField(f.field, url)
             setField(f.widthField, widthPct)
+          }}
+        />
+      )
+    }
+    if (f.type === 'video') {
+      return (
+        <VideoUploadField
+          key={f.field}
+          label={f.label}
+          url={values[f.field]}
+          kind={values[f.kindField]}
+          preview={values[f.previewField]}
+          position={values[f.positionField]}
+          duration={values[f.durationField]}
+          coverUrl={f.coverField ? values[f.coverField] : ''}
+          onChange={(patch) => {
+            if ('url' in patch) setField(f.field, patch.url)
+            if ('kind' in patch) setField(f.kindField, patch.kind)
+            if ('preview' in patch) setField(f.previewField, patch.preview)
+            if ('position' in patch) setField(f.positionField, patch.position)
+            if ('duration' in patch) setField(f.durationField, patch.duration)
           }}
         />
       )

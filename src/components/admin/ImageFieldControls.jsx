@@ -14,12 +14,12 @@ export function useRevertableUrl(url) {
   }
 }
 
-export function ClearImageButton({ onClick, className = '' }) {
+export function ClearImageButton({ onClick, className = '', label = 'Remove image' }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label="Remove image"
+      aria-label={label}
       className={[
         'absolute -right-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-danger text-white shadow-md transition-transform hover:scale-105',
         className,
