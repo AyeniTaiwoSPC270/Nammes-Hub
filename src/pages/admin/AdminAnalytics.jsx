@@ -77,6 +77,75 @@ function LoadingGrid() {
   )
 }
 
+function PdfMenu({ disabled, busy, onChoose }) {
+  const [open, setOpen] = useState(false)
+
+  function choose(layout) {
+    setOpen(false)
+    onChoose(layout)
+  }
+
+  return (
+    <div className="relative">
+      <Button
+        variant="secondary"
+        size="sm"
+        loading={busy}
+        disabled={disabled}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
+        PDF
+        <span className="material-symbols-outlined text-base" aria-hidden="true">
+          {open ? 'expand_less' : 'expand_more'}
+        </span>
+      </Button>
+
+      {open && (
+        <>
+          {/* Click anywhere else to dismiss. A menu that traps you in an admin tool is worse than one
+              that closes by accident. */}
+          <button
+            type="button"
+            aria-label="Close the PDF menu"
+            className="fixed inset-0 z-10 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <ul
+            role="menu"
+            className="absolute right-0 z-20 mt-1 w-64 overflow-hidden rounded-md border border-hairline bg-surface p-1 shadow-md"
+          >
+            <li>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => choose('landscape')}
+                className="flex w-full flex-col items-start rounded-sm px-3 py-2 text-left text-sm text-ink hover:bg-surface-low"
+              >
+                <span className="font-semibold">One-page summary</span>
+                <span className="text-xs text-ink-muted">Landscape · headline numbers and charts</span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => choose('portrait')}
+                className="flex w-full flex-col items-start rounded-sm px-3 py-2 text-left text-sm text-ink hover:bg-surface-low"
+              >
+                <span className="font-semibold">Full report</span>
+                <span className="text-xs text-ink-muted">Portrait · adds top content, queues and activity</span>
+              </button>
+            </li>
+          </ul>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function AdminAnalytics() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [pdfBusy, setPdfBusy] = useState(false)
@@ -99,10 +168,10 @@ export default function AdminAnalytics() {
     downloadTextFile(csvFilename(range), analyticsCsv(data))
   }
 
-  async function handlePdf() {
+  async function handlePdf(layout) {
     setPdfBusy(true)
     try {
-      await downloadAnalyticsPdf(data, range)
+      await downloadAnalyticsPdf(data, range, layout)
     } catch {
       toast.error('The PDF could not be built. Try the CSV instead.')
     } finally {
@@ -134,10 +203,7 @@ export default function AdminAnalytics() {
             <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
             CSV
           </Button>
-          <Button variant="secondary" size="sm" onClick={handlePdf} loading={pdfBusy} disabled={!analyticsQuery.data}>
-            <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
-            PDF
-          </Button>
+          <PdfMenu disabled={!analyticsQuery.data} busy={pdfBusy} onChoose={handlePdf} />
         </div>
       </div>
 
