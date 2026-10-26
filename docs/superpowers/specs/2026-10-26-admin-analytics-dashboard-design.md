@@ -164,7 +164,7 @@ Migration adds `handled_at timestamptz` and `handled_by uuid references auth.use
 | `src/data/analytics.js` | `fetchAnalytics(days)`, `useAnalyticsQuery(days)`, `recordPageView(...)`, `useAnalyticsFlag()` |
 | `src/pages/admin/AdminAnalytics.jsx` | route component, `?range=30d` state, layout |
 | `src/components/admin/analytics/*` | `StatCard`, `TrafficChart`, `SignupChart`, `EngagementChart`, `TopContentList`, `AwardChart`, `EmailReach`, `AttentionPanel`, `ActivityFeed`, `QuickActions`, `RangePicker`, `ExportMenu` |
-| `src/lib/analyticsPdf.js` | PDF summary, same `jsPDF` + `autoTable` idiom as `src/lib/timetablePdf.js` |
+| `src/lib/analyticsPdf.js` | the PDF: drawn charts, KPI tiles, header, watermark and footer note (see below) |
 
 Reuse rather than rebuild: `useCountUp` for KPI numbers, `downloadTextFile` for CSV, `Card`,
 `Badge`, `Skeleton`, `EmptyState`, `ErrorState`, `Button`, and `lazyRetry` for the route chunk.
@@ -179,6 +179,28 @@ the switch is off; `/admin/*` is skipped in the client before any request is att
 `page_views` grows on every navigation, so the daily series is downsampled to 90 points in the
 browser (`downsample` in `analytics.js`) — weekly buckets for an all-time range, unchanged for 7/30/90
 days. The SQL always returns one row per day.
+
+### PDF export
+
+The PDF is drawn, not tabulated. The first build printed each number as a table row, which answered
+"what are the figures" and nothing about the shape of a trend — so the export now mirrors the page:
+KPI tiles across the top, then the traffic area chart, signups, stacked engagement, horizontal top
+content and awards bars, an email donut, the queues and the activity list. Everything is jsPDF vector
+primitives reading the same `sanitizeAnalytics` output as the screen; no screenshot, because
+html2canvas captures Recharts' SVG unreliably and would bake in the exporting admin's viewport and
+dark mode.
+
+Two layouts, chosen from the PDF menu:
+
+| Layout | Content |
+|---|---|
+| One-page summary (landscape) | header, seven tiles, traffic, email, signups, engagement, top content |
+| Full report (portrait, 2 pages) | all of the above plus awards, the queues and the activity feed |
+
+Both carry the logo, the period, the generated-at stamp, a 4%-opacity watermark and a footer note
+saying the numbers are private to admins and when traffic counting began. `analyticsPdfModel` is pure
+and tested; `drawAnalyticsReport` is exercised in Node against a real `jsPDF` document so a wrong
+coordinate fails a test rather than shipping a broken page.
 
 ### Page layout
 

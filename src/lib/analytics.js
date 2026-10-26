@@ -331,7 +331,8 @@ export function csvFilename(rangeKeyValue) {
   return `nammes-analytics-${rangeKeyValue}-${stamp}.csv`
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+// Exported so the PDF report prints months the same way the charts do.
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 // "2026-10-05" -> "5 Oct", from the string's own parts.
 //
