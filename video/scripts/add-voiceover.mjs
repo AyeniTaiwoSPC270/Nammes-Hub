@@ -21,14 +21,21 @@
  * picture side: video is stream-copied, only the audio is replaced.
  *
  * Usage: node scripts/add-voiceover.mjs [take.mp3] [--retranscribe] [--dry]
+ *        [--tag live] [--cuts 19.3-20.6,56.95-60.45] [--tempo 1.05]
  *
  * The take defaults to the first Rho read in voice-elevenlabs/; pass another
  * file (a newer generation, say) and it gets its own transcript cache.
+ *
+ * --tag names the deliverables: the default "vo" writes -vo.mp4, "live" writes
+ * -vo-live.mp4, and so on. --cuts removes repeated takes from the read before
+ * it is transcribed, in source-timeline seconds. --tempo applies atempo to the
+ * whole take before cutting; it is a last resort for a read that is uniformly
+ * too slow, not a way to squeeze one long line.
  */
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { basename, extname, join } from 'node:path'
 
 const ffmpeg = fileURLToPath(
   new URL('../node_modules/@remotion/compositor-win32-x64-msvc/ffmpeg.exe', import.meta.url),
@@ -37,21 +44,56 @@ const ARGS = process.argv.slice(2)
 const DRY = ARGS.includes('--dry')
 const RETRANSCRIBE = ARGS.includes('--retranscribe')
 
+/** Flags that consume the next argv entry, so it is not mistaken for the take. */
+const VALUE_FLAGS = new Set(['--tag', '--cuts', '--tempo'])
+function flagValue(name) {
+  const at = ARGS.indexOf(name)
+  return at >= 0 ? ARGS[at + 1] : undefined
+}
+const POSITIONAL = ARGS.filter((arg, i) => !arg.startsWith('--') && !VALUE_FLAGS.has(ARGS[i - 1]))
+
 const SR = 48000
 const CH = 2
-const VO_SRC = ARGS.find((arg) => !arg.startsWith('--'))
+const VO_SRC = POSITIONAL[0]
   ?? 'voice-elevenlabs/ElevenLabs_2026-10-25T20_26_44_Rho - Stories & Podcast_pvc_sp100_s50_sb70_se5_b_m2.mp3'
 const SRT = 'out/nammes-hub-explainer-short.srt'
 const WORK = 'out/voice-import'
+/** Output suffix; the default keeps the names the ElevenLabs pass already wrote. */
+const TAG = flagValue('--tag') ?? 'vo'
+const SUFFIX = TAG === 'vo' ? '' : `-${TAG}`
+const TEMPO = Number(flagValue('--tempo') ?? 1)
+if (!(TEMPO >= 0.5 && TEMPO <= 2)) throw new Error('--tempo must be between 0.5 and 2')
+
+/**
+ * Ranges of the read to delete, in source seconds. Used for a live take where
+ * the speaker repeated a line: the later take is kept and the earlier one goes.
+ */
+const CUTS = (flagValue('--cuts') ?? '')
+  .split(',')
+  .map((part) => part.trim())
+  .filter(Boolean)
+  .map((part) => {
+    const m = part.match(/^([\d.]+)\s*-\s*([\d.]+)$/)
+    if (!m) throw new Error(`bad --cuts range "${part}"`)
+    const start = Number(m[1])
+    const end = Number(m[2])
+    if (!(end > start)) throw new Error(`bad --cuts range "${part}"`)
+    return [start, end]
+  })
+  .sort((a, b) => a[0] - b[0])
+
 /** Per-take cache, so trying a second read never reuses the first's timings. */
-const TAKE = basename(VO_SRC).replace(/\.mp3$/i, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
-const WORDS = join(WORK, `${TAKE}.words.json`)
-const RETIMED = join(WORK, 'short-vo-retimed.wav')
-const FINAL_AUDIO = join(WORK, 'short-vo-mix.wav')
+const TAKE = basename(VO_SRC).replace(/\.[^.]+$/, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')
+const CUT_TAG = `${CUTS.length ? '-cut' : ''}${TEMPO !== 1 ? `-t${TEMPO}` : ''}`
+const DECODED = join(WORK, `${TAKE}-48k.wav`)
+const CUT_WAV = join(WORK, `${TAKE}${CUT_TAG}.wav`)
+const WORDS = join(WORK, `${TAKE}${CUT_TAG}.words.json`)
+const RETIMED = join(WORK, `short-vo-${TAG}-retimed.wav`)
+const FINAL_AUDIO = join(WORK, `short-vo-${TAG}-mix.wav`)
 
 const TARGETS = [
-  { src: 'out/nammes-hub-explainer-short-16x9.mp4', out: 'out/nammes-hub-explainer-short-16x9-vo.mp4' },
-  { src: 'out/nammes-hub-explainer-short-9x16.mp4', out: 'out/nammes-hub-explainer-short-9x16-vo.mp4' },
+  { src: 'out/nammes-hub-explainer-short-16x9.mp4', out: `out/nammes-hub-explainer-short-16x9-vo${SUFFIX}.mp4` },
+  { src: 'out/nammes-hub-explainer-short-9x16.mp4', out: `out/nammes-hub-explainer-short-9x16-vo${SUFFIX}.mp4` },
 ]
 
 /** The voice's first word sits this far after the caption appears. */
@@ -124,6 +166,36 @@ function writeWav(path, pcm) {
   header.write('data', 36)
   header.writeUInt32LE(pcm.length, 40)
   writeFileSync(path, Buffer.concat([header, pcm]))
+}
+
+/**
+ * Delete [start, end] ranges from a 48k stereo take. Each edge gets a 10ms
+ * fade so the join does not click; the fade lives on the kept side of the cut.
+ */
+function cutAudio(pcm, frames, cuts) {
+  const fade = Math.round(0.01 * SR)
+  const gain = new Float32Array(frames).fill(1)
+  const keep = []
+  let from = 0
+  for (const [start, end] of cuts) {
+    const a = Math.max(0, Math.min(frames, Math.round(start * SR)))
+    const b = Math.max(a, Math.min(frames, Math.round(end * SR)))
+    if (a > from) keep.push([from, a])
+    for (let f = Math.max(0, a - fade); f < a; f++) gain[f] = Math.min(gain[f], (a - f) / fade)
+    for (let f = b; f < Math.min(frames, b + fade); f++) gain[f] = Math.min(gain[f], (f - b) / fade)
+    from = b
+  }
+  if (from < frames) keep.push([from, frames])
+  const total = keep.reduce((sum, [a, b]) => sum + (b - a), 0)
+  const out = new Int16Array(total * CH)
+  let at = 0
+  for (const [a, b] of keep) {
+    for (let f = a; f < b; f++) {
+      for (let c = 0; c < CH; c++) out[at * CH + c] = Math.round(pcm[f * CH + c] * gain[f])
+      at++
+    }
+  }
+  return out
 }
 
 /** SRT -> [{ start, end, text }] in output-timeline seconds. */
@@ -239,7 +311,7 @@ function align(scriptTokens, asrTokens) {
   return map
 }
 
-async function transcribe() {
+async function transcribe(sourcePath) {
   const env = Object.fromEntries(
     readFileSync(new URL('../.env', import.meta.url), 'utf8')
       .split(/\r?\n/)
@@ -250,8 +322,10 @@ async function transcribe() {
       }),
   )
   if (!env.ELEVENLABS_API_KEY) throw new Error('ELEVENLABS_API_KEY is missing from video/.env')
+  const ext = extname(sourcePath).toLowerCase()
+  const mime = ext === '.wav' ? 'audio/wav' : ext === '.opus' ? 'audio/ogg' : 'audio/mpeg'
   const form = new FormData()
-  form.append('file', new Blob([readFileSync(VO_SRC)], { type: 'audio/mpeg' }), 'vo.mp3')
+  form.append('file', new Blob([readFileSync(sourcePath)], { type: mime }), `vo${ext}`)
   form.append('model_id', 'scribe_v1')
   form.append('timestamps_granularity', 'word')
   const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
@@ -271,7 +345,26 @@ async function main() {
   console.log(`take: ${VO_SRC}`)
 
   const captions = parseSrt(readFileSync(SRT, 'utf8'))
-  const wordsJson = !RETRANSCRIBE && existsSync(WORDS) ? JSON.parse(readFileSync(WORDS, 'utf8')) : await transcribe()
+
+  // Decode once at the output format, then remove the repeated takes before
+  // transcription: the word timings have to describe the audio that is placed,
+  // not the uncut read they were recorded against.
+  const decodeArgs = ['-y', '-i', VO_SRC, '-ar', String(SR), '-ac', String(CH), '-c:a', 'pcm_s16le']
+  if (TEMPO !== 1) decodeArgs.push('-af', `atempo=${TEMPO}`)
+  decodeArgs.push(DECODED)
+  await run(decodeArgs)
+
+  let voWavPath = DECODED
+  if (CUTS.length) {
+    const decoded = parseWav(readFileSync(DECODED))
+    const pcm = new Int16Array(decoded.buf.buffer, decoded.buf.byteOffset + decoded.off, decoded.frames * CH)
+    const cut = cutAudio(pcm, decoded.frames, CUTS)
+    writeWav(CUT_WAV, Buffer.from(cut.buffer, cut.byteOffset, cut.byteLength))
+    voWavPath = CUT_WAV
+    console.log(`cut ${CUTS.map(([a, b]) => `${a}-${b}s`).join(', ')} -> ${(cut.length / CH / SR).toFixed(2)}s`)
+  }
+
+  const wordsJson = !RETRANSCRIBE && existsSync(WORDS) ? JSON.parse(readFileSync(WORDS, 'utf8')) : await transcribe(voWavPath)
   const words = wordsJson.words.filter((w) => w.type === 'word')
   if (!words.length) throw new Error('transcript has no words')
 
@@ -344,10 +437,6 @@ async function main() {
     return
   }
 
-  // Decode the take once at the output format so every sample offset below is
-  // an integer frame at 48 kHz, the same rate as the bed.
-  const voWavPath = join(WORK, 'short-vo-48k.wav')
-  await run(['-y', '-i', VO_SRC, '-ar', String(SR), '-ac', String(CH), '-c:a', 'pcm_s16le', voWavPath])
   const voWav = parseWav(readFileSync(voWavPath))
   const src = new Int16Array(voWav.buf.buffer, voWav.buf.byteOffset + voWav.off, voWav.frames * CH)
 
@@ -435,7 +524,7 @@ async function main() {
 
   // The bed is the picture's own audio, so nothing about the existing mix moves
   // except the 8 dB under each line.
-  const musicWavPath = join(WORK, 'short-music-48k.wav')
+  const musicWavPath = join(WORK, `short-music-${TAG}-48k.wav`)
   await run(['-y', '-i', TARGETS[0].src, '-vn', '-ar', String(SR), '-ac', String(CH), '-c:a', 'pcm_s16le', musicWavPath])
   const musicWav = parseWav(readFileSync(musicWavPath))
   const music = new Int16Array(musicWav.buf.buffer, musicWav.buf.byteOffset + musicWav.off, musicWav.frames * CH)
