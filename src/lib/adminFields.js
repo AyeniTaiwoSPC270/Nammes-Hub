@@ -1,4 +1,4 @@
-import { PREVIEW_STYLES, POSITIONS, isValidDuration } from './newsVideo'
+import { PREVIEW_STYLES, POSITIONS, isValidDuration, MIN_PREVIEW_SECONDS, MAX_PREVIEW_SECONDS } from './newsVideo'
 
 export function slugify(text) {
   return text
@@ -44,6 +44,9 @@ export function buildFormState(fields, record) {
       state[f.previewField] = record?.[f.previewField] ?? PREVIEW_STYLES[1].value
       state[f.positionField] = record?.[f.positionField] ?? POSITIONS[0].value
       state[f.durationField] = record?.[f.durationField] ?? ''
+      state[f.secondsField] = record?.[f.secondsField] ?? ''
+      // Selects are strings in form state, so the tri-state is '' / '1' / '0' -- inherit, loop, once.
+      state[f.loopField] = record?.[f.loopField] === true ? '1' : record?.[f.loopField] === false ? '0' : ''
     } else if (f.type === 'select') {
       // A native <select> visually shows its first <option> even when the
       // controlled value doesn't match any option (e.g. an empty default).
@@ -72,6 +75,8 @@ export function buildPayload(fields, values) {
         payload[f.previewField] = null
         payload[f.positionField] = null
         payload[f.durationField] = null
+        payload[f.secondsField] = null
+        payload[f.loopField] = null
       } else {
         payload[f.field] = url
         payload[f.kindField] = values[f.kindField] || null
@@ -80,6 +85,16 @@ export function buildPayload(fields, values) {
         // A duration the badge would print verbatim ("12 minutes") is dropped rather than published;
         // the field warns inline while typing, so this is the last line of defence, not the only one.
         payload[f.durationField] = isValidDuration(values[f.durationField]) && values[f.durationField] ? String(values[f.durationField]).trim() : null
+        // Blank or out of range degrades to inherit (null) rather than failing the save -- the same
+        // rule the duration field applies. The column's check constraint and the resolver's clamp
+        // are the last two lines of defence, never the first.
+        const seconds = Number(values[f.secondsField])
+        payload[f.secondsField] =
+          values[f.secondsField] === '' || values[f.secondsField] == null ||
+          !Number.isInteger(seconds) || seconds < MIN_PREVIEW_SECONDS || seconds > MAX_PREVIEW_SECONDS
+            ? null
+            : seconds
+        payload[f.loopField] = values[f.loopField] === '1' ? true : values[f.loopField] === '0' ? false : null
       }
     } else if (f.type === 'number') payload[f.field] = values[f.field] === '' ? null : Number(values[f.field])
     else payload[f.field] = values[f.field] === '' ? null : values[f.field]

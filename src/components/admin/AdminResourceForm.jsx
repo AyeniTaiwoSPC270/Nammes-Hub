@@ -6,6 +6,7 @@ import VideoUploadField from './VideoUploadField'
 import AvatarUploadField from './AvatarUploadField'
 import EventImageUploadField from './EventImageUploadField'
 import { buildFormState, buildPayload } from '../../lib/adminFields'
+import { useContentSettingsQuery } from '../../data/contentLooks'
 
 // Short, single-line field types can sit two-up in the panel (matching the
 // mockup's paired Category/Date row); the first field and any long-form
@@ -32,6 +33,12 @@ function groupFields(fields) {
 
 export default function AdminResourceForm({ config, record, onSubmit, onCancel, saving }) {
   const [values, setValues] = useState(() => buildFormState(config.fields, record))
+  // Only screens with a video field pay for this -- it feeds the live "site default" hints on the
+  // preview length and repeat controls. The key is shared with every other settings reader, so this
+  // is a cache read, not a second request, wherever the row is already loaded.
+  const settingsQuery = useContentSettingsQuery({
+    enabled: config.fields.some((f) => f.type === 'video'),
+  })
 
   function setField(field, value) {
     setValues((v) => ({ ...v, [field]: value }))
@@ -67,6 +74,10 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
           preview={values[f.previewField]}
           position={values[f.positionField]}
           duration={values[f.durationField]}
+          seconds={values[f.secondsField]}
+          loop={values[f.loopField]}
+          defaultSeconds={settingsQuery.data?.news_video_preview_seconds ?? 3}
+          defaultLoop={settingsQuery.data?.news_video_loop === true}
           coverUrl={f.coverField ? values[f.coverField] : ''}
           onChange={(patch) => {
             if ('url' in patch) setField(f.field, patch.url)
@@ -74,6 +85,8 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
             if ('preview' in patch) setField(f.previewField, patch.preview)
             if ('position' in patch) setField(f.positionField, patch.position)
             if ('duration' in patch) setField(f.durationField, patch.duration)
+            if ('seconds' in patch) setField(f.secondsField, patch.seconds)
+            if ('loop' in patch) setField(f.loopField, patch.loop)
           }}
         />
       )

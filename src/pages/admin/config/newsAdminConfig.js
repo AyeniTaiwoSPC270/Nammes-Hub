@@ -19,8 +19,9 @@ export const newsAdminConfig = {
     { field: 'badge_tone', label: 'Badge (optional)', type: 'select', options: ['', 'new', 'updated'], optional: true },
     { field: 'badge_label', label: 'Badge label', type: 'text', optional: true },
     { field: 'image_url', widthField: 'image_width_pct', label: 'Image', type: 'image' },
-    // One field, five columns: the URL, its kind, the card preview style, where it sits in the article
-    // and the runtime badge. `coverField` is the image above -- the "no cover" warning is only knowable
+    // One field, seven columns: the URL, its kind, the card preview style, where it sits in the article,
+    // the runtime badge, and the preview's length and repeat (NULL = inherit the site default).
+    // `coverField` is the image above -- the "no cover" warning is only knowable
     // if this field can see it.
     {
       field: 'video_url',
@@ -30,6 +31,8 @@ export const newsAdminConfig = {
       previewField: 'video_preview',
       positionField: 'video_position',
       durationField: 'video_duration',
+      secondsField: 'video_preview_seconds',
+      loopField: 'video_loop',
       coverField: 'image_url',
       optional: true,
     },

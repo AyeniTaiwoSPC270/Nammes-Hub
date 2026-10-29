@@ -140,6 +140,8 @@ describe('the video field type', () => {
       previewField: 'video_preview',
       positionField: 'video_position',
       durationField: 'video_duration',
+      secondsField: 'video_preview_seconds',
+      loopField: 'video_loop',
     },
   ]
 
@@ -150,6 +152,9 @@ describe('the video field type', () => {
       video_preview: 'tap',
       video_position: 'top',
       video_duration: '',
+      // Inherit is a blank, not a 3: a new post should follow whatever the site default says today.
+      video_preview_seconds: '',
+      video_loop: '',
     })
   })
 
@@ -161,7 +166,11 @@ describe('the video field type', () => {
       video_position: 'bottom',
       video_duration: '4:12',
     }
-    expect(buildFormState(videoFields, record)).toEqual(record)
+    expect(buildFormState(videoFields, record)).toEqual({
+      ...record,
+      video_preview_seconds: '',
+      video_loop: '',
+    })
   })
 
   it('nulls every companion column when the video is cleared, leaving no orphan kind', () => {
@@ -171,6 +180,8 @@ describe('the video field type', () => {
       video_preview: 'auto',
       video_position: 'top',
       video_duration: '1:05',
+      video_preview_seconds: '6',
+      video_loop: '1',
     })
     expect(payload).toEqual({
       video_url: null,
@@ -178,6 +189,8 @@ describe('the video field type', () => {
       video_preview: null,
       video_position: null,
       video_duration: null,
+      video_preview_seconds: null,
+      video_loop: null,
     })
   })
 
@@ -188,6 +201,8 @@ describe('the video field type', () => {
       video_preview: 'auto',
       video_position: 'bottom',
       video_duration: ' 4:12 ',
+      video_preview_seconds: '6',
+      video_loop: '0',
     })
     expect(payload).toEqual({
       video_url: 'https://youtu.be/abcdefghijk',
@@ -195,6 +210,8 @@ describe('the video field type', () => {
       video_preview: 'auto',
       video_position: 'bottom',
       video_duration: '4:12',
+      video_preview_seconds: 6,
+      video_loop: false,
     })
   })
 
@@ -219,5 +236,41 @@ describe('the video field type', () => {
       video_duration: '12 minutes',
     })
     expect(payload.video_duration).toBeNull()
+  })
+})
+
+describe('the video field owns its timing columns', () => {
+  const fields = [{
+    field: 'video_url', type: 'video',
+    kindField: 'video_kind', previewField: 'video_preview',
+    positionField: 'video_position', durationField: 'video_duration',
+    secondsField: 'video_preview_seconds', loopField: 'video_loop',
+  }]
+  const withVideo = {
+    video_url: 'https://x.supabase.co/storage/v1/object/public/news-videos/a.mp4',
+    video_kind: 'file', video_preview: 'tap', video_position: 'top', video_duration: '0:12',
+    video_preview_seconds: '6', video_loop: '1',
+  }
+
+  it('emits a number and a boolean, and inherit for anything blank', () => {
+    expect(buildPayload(fields, withVideo)).toMatchObject({ video_preview_seconds: 6, video_loop: true })
+    expect(buildPayload(fields, { ...withVideo, video_preview_seconds: '', video_loop: '' }))
+      .toMatchObject({ video_preview_seconds: null, video_loop: null })
+    // Out of range degrades to inherit rather than failing the save -- the duration field's rule.
+    expect(buildPayload(fields, { ...withVideo, video_preview_seconds: '99' }).video_preview_seconds).toBeNull()
+  })
+
+  it('nulls the timing columns with the rest when the video is cleared', () => {
+    const payload = buildPayload(fields, { ...withVideo, video_url: '' })
+    expect(payload.video_preview_seconds).toBeNull()
+    expect(payload.video_loop).toBeNull()
+  })
+
+  it('seeds inherit for a new post and the stored answers for an edit', () => {
+    expect(buildFormState(fields, null)).toMatchObject({ video_preview_seconds: '', video_loop: '' })
+    expect(buildFormState(fields, { video_preview_seconds: 7 }).video_preview_seconds).toBe(7)
+    expect(buildFormState(fields, { video_loop: false }).video_loop).toBe('0')
+    expect(buildFormState(fields, { video_loop: true }).video_loop).toBe('1')
+    expect(buildFormState(fields, { video_loop: null }).video_loop).toBe('')
   })
 })

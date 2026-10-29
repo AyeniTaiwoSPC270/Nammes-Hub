@@ -75,8 +75,10 @@ export async function fetchContentSettings() {
   return data
 }
 
-export function useContentSettingsQuery() {
-  return useQuery({ queryKey: SETTINGS_KEY, queryFn: fetchContentSettings })
+export function useContentSettingsQuery(options = {}) {
+  // Options so a screen that only needs part of the row can gate the fetch (`enabled` is the only one
+  // ever passed). The key stays shared: every reader still shares one cache entry.
+  return useQuery({ queryKey: SETTINGS_KEY, queryFn: fetchContentSettings, ...options })
 }
 
 /** The pointer name for a page, so the two call sites below cannot disagree about it. */
