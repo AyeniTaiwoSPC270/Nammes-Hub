@@ -19,6 +19,14 @@ alter table public.content_settings
     check (news_video_preview_seconds between 2 and 30),
   add column news_video_loop boolean not null default false;
 
+-- The settings row's UPDATE grant is column-scoped to the original four columns plus updated_at
+-- (20261015100000_content_looks.sql:108), and a column-scoped grant covers only the columns it names.
+-- Without these two lines every save from the Design tab would be refused by Postgres with
+-- "permission denied" -- the row would never reach the check constraint and the admin would only see
+-- a toast. Column-level grants accumulate, so granting the two new columns here adds them to the set.
+grant update (news_video_preview_seconds, news_video_loop)
+  on public.content_settings to authenticated;
+
 -- apply_change_request rewrites every column it names from the payload, so a column it does NOT know
 -- about is set to NULL -- and it guards each UPDATE column on `payload ? 'column'` so a request queued
 -- before this migration leaves the live values alone. Both rules carry the two new columns; the body
