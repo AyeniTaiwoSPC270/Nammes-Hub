@@ -21,6 +21,11 @@ import { PREVIEW_SECONDS } from '../../lib/newsVideo'
 export const CARD_STAGGER = 0.06
 export const MAX_STAGGER_DELAY = 0.3
 
+// How long a preview may sit mounted without a single frame before it is given up on. Deliberately
+// longer than PREVIEW_SECONDS: it only exists so an autoplay the phone refuses, or a file that never
+// loads, cannot leave a video element parked on the card forever.
+const NEVER_STARTED_MS = 8000
+
 /**
  * The reveal delay for card `index`, or none at all when the look has the cascade switched off.
  *
@@ -297,16 +302,28 @@ function VideoOverlay({ video }) {
     setPlaying(false)
   }, [])
 
-  // Starts muted and stops itself after PREVIEW_SECONDS. The cap is what keeps `auto` honest: an
-  // observer that fires on every re-entry would otherwise stream the file every time the reader
-  // scrolls a card past the fold.
+  // Arms the stop countdown, but only once frames are actually flowing: the preview is three seconds
+  // of PLAYING, not three seconds of mounting. Starting the clock at mount let a slow phone connection
+  // spend the whole budget buffering, unmount the video before its first frame and report "video does
+  // not play" while a desktop on the same code played fine.
+  const armStop = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null
+      setPlaying(false)
+    }, PREVIEW_SECONDS * 1000)
+  }, [])
+
+  // Starts muted. The clock it sets here is only a safety net for a file that never starts at all
+  // (autoplay blocked, dead connection), so it is deliberately longer than the preview itself and is
+  // replaced by `armStop` the moment playback begins.
   const startPreview = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
     setPlaying(true)
     timerRef.current = setTimeout(() => {
       timerRef.current = null
       setPlaying(false)
-    }, PREVIEW_SECONDS * 1000)
+    }, NEVER_STARTED_MS)
   }, [])
 
   useEffect(() => {
@@ -346,8 +363,12 @@ function VideoOverlay({ video }) {
       onPointerEnter={(e) => {
         if (canPlay && video.preview === 'hover' && e.pointerType === 'mouse') startPreview()
       }}
-      onPointerLeave={() => {
-        if (canPlay && video.preview === 'hover') stopPreview()
+      onPointerLeave={(e) => {
+        // Symmetric with the enter handler, and the reason a phone used to play nothing: touch fires
+        // pointerleave the instant a finger lifts (or while it scrolls across the band), so without
+        // this guard a tap started a preview that cancelled itself in the same gesture and a scroll
+        // cut a playing one dead -- on a mouse only.
+        if (canPlay && video.preview === 'hover' && e.pointerType === 'mouse') stopPreview()
       }}
     >
       {playing && (
@@ -358,6 +379,7 @@ function VideoOverlay({ video }) {
           muted
           playsInline
           preload="metadata"
+          onPlaying={armStop}
           aria-label="Video preview"
         />
       )}
