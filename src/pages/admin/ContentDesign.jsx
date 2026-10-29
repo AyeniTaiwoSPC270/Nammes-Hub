@@ -25,6 +25,7 @@ import { ContentFeed, EventCard, NewsCard, NewsFeatureCard } from '../../compone
 import {
   lookLivePatch,
   lookOnHomePatch,
+  newsVideoPatch,
   useContentLooksQuery,
   useContentSettingsQuery,
   useDeleteContentLookMutation,
@@ -32,8 +33,9 @@ import {
   useUpdateContentSettingsMutation,
 } from '../../data/contentLooks'
 import { useEventsQuery, groupEventsByTime } from '../../data/events'
-import { useNewsQuery, getNews } from '../../data/news'
+import { useNewsQuery, getNews, useNewsVideoFlag } from '../../data/news'
 import { generateId } from '../../lib/adminFields'
+import { MIN_PREVIEW_SECONDS, MAX_PREVIEW_SECONDS } from '../../lib/newsVideo'
 import { useTheme } from '../../lib/ThemeContext'
 import { useToast } from '../../lib/ToastContext'
 import { NAME_MAX, sanitizeTheme, themeVars } from '../../../api/_lib/contentTheme.js'
@@ -93,6 +95,54 @@ export function ContentDesignBody({ page }) {
   const saveMutation = useSaveContentLookMutation(page)
   const deleteMutation = useDeleteContentLookMutation(page)
   const settingsMutation = useUpdateContentSettingsMutation()
+
+  // The news video preview defaults. The input owns its text until blur: the settings row arrives
+  // asynchronously, so a value seeded straight from it would reset mid-typing. `null` means "not edited
+  // yet, show the stored value". `useNewsVideoFlag` sits with the other queries, before the early
+  // returns below, so the hook order never changes between renders.
+  const [secondsDraft, setSecondsDraft] = useState(null)
+  const storedSeconds = settings?.news_video_preview_seconds ?? 3
+  const loopDefault = settings?.news_video_loop === true
+  const videoEnabled = useNewsVideoFlag()
+
+  function saveSeconds() {
+    if (settingsMutation.isPending || secondsDraft === null) return
+    // Blank reverts rather than erroring: the column is NOT NULL with a default, so there is no
+    // "clear it" state to save, and telling off an admin who deleted a digit helps nobody.
+    if (String(secondsDraft).trim() === '') {
+      setSecondsDraft(null)
+      return
+    }
+    if (Number(secondsDraft) === storedSeconds) {
+      setSecondsDraft(null)
+      return
+    }
+    // Range-checked in newsVideoPatch, which throws -- caught here so the reason reaches the toast
+    // instead of the console. The mutation's onError never runs for a throw that happens before it.
+    let patch
+    try {
+      patch = newsVideoPatch({ seconds: Number(secondsDraft) })
+    } catch (error) {
+      toast.error(error.message)
+      return
+    }
+    settingsMutation.mutate(patch, {
+      onSuccess: () => {
+        setSecondsDraft(null)
+        toast.success('Preview length default saved.')
+      },
+      onError: (error) => toast.error(error.message),
+    })
+  }
+
+  function toggleLoopDefault(next) {
+    if (settingsMutation.isPending) return
+    settingsMutation.mutate(newsVideoPatch({ loop: next }), {
+      onSuccess: () =>
+        toast.success(next ? 'Previews now repeat by default.' : 'Previews now play once by default.'),
+      onError: (error) => toast.error(error.message),
+    })
+  }
 
   function selectLook(id) {
     if (id === selectedId) return
@@ -349,6 +399,48 @@ export function ContentDesignBody({ page }) {
                 label="Use this design on the home page"
                 description={`Applies to the ${label.toLowerCase()} block on the home page only.`}
               />
+
+              {/* Only news has video, and only while the kill switch is on: an events default here
+                  would be a control over nothing. The hook above is unconditional either way. */}
+              {page === 'news' && videoEnabled && (
+                <div className="flex flex-col gap-3 border-t border-hairline pt-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink-900">Video preview defaults</p>
+                    <p className="text-xs text-ink-muted">
+                      Applies to every news video that has no override of its own.
+                    </p>
+                  </div>
+                  <label className="flex flex-col gap-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
+                      Preview length
+                    </span>
+                    <input
+                      type="number"
+                      min={MIN_PREVIEW_SECONDS}
+                      max={MAX_PREVIEW_SECONDS}
+                      value={secondsDraft ?? String(storedSeconds)}
+                      onChange={(e) => setSecondsDraft(e.target.value)}
+                      onBlur={saveSeconds}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          saveSeconds()
+                        }
+                      }}
+                      className="min-h-10 rounded-md border border-hairline bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none"
+                    />
+                    <span className="text-xs text-ink-muted">
+                      Seconds, {MIN_PREVIEW_SECONDS}–{MAX_PREVIEW_SECONDS}. Saved when you leave the box.
+                    </span>
+                  </label>
+                  <Toggle
+                    checked={loopDefault}
+                    onChange={toggleLoopDefault}
+                    label="Repeat the preview"
+                    description="Repeats until the reader leaves the card."
+                  />
+                </div>
+              )}
             </div>
           </section>
 

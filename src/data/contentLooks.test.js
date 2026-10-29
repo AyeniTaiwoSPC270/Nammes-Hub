@@ -6,6 +6,7 @@ import {
   isLookOnHome,
   lookLivePatch,
   lookOnHomePatch,
+  newsVideoPatch,
   saveContentLook,
   updateContentSettings,
 } from './contentLooks'
@@ -179,6 +180,22 @@ describe('finding the live design: the join that usePageLook is made of', () => 
       const live = findLiveLook(page, undefined, undefined)
       expect(sanitizeTheme(live?.design, page), page).toEqual(defaultTheme(page))
     }
+  })
+})
+
+describe('the news video preview defaults', () => {
+  it('builds the news video preview default patch, cleaned and range-checked', () => {
+    expect(newsVideoPatch({ seconds: 6, loop: true })).toEqual({
+      news_video_preview_seconds: 6,
+      news_video_loop: true,
+    })
+    expect(newsVideoPatch({ seconds: 6 })).toEqual({ news_video_preview_seconds: 6 })
+    expect(newsVideoPatch({ loop: false })).toEqual({ news_video_loop: false })
+    expect(newsVideoPatch({})).toEqual({})
+    // Range-checked here rather than only by the column's check constraint, so the admin is told what
+    // is wrong instead of the database silently rejecting the write.
+    expect(() => newsVideoPatch({ seconds: 99 })).toThrow(/2/)
+    expect(() => newsVideoPatch({ seconds: 'six' })).toThrow(/2/)
   })
 })
 
