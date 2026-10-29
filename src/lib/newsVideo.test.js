@@ -153,6 +153,21 @@ describe('preview timing', () => {
   })
 })
 
+// The card is where a preview is actually shown, and both settings die quietly if it reads the
+// constant or forgets the loop attribute -- nothing else in the suite renders it.
+describe('the card honours the per-post timing', () => {
+  const cards = readFileSync('src/components/content/ContentCards.jsx', 'utf8')
+
+  it('loops when the post says so', () => {
+    expect(cards).toContain('loop={video.loop}')
+  })
+
+  it("counts down the row's own seconds and never the constant", () => {
+    expect(cards).toContain('previewSeconds')
+    expect(cards).not.toContain('PREVIEW_SECONDS')
+  })
+})
+
 describe('formatDuration / isValidDuration', () => {
   it('formats minutes and hours', () => {
     expect(formatDuration(95)).toBe('1:35')
