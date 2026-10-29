@@ -87,6 +87,8 @@ describe('resolveVideo', () => {
       preview: 'tap',
       position: 'top',
       duration: '1:35',
+      previewSeconds: 3,
+      loop: false,
     })
   })
 
@@ -115,6 +117,39 @@ describe('resolveVideo', () => {
     const v = resolveVideo({ ...base, video_preview: 'hoverish', video_position: 'sideways' }, opts())
     expect(v.preview).toBe('tap')
     expect(v.position).toBe('top')
+  })
+})
+
+describe('preview timing', () => {
+  const row = { video_kind: 'file', video_url: BUCKET_URL, video_preview: 'tap', video_position: 'top' }
+
+  it('prefers the post, then the site default, then 3 seconds', () => {
+    expect(resolveVideo({ ...row, video_preview_seconds: 9 }, opts()).previewSeconds).toBe(9)
+    expect(resolveVideo(row, { ...opts(), defaults: { seconds: 7 } }).previewSeconds).toBe(7)
+    expect(resolveVideo(row, opts()).previewSeconds).toBe(3)
+  })
+
+  it('settles a value the check constraint would have rejected', () => {
+    // A hand-edited row must not reach a renderer: out of range and non-integers fall through.
+    for (const bad of [1, 31, 0, -5, 'six', 4.5]) {
+      const v = resolveVideo({ ...row, video_preview_seconds: bad }, { ...opts(), defaults: { seconds: 7 } })
+      expect(v.previewSeconds, String(bad)).toBe(7)
+    }
+  })
+
+  it('clamps the inherited default too, then floors at the constant', () => {
+    expect(resolveVideo(row, { ...opts(), defaults: { seconds: 99 } }).previewSeconds).toBe(30)
+    expect(resolveVideo(row, { ...opts(), defaults: { seconds: 1 } }).previewSeconds).toBe(2)
+    expect(resolveVideo(row, opts()).previewSeconds).toBe(3)
+  })
+
+  it('reads the loop tri-state: post wins, else the default, else off', () => {
+    expect(resolveVideo({ ...row, video_loop: false }, { ...opts(), defaults: { loop: true } }).loop).toBe(false)
+    expect(resolveVideo({ ...row, video_loop: true }, opts()).loop).toBe(true)
+    expect(resolveVideo(row, { ...opts(), defaults: { loop: true } }).loop).toBe(true)
+    expect(resolveVideo(row, opts()).loop).toBe(false)
+    // A JSON payload delivers booleans, not strings -- a truthy "false" must not read as loop on.
+    expect(resolveVideo({ ...row, video_loop: 'false' }, { ...opts(), defaults: { loop: true } }).loop).toBe(true)
   })
 })
 
