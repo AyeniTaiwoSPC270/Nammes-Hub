@@ -25,7 +25,15 @@ export const MAX_VIDEO_BYTES = 50 * 1024 * 1024
 
 // How long a card preview runs before it stops itself. Long enough to read a gesture, short enough that
 // a grid of twenty cards cannot stream a whole video nobody asked for.
+//
+// The FALLBACK when neither the post nor the site has an opinion -- not "the" preview length any more:
+// a post carries `video_preview_seconds`, the site carries `news_video_preview_seconds`, and this is
+// what is left when both are absent or unusable.
 export const PREVIEW_SECONDS = 3
+// One range, two places (the per-post column's check constraint and the site default's), enforced
+// again here because a hand-edited row must not reach a renderer just because it skipped the form.
+export const MIN_PREVIEW_SECONDS = 2
+export const MAX_PREVIEW_SECONDS = 30
 
 // Supabase's public object URL shape, for our bucket, relative to the storage API root the caller
 // passes (`<project>/storage/v1`). The check is anchored on that base rather than on a substring,
@@ -83,25 +91,53 @@ export function isNewsVideoUrl(url, storageBase) {
 }
 
 /**
+ * How long this post's preview runs, and whether it repeats: the post's own answer when it has one,
+ * the site default when it doesn't, 3 seconds / never as the floor. Settled here rather than in the
+ * card, because the admin form, the card and the studio preview must never disagree about it.
+ *
+ * The two levels are judged slightly differently on purpose. A POST value only counts when it is an
+ * integer already inside 2-30 -- anything else is somebody's typo, so it falls through to the default
+ * instead of being repaired. A SITE default is clamped into range rather than discarded, because a
+ * clamped site default is still the site's intent, and only an unusable one (null, 'six', missing)
+ * drops to the constant.
+ */
+function cleanPreviewTiming(item, defaults) {
+  const post = Number(item?.video_preview_seconds)
+  let seconds = null
+  if (Number.isInteger(post) && post >= MIN_PREVIEW_SECONDS && post <= MAX_PREVIEW_SECONDS) {
+    seconds = post
+  } else {
+    const inherited = Number(defaults?.seconds)
+    // Number(null) and Number('') are 0, so blank and JSON null are excluded before the clamp would
+    // quietly turn them into the 2-second floor.
+    if (defaults?.seconds !== null && defaults?.seconds !== undefined && defaults?.seconds !== '' && Number.isFinite(inherited)) {
+      seconds = Math.min(MAX_PREVIEW_SECONDS, Math.max(MIN_PREVIEW_SECONDS, inherited))
+    }
+  }
+  const loop = typeof item?.video_loop === 'boolean' ? item.video_loop : defaults?.loop === true
+  return { previewSeconds: seconds ?? PREVIEW_SECONDS, loop }
+}
+
+/**
  * A row's video columns, cleaned into one shape — or `null` when the post has no usable video.
  *
  * Every branch that could disagree with another surface is settled here instead: a `file` row pointing
  * at some other bucket, a `youtube` row with a URL that is not YouTube, and a kind the check constraint
  * would reject all read as "no video" rather than as a broken player on the page.
  */
-export function resolveVideo(item, { enabled = true, storageBase } = {}) {
+export function resolveVideo(item, { enabled = true, storageBase, defaults } = {}) {
   if (!enabled || !item) return null
   const { video_kind: kind, video_url: url } = item
   if (!kind || !url) return null
 
   if (kind === 'file') {
     if (!isNewsVideoUrl(url, storageBase)) return null
-    return { kind, url, preview: cleanPreview(item.video_preview), position: cleanPosition(item.video_position), duration: item.video_duration || '' }
+    return { kind, url, preview: cleanPreview(item.video_preview), position: cleanPosition(item.video_position), duration: item.video_duration || '', ...cleanPreviewTiming(item, defaults) }
   }
   if (kind === 'youtube') {
     const id = parseYouTubeId(url)
     if (!id) return null
-    return { kind, url, id, preview: cleanPreview(item.video_preview), position: cleanPosition(item.video_position), duration: item.video_duration || '' }
+    return { kind, url, id, preview: cleanPreview(item.video_preview), position: cleanPosition(item.video_position), duration: item.video_duration || '', ...cleanPreviewTiming(item, defaults) }
   }
   return null
 }

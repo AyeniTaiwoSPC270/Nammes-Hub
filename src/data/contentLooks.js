@@ -14,11 +14,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabaseClient'
 import { PAGES, cleanLookName, sanitizeTheme } from '../../api/_lib/contentTheme.js'
+import { MIN_PREVIEW_SECONDS, MAX_PREVIEW_SECONDS } from '../lib/newsVideo'
 
 // The columns the studio is allowed to write. Anything else in a settings patch is dropped here rather
 // than handed to the database, so the column-scoped grant (20261015100000_content_looks.sql:88-90) cannot
 // be spent on a field no admin UI has. `id` is absent for the same reason it is absent there.
-const SETTINGS_FIELDS = ['events_look_id', 'news_look_id', 'events_on_home', 'news_on_home']
+const SETTINGS_FIELDS = [
+  'events_look_id', 'news_look_id', 'events_on_home', 'news_on_home',
+  'news_video_preview_seconds', 'news_video_loop',
+]
 
 // `created_at` is deliberately absent: re-saving an existing design must not rewrite when it was added.
 // `page` is present but is never taken from the payload -- see saveContentLook.
@@ -75,8 +79,10 @@ export async function fetchContentSettings() {
   return data
 }
 
-export function useContentSettingsQuery() {
-  return useQuery({ queryKey: SETTINGS_KEY, queryFn: fetchContentSettings })
+export function useContentSettingsQuery(options = {}) {
+  // Options so a screen that only needs part of the row can gate the fetch (`enabled` is the only one
+  // ever passed). The key stays shared: every reader still shares one cache entry.
+  return useQuery({ queryKey: SETTINGS_KEY, queryFn: fetchContentSettings, ...options })
 }
 
 /** The pointer name for a page, so the two call sites below cannot disagree about it. */
@@ -195,6 +201,26 @@ export function lookLivePatch(page, lookId) {
 export function lookOnHomePatch(page, onHome) {
   if (!isPage(page)) throw new Error(`Unknown content page: ${page}`)
   return { [onHomeField(page)]: onHome === true }
+}
+
+/**
+ * The news video preview defaults: how long a card preview runs and whether it repeats, for every
+ * post that has no answer of its own. Range-checked here rather than only by the column's check
+ * constraint, because the admin should be told what is wrong instead of the database.
+ */
+export function newsVideoPatch({ seconds, loop } = {}) {
+  const patch = {}
+  if (seconds !== undefined) {
+    const n = Number(seconds)
+    if (!Number.isInteger(n) || n < MIN_PREVIEW_SECONDS || n > MAX_PREVIEW_SECONDS) {
+      throw new Error(
+        `Preview length must be a whole number of seconds between ${MIN_PREVIEW_SECONDS} and ${MAX_PREVIEW_SECONDS}.`,
+      )
+    }
+    patch.news_video_preview_seconds = n
+  }
+  if (loop !== undefined) patch.news_video_loop = loop === true
+  return patch
 }
 
 export function useSaveContentLookMutation(page) {

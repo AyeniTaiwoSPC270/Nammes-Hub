@@ -87,6 +87,8 @@ describe('resolveVideo', () => {
       preview: 'tap',
       position: 'top',
       duration: '1:35',
+      previewSeconds: 3,
+      loop: false,
     })
   })
 
@@ -115,6 +117,54 @@ describe('resolveVideo', () => {
     const v = resolveVideo({ ...base, video_preview: 'hoverish', video_position: 'sideways' }, opts())
     expect(v.preview).toBe('tap')
     expect(v.position).toBe('top')
+  })
+})
+
+describe('preview timing', () => {
+  const row = { video_kind: 'file', video_url: BUCKET_URL, video_preview: 'tap', video_position: 'top' }
+
+  it('prefers the post, then the site default, then 3 seconds', () => {
+    expect(resolveVideo({ ...row, video_preview_seconds: 9 }, opts()).previewSeconds).toBe(9)
+    expect(resolveVideo(row, { ...opts(), defaults: { seconds: 7 } }).previewSeconds).toBe(7)
+    expect(resolveVideo(row, opts()).previewSeconds).toBe(3)
+  })
+
+  it('settles a value the check constraint would have rejected', () => {
+    // A hand-edited row must not reach a renderer: out of range and non-integers fall through.
+    for (const bad of [1, 31, 0, -5, 'six', 4.5]) {
+      const v = resolveVideo({ ...row, video_preview_seconds: bad }, { ...opts(), defaults: { seconds: 7 } })
+      expect(v.previewSeconds, String(bad)).toBe(7)
+    }
+  })
+
+  it('clamps the inherited default too, then floors at the constant', () => {
+    expect(resolveVideo(row, { ...opts(), defaults: { seconds: 99 } }).previewSeconds).toBe(30)
+    expect(resolveVideo(row, { ...opts(), defaults: { seconds: 1 } }).previewSeconds).toBe(2)
+    expect(resolveVideo(row, opts()).previewSeconds).toBe(3)
+  })
+
+  it('reads the loop tri-state: post wins, else the default, else off', () => {
+    expect(resolveVideo({ ...row, video_loop: false }, { ...opts(), defaults: { loop: true } }).loop).toBe(false)
+    expect(resolveVideo({ ...row, video_loop: true }, opts()).loop).toBe(true)
+    expect(resolveVideo(row, { ...opts(), defaults: { loop: true } }).loop).toBe(true)
+    expect(resolveVideo(row, opts()).loop).toBe(false)
+    // A JSON payload delivers booleans, not strings -- a truthy "false" must not read as loop on.
+    expect(resolveVideo({ ...row, video_loop: 'false' }, { ...opts(), defaults: { loop: true } }).loop).toBe(true)
+  })
+})
+
+// The card is where a preview is actually shown, and both settings die quietly if it reads the
+// constant or forgets the loop attribute -- nothing else in the suite renders it.
+describe('the card honours the per-post timing', () => {
+  const cards = readFileSync('src/components/content/ContentCards.jsx', 'utf8')
+
+  it('loops when the post says so', () => {
+    expect(cards).toContain('loop={video.loop}')
+  })
+
+  it("counts down the row's own seconds and never the constant", () => {
+    expect(cards).toContain('previewSeconds')
+    expect(cards).not.toContain('PREVIEW_SECONDS')
   })
 })
 
@@ -152,19 +202,28 @@ describe('formatDuration / isValidDuration', () => {
 
 // The review queue is the trap this whole feature could fall into: `apply_change_request` rewrites
 // every column it names and sets the rest to NULL, so a media column added to `news` without being
-// added here is a video that vanishes the first time a non-owner's edit is approved. This is the test
-// the spec promised -- it fails when a sixth column is added and the queue is forgotten.
+// added here is a video that vanishes the first time a non-owner's edit is approved.
+//
+// It reads the LATEST matching migration on purpose. Two files now define the function, and this test
+// originally took the FIRST match -- which after the second migration meant every assertion below kept
+// passing against the stale copy no client ships.
 describe('apply_change_request knows about every news video column', () => {
-  const VIDEO_COLUMNS = ['video_kind', 'video_url', 'video_preview', 'video_position', 'video_duration']
+  const VIDEO_COLUMNS = [
+    'video_kind', 'video_url', 'video_preview', 'video_position', 'video_duration',
+    'video_preview_seconds', 'video_loop',
+  ]
 
   // Found by content rather than by name: the timestamp prefix changes whenever this is re-cut, and a
   // guard that silently reads nothing (or the pre-video migration) would pass for the wrong reason.
   const newsBranch = (() => {
     const dir = 'supabase/migrations'
-    const files = readdirSync(dir).filter((name) => name.endsWith('.sql'))
-    const migration = files
+    const files = readdirSync(dir)
+      .filter((name) => name.endsWith('.sql'))
+      .sort() // readdir order is filesystem-defined; "latest" has to mean chronological name order
+    const matches = files
       .map((name) => readFileSync(`${dir}/${name}`, 'utf8'))
-      .find((sql) => sql.includes('video_kind') && sql.includes('apply_change_request'))
+      .filter((sql) => sql.includes('video_kind') && sql.includes('apply_change_request'))
+    const migration = matches.at(-1)
     if (!migration) return null
     const start = migration.indexOf("req.entity_type = 'news'")
     const end = migration.indexOf("req.entity_type = 'events'")
@@ -175,12 +234,12 @@ describe('apply_change_request knows about every news video column', () => {
     expect(newsBranch).toBeTruthy()
   })
 
-  it('writes all five columns on insert', () => {
+  it('writes all seven columns on insert', () => {
     const insert = newsBranch.slice(newsBranch.indexOf('insert into public.news'), newsBranch.indexOf('else'))
     for (const column of VIDEO_COLUMNS) expect(insert, column).toContain(column)
   })
 
-  it('writes all five columns on update, each guarded on the payload carrying it', () => {
+  it('writes all seven columns on update, each guarded on the payload carrying it', () => {
     const update = newsBranch.slice(newsBranch.indexOf('update public.news'))
     for (const column of VIDEO_COLUMNS) {
       // Unguarded, a request submitted before this migration -- or one whose sender had the kill

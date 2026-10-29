@@ -14,10 +14,18 @@ const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL ?? ''}/storage/v1`
  * A news row's video, cleaned, or null for a text-only post, an invalid URL, or a closed kill switch.
  *
  * Every surface (cards, article, studio preview) goes through here so they cannot disagree about what
- * counts as a video.
+ * counts as a video. `settings` is the optional `content_settings` row: its columns are the site
+ * defaults for preview length and repeat, handed to the resolver under neutral names so no other
+ * surface has to know which table the default came from.
  */
-export function resolveNewsVideo(item, enabled = true) {
-  return resolveVideo(item, { enabled, storageBase: STORAGE_BASE })
+export function resolveNewsVideo(item, enabled = true, settings) {
+  return resolveVideo(item, {
+    enabled,
+    storageBase: STORAGE_BASE,
+    defaults: settings
+      ? { seconds: settings.news_video_preview_seconds, loop: settings.news_video_loop }
+      : undefined,
+  })
 }
 
 /**

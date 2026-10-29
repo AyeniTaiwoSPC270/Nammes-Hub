@@ -15,15 +15,15 @@ import Badge from '../ui/Badge'
 import BlurredBackdropImage from '../ui/BlurredBackdropImage'
 import { themeVars } from '../../../api/_lib/contentTheme.js'
 import { resolveNewsVideo, useNewsVideoFlag } from '../../data/news'
-import { PREVIEW_SECONDS } from '../../lib/newsVideo'
+import { useContentSettingsQuery } from '../../data/contentLooks'
 
 // The same pair Events.jsx and Home.jsx both used for the reveal cascade.
 export const CARD_STAGGER = 0.06
 export const MAX_STAGGER_DELAY = 0.3
 
 // How long a preview may sit mounted without a single frame before it is given up on. Deliberately
-// longer than PREVIEW_SECONDS: it only exists so an autoplay the phone refuses, or a file that never
-// loads, cannot leave a video element parked on the card forever.
+// longer than any allowed preview length (2-30s): it only exists so an autoplay the phone refuses, or a
+// file that never loads, cannot leave a video element parked on the card forever.
 const NEVER_STARTED_MS = 8000
 
 /**
@@ -150,7 +150,8 @@ export function EventCard({ event, theme }) {
  */
 export function NewsCard({ item, theme, excerpt = '' }) {
   const videoEnabled = useNewsVideoFlag()
-  const video = resolveNewsVideo(item, videoEnabled)
+  const settings = useContentSettingsQuery().data
+  const video = resolveNewsVideo(item, videoEnabled, settings)
   const tone = TONES[item.tone] ? item.tone : 'neutral'
   const text = TONE_TEXT[tone]
   return (
@@ -190,7 +191,8 @@ export function NewsCard({ item, theme, excerpt = '' }) {
  */
 export function NewsFeatureCard({ item, theme }) {
   const videoEnabled = useNewsVideoFlag()
-  const video = resolveNewsVideo(item, videoEnabled)
+  const settings = useContentSettingsQuery().data
+  const video = resolveNewsVideo(item, videoEnabled, settings)
   const tone = TONES[item.tone] ? item.tone : 'neutral'
   const text = TONE_TEXT[tone]
   const side = theme.layout.featured === 'image-left'
@@ -302,17 +304,24 @@ function VideoOverlay({ video }) {
     setPlaying(false)
   }, [])
 
-  // Arms the stop countdown, but only once frames are actually flowing: the preview is three seconds
-  // of PLAYING, not three seconds of mounting. Starting the clock at mount let a slow phone connection
+  // Arms the stop countdown, but only once frames are actually flowing: the preview is N seconds
+  // of PLAYING, not N seconds of mounting. Starting the clock at mount let a slow phone connection
   // spend the whole budget buffering, unmount the video before its first frame and report "video does
   // not play" while a desktop on the same code played fine.
+  //
+  // With repeat on there is no timer at all -- the stop triggers (hover-off, tap-toggle, scroll-out)
+  // are the whole rule, which is what the owner chose over a looping cap that visibly restarts mid-read.
   const armStop = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+    if (video.loop) return
     timerRef.current = setTimeout(() => {
       timerRef.current = null
       setPlaying(false)
-    }, PREVIEW_SECONDS * 1000)
-  }, [])
+    }, video.previewSeconds * 1000)
+  }, [video.loop, video.previewSeconds])
 
   // Starts muted. The clock it sets here is only a safety net for a file that never starts at all
   // (autoplay blocked, dead connection), so it is deliberately longer than the preview itself and is
@@ -332,25 +341,30 @@ function VideoOverlay({ video }) {
     }
   }, [])
 
-  // `auto`: play once when the card is mostly on screen, then leave it alone for the rest of the
-  // page load. `startedRef` is the "once"; the observer is disconnected by this cleanup.
+  // `auto`: play when the card is mostly on screen. With a timed preview that is once for the rest
+  // of the page load (`startedRef` is the "once"); with repeat it is every re-entry, and the
+  // observer STOPS it on the way out -- otherwise a card scrolled past keeps streaming a 30MB file
+  // on a phone with nothing on screen to show it.
   useEffect(() => {
     if (video.kind !== 'file' || video.preview !== 'auto') return undefined
     const node = bandRef.current
     if (!node || typeof IntersectionObserver === 'undefined') return undefined
     const observer = new IntersectionObserver(
       (entries) => {
-        if (startedRef.current) return
-        if (entries.some((entry) => entry.isIntersecting)) {
+        const visible = entries.some((entry) => entry.isIntersecting)
+        if (visible) {
+          if (startedRef.current && !video.loop) return
           startedRef.current = true
           startPreview()
+        } else if (video.loop) {
+          stopPreview()
         }
       },
       { threshold: 0.6 }
     )
     observer.observe(node)
     return () => observer.disconnect()
-  }, [video.kind, video.preview, startPreview])
+  }, [video.kind, video.preview, video.loop, startPreview, stopPreview])
 
   const canPlay = video.kind === 'file' && video.preview !== 'none'
   const badge =
@@ -374,6 +388,7 @@ function VideoOverlay({ video }) {
       {playing && (
         <video
           src={video.url}
+          loop={video.loop}
           className="absolute inset-0 h-full w-full object-cover"
           autoPlay
           muted

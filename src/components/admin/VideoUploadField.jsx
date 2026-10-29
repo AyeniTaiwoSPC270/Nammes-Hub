@@ -4,6 +4,8 @@ import {
   PREVIEW_STYLES,
   POSITIONS,
   MAX_VIDEO_BYTES,
+  MIN_PREVIEW_SECONDS,
+  MAX_PREVIEW_SECONDS,
   videoFileError,
   readVideoDuration,
   formatDuration,
@@ -22,8 +24,9 @@ const MAX_MB = Math.round(MAX_VIDEO_BYTES / (1024 * 1024))
 
 /**
  * The `video` field type: an uploaded MP4 or a YouTube link, plus the per-post preview style, article
- * position and duration badge. Owns five columns through `kindField`/`previewField`/`positionField`/
- * `durationField`, the same way the `image` type owns its width.
+ * position, duration badge, and the preview's length and repeat. Owns seven columns through
+ * `kindField`/`previewField`/`positionField`/`durationField`/`secondsField`/`loopField`, the same way
+ * the `image` type owns its width.
  *
  * `coverUrl` is passed in rather than looked up so this panel can say out loud what a video with no
  * cover will look like on the card -- the agreed warn-don't-block rule.
@@ -35,6 +38,10 @@ export default function VideoUploadField({
   preview,
   position,
   duration,
+  seconds,
+  loop,
+  defaultSeconds = 3,
+  defaultLoop = false,
   coverUrl,
   onChange,
 }) {
@@ -224,6 +231,51 @@ export default function VideoUploadField({
             ))}
           </select>
         </label>
+
+        {/* Timing controls only for an uploaded file: a YouTube card never plays a player on the
+            card at all (an iframe inside the Link is invalid HTML), so length and repeat would be
+            promises the page cannot keep. */}
+        {kind === 'file' && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
+              Preview length
+            </span>
+            <input
+              type="number"
+              min={MIN_PREVIEW_SECONDS}
+              max={MAX_PREVIEW_SECONDS}
+              value={seconds}
+              onChange={(e) => onChange({ seconds: e.target.value })}
+              placeholder={`Site default (${defaultSeconds})`}
+              className={controlClass}
+            />
+            {seconds !== '' &&
+            (Number(seconds) < MIN_PREVIEW_SECONDS || Number(seconds) > MAX_PREVIEW_SECONDS) ? (
+              <span className="text-xs text-danger">
+                Between {MIN_PREVIEW_SECONDS} and {MAX_PREVIEW_SECONDS} — anything else saves as “use site
+                default”.
+              </span>
+            ) : (
+              <span className="text-xs text-ink-muted">
+                Seconds, {MIN_PREVIEW_SECONDS}–{MAX_PREVIEW_SECONDS}. Blank uses the site default.
+              </span>
+            )}
+          </label>
+        )}
+
+        {kind === 'file' && (
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
+              Repeat
+            </span>
+            <select value={loop} onChange={(e) => onChange({ loop: e.target.value })} className={controlClass}>
+              <option value="">Use site default ({defaultLoop ? 'repeat' : 'play once'})</option>
+              <option value="1">Repeat until they leave</option>
+              <option value="0">Play once</option>
+            </select>
+            <span className="text-xs text-ink-muted">Repeat overrides the length above.</span>
+          </label>
+        )}
       </div>
 
       <label className="flex max-w-[400px] flex-col gap-1.5">
