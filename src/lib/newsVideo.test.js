@@ -152,19 +152,28 @@ describe('formatDuration / isValidDuration', () => {
 
 // The review queue is the trap this whole feature could fall into: `apply_change_request` rewrites
 // every column it names and sets the rest to NULL, so a media column added to `news` without being
-// added here is a video that vanishes the first time a non-owner's edit is approved. This is the test
-// the spec promised -- it fails when a sixth column is added and the queue is forgotten.
+// added here is a video that vanishes the first time a non-owner's edit is approved.
+//
+// It reads the LATEST matching migration on purpose. Two files now define the function, and this test
+// originally took the FIRST match -- which after the second migration meant every assertion below kept
+// passing against the stale copy no client ships.
 describe('apply_change_request knows about every news video column', () => {
-  const VIDEO_COLUMNS = ['video_kind', 'video_url', 'video_preview', 'video_position', 'video_duration']
+  const VIDEO_COLUMNS = [
+    'video_kind', 'video_url', 'video_preview', 'video_position', 'video_duration',
+    'video_preview_seconds', 'video_loop',
+  ]
 
   // Found by content rather than by name: the timestamp prefix changes whenever this is re-cut, and a
   // guard that silently reads nothing (or the pre-video migration) would pass for the wrong reason.
   const newsBranch = (() => {
     const dir = 'supabase/migrations'
-    const files = readdirSync(dir).filter((name) => name.endsWith('.sql'))
-    const migration = files
+    const files = readdirSync(dir)
+      .filter((name) => name.endsWith('.sql'))
+      .sort() // readdir order is filesystem-defined; "latest" has to mean chronological name order
+    const matches = files
       .map((name) => readFileSync(`${dir}/${name}`, 'utf8'))
-      .find((sql) => sql.includes('video_kind') && sql.includes('apply_change_request'))
+      .filter((sql) => sql.includes('video_kind') && sql.includes('apply_change_request'))
+    const migration = matches.at(-1)
     if (!migration) return null
     const start = migration.indexOf("req.entity_type = 'news'")
     const end = migration.indexOf("req.entity_type = 'events'")
@@ -175,12 +184,12 @@ describe('apply_change_request knows about every news video column', () => {
     expect(newsBranch).toBeTruthy()
   })
 
-  it('writes all five columns on insert', () => {
+  it('writes all seven columns on insert', () => {
     const insert = newsBranch.slice(newsBranch.indexOf('insert into public.news'), newsBranch.indexOf('else'))
     for (const column of VIDEO_COLUMNS) expect(insert, column).toContain(column)
   })
 
-  it('writes all five columns on update, each guarded on the payload carrying it', () => {
+  it('writes all seven columns on update, each guarded on the payload carrying it', () => {
     const update = newsBranch.slice(newsBranch.indexOf('update public.news'))
     for (const column of VIDEO_COLUMNS) {
       // Unguarded, a request submitted before this migration -- or one whose sender had the kill
