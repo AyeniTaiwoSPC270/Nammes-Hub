@@ -7,6 +7,7 @@ import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
 import GalleryLightbox from '../components/GalleryLightbox'
+import ReportProblem from '../components/ReportProblem'
 import { ContentLook } from '../components/content/ContentCards'
 
 const CARD_STAGGER = 0.06
@@ -160,6 +161,10 @@ export default function EventDetail() {
           onClose={() => setLightboxIndex(null)}
         />
       )}
+
+      <div className="mt-6">
+        <ReportProblem title={event.title} />
+      </div>
     </div>
   )
 }

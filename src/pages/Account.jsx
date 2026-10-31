@@ -5,6 +5,7 @@ import { useToast } from '../lib/ToastContext'
 import Reveal from '../components/ui/Reveal'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
+import FeedbackLauncher from '../components/FeedbackLauncher'
 import { useNotificationPrefQuery, useSetNotificationPrefMutation } from '../data/notificationPrefs'
 import { useOwnProfileQuery, useSetFullNameMutation, useSetEntryYearMutation } from '../data/profiles'
 
@@ -107,6 +108,16 @@ export default function Account() {
             className="h-5 w-5 accent-green-900"
           />
         </label>
+      </Reveal>
+
+      <Reveal delay={0.12} className="mt-6 flex items-center justify-between gap-4 rounded-lg border border-hairline bg-surface p-5 shadow-sm">
+        <div>
+          <h2 className="font-bold text-ink-900">Rate the Hub</h2>
+          <p className="text-sm text-ink-muted">How has it been working for you? It takes one tap.</p>
+        </div>
+        <FeedbackLauncher className="whitespace-nowrap rounded-md border border-hairline px-3 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-surface-low">
+          Rate the Hub
+        </FeedbackLauncher>
       </Reveal>
     </div>
   )

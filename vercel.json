@@ -41,6 +41,10 @@
       "destination": "/api/system?action=og"
     },
     {
+      "source": "/news/(.*)",
+      "destination": "/api/system?action=news-preview&key=$1"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -93,7 +97,7 @@
   "functions": {
     "api/system.js": {
       "maxDuration": 300,
-      "includeFiles": "{scripts/manual/**,public/logo.png,api/_lib/fonts/**}"
+      "includeFiles": "{scripts/manual/**,public/logo.png,api/_lib/fonts/**,dist/index.html}"
     }
   }
 }

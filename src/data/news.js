@@ -72,6 +72,43 @@ export function getNewsById(list, id) {
   return list.find((n) => n.id === id)
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Resolve the one segment of `/news/:key`, which is either a legacy id or a slug.
+ *
+ * Both are accepted because every article shared before slugs existed is an id link, and the
+ * analytics path mapping and the change-request queue still build `/news/<id>` paths today. One
+ * resolver rather than two routes, so a link can never land on a route that does not know it.
+ */
+export function getNewsByKey(list, key) {
+  if (!key) return null
+  return UUID.test(key) ? getNewsById(list, key) : list.find((n) => n.slug === key) ?? null
+}
+
+/**
+ * The `news_share` kill switch, as a plain boolean.
+ *
+ * Its own per-key query for the same reason `useNewsVideoFlag` above has one: it decides what an
+ * anonymous visitor sees on an article page, and `feature_flags` grants select to anon.
+ * True until the row says otherwise, so a failed read never hides a control permanently.
+ */
+export function useNewsShareFlag() {
+  const { data } = useQuery({
+    queryKey: ['feature_flags', 'news_share'],
+    queryFn: async () => {
+      const { data: row, error } = await supabase
+        .from('feature_flags')
+        .select('enabled')
+        .eq('key', 'news_share')
+        .maybeSingle()
+      if (error) return true
+      return row?.enabled ?? true
+    },
+  })
+  return data ?? true
+}
+
 export function filterNewsByCategory(list, category) {
   if (!category || category === 'All' || !NEWS_CATEGORIES.includes(category)) return list
   return list.filter((n) => n.category === category)

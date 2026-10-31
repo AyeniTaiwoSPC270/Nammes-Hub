@@ -276,7 +276,7 @@ export default function App() {
             <Route path="resources/:level" element={<ResourceLevel />} />
             <Route path="resources/:level/:semester" element={<ResourceList />} />
             <Route path="news" element={<News />} />
-            <Route path="news/:id" element={<NewsDetail />} />
+            <Route path="news/:key" element={<NewsDetail />} />
             <Route path="opportunities" element={<Opportunities />} />
             <Route path="awards" element={<Awards />} />
             <Route path="quiz" element={<Quizzes />} />

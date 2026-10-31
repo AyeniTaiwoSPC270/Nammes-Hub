@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import {
   INBOX_CATEGORIES,
   categoryMeta,
@@ -216,15 +216,33 @@ describe('category definitions', () => {
   })
 
   // The same guard quizTypes uses: a source added to one side and not the other fails here.
+  // Read from the LATEST migration that declares the function, not the original: `create or
+  // replace` rewrites the whole body, so the original is no longer what the database runs.
+  const latestInboxSql = () => {
+    const files = readdirSync('supabase/migrations')
+      .filter((f) => f.endsWith('.sql'))
+      .filter((f) => readFileSync(`supabase/migrations/${f}`, 'utf8').includes('function public.admin_inbox()'))
+    expect(files.length, 'no migration defines admin_inbox()').toBeGreaterThan(0)
+    return readFileSync(`supabase/migrations/${files[files.length - 1]}`, 'utf8')
+  }
+
   it('matches the categories unioned by admin_inbox()', () => {
-    const sql = readFileSync('supabase/migrations/20261017120000_admin_inbox.sql', 'utf8')
+    const sql = latestInboxSql()
     const fromSql = [...sql.matchAll(/select '([a-z]+)'::text as category/g)].map((m) => m[1])
     expect(fromSql.sort()).toEqual(INBOX_CATEGORIES.map((c) => c.key).sort())
   })
 
   it('matches the categories the seen table will accept', () => {
-    const sql = readFileSync('supabase/migrations/20261017120000_admin_inbox.sql', 'utf8')
-    const constraint = sql.match(/category in\s*\(([\s\S]*?)\)\s*,/)
+    // The constraint is widened rather than re-created in place, so the definition that matters is
+    // the last migration that writes `admin_inbox_seen_category_check check (category in`.
+    const files = readdirSync('supabase/migrations')
+      .filter((f) => f.endsWith('.sql'))
+      .filter((f) =>
+        readFileSync(`supabase/migrations/${f}`, 'utf8').includes('admin_inbox_seen_category_check check (category in'),
+      )
+    expect(files.length, 'no migration declares the seen-table category constraint').toBeGreaterThan(0)
+    const sql = readFileSync(`supabase/migrations/${files[files.length - 1]}`, 'utf8')
+    const constraint = sql.match(/admin_inbox_seen_category_check check \(category in\s*\(([\s\S]*?)\)/)
     const allowed = [...(constraint?.[1] ?? '').matchAll(/'([a-z]+)'/g)].map((m) => m[1])
     expect(allowed.sort()).toEqual(INBOX_CATEGORIES.map((c) => c.key).sort())
   })

@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 import ErrorState from '../../components/ui/ErrorState'
 import Reveal from '../../components/ui/Reveal'
+import ReportProblem from '../../components/ReportProblem'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useOutlinesQuery, getCourse } from '../../data/outlines'
 import { useApprovedSubmissionsQuery, groupSubmissionsByType } from '../../data/outlineSubmissions'
@@ -208,6 +209,10 @@ export default function OutlineDetail() {
         <Button variant="ghost" onClick={() => navigate(`/outlines/${level}/${semester}`)}>
           Back to course list
         </Button>
+      </div>
+
+      <div className="mt-4">
+        <ReportProblem title={course.title} />
       </div>
     </div>
   )
