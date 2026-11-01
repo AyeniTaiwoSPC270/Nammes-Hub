@@ -1,0 +1,8 @@
+# False positive, kept rather than rewritten out of history.
+#
+# fe5c449 asserted that a news preview's og:image carries the article's slug, and spelled the URL
+# out as `key=<slug>`. The generic-api-key rule reads that shape as a credential being assigned a
+# value. It is a test fixture: the slug is a public URL segment and nothing is secret. The assertion
+# itself no longer writes it that way (api/_lib/handlers/newsPreview.test.js), so this entry only
+# covers the commit that already contains the old line.
+fe5c449e68eb65bcf116bf7d03423ae58895e624:api/_lib/handlers/newsPreview.test.js:generic-api-key:89

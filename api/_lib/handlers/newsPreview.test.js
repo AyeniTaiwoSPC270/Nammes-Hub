@@ -39,6 +39,18 @@ function fakeClient({ article = ARTICLE, flags = { news_share: true } } = {}) {
   }
 }
 
+/**
+ * The key the og:image URL carries, parsed rather than grepped for.
+ *
+ * These assertions used to spell out `key=<slug>`, which a secret scanner reads as an API key being
+ * assigned a value -- gitleaks failed the build on it. Matching the URL and pulling the key out
+ * keeps the same precision without a literal that looks like a credential.
+ */
+function imageKey(html) {
+  const match = String(html).match(/\/api\/news-image\?key=([^"]+)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
 const SHELL = '<!doctype html><html><head><meta property="og:title" content="NAMMES Hub"></head></html>'
 const shell = () => SHELL
 const req = (key, headers = {}) => ({ query: { key }, headers })
@@ -74,7 +86,8 @@ describe('news-preview', () => {
     expect(res.body).toContain('og:title" content="Matriculation 2026 — dates announced')
     expect(res.body).toContain('og:url" content="https://')
     expect(res.body).toContain('/news/matriculation-2026')
-    expect(res.body).toMatch(/og:image" content="https:\/\/[^"]+\/api\/news-image\?key=matriculation-2026/)
+    expect(res.body).toMatch(/og:image" content="https:\/\/[^"]+\/api\/news-image\?key=/)
+    expect(imageKey(res.body)).toBe('matriculation-2026')
     expect(res.body).toContain('og:image:width" content="1200"')
     expect(res.body).toContain('og:image:height" content="630"')
     expect(res.body).toContain('The ceremony holds on the 14th')
@@ -86,7 +99,7 @@ describe('news-preview', () => {
     const res = fakeRes()
     await handler(crawler(ARTICLE.id), res)
     expect(res.body).toContain('/news/matriculation-2026')
-    expect(res.body).toContain('key=matriculation-2026')
+    expect(imageKey(res.body)).toBe('matriculation-2026')
   })
 
   it('escapes an admin-authored title', async () => {
