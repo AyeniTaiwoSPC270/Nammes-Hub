@@ -97,6 +97,20 @@ export function analyticsPdfModel(data, generatedAt = new Date()) {
       delta: formatDelta(percentDelta(kpis.formResponses.current, kpis.formResponses.previous)),
     },
     {
+      label: 'Problem reports',
+      value: formatNumber(kpis.reports.current),
+      delta: formatDelta(percentDelta(kpis.reports.current, kpis.reports.previous)),
+    },
+    {
+      label: 'Ratings',
+      value: formatNumber(kpis.feedback.current),
+      delta: formatDelta(percentDelta(kpis.feedback.current, kpis.feedback.previous)),
+      note:
+        kpis.feedback.total > 0
+          ? `avg ${kpis.feedback.average.toFixed(1)}/5 of ${formatNumber(kpis.feedback.total)}`
+          : undefined,
+    },
+    {
       label: 'Email opt-in',
       value: percentLabel(kpis.optInRate.current),
       note: `${formatNumber(kpis.optInRate.optedIn)} of ${formatNumber(kpis.optInRate.total)}`,
@@ -118,6 +132,7 @@ export function analyticsPdfModel(data, generatedAt = new Date()) {
       ['Submissions waiting', data.attention.pendingSubmissions],
       ['Edits awaiting approval', data.attention.pendingReviews],
       ['Messages unanswered', data.attention.unhandledMessages],
+      ['Problem reports open', data.attention.unhandledReports],
       ['Calendar dates TBA', data.attention.calendarTba],
       ['Emails failed to send', data.attention.failedEmails],
       ['Server errors in 24h', data.attention.errors24h],

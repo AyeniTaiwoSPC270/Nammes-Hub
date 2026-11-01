@@ -41,6 +41,10 @@
       "destination": "/api/system?action=og"
     },
     {
+      "source": "/api/news-image",
+      "destination": "/api/system?action=news-image"
+    },
+    {
       "source": "/news/(.*)",
       "destination": "/api/system?action=news-preview&key=$1"
     },

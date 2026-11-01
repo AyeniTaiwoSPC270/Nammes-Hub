@@ -40,7 +40,7 @@ export const feedbackCategoryLabel = (code) => (code ? `${code.charAt(0).toUpper
  * server resolves whoever the token belongs to, so a crafted request cannot file a rating under
  * somebody else's name. No session means no token, which the server reads as anonymous.
  */
-export async function submitFeedback({ rating, category, message, pagePath }) {
+export async function submitFeedback({ rating, category, message, pagePath, token }) {
   let accessToken
   try {
     const { data } = await supabase.auth.getSession()
@@ -54,6 +54,10 @@ export async function submitFeedback({ rating, category, message, pagePath }) {
     category,
     message,
     page_path: pagePath,
+    // The server requires this whenever VITE_TURNSTILE_SITE_KEY is set, and the modal's Send
+    // button is already gated on the widget returning one. Dropping it here would mean a rating
+    // that the form refuses to submit until verified, and then rejects as unverified.
+    ...(token ? { token } : {}),
     ...(accessToken ? { accessToken } : {}),
   })
 }

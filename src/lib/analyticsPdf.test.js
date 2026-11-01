@@ -88,7 +88,8 @@ describe('analyticsPdfModel', () => {
 
   it('flattens the queues into label/value rows', () => {
     expect(model.attention).toContainEqual(['Submissions waiting', 2])
-    expect(model.attention).toHaveLength(6)
+    expect(model.attention).toContainEqual(['Problem reports open', 0])
+    expect(model.attention).toHaveLength(7)
   })
 })
 

@@ -129,6 +129,8 @@ export function emptyAnalytics(days = 30) {
       quizPlays: { current: 0, previous: 0, players: 0 },
       cbtAttempts: { current: 0, previous: 0, averageScore: 0 },
       formResponses: { current: 0, previous: 0 },
+      reports: { current: 0, previous: 0 },
+      feedback: { current: 0, previous: 0, average: 0, total: 0 },
       optInRate: { current: 0, previous: 0, optedIn: 0, total: 0 },
     },
     traffic: [],
@@ -141,6 +143,7 @@ export function emptyAnalytics(days = 30) {
       pendingSubmissions: 0,
       pendingReviews: 0,
       unhandledMessages: 0,
+      unhandledReports: 0,
       calendarTba: 0,
       failedEmails: 0,
       errors24h: 0,
@@ -206,6 +209,20 @@ export function sanitizeAnalytics(raw, days = 30) {
         current: toInt(kpi('formResponses').current),
         previous: toInt(kpi('formResponses').previous),
       },
+      reports: {
+        current: toInt(kpi('reports').current),
+        previous: toInt(kpi('reports').previous),
+      },
+      // The count is the window; the average and total are all time, which is how the database
+      // builds it -- a rating table has too few rows for a thirty-day mean to say anything. The
+      // average is clamped rather than trusted, because it is the one number drawn to one decimal
+      // and a hand-edited row could otherwise print 9.7 out of 5.
+      feedback: {
+        current: toInt(kpi('feedback').current),
+        previous: toInt(kpi('feedback').previous),
+        average: Math.min(5, Math.max(0, toNumber(kpi('feedback').average))),
+        total: toInt(kpi('feedback').total),
+      },
       // Recomputed from the counts rather than trusting the ratio: a row edited by hand between the two
       // numbers would otherwise show a share that matches neither of them.
       optInRate: {
@@ -243,6 +260,7 @@ export function sanitizeAnalytics(raw, days = 30) {
       pendingSubmissions: toInt(attention.pendingSubmissions),
       pendingReviews: toInt(attention.pendingReviews),
       unhandledMessages: toInt(attention.unhandledMessages),
+      unhandledReports: toInt(attention.unhandledReports),
       calendarTba: toInt(attention.calendarTba),
       failedEmails: toInt(attention.failedEmails),
       errors24h: toInt(attention.errors24h),

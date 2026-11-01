@@ -52,7 +52,7 @@ export default function FeedbackModal({ onClose, onRated }) {
   }, [onClose])
 
   const submitMutation = useMutation({
-    mutationFn: () => submitFeedback({ rating, category, message, pagePath }),
+    mutationFn: () => submitFeedback({ rating, category, message, pagePath, token: captcha.token }),
     onSettled: () => captcha.reset(),
     onSuccess: () => {
       onRated?.()

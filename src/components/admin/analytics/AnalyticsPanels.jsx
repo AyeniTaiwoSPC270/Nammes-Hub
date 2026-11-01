@@ -53,6 +53,12 @@ const ATTENTION_ITEMS = [
   { key: 'pendingSubmissions', label: 'submissions waiting', href: '/admin/submissions', icon: 'fact_check' },
   { key: 'pendingReviews', label: 'edits awaiting approval', href: '/admin/reviews', icon: 'how_to_reg', ownerOnly: true },
   { key: 'unhandledMessages', label: 'messages unanswered', href: '/admin/messages', icon: 'mail' },
+  {
+    key: 'unhandledReports',
+    label: 'problem reports open',
+    href: '/admin/messages?filter=reports',
+    icon: 'flag',
+  },
   { key: 'calendarTba', label: 'calendar dates TBA', href: '/admin/calendar', icon: 'event_busy' },
   { key: 'failedEmails', label: 'emails failed to send', href: '/admin/system', icon: 'error', ownerOnly: true },
   { key: 'errors24h', label: 'server errors in 24h', href: '/admin/system', icon: 'monitor_heart', ownerOnly: true },
