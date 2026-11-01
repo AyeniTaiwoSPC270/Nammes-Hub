@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { verifyTurnstile } from './_lib/turnstileVerify.js'
-import { validateContact, validateAnswers } from './_lib/publicSubmission.js'
+import { validateContact, validateReport, validateFeedback, validateAnswers } from './_lib/publicSubmission.js'
 import { isUuid } from './_lib/validate.js'
 
 // Public submissions (contact form, and responses to public forms from people who are not signed in).
@@ -18,7 +18,7 @@ export function createSubmitPublicHandler({
     }
 
     const body = req.body ?? {}
-    if (body.type !== 'contact' && body.type !== 'form_response') {
+    if (body.type !== 'contact' && body.type !== 'form_response' && body.type !== 'report' && body.type !== 'feedback') {
       res.status(400).json({ error: 'Unsupported submission type' })
       return
     }
@@ -45,8 +45,10 @@ export function createSubmitPublicHandler({
 
     const supabaseAdmin = getClient()
 
-    // Same pause switch the database rules honour for direct inserts.
-    const { data: flag } = await supabaseAdmin.from('feature_flags').select('enabled').eq('key', 'public_forms').maybeSingle()
+    // Same pause switch the database rules honour for direct inserts. Reports have their own key:
+    // pausing anonymous form responses must not also stop a visitor reporting a broken link.
+    const flagKey = body.type === 'report' ? 'reports' : body.type === 'feedback' ? 'feedback' : 'public_forms'
+    const { data: flag } = await supabaseAdmin.from('feature_flags').select('enabled').eq('key', flagKey).maybeSingle()
     if (flag && flag.enabled === false) {
       res.status(503).json({ error: 'Submissions are temporarily paused' })
       return
@@ -62,6 +64,48 @@ export function createSubmitPublicHandler({
       if (error) {
         console.error('submit-public: contact insert failed', error)
         res.status(500).json({ error: 'Could not send your message. Please try again.' })
+        return
+      }
+      res.status(200).json({ ok: true })
+      return
+    }
+
+    if (body.type === 'report') {
+      const checked = validateReport(body)
+      if (!checked.ok) {
+        res.status(400).json({ error: checked.error })
+        return
+      }
+      // `kind` is set here, never taken from the payload: a client that could choose it would be
+      // able to file a message as a report, or a report as a message with no reply address.
+      const { error } = await supabaseAdmin.from('contact_messages').insert({ kind: 'report', ...checked.value })
+      if (error) {
+        console.error('submit-public: report insert failed', error)
+        res.status(500).json({ error: 'Could not send your report. Please try again.' })
+        return
+      }
+      res.status(200).json({ ok: true })
+      return
+    }
+
+    if (body.type === 'feedback') {
+      const checked = validateFeedback(body)
+      if (!checked.ok) {
+        res.status(400).json({ error: checked.error })
+        return
+      }
+      // Identity is resolved here, never trusted: a payload claiming someone else's id would
+      // attribute a rating to them. No token, or a token that does not verify, stores null -- the
+      // rating itself is still worth having, so a stale session must not swallow it.
+      let userId = null
+      if (typeof body.accessToken === 'string' && body.accessToken) {
+        const { data, error } = await supabaseAdmin.auth.getUser(body.accessToken)
+        if (!error) userId = data?.user?.id ?? null
+      }
+      const { error } = await supabaseAdmin.from('hub_feedback').insert({ ...checked.value, user_id: userId })
+      if (error) {
+        console.error('submit-public: feedback insert failed', error)
+        res.status(500).json({ error: 'Could not save your rating. Please try again.' })
         return
       }
       res.status(200).json({ ok: true })

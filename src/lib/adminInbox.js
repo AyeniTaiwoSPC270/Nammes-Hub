@@ -22,6 +22,20 @@ export const INBOX_CATEGORIES = [
     description: 'Sent through the contact form',
   },
   {
+    key: 'reports',
+    label: 'Problem reports',
+    icon: 'flag',
+    href: '/admin/messages?filter=reports',
+    description: 'Reported on a page by a visitor',
+  },
+  {
+    key: 'feedback',
+    label: 'Feedback',
+    icon: 'star',
+    href: '/admin/messages?filter=feedback',
+    description: 'A rating left on the Hub',
+  },
+  {
     key: 'responses',
     label: 'Form responses',
     icon: 'checklist',

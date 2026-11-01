@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getNews, getNewsById, filterNewsByCategory, NEWS_CATEGORIES } from './news'
+import { getNews, getNewsById, getNewsByKey, filterNewsByCategory, NEWS_CATEGORIES } from './news'
 
 const fixture = [
   { id: 'a', category: 'Academics', date: 'Jul 20, 2026', title: 'A' },
@@ -13,6 +13,32 @@ describe('getNewsById', () => {
   })
   it('returns undefined for an unknown id', () => {
     expect(getNewsById(fixture, 'does-not-exist')).toBeUndefined()
+  })
+})
+
+describe('getNewsByKey', () => {
+  const slugged = [
+    { id: '11111111-1111-4111-8111-111111111111', slug: 'exam-timetable', title: 'Exams' },
+    { id: '22222222-2222-4222-8222-222222222222', slug: 'matriculation', title: 'Matriculation' },
+  ]
+
+  it('resolves a slug', () => {
+    expect(getNewsByKey(slugged, 'exam-timetable').title).toBe('Exams')
+  })
+
+  it('resolves a legacy id, so every link shared before slugs existed still works', () => {
+    expect(getNewsByKey(slugged, '22222222-2222-4222-8222-222222222222').title).toBe('Matriculation')
+  })
+
+  it('returns null for an unknown key, an empty key and no key', () => {
+    expect(getNewsByKey(slugged, 'nope')).toBeNull()
+    expect(getNewsByKey(slugged, '')).toBeNull()
+    expect(getNewsByKey(slugged, undefined)).toBeNull()
+  })
+
+  it('never matches an id against a slug field when the key is not a uuid', () => {
+    expect(getNewsByKey(slugged, '11111111-1111-4111-8111-111111111111')).toBeTruthy()
+    expect(getNewsByKey(slugged, 'not-a-uuid-but-close')).toBeNull()
   })
 })
 

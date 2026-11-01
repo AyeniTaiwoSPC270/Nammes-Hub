@@ -171,10 +171,186 @@ describe('the analytics dashboard keeps its gate and its privacy rules', () => {
 
   it('the purge job also expires page views', () => {
     // Re-declaring purge_old_data replaces the whole body, so losing this line would silently stop
-    // expiry for every table it touches, not just the new one.
-    const source = analyticsFile()
+    // expiry for every table it touches, not just the new one. Read from the latest declaration:
+    // admin_analytics has been re-declared since, and the two functions move independently.
+    const files = migrations.filter((f) => read(f).includes('create or replace function public.purge_old_data'))
+    expect(files.length, 'no migration defines purge_old_data').toBeGreaterThan(0)
+    const source = readSql(files[files.length - 1])
     expect(source).toContain('delete from public.contact_messages')
     expect(source).toContain('delete from public.error_log')
     expect(source).toContain('delete from public.page_views')
+  })
+})
+
+describe('report a problem', () => {
+  const reportFile = '20261031100000_report_a_problem.sql'
+
+  it('adds the four columns and closes the category list', () => {
+    const source = readSql(reportFile)
+    expect(source).toMatch(/add column if not exists kind text not null default 'message'/)
+    expect(source).toMatch(/add column if not exists category text/)
+    expect(source).toMatch(/add column if not exists page_url text/)
+    expect(source).toMatch(/add column if not exists page_title text/)
+    expect(source).toMatch(/kind in \('message', 'report'\)/)
+    expect(source).toContain("'broken_link', 'wrong_info', 'outdated', 'other'")
+  })
+
+  it('a plain message still requires a name, an email and a message', () => {
+    // Dropping the column-level nullability is what lets a report carry no reply address. Without
+    // this row-level check, a contact message could then be saved with all three missing.
+    const source = readSql(reportFile)
+    const check = source.match(/add constraint contact_messages_shape_check check \(([\s\S]*?)\);/)?.[1] ?? ''
+    expect(check, 'the shape check could not be read').toBeTruthy()
+    expect(check).toMatch(/kind = 'message'[\s\S]*name is not null[\s\S]*email is not null[\s\S]*message is not null/)
+    expect(check, 'a report must not be able to claim an off-site page').toMatch(/page_url like '\/%' /)
+    expect(check).toMatch(/char_length\(coalesce\(message, ''\)\) <= 1000/)
+  })
+
+  it('seeds the reports flag off', () => {
+    expect(readSql(reportFile)).toMatch(/insert into public\.feature_flags \(key, enabled\) values \('reports', false\)/)
+  })
+
+  it('the contact alert skips reports', () => {
+    // The alert function is shared by three tables and re-declared wholesale, so the guard is
+    // asserted rather than assumed: without it every bug report emails the owner.
+    const source = readSql(reportFile)
+    expect(source).toMatch(/TG_TABLE_NAME = 'contact_messages' and \(to_jsonb\(NEW\)->>'kind'\) = 'report'/)
+    expect(source).toContain("when 'contact_messages' then 'https://www.nammeshub.com.ng/api/webhook-contact'")
+    expect(source).toContain('create trigger contact_messages_notify after insert on public.contact_messages')
+  })
+
+  it('the browser still cannot insert into contact_messages directly', () => {
+    expect(allSql).toContain('revoke insert on public.contact_messages from anon, authenticated')
+  })
+})
+
+describe('news slugs', () => {
+  const slugFile = '20261031110000_news_slug.sql'
+
+  it('fills a null slug from the title before the row is written', () => {
+    const source = readSql(slugFile)
+    expect(source).toMatch(/create trigger news_set_slug before insert on public\.news/)
+    expect(source).toMatch(/new\.slug := public\.news_slug\(new\.title, new\.id\)/)
+    expect(source).toMatch(/add column if not exists slug text/)
+    expect(source).toContain('create unique index news_slug_key on public.news (slug)')
+  })
+
+  it('gives two posts with the same title different slugs', () => {
+    // The generator must consult the table, not just slugify: a title-only rule would hand the
+    // second post a slug the unique index refuses, and the insert would fail at the admin's end.
+    const source = readSql(slugFile)
+    expect(source, 'news_slug must check for a clash').toMatch(/while exists \(select 1 from public\.news where slug = candidate\)/)
+    expect(source).toMatch(/\[\^a-zA-Z0-9\]\+/)
+    expect(source).toMatch(/length\(base\) > 60/)
+  })
+
+  it('backfills the rows that already exist', () => {
+    const source = readSql(slugFile)
+    expect(source).toMatch(/for row in select id, title from public\.news where slug is null/)
+  })
+
+  it('an approved non-owner edit cannot rewrite a published URL', () => {
+    // apply_change_request names every column it writes. `slug` must NOT appear in the news update
+    // branch: the payload never carries one, and naming it there would null out every article's URL
+    // the first time a queued edit is approved.
+    const files = migrations.filter((f) => read(f).includes('entity_type = \'news\''))
+    expect(files.length, 'no migration defines the news branch of apply_change_request').toBeGreaterThan(0)
+    const source = readSql(files[files.length - 1])
+    const update = source.match(/update public\.news set([\s\S]*?)where id = req\.record_id/)?.[1] ?? ''
+    expect(update, 'the news update branch could not be read').toBeTruthy()
+    expect(update).not.toMatch(/\bslug\b/)
+  })
+
+  it('seeds the news_share flag off', () => {
+    expect(readSql(slugFile)).toMatch(/insert into public\.feature_flags \(key, enabled\) values \('news_share', false\)/)
+  })
+
+  it('rewrites /news/ before the SPA catch-all', () => {
+    // Rewrites are evaluated in order; after the catch-all, every article URL would be answered by
+    // index.html and no preview would ever be generated.
+    const config = JSON.parse(readFileSync('vercel.json', 'utf8'))
+    const sources = config.rewrites.map((r) => r.source)
+    const newsIndex = sources.findIndex((s) => s.startsWith('/news/'))
+    const catchAllIndex = sources.findIndex((s) => s.includes('((?!api/)'))
+    expect(newsIndex, 'no /news/ rewrite').toBeGreaterThan(-1)
+    expect(catchAllIndex, 'no SPA catch-all rewrite').toBeGreaterThan(-1)
+    expect(newsIndex).toBeLessThan(catchAllIndex)
+  })
+})
+
+describe('rate the hub', () => {
+  const feedbackFile = '20261031120000_hub_feedback.sql'
+  const rollupFile = '20261031130000_inbox_and_analytics_rollup.sql'
+  const latestAdminInbox = () => {
+    const files = migrations.filter((f) => read(f).includes('function public.admin_inbox()'))
+    expect(files.length, 'no migration defines admin_inbox()').toBeGreaterThan(0)
+    return readSql(files[files.length - 1])
+  }
+  const latestAnalytics = () => {
+    const files = migrations.filter((f) => read(f).includes('create or replace function public.admin_analytics'))
+    expect(files.length, 'no migration defines admin_analytics').toBeGreaterThan(0)
+    return readSql(files[files.length - 1])
+  }
+
+  it('creates hub_feedback with no insert path for a browser', () => {
+    const source = readSql(feedbackFile)
+    expect(source).toMatch(/create table public\.hub_feedback/)
+    expect(source).toMatch(/rating smallint not null check \(rating between 1 and 5\)/)
+    expect(source).toMatch(/revoke all on public\.hub_feedback from anon, authenticated/)
+    expect(source, 'hub_feedback must not grant insert to a client').not.toMatch(/grant insert[^;]*hub_feedback/i)
+    // No insert policy either: a grant without a policy would still be refused by RLS, but stating
+    // both is what stops the next migration from "fixing" the missing grant.
+    expect(source, 'hub_feedback must not gain an insert policy').not.toMatch(/policy[^;]*hub_feedback[^;]*insert/is)
+  })
+
+  it('lets admins read and update it, enforced in the database', () => {
+    const source = readSql(feedbackFile)
+    expect(source).toMatch(/create policy hub_feedback_select_admin[\s\S]*?is_admin\(\)/)
+    expect(source).toMatch(/create policy hub_feedback_update_admin[\s\S]*?with check \(\(select public\.is_admin\(\)\)\)/)
+    expect(source).toMatch(/grant select, update on public\.hub_feedback to authenticated/)
+  })
+
+  it('seeds the feedback flag off and never expires the rows', () => {
+    expect(readSql(feedbackFile)).toMatch(/insert into public\.feature_flags \(key, enabled\) values \('feedback', false\)/)
+    const purge = migrations.filter((f) => read(f).includes('create or replace function public.purge_old_data'))
+    expect(readSql(purge[purge.length - 1]), 'feedback is an average over time, not an inbox').not.toContain('hub_feedback')
+  })
+
+  it('widens the seen-table constraint to the two new categories', () => {
+    const source = readSql(rollupFile)
+    const constraint = source.match(/admin_inbox_seen_category_check check \(category in\s*\(([\s\S]*?)\)/)?.[1] ?? ''
+    expect(constraint, 'the constraint could not be read').toBeTruthy()
+    expect(constraint).toContain("'reports'")
+    expect(constraint).toContain("'feedback'")
+    expect(source).toMatch(/drop constraint if exists admin_inbox_seen_category_check/)
+  })
+
+  it('announces a report once, as a report, and a rating once', () => {
+    const source = latestAdminInbox()
+    // The messages source must exclude reports or every report is announced twice, once mislabelled.
+    const messages = source.match(/select 'messages'::text as category[\s\S]*?from public\.contact_messages m[\s\S]*?and m\.created_at/)?.[0] ?? ''
+    expect(messages, 'the messages source could not be read').toContain("m.kind = 'message'")
+    expect(source).toMatch(/select 'reports'::text as category, m\.id::text, 'New problem report'/)
+    expect(source).toMatch(/select 'feedback'::text as category, f\.id::text/)
+    // Both new categories have a handled state, so both need an outstanding count or the bell can
+    // never be emptied.
+    expect(source).toMatch(/select 'reports', count\(\*\)::int[\s\S]*?kind = 'report' and handled_at is null/)
+    expect(source).toMatch(/select 'feedback', count\(\*\)::int[\s\S]*?where not handled/)
+  })
+
+  it('keeps reports out of the unanswered-messages number and in one of their own', () => {
+    const source = latestAnalytics()
+    expect(source, 'a report would make "unanswered" climb forever').toMatch(
+      /'unhandledMessages', \(select count\(\*\) from public\.contact_messages where kind = 'message' and handled_at is null\)/,
+    )
+    expect(source).toMatch(/'unhandledReports', \(select count\(\*\) from public\.contact_messages where kind = 'report'/)
+    expect(source).toMatch(/'reports', jsonb_build_object/)
+    expect(source).toMatch(/'feedback', jsonb_build_object/)
+    expect(source, 'the average must read all time, not the window').toMatch(/'average', \(select coalesce\(round\(avg\(rating\)::numeric, 1\), 0\) from public\.hub_feedback\)/)
+  })
+
+  it('resolves a top-content news path by slug as well as by id', () => {
+    const source = latestAnalytics()
+    expect(source).toMatch(/left join public\.news n\s*on t\.path = '\/news\/' \|\| n\.id or t\.path = '\/news\/' \|\| n\.slug/)
   })
 })

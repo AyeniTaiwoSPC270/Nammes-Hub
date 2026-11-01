@@ -7,6 +7,7 @@ import calendarIcs from './_lib/handlers/calendar-ics.js'
 // The named export, not the default: og.js's default is the already-built handler, so importing it and calling it
 // would fire the handler with no request.
 import { createOgHandler } from './_lib/handlers/og.js'
+import { createNewsPreviewHandler, createNewsImageHandler } from './_lib/handlers/newsPreview.js'
 
 // One function for the System page routes, the email worker, the calendar reminder worker, the handbook PDF
 // builder (see api/account.js for why routes share functions) and the Open Graph previews.
@@ -22,6 +23,8 @@ const ACTIONS = {
   'calendar-reminders': calendarReminders,
   'calendar-ics': calendarIcs,
   og: createOgHandler(),
+  'news-preview': createNewsPreviewHandler(),
+  'news-image': createNewsImageHandler(),
 }
 
 export default function handler(req, res) {

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 export async function fetchContactMessages() {
   const { data, error } = await supabase
     .from('contact_messages')
-    .select('id, name, email, message, created_at, handled_at')
+    .select('id, kind, name, email, message, category, page_url, page_title, created_at, handled_at')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data

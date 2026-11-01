@@ -3,6 +3,7 @@ import Breadcrumbs from '../../components/Breadcrumbs'
 import EmptyState from '../../components/ui/EmptyState'
 import ErrorState from '../../components/ui/ErrorState'
 import Reveal from '../../components/ui/Reveal'
+import ReportProblem from '../../components/ReportProblem'
 import { SkeletonTable } from '../../components/ui/Skeleton'
 import { LEVELS, SEMESTER_LABELS, useResourcesQuery, getResources } from '../../data/resources'
 
@@ -91,6 +92,10 @@ export default function ResourceList() {
             description="Drive links and study materials for this level and semester haven't been added yet."
           />
         )}
+      </div>
+
+      <div className="mt-6">
+        <ReportProblem title={`${level} Level · ${SEMESTER_LABELS[semester]} Resources`} />
       </div>
     </div>
   )

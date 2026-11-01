@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import SocialIcons from './SocialIcons'
+import FeedbackLauncher from './FeedbackLauncher'
 import { useSiteContentQuery } from '../data/siteContent'
 import { useCalendarFlag } from '../data/calendar'
 import { HANDBOOK_DOWNLOAD_NAME, useHandbookPdfUrl } from '../data/handbook'
@@ -35,6 +36,9 @@ const linkGroups = [
       { label: 'CGPA calculator', to: '/cgpa' },
       { label: 'Contact Us', to: '/contact' },
       { label: 'Sign in', to: '/login' },
+      // Not a route: it opens the rating modal in place, and disappears with the rest of the
+      // feature when the feedback switch is off.
+      { label: 'Rate the Hub', feedback: true },
     ],
   },
 ]
@@ -114,6 +118,13 @@ export default function Footer() {
                     <a key={item.label} href={handbookUrl} download={HANDBOOK_DOWNLOAD_NAME} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
                       {item.label}
                     </a>
+                  ) : item.feedback ? (
+                    <FeedbackLauncher
+                      key={item.label}
+                      className="text-sm text-white/80 no-underline hover:text-white hover:underline"
+                    >
+                      {item.label}
+                    </FeedbackLauncher>
                   ) : (
                     <Link key={item.label} to={item.to} className="text-sm text-white/80 no-underline hover:text-white hover:underline">
                       {item.label}
@@ -130,6 +141,10 @@ export default function Footer() {
         <span>&copy; {year} NAMMES Hub. All rights reserved.</span>
         <span>University of Lagos, Faculty of Engineering</span>
       </div>
+
+      {/* The one automatic entry point, mounted here because the footer is on every page. It
+          renders nothing unless the switch is on and this device has not been asked before. */}
+      <FeedbackLauncher auto />
     </footer>
   )
 }

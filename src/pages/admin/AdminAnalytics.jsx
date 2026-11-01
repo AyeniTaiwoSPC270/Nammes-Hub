@@ -263,6 +263,23 @@ export default function AdminAnalytics() {
               spark={data.engagement.map((row) => row.forms)}
             />
             <StatCard
+              label="Problem reports"
+              value={data.kpis.reports.current}
+              previous={data.kpis.reports.previous}
+              icon="flag"
+            />
+            <StatCard
+              label="Ratings"
+              value={data.kpis.feedback.current}
+              previous={data.kpis.feedback.previous}
+              icon="star"
+              hint={
+                data.kpis.feedback.total > 0
+                  ? `Average ${data.kpis.feedback.average.toFixed(1)}/5 across ${data.kpis.feedback.total.toLocaleString()} ratings`
+                  : 'No ratings yet'
+              }
+            />
+            <StatCard
               label="Email opt-in"
               value={data.kpis.optInRate.optedIn}
               icon="campaign"

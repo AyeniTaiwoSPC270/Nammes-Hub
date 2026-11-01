@@ -51,10 +51,11 @@ export function siteOrigin() {
   return process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'nammes-hub.vercel.app'
 }
 
-export function renderPage({ title, description, path = '/' }) {
+export function renderPage({ title, description, path = '/', image, imageWidth, imageHeight }) {
   const origin = `https://${siteOrigin()}`
   const url = `${origin}${path}`
-  const image = `${origin}/logo.png`
+  // The article card passes its own generated image; a quiz preview falls back to the site mark.
+  const imageHref = image ? String(image) : `${origin}/logo.png`
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -66,12 +67,13 @@ export function renderPage({ title, description, path = '/' }) {
 <meta property="og:site_name" content="${escapeHtml(SITE)}">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">
-<meta property="og:image" content="${escapeHtml(image)}">
+<meta property="og:image" content="${escapeHtml(imageHref)}">
+${imageWidth && imageHeight ? `<meta property="og:image:width" content="${escapeHtml(imageWidth)}">\n<meta property="og:image:height" content="${escapeHtml(imageHeight)}">\n` : ''}
 <meta property="og:url" content="${escapeHtml(url)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
-<meta name="twitter:image" content="${escapeHtml(image)}">
+<meta name="twitter:image" content="${escapeHtml(imageHref)}">
 </head>
 <body><p><a href="${escapeHtml(url)}">${escapeHtml(title)}</a></p></body>
 </html>`

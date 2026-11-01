@@ -1,16 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
+import ReportProblem from '../components/ReportProblem'
 import { SkeletonText } from '../components/ui/Skeleton'
 import { ContentLook } from '../components/content/ContentCards'
-import { useNewsQuery, getNewsById, resolveNewsVideo, useNewsVideoFlag } from '../data/news'
+import { useNewsQuery, getNewsByKey, resolveNewsVideo, useNewsVideoFlag, useNewsShareFlag } from '../data/news'
+import { shareArticle, copyLink, whatsappUrl } from '../lib/share'
 import { youtubeEmbedUrl, youtubeThumbUrl } from '../lib/newsVideo'
 import { usePageLook } from '../data/contentLooks'
 import { linkifyText } from '../lib/linkify'
+import { useToast } from '../lib/ToastContext'
 
 /**
  * A post's player: a native `<video>` for an upload, a click-to-load facade for a YouTube link.
@@ -92,13 +95,111 @@ function NewsVideo({ video, cover }) {
   )
 }
 
+/**
+ * The share control: the phone's own sheet where one exists, with Copy link and WhatsApp beside it.
+ * Rendered as a menu rather than three buttons because on a phone the sheet is the whole point and
+ * two more buttons would crowd the footer of every article.
+ */
+function ArticleShare({ title, path }) {
+  const toast = useToast()
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef(null)
+  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+
+  useEffect(() => {
+    if (!open) return undefined
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    function onPointerDown(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [open])
+
+  async function handleNative() {
+    setOpen(false)
+    const result = await shareArticle({ title, path })
+    if (result.reason === 'error') toast.error('Could not open the share sheet.')
+  }
+
+  async function handleCopy() {
+    setOpen(false)
+    const copied = await copyLink(path)
+    if (copied) toast.success('Link copied to clipboard.')
+    else toast.error('Could not copy the link — copy it from the address bar.')
+  }
+
+  function handleWhatsApp() {
+    setOpen(false)
+    window.open(whatsappUrl(title, path), '_blank', 'noopener,noreferrer')
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted transition-colors hover:text-brand-orange"
+      >
+        <span className="material-symbols-outlined text-base" aria-hidden="true">
+          share
+        </span>
+        Share
+      </button>
+
+      {open && (
+        <div role="menu" className="absolute bottom-full left-0 z-20 mb-2 w-48 rounded-lg border border-hairline bg-surface p-1 shadow-md">
+          {canNativeShare && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleNative}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-ink-900 hover:bg-surface-low"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">share</span>
+              Share…
+            </button>
+          )}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleCopy}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-ink-900 hover:bg-surface-low"
+          >
+            <span className="material-symbols-outlined text-base" aria-hidden="true">content_copy</span>
+            Copy link
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleWhatsApp}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-ink-900 hover:bg-surface-low"
+          >
+            <span className="material-symbols-outlined text-base" aria-hidden="true">campaign</span>
+            WhatsApp
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function NewsDetail() {
-  const { id } = useParams()
+  const { key } = useParams()
   const navigate = useNavigate()
   const { data, isLoading, isError, refetch } = useNewsQuery()
   // Hook first, before any early return below: it has to run on every render or the loading and error
   // branches would render a different number of hooks than the loaded one.
   const videoEnabled = useNewsVideoFlag()
+  const shareEnabled = useNewsShareFlag()
   // A detail page has no cards and no grid, so the look reaches it in exactly two places: the category
   // accent and the hero's corner radius. `ContentLook` wraps the article only, NOT the page, so the
   // breadcrumb, the back button and the nav keep the site's own colours.
@@ -127,8 +228,13 @@ export default function NewsDetail() {
     )
   }
 
-  const post = getNewsById(data ?? [], id)
+  const post = getNewsByKey(data ?? [], key)
   if (!post) return <Navigate to="/news" replace />
+
+  // One URL per article: an id link resolves and then lands on the slug form, so every link ever
+  // shared keeps working without the canonical address becoming two.
+  const canonical = post.slug ?? post.id
+  if (key !== canonical) return <Navigate to={`/news/${canonical}`} replace />
 
   const video = resolveNewsVideo(post, videoEnabled)
   // A video at the top IS the article's media, so the cover is not repeated above it -- it has already
@@ -170,10 +276,15 @@ export default function NewsDetail() {
         </Reveal>
       </ContentLook>
 
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
         <Button variant="ghost" onClick={() => navigate('/news')}>
           Back to news
         </Button>
+        {shareEnabled && <ArticleShare title={post.title} path={`/news/${canonical}`} />}
+      </div>
+
+      <div className="mt-4">
+        <ReportProblem title={post.title} />
       </div>
     </div>
   )
