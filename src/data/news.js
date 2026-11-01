@@ -72,18 +72,20 @@ export function getNewsById(list, id) {
   return list.find((n) => n.id === id)
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
 /**
  * Resolve the one segment of `/news/:key`, which is either a legacy id or a slug.
  *
  * Both are accepted because every article shared before slugs existed is an id link, and the
  * analytics path mapping and the change-request queue still build `/news/<id>` paths today. One
  * resolver rather than two routes, so a link can never land on a route that does not know it.
+ *
+ * The slug is tried first, then the id, because `news.id` is a readable text key
+ * ('nammes-hub-is-here-i8p821') rather than a uuid -- the two forms cannot be told apart by shape,
+ * so an id-shaped guess is what would break the old links this exists to keep.
  */
 export function getNewsByKey(list, key) {
   if (!key) return null
-  return UUID.test(key) ? getNewsById(list, key) : list.find((n) => n.slug === key) ?? null
+  return list.find((n) => n.slug === key) ?? getNewsById(list, key) ?? null
 }
 
 /**

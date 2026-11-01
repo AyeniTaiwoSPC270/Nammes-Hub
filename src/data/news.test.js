@@ -17,9 +17,11 @@ describe('getNewsById', () => {
 })
 
 describe('getNewsByKey', () => {
+  // Ids as the real table has them: readable text keys, which is why the resolver cannot tell an
+  // id from a slug by shape and has to try both.
   const slugged = [
-    { id: '11111111-1111-4111-8111-111111111111', slug: 'exam-timetable', title: 'Exams' },
-    { id: '22222222-2222-4222-8222-222222222222', slug: 'matriculation', title: 'Matriculation' },
+    { id: 'exam-timetable-post-k2m9', slug: 'exam-timetable', title: 'Exams' },
+    { id: 'nammes-hub-is-here-i8p821', slug: 'matriculation', title: 'Matriculation' },
   ]
 
   it('resolves a slug', () => {
@@ -27,7 +29,7 @@ describe('getNewsByKey', () => {
   })
 
   it('resolves a legacy id, so every link shared before slugs existed still works', () => {
-    expect(getNewsByKey(slugged, '22222222-2222-4222-8222-222222222222').title).toBe('Matriculation')
+    expect(getNewsByKey(slugged, 'nammes-hub-is-here-i8p821').title).toBe('Matriculation')
   })
 
   it('returns null for an unknown key, an empty key and no key', () => {
@@ -36,9 +38,9 @@ describe('getNewsByKey', () => {
     expect(getNewsByKey(slugged, undefined)).toBeNull()
   })
 
-  it('never matches an id against a slug field when the key is not a uuid', () => {
-    expect(getNewsByKey(slugged, '11111111-1111-4111-8111-111111111111')).toBeTruthy()
-    expect(getNewsByKey(slugged, 'not-a-uuid-but-close')).toBeNull()
+  it('prefers a slug over an id when a key could be either', () => {
+    const clashing = [...slugged, { id: 'extra-post-x', slug: 'matriculation', title: 'Other' }]
+    expect(getNewsByKey(clashing, 'matriculation').title).toBe('Matriculation')
   })
 })
 

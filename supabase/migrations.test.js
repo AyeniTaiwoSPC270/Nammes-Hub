@@ -252,13 +252,23 @@ describe('news slugs', () => {
     expect(source).toMatch(/update public\.news set slug = public\.news_slug\(v_title, v_id\)/)
   })
 
+  it('types news_slug the way the table is typed', () => {
+    // `news.id` is a readable text key, not a uuid. A uuid parameter matches no call at insert
+    // time, and makes the backfill fail on its first row with 22P02.
+    const source = readSql(slugFile)
+    expect(source).toMatch(/news_slug\(p_title text, p_id text\)/)
+    expect(source, 'the uuid overload has to be dropped, not shadowed').toMatch(
+      /drop function if exists public\.news_slug\(text, uuid\)/,
+    )
+  })
+
   it('never feeds a record field to news_slug', () => {
     // A loop over `row record` looks the same and fails at apply time: a record field has no
     // static type, so the call is resolved as news_slug(text, text) and Postgres answers 42883.
     // Typed variables are the fix, and this is the assertion that keeps them.
     const source = readSql(slugFile)
     expect(source).not.toMatch(/public\.news_slug\(row\./)
-    expect(source).toMatch(/v_id uuid/)
+    expect(source).toMatch(/v_id text/)
     expect(source).toMatch(/v_title text/)
   })
 

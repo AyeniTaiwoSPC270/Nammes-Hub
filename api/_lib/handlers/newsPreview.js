@@ -16,8 +16,6 @@ import { renderNewsCard, OG_WIDTH, OG_HEIGHT } from '../newsCardRender.js'
 //
 // Spec: docs/superpowers/specs/2026-10-31-news-slugs-share-preview-design.md
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
 /** First ~160 characters of the body as plain text: the whole article is not a description. */
 export function newsExcerpt(body, max = 160) {
   const text = String(body ?? '').replace(/\s+/g, ' ').trim()
@@ -56,12 +54,14 @@ function readLogo() {
 
 async function findArticle(client, key) {
   const columns = 'id, slug, title, body, image_url'
-  const { data } = await client
-    .from('news')
-    .select(columns)
-    .eq(UUID.test(key) ? 'id' : 'slug', key)
-    .maybeSingle()
-  return data ?? null
+  // Slug first, id second. `news.id` is a readable text key, not a uuid, so the two cannot be
+  // told apart by shape; the slug is the canonical address and the id is the legacy form a link
+  // shared before slugs existed still carries.
+  for (const column of ['slug', 'id']) {
+    const { data } = await client.from('news').select(columns).eq(column, key).maybeSingle()
+    if (data) return data
+  }
+  return null
 }
 
 async function isShareEnabled(client) {
