@@ -67,19 +67,27 @@ create trigger news_set_slug before insert on public.news
 -- ===== Backfill =====
 -- One row at a time so each call to news_slug() sees the slugs already handed out in this
 -- transaction; a single set-based update would race with itself and trip the unique index.
+--
+-- The loop variables are declared with their real types rather than read off a `record`. A
+-- PL/pgSQL record field has no static type, so `news_slug(row.title, row.id)` resolves to
+-- news_slug(text, text), which does not exist -- the whole statement fails with 42883.
 do $$
 declare
-  row record;
+  v_id uuid;
+  v_title text;
 begin
-  for row in select id, title from public.news where slug is null order by created_at loop
-    update public.news set slug = public.news_slug(row.title, row.id) where id = row.id;
+  for v_id, v_title in
+    select id, title from public.news where slug is null order by created_at
+  loop
+    update public.news set slug = public.news_slug(v_title, v_id) where id = v_id;
   end loop;
 end;
 $$;
 
--- Not `create unique index if not exists`: the backfill above is what makes this safe, and a
--- silently skipped index would leave duplicates free to appear later.
-create unique index news_slug_key on public.news (slug);
+-- `if not exists` so a half-applied file can be run again: this migration is applied by hand
+-- through the SQL editor, and a failure above leaves the work to be repeated. It does not excuse
+-- duplicates -- building the index fails on them either way.
+create unique index if not exists news_slug_key on public.news (slug);
 
 -- ===== Kill switch =====
 -- Off until it is switched on from the System page: with the flag off, the share button does not

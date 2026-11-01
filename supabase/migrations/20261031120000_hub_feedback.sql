@@ -6,7 +6,9 @@
 -- close_public_inserts.sql moved contact_messages to -- a table anyone can write to directly is a
 -- table anyone can fill with anything.
 
-create table public.hub_feedback (
+-- `if not exists`, and a drop before each policy, so the file can be run again after a failure:
+-- these are applied by hand through the SQL editor, and one bad statement costs the whole batch.
+create table if not exists public.hub_feedback (
   id uuid primary key default gen_random_uuid(),
   rating smallint not null check (rating between 1 and 5),
   category text check (category is null or category in ('design', 'content', 'speed', 'bugs', 'other')),
@@ -27,17 +29,19 @@ revoke all on public.hub_feedback from anon, authenticated;
 
 grant select, update on public.hub_feedback to authenticated;
 
+drop policy if exists hub_feedback_select_admin on public.hub_feedback;
 create policy hub_feedback_select_admin
   on public.hub_feedback for select to authenticated
   using ((select public.is_admin()));
 
+drop policy if exists hub_feedback_update_admin on public.hub_feedback;
 create policy hub_feedback_update_admin
   on public.hub_feedback for update to authenticated
   using ((select public.is_admin()))
   with check ((select public.is_admin()));
 
 -- The inbox reads a 30-day window newest-first; the dashboard's average reads everything.
-create index hub_feedback_created_idx on public.hub_feedback (created_at desc);
+create index if not exists hub_feedback_created_idx on public.hub_feedback (created_at desc);
 
 -- ===== Kill switch =====
 -- Off until it is switched on from the System page: modal, footer link, Account link and the

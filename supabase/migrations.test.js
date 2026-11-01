@@ -232,7 +232,9 @@ describe('news slugs', () => {
     expect(source).toMatch(/create trigger news_set_slug before insert on public\.news/)
     expect(source).toMatch(/new\.slug := public\.news_slug\(new\.title, new\.id\)/)
     expect(source).toMatch(/add column if not exists slug text/)
-    expect(source).toContain('create unique index news_slug_key on public.news (slug)')
+    // `if not exists` is a re-run affordance, not a weaker constraint: building the index still
+    // fails if two rows ended up with the same slug.
+    expect(source).toContain('create unique index if not exists news_slug_key on public.news (slug)')
   })
 
   it('gives two posts with the same title different slugs', () => {
@@ -246,7 +248,18 @@ describe('news slugs', () => {
 
   it('backfills the rows that already exist', () => {
     const source = readSql(slugFile)
-    expect(source).toMatch(/for row in select id, title from public\.news where slug is null/)
+    expect(source).toMatch(/for v_id, v_title in\s+select id, title from public\.news where slug is null/)
+    expect(source).toMatch(/update public\.news set slug = public\.news_slug\(v_title, v_id\)/)
+  })
+
+  it('never feeds a record field to news_slug', () => {
+    // A loop over `row record` looks the same and fails at apply time: a record field has no
+    // static type, so the call is resolved as news_slug(text, text) and Postgres answers 42883.
+    // Typed variables are the fix, and this is the assertion that keeps them.
+    const source = readSql(slugFile)
+    expect(source).not.toMatch(/public\.news_slug\(row\./)
+    expect(source).toMatch(/v_id uuid/)
+    expect(source).toMatch(/v_title text/)
   })
 
   it('an approved non-owner edit cannot rewrite a published URL', () => {
@@ -294,7 +307,7 @@ describe('rate the hub', () => {
 
   it('creates hub_feedback with no insert path for a browser', () => {
     const source = readSql(feedbackFile)
-    expect(source).toMatch(/create table public\.hub_feedback/)
+    expect(source).toMatch(/create table if not exists public\.hub_feedback/)
     expect(source).toMatch(/rating smallint not null check \(rating between 1 and 5\)/)
     expect(source).toMatch(/revoke all on public\.hub_feedback from anon, authenticated/)
     expect(source, 'hub_feedback must not grant insert to a client').not.toMatch(/grant insert[^;]*hub_feedback/i)
