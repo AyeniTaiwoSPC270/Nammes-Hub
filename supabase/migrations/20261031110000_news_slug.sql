@@ -15,7 +15,12 @@ alter table public.news add column if not exists slug text;
 -- Collisions append a slice of the id (unique by definition), which keeps two posts with the same
 -- title distinguishable without a lookup table. Not immutable on purpose: it reads `news` to test
 -- for a clash, so Postgres must not be allowed to precompute it.
-create or replace function public.news_slug(p_title text, p_id uuid)
+--
+-- `p_id` is text because `news.id` is: the content tables were keyed by a readable string
+-- ('nammes-hub-is-here-i8p821'), not a uuid. Typing it uuid makes the trigger's call find no
+-- function at all, and makes the backfill fail on its first row with 22P02.
+drop function if exists public.news_slug(text, uuid);
+create or replace function public.news_slug(p_title text, p_id text)
 returns text
 language plpgsql
 as $$
@@ -70,10 +75,11 @@ create trigger news_set_slug before insert on public.news
 --
 -- The loop variables are declared with their real types rather than read off a `record`. A
 -- PL/pgSQL record field has no static type, so `news_slug(row.title, row.id)` resolves to
--- news_slug(text, text), which does not exist -- the whole statement fails with 42883.
+-- news_slug(text, text) even when the argument is text, and the mismatch is reported as 42883
+-- rather than as the type error it is.
 do $$
 declare
-  v_id uuid;
+  v_id text;
   v_title text;
 begin
   for v_id, v_title in

@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { createNewsPreviewHandler, createNewsImageHandler, newsExcerpt } from './newsPreview.js'
 
+// `news.id` is a readable text key, not a uuid -- the shape the real table uses.
 const ARTICLE = {
-  id: '11111111-1111-4111-8111-111111111111',
+  id: 'matriculation-2026-dates-a1b2c3',
   slug: 'matriculation-2026',
   title: 'Matriculation 2026 — dates announced',
   body: '  The ceremony holds on the 14th of March at the main auditorium.  Bring your fee receipt.  ',
@@ -28,8 +29,10 @@ function fakeClient({ article = ARTICLE, flags = { news_share: true } } = {}) {
       if (table === 'news') {
         return {
           select: () => ({
-            eq: (_col, value) => ({
-              maybeSingle: async () => ({ data: article && (article.id === value || article.slug === value) ? article : null }),
+            // One column at a time, so the resolver's slug-then-id order is actually exercised
+            // rather than satisfied by a lookup that matches either field.
+            eq: (column, value) => ({
+              maybeSingle: async () => ({ data: article && article[column] === value ? article : null }),
             }),
           }),
         }
@@ -101,6 +104,7 @@ describe('news-preview', () => {
     expect(res.body).toContain('/news/matriculation-2026')
     expect(imageKey(res.body)).toBe('matriculation-2026')
   })
+
 
   it('escapes an admin-authored title', async () => {
     const handler = make({ article: { ...ARTICLE, title: '<script>"x"</script>' } })
