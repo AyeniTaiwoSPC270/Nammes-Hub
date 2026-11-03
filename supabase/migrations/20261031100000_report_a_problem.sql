@@ -21,10 +21,17 @@ alter table public.contact_messages
   alter column email drop not null,
   alter column message drop not null;
 
+-- `add constraint` has no `if not exists`, so re-running this file after a partial apply fails on
+-- its own work while everything above it succeeds. Drop first so the two constraints are as
+-- re-runnable as the column adds; a check constraint carries no data, so nothing is lost.
+alter table public.contact_messages
+  drop constraint if exists contact_messages_kind_check;
 alter table public.contact_messages
   add constraint contact_messages_kind_check
     check (kind in ('message', 'report'));
 
+alter table public.contact_messages
+  drop constraint if exists contact_messages_shape_check;
 alter table public.contact_messages
   add constraint contact_messages_shape_check check (
     (
