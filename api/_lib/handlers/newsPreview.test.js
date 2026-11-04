@@ -10,11 +10,13 @@ const ARTICLE = {
   image_url: 'https://example.supabase.co/storage/v1/object/public/news-images/m.webp',
 }
 
+// No `type()` method, on purpose. Vercel's Node response has `status`, `send`, `json` and `redirect` and nothing else;
+// a fake that supplied `type` is what let these handlers call it, which failed every request in production while the
+// suite stayed green. Content types are read back off the headers now.
 function fakeRes() {
-  const res = { statusCode: null, body: null, headers: {}, contentType: null }
+  const res = { statusCode: null, body: null, headers: {} }
   res.status = (code) => { res.statusCode = code; return res }
   res.setHeader = (key, value) => { res.headers[key] = value }
-  res.type = (value) => { res.contentType = value; return res }
   res.send = (value) => { res.body = value; return res }
   res.json = (value) => { res.body = value; return res }
   return res
@@ -79,6 +81,7 @@ describe('news-preview', () => {
     expect(res.statusCode).toBe(200)
     expect(res.body).toBe(SHELL)
     expect(res.headers['Cache-Control']).toBe('public, max-age=0, must-revalidate')
+    expect(res.headers['Content-Type']).toContain('text/html')
   })
 
   it('gives a crawler the article tags, with an absolute image URL', async () => {
@@ -153,7 +156,7 @@ describe('news-image', () => {
     const res = fakeRes()
     await handler(crawler('matriculation-2026'), res)
     expect(res.statusCode).toBe(200)
-    expect(res.contentType).toBe('image/png')
+    expect(res.headers['Content-Type']).toBe('image/png')
     expect(Buffer.isBuffer(res.body)).toBe(true)
     expect(res.body.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a')
     expect(pngSize(res.body)).toEqual({ width: 1200, height: 630 })
