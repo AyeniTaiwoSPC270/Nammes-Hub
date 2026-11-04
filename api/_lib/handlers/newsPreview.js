@@ -14,6 +14,11 @@ import { renderNewsCard, OG_WIDTH, OG_HEIGHT } from '../newsCardRender.js'
 // Registered as `news-preview` and `news-image` on api/system.js rather than given their own
 // entry points: the Hobby plan's twelve function slots are all taken.
 //
+// Content types go on as a header, never through `res.type()`. Vercel's Node response is only
+// `status`, `send`, `json` and `redirect` (see VercelResponse in @vercel/node); `type` is an Express
+// method and calling it throws, which surfaces as FUNCTION_INVOCATION_FAILED rather than a bad
+// content type. Every other handler in api/ sets the header for the same reason.
+//
 // Spec: docs/superpowers/specs/2026-10-31-news-slugs-share-preview-design.md
 
 /** First ~160 characters of the body as plain text: the whole article is not a description. */
@@ -96,31 +101,36 @@ export function createNewsPreviewHandler({
       const html = shell()
       if (!html) {
         console.error('news-preview: dist/index.html is missing from the function bundle')
-        res.status(500).type('text/plain').send('Service unavailable')
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+        res.status(500).send('Service unavailable')
         return
       }
       // Revalidate rather than cache: index.html carries hashed asset URLs, and a stale copy would
       // point a visitor at files the current deployment has already deleted.
       res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
-      res.status(200).type('text/html').send(html)
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      res.status(200).send(html)
       return
     }
 
     const html = shell()
     if (!html) {
-      res.status(404).type('text/plain').send('Not found')
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.status(404).send('Not found')
       return
     }
     res.setHeader('Cache-Control', 'public, max-age=300')
 
     if (!article) {
-      res.status(200).type('text/html').send(html)
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      res.status(200).send(html)
       return
     }
 
     const keyForImage = article.slug ?? article.id
     const image = `https://${siteOrigin()}/api/news-image?key=${encodeURIComponent(keyForImage)}`
-    res.status(200).type('text/html').send(
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    res.status(200).send(
       renderPage({
         title: article.title,
         description: newsExcerpt(article.body),
@@ -143,12 +153,14 @@ export function createNewsImageHandler({
     const key = keyOf(req)
     const client = getClient()
     if (!(await isShareEnabled(client))) {
-      res.status(404).type('text/plain').send('Not found')
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.status(404).send('Not found')
       return
     }
     const article = key ? await findArticle(client, key) : null
     if (!article) {
-      res.status(404).type('text/plain').send('Not found')
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.status(404).send('Not found')
       return
     }
 
@@ -158,7 +170,8 @@ export function createNewsImageHandler({
     // A card is derived from a row that changes rarely, and WhatsApp re-fetches aggressively;
     // caching it is what stops every preview cold-starting the canvas renderer.
     res.setHeader('Cache-Control', 'public, s-maxage=86400')
-    res.status(200).type('image/png').send(png)
+    res.setHeader('Content-Type', 'image/png')
+    res.status(200).send(png)
   }
 }
 

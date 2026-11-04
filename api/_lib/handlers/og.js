@@ -97,8 +97,12 @@ export function createOgHandler(getClient) {
 
     // Not this endpoint's business. A 404 rather than the app shell keeps a mistyped or stale /api/og out of the
     // crawlers' cache, instead of handing every broken link the same card.
+    //
+    // The content type is a header because `res.type()` does not exist on Vercel's Node response -- it is an Express
+    // method, it is undefined here, and calling it fails the invocation with FUNCTION_INVOCATION_FAILED.
     if (!preview) {
-      res.status(404).type('text/plain').send('Not found')
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.status(404).send('Not found')
       return
     }
 
@@ -128,7 +132,8 @@ export function createOgHandler(getClient) {
     // WhatsApp refetches aggressively. Without this, every preview cold-starts a serverless handler, which is how a
     // share feature becomes the reason a game feels slow.
     res.setHeader('Cache-Control', 'public, max-age=300')
-    res.status(200).type('text/html').send(renderPage({ ...copy, path: preview.target(query) }))
+    res.setHeader('Content-Type', 'text/html; charset=utf-8')
+    res.status(200).send(renderPage({ ...copy, path: preview.target(query) }))
   }
 }
 

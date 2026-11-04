@@ -1,15 +1,20 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync, readdirSync } from 'node:fs'
+import path from 'node:path'
 import { createOgHandler, escapeHtml, renderPage } from './og.js'
 import { QUIZ, SESSION, fakeDb, fakeRes } from '../quizTestKit.js'
 
 const UUID = '33333333-3333-4333-8333-333333333333'
 
 // A fake response that also records the content type, so "this is HTML, not JSON" is an assertion and not a hope.
+//
+// It deliberately has no `type()` method: Vercel's Node response does not have one either, and a fake that added it
+// let every one of these handlers call a method that only exists in the test -- the endpoints 500'd in production
+// with FUNCTION_INVOCATION_FAILED while this suite stayed green.
 function res() {
   const r = fakeRes()
   const headers = {}
   r.setHeader = (k, v) => { headers[k] = v; r.headers[k] = v }
-  r.type = (t) => { r.contentType = t; return r }
   r.send = (b) => { r.body = b; return r }
   r.redirect = (status, location) => { r.redirected = { status, location }; return r }
   return r
@@ -41,7 +46,7 @@ describe('the Open Graph endpoint', () => {
   it('answers with HTML, never JSON', async () => {
     const r = await run(finishedGame(), { type: 'join' })
     expect(r.statusCode).toBe(200)
-    expect(r.contentType).toBe('text/html')
+    expect(r.headers['Content-Type']).toContain('text/html')
     expect(typeof r.body).toBe('string')
     expect(r.body).toContain('<!doctype html>')
   })
@@ -166,5 +171,27 @@ describe('escaping', () => {
   it('escapes the canonical url too', () => {
     const html = renderPage({ title: 'T', description: 'D', path: '/x"><script>' })
     expect(html).not.toContain('"><script>')
+  })
+})
+
+describe('the response object', () => {
+  // A source scan, because this cannot be caught by calling the handlers: the fakes are ours and the real response is
+  // Vercel's. `res.type` is Express-only and undefined in a Node function, so a single call takes the whole invocation
+  // down -- og, news-preview and the share card all returned 500 on every request until this was found.
+  const files = []
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) walk(full)
+      else if (entry.name.endsWith('.js') && !entry.name.endsWith('.test.js')) files.push(full)
+    }
+  }
+  walk(path.join(process.cwd(), 'api'))
+
+  // Matches a call (`.type('text/html')`), not the mention of it in the comments that explain this.
+  it('never calls res.type(), which Vercel does not provide', () => {
+    const call = /\.type\(\s*['"`]/
+    const offenders = files.filter((file) => call.test(readFileSync(file, 'utf8')))
+    expect(offenders).toEqual([])
   })
 })
