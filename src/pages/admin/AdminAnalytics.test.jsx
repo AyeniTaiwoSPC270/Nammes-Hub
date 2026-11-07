@@ -68,6 +68,14 @@ describe('AdminAnalytics', () => {
     expect(renderPage('/admin/analytics?range=7d')).toContain('20 Oct')
   })
 
+  it('opens a custom range from the URL without a preset claiming it', () => {
+    // A custom window is not one of the presets, so none of them may render as pressed -- otherwise the
+    // page argues with itself about which range is on screen.
+    const html = renderPage('/admin/analytics?range=custom&from=2026-10-20&to=2026-10-22')
+    expect(html).toContain('Analytics')
+    expect(html).not.toContain('aria-pressed="true"')
+  })
+
   it('does not claim there is no traffic when there is', () => {
     expect(renderPage()).not.toContain('No page views are recorded for this period yet')
   })
