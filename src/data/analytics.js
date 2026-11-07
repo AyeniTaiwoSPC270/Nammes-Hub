@@ -5,16 +5,28 @@ import { sanitizeAnalytics } from '../lib/analytics'
 // One RPC, one request. The database groups; the browser only draws. sanitizeAnalytics is applied here
 // rather than in the page so every consumer -- the screen, the CSV, the PDF -- sees the same clean
 // numbers, and a malformed payload cannot reach a chart at all.
-export async function fetchAnalytics(days = 30) {
-  const { data, error } = await supabase.rpc('admin_analytics', { p_days: days })
+//
+// The window is an analyticsRangeFromSearch() result: { key, days, from, to }. A preset sends only its
+// day count, keeping the old call shape; a custom range sends its two ends, and the function prefers
+// them over the count. p_days still goes along because it is what the sanitizer and the empty state
+// fall back to while the request is in flight.
+export async function fetchAnalytics(range = { days: 30 }) {
+  const days = range?.days ?? 30
+  const custom = Boolean(range?.from && range?.to)
+  const { data, error } = custom
+    ? await supabase.rpc('admin_analytics', { p_days: days, p_from: range.from, p_to: range.to })
+    : await supabase.rpc('admin_analytics', { p_days: days })
   if (error) throw error
   return sanitizeAnalytics(data, days)
 }
 
-export function useAnalyticsQuery(days = 30) {
+export function useAnalyticsQuery(range = { days: 30 }) {
+  const days = range?.days ?? 30
   return useQuery({
-    queryKey: ['admin', 'analytics', days],
-    queryFn: () => fetchAnalytics(days),
+    // The ends are part of the key, not just the span: "1-7 Oct" and "20-26 Oct" are the same number
+    // of days and entirely different numbers, and a key that ignored them would serve one for the other.
+    queryKey: ['admin', 'analytics', range?.key ?? 'preset', days, range?.from ?? '', range?.to ?? ''],
+    queryFn: () => fetchAnalytics(range),
     // A dashboard is opened to look at something, not to watch it. A minute keeps a range switch cheap
     // when the admin flips back and forth, without serving yesterday's numbers all afternoon.
     staleTime: 60_000,

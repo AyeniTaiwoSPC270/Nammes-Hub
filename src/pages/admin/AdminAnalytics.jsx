@@ -14,6 +14,7 @@ import {
   QuickActionsPanel,
   TopContentPanel,
 } from '../../components/admin/analytics/AnalyticsPanels'
+import RangeCalendar from '../../components/admin/analytics/RangeCalendar'
 import Button from '../../components/ui/Button'
 import ErrorState from '../../components/ui/ErrorState'
 import { useAnalyticsQuery } from '../../data/analytics'
@@ -22,13 +23,16 @@ import { useAuth } from '../../lib/AuthContext'
 import {
   RANGE_OPTIONS,
   analyticsCsv,
+  analyticsRangeFromSearch,
   csvFilename,
   emptyAnalytics,
   formatDay,
   hasTraffic,
   percentLabel,
-  rangeDays,
-  rangeFromSearch,
+  rangeFileLabel,
+  searchForCustomRange,
+  searchForRange,
+  todayDayKey,
 } from '../../lib/analytics'
 import { downloadTextFile } from '../../lib/downloadFile'
 import { downloadAnalyticsPdf } from '../../lib/analyticsPdf'
@@ -151,27 +155,32 @@ export default function AdminAnalytics() {
   const [pdfBusy, setPdfBusy] = useState(false)
   const { user } = useAuth()
   const toast = useToast()
-  const range = rangeFromSearch(searchParams.toString())
-  const days = rangeDays(range)
-  const analyticsQuery = useAnalyticsQuery(days)
+  // One object, not a day count: a preset carries ?range=30d and a custom window carries the two dates
+  // it was built from, and both the query and the exports are keyed off whichever it is.
+  const range = analyticsRangeFromSearch(searchParams.toString())
+  const today = todayDayKey()
+  const analyticsQuery = useAnalyticsQuery(range)
   const adminRowQuery = useOwnAdminRowQuery(user?.id)
   const isOwner = Boolean(adminRowQuery.data?.is_owner)
-  const data = analyticsQuery.data ?? emptyAnalytics(days)
+  const data = analyticsQuery.data ?? emptyAnalytics(range.days)
 
   function chooseRange(key) {
-    const next = new URLSearchParams(searchParams)
-    next.set('range', key)
-    setSearchParams(next, { replace: true })
+    setSearchParams(new URLSearchParams(searchForRange(searchParams.toString(), key)), { replace: true })
+  }
+
+  function chooseCustom(from, to) {
+    const next = searchForCustomRange(searchParams.toString(), from, to)
+    setSearchParams(new URLSearchParams(next), { replace: true })
   }
 
   function handleCsv() {
-    downloadTextFile(csvFilename(range), analyticsCsv(data))
+    downloadTextFile(csvFilename(rangeFileLabel(range)), analyticsCsv(data))
   }
 
   async function handlePdf(layout) {
     setPdfBusy(true)
     try {
-      await downloadAnalyticsPdf(data, range, layout)
+      await downloadAnalyticsPdf(data, rangeFileLabel(range), layout)
     } catch {
       toast.error('The PDF could not be built. Try the CSV instead.')
     } finally {
@@ -180,12 +189,17 @@ export default function AdminAnalytics() {
   }
 
   const traffic = data.traffic
+  // The label comes from the payload, not the URL, so it says what was actually counted: the database
+  // clamps a window that reaches into the future or past 730 days, and a custom one-day pick has no
+  // "9 Oct – 9 Oct" to show.
   const rangeLabel =
     data.range.from && data.range.to
-      ? `${formatDay(data.range.from)} – ${formatDay(data.range.to)}`
-      : days === 0
+      ? data.range.from === data.range.to
+        ? formatDay(data.range.from)
+        : `${formatDay(data.range.from)} – ${formatDay(data.range.to)}`
+      : range.days === 0
         ? 'All time'
-        : `Last ${days} days`
+        : `Last ${range.days} days`
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
@@ -198,7 +212,8 @@ export default function AdminAnalytics() {
           </p>
         </header>
         <div className="flex flex-wrap items-center gap-2">
-          <RangePicker value={range} onChange={chooseRange} />
+          <RangePicker value={range.key} onChange={chooseRange} />
+          <RangeCalendar range={range} today={today} onSelect={chooseCustom} />
           <Button variant="secondary" size="sm" onClick={handleCsv} disabled={!analyticsQuery.data}>
             <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
             CSV

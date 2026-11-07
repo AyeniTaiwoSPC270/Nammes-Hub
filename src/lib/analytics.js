@@ -14,6 +14,14 @@ export const RANGE_OPTIONS = [
 
 export const DEFAULT_RANGE = '30d'
 
+// A range that names both ends instead of a number of days. It is not one of RANGE_OPTIONS because it
+// is not a preset: it carries two dates, so it travels as ?range=custom&from=&to=.
+export const CUSTOM_RANGE_KEY = 'custom'
+
+// Mirrors the clamp inside admin_analytics. A client that allowed more would draw a label for a window
+// the database quietly shortened underneath it.
+export const MAX_RANGE_DAYS = 730
+
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export function rangeDays(key) {
@@ -24,19 +32,98 @@ export function rangeKey(days) {
   return RANGE_OPTIONS.find((o) => o.days === Number(days))?.key ?? DEFAULT_RANGE
 }
 
-// Reads ?range= from the URL. An unknown or missing value falls back to 30 days rather than throwing:
-// a shared link with a typo should still open the page.
-export function rangeFromSearch(search) {
+// A day key that is a real calendar date, not merely the right shape. `2026-02-31` matches
+// /\d{4}-\d{2}-\d{2}/ and is a day nobody can look at, so it is refused here rather than handed to a
+// query that returns seven empty charts. Built from its own parts, never `new Date('2026-02-31')` --
+// that parse is UTC midnight, the trap api/_lib/calendarDates.js exists to close.
+export function normaliseDay(value) {
+  if (!isDay(value)) return ''
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  const real = date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+  return real ? value : ''
+}
+
+// A day *count*, so Date.UTC is arithmetic here and deliberately not a wall-clock day.
+function dayNumber(key) {
+  const [year, month, day] = key.split('-').map(Number)
+  return Date.UTC(year, month - 1, day) / DAY_MS
+}
+
+// Inclusive at both ends: one day is 1, not 0.
+export function spanDays(from, to) {
+  return Math.abs(dayNumber(to) - dayNumber(from)) + 1
+}
+
+// "Is today" read out of a Lagos calendar, because that is the day admin_analytics buckets in. An
+// admin on a machine west of Greenwich would otherwise be offered a date the database has no rows for
+// yet, and one east of it a date it already has.
+export function todayDayKey(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Lagos',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now)
+  const part = (type) => parts.find((p) => p.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}`
+}
+
+// Reads ?range= (and ?from=/?to=) from the URL. An unknown or missing value falls back to 30 days
+// rather than throwing: a shared link with a typo should still open the page.
+export function analyticsRangeFromSearch(search) {
   const params = new URLSearchParams(search)
   const key = params.get('range')
-  return RANGE_OPTIONS.some((o) => o.key === key) ? key : DEFAULT_RANGE
+
+  if (key === CUSTOM_RANGE_KEY) {
+    const a = normaliseDay(params.get('from'))
+    const b = normaliseDay(params.get('to'))
+    // A half-written custom range is not a range. Falling back to the preset beats answering with an
+    // empty window the admin did not ask for and cannot see the edges of.
+    if (a && b) {
+      const from = a <= b ? a : b
+      const to = a <= b ? b : a
+      return { key: CUSTOM_RANGE_KEY, days: Math.min(spanDays(from, to), MAX_RANGE_DAYS), from, to }
+    }
+  }
+
+  const preset = RANGE_OPTIONS.find((o) => o.key === key)
+  const chosen = preset ?? RANGE_OPTIONS.find((o) => o.key === DEFAULT_RANGE)
+  return { key: chosen.key, days: chosen.days, from: '', to: '' }
+}
+
+export function rangeFromSearch(search) {
+  return analyticsRangeFromSearch(search).key
 }
 
 export function searchForRange(search, key) {
   const params = new URLSearchParams(search)
   params.set('range', RANGE_OPTIONS.some((o) => o.key === key) ? key : DEFAULT_RANGE)
+  // Choosing a preset leaves a custom range behind, and leaving the dates in the URL would put the
+  // page in two states at once on a refresh.
+  params.delete('from')
+  params.delete('to')
   const next = params.toString()
   return next ? `?${next}` : ''
+}
+
+export function searchForCustomRange(search, from, to) {
+  const a = normaliseDay(from)
+  const b = normaliseDay(to)
+  if (!a || !b) return searchForRange(search, DEFAULT_RANGE)
+  const params = new URLSearchParams(search)
+  params.set('range', CUSTOM_RANGE_KEY)
+  params.set('from', a <= b ? a : b)
+  params.set('to', a <= b ? b : a)
+  return `?${params.toString()}`
+}
+
+// What the CSV and PDF filenames call the window. A preset keeps its short key; a custom range names
+// its own two days, because two exports of different weeks otherwise land in the same folder as
+// nammes-analytics-custom.pdf twice.
+export function rangeFileLabel(range) {
+  if (range?.key === CUSTOM_RANGE_KEY && range.from && range.to) return `custom-${range.from}-to-${range.to}`
+  return range?.key ?? DEFAULT_RANGE
 }
 
 export function percentDelta(current, previous) {

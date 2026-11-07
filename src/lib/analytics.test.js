@@ -10,10 +10,16 @@ import {
   humanisePath,
   normalisePath,
   percentDelta,
+  analyticsRangeFromSearch,
+  normaliseDay,
   rangeDays,
+  rangeFileLabel,
   rangeFromSearch,
   sanitizeAnalytics,
+  searchForCustomRange,
   searchForRange,
+  spanDays,
+  todayDayKey,
   totalFor,
 } from './analytics'
 
@@ -33,6 +39,69 @@ describe('range', () => {
   it('keeps unrelated query parameters when writing the range', () => {
     expect(searchForRange('?tab=reach', '7d')).toBe('?tab=reach&range=7d')
     expect(searchForRange('?range=bogus', '7d')).toBe('?range=7d')
+  })
+
+  it('drops the dates when a preset is chosen again', () => {
+    // Otherwise the URL says both "30 days" and "1-7 Oct", and a refresh has to guess which one won.
+    expect(searchForRange('?range=custom&from=2026-10-01&to=2026-10-07', '30d')).toBe('?range=30d')
+  })
+})
+
+describe('custom range', () => {
+  it('reads both dates out of the URL', () => {
+    expect(analyticsRangeFromSearch('?range=custom&from=2026-10-01&to=2026-10-07')).toEqual({
+      key: 'custom',
+      days: 7,
+      from: '2026-10-01',
+      to: '2026-10-07',
+    })
+  })
+
+  it('orders the ends, so a backwards pick is still a window', () => {
+    expect(analyticsRangeFromSearch('?range=custom&from=2026-10-07&to=2026-10-01')).toMatchObject({
+      from: '2026-10-01',
+      to: '2026-10-07',
+      days: 7,
+    })
+  })
+
+  it('counts a single day as one day, not zero', () => {
+    const range = analyticsRangeFromSearch('?range=custom&from=2026-10-05&to=2026-10-05')
+    expect(range.days).toBe(1)
+    expect(spanDays('2026-10-05', '2026-10-05')).toBe(1)
+    expect(spanDays('2026-10-05', '2026-10-06')).toBe(2)
+  })
+
+  it('refuses a half-written range and a day that does not exist', () => {
+    // The fallback is the preset, not an empty window the admin cannot see the edges of.
+    expect(analyticsRangeFromSearch('?range=custom&from=2026-10-01')).toMatchObject({ key: '30d', from: '' })
+    expect(normaliseDay('2026-02-31')).toBe('')
+    expect(normaliseDay('2026-02-28')).toBe('2026-02-28')
+    expect(normaliseDay('nope')).toBe('')
+    expect(analyticsRangeFromSearch('?range=custom&from=2026-02-31&to=2026-03-02')).toMatchObject({ key: '30d' })
+  })
+
+  it('clamps the span the way the database does', () => {
+    expect(analyticsRangeFromSearch('?range=custom&from=2020-01-01&to=2026-11-07').days).toBe(730)
+  })
+
+  it('writes the range back into the URL and keeps other parameters', () => {
+    expect(searchForCustomRange('?tab=reach', '2026-10-07', '2026-10-01')).toBe(
+      '?tab=reach&range=custom&from=2026-10-01&to=2026-10-07'
+    )
+  })
+
+  it('names an export after its own two days', () => {
+    const range = { key: 'custom', days: 7, from: '2026-10-01', to: '2026-10-07' }
+    expect(rangeFileLabel(range)).toBe('custom-2026-10-01-to-2026-10-07')
+    expect(rangeFileLabel({ key: '30d' })).toBe('30d')
+  })
+
+  it('reads today from Lagos rather than the browser', () => {
+    // Vercel is UTC and the browser may be anywhere; the RPC buckets a day in Lagos, so the picker's
+    // "today" has to be the same day or it offers one the data has not reached.
+    expect(todayDayKey(new Date('2026-11-07T00:30:00Z'))).toBe('2026-11-07')
+    expect(todayDayKey(new Date('2026-11-07T23:30:00Z'))).toBe('2026-11-08')
   })
 })
 
