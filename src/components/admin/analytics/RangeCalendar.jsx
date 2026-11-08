@@ -88,17 +88,20 @@ export default function RangeCalendar({ range, today, onSelect }) {
             className="fixed inset-0 z-10 cursor-default"
             onClick={() => setOpen(false)}
           />
+          {/* Viewport-bound on a phone, anchored to the trigger on a wider screen. The trigger sits
+              at the left end of the control row, so a right-anchored 288px panel hangs off the left
+              edge on a narrow viewport -- it has nowhere to grow towards. */}
           <div
             role="dialog"
             aria-label="Pick a date range"
-            className="absolute right-0 z-20 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-hairline bg-surface p-3 shadow-md"
+            className="fixed left-2 right-2 z-20 mt-1 max-h-[85vh] overflow-y-auto rounded-md border border-hairline bg-surface p-3 shadow-md sm:absolute sm:left-auto sm:right-0 sm:w-72"
           >
             <div className="flex items-center justify-between gap-2">
               <button
                 type="button"
                 aria-label="Previous month"
                 onClick={() => setView((v) => monthOf(addMonths(new Date(v.year, v.month, 1), -1)))}
-                className="flex h-8 w-8 items-center justify-center rounded-sm text-ink-muted hover:bg-surface-low hover:text-brand"
+                className="flex h-9 w-9 items-center justify-center rounded-sm text-ink-muted hover:bg-surface-low hover:text-brand"
               >
                 <span className="material-symbols-outlined text-base" aria-hidden="true">chevron_left</span>
               </button>
@@ -110,7 +113,7 @@ export default function RangeCalendar({ range, today, onSelect }) {
                 aria-label="Next month"
                 disabled={atLatestMonth}
                 onClick={() => setView((v) => monthOf(addMonths(new Date(v.year, v.month, 1), 1)))}
-                className="flex h-8 w-8 items-center justify-center rounded-sm text-ink-muted hover:bg-surface-low hover:text-brand disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                className="flex h-9 w-9 items-center justify-center rounded-sm text-ink-muted hover:bg-surface-low hover:text-brand disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
               >
                 <span className="material-symbols-outlined text-base" aria-hidden="true">chevron_right</span>
               </button>
@@ -135,7 +138,7 @@ export default function RangeCalendar({ range, today, onSelect }) {
                 // Days from the neighbouring month keep the grid square but are not buttons: a click
                 // that silently changes the month underneath the cursor is worse than a gap.
                 if (!inside) {
-                  return <span key={day} className="h-8 rounded-sm" />
+                  return <span key={day} className="h-9 rounded-sm" />
                 }
 
                 return (
@@ -147,7 +150,9 @@ export default function RangeCalendar({ range, today, onSelect }) {
                     aria-label={formatDay(day)}
                     onClick={() => pick(day)}
                     className={[
-                      'h-8 rounded-sm text-sm font-semibold transition-colors',
+                      // 36px is the most a seven-column grid affords on a 320px screen; below that the
+                      // day you want is smaller than a fingertip.
+                      'h-9 rounded-sm text-sm font-semibold transition-colors',
                       selected
                         ? 'bg-green-900 text-white'
                         : inRange
