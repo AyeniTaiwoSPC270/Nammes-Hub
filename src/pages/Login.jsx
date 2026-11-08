@@ -14,6 +14,7 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [needsCode, setNeedsCode] = useState(false)
@@ -144,16 +145,27 @@ export default function Login() {
             <input
               id="password"
               autoComplete="current-password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
               className={[
-                'w-full rounded-md border bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors',
+                'w-full rounded-md border bg-surface py-2.5 pl-10 pr-11 text-base text-ink outline-none transition-colors',
                 error ? 'border-danger' : 'border-hairline focus:border-brand',
               ].join(' ')}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((shown) => !shown)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+              className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-sm text-ink-muted transition-colors duration-150 hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <span className="material-symbols-outlined text-lg" aria-hidden="true">
+                {showPassword ? 'visibility_off' : 'visibility'}
+              </span>
+            </button>
           </div>
           {error && <span className="text-xs text-danger">{error}</span>}
         </div>

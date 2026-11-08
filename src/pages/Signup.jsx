@@ -5,6 +5,7 @@ import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
 import { validateStudentId } from '../data/profiles'
+import { PASSWORD_RULE, validatePassword } from '../lib/passwordRules'
 import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
 import { captchaOptions, canSubmitWithCaptcha } from '../lib/turnstile'
 
@@ -30,8 +31,9 @@ export default function Signup() {
     if (studentIdError) {
       nextErrors.studentId = studentIdError
     }
-    if (password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters'
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      nextErrors.password = passwordError
     }
     if (password !== confirmPassword) {
       nextErrors.confirmPassword = 'Passwords don’t match'
@@ -119,14 +121,16 @@ export default function Signup() {
         <FormField
           label="Password"
           type="password"
+          revealable
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          helper={!errors.password ? 'At least 8 characters' : undefined}
+          helper={!errors.password ? PASSWORD_RULE : undefined}
           error={errors.password}
         />
         <FormField
           label="Confirm password"
           type="password"
+          revealable
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           error={errors.confirmPassword}

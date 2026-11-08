@@ -81,7 +81,7 @@ ${table(['You canâ€¦', 'Without an account', 'With an account'], [
 <h2>Create your account in five steps</h2>
 ${steps([
   '<strong>Open Sign Up.</strong> Choose <span class="btn">Sign In</span> at the top right, then <em>Create an account</em>, or go straight to <span class="path">/signup</span>.',
-  '<strong>Fill in the form.</strong> Your full name, your department <em>matric number</em> (see the next chapter), your email, and a password of at least 8 characters, typed twice.',
+  '<strong>Fill in the form.</strong> Your full name, your department <em>matric number</em> (see the next chapter), your email, and a password of at least 10 characters, typed twice.',
   '<strong>Tick "Verify you are human".</strong> This small check stops automated bots from creating fake accounts.',
   '<strong>Confirm your email.</strong> The Hub sends a confirmation email. Open it and click the link to activate your account.',
   '<strong>Sign in.</strong> Return to the Hub, choose Sign In, and enter your email and password. Done!',
@@ -173,7 +173,7 @@ ${note('The Hub checks whether the site is really reachable rather than trusting
     html: `
 <h2 class="first">Signing up and your matric number</h2>
 ${glance([['Address', 'nammeshub.com.ng/signup'], ['Sign-in needed?', 'No, this is how you get one'], ['Fields', 'Name, matric number, email, password'], ['Takes', 'About two minutes']])}
-<p>To sign up you provide your <strong>full name</strong>, <strong>matric number</strong>, <strong>email</strong> and a <strong>password</strong> (at least 8 characters, entered twice so a typo cannot lock you out). Tick the <em>Verify you are human</em> box and choose <span class="btn">Create account</span>.</p>
+<p>To sign up you provide your <strong>full name</strong>, <strong>matric number</strong>, <strong>email</strong> and a <strong>password</strong> (at least 10 characters, entered twice so a typo cannot lock you out). Tick the <em>Verify you are human</em> box and choose <span class="btn">Create account</span>.</p>
 <h3>Your matric number</h3>
 <p>The Hub asks for your <strong>department matric number</strong>. It follows the pattern <code>YY0406XXX</code>: two digits for your entry year, then <code>0406</code> (the department code), then three digits. For example, <code>240406012</code> or <code>260406009</code>.</p>
 <p>Your matric number is what proves you are a real member of the department. It is used, for example, to make sure the awards stay fair: one member, one vote.</p>
@@ -191,7 +191,7 @@ ${warn('Your matric number is saved once, at sign-up, and you <strong>cannot cha
 ${steps([
   'On the Sign In page choose <strong>Forgot password?</strong> (next to the password box).',
   'Type the email you signed up with and submit. The Hub emails you a reset link.',
-  'Open the email, click the link, and choose a <strong>new password</strong> of at least 8 characters.',
+  'Open the email, click the link, and choose a <strong>new password</strong> of at least 10 characters.',
   'You are sent back to Sign In with a confirmation. Sign in with the new password.',
 ])}
 ${shot('forgot', 'The Forgot password page. You need only the email you signed up with.', { url: '/forgot-password' })}
