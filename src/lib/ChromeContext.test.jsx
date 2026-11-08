@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isChromeFreePath, resolveChrome } from './ChromeContext'
+import { isAuthPath, isChromeFreePath, resolveChrome } from './ChromeContext'
 
 describe('isChromeFreePath', () => {
   it('is true for a form page and false for the list, an admin page and a nested path', () => {
@@ -8,6 +8,29 @@ describe('isChromeFreePath', () => {
     expect(isChromeFreePath('/forms')).toBe(false)
     expect(isChromeFreePath('/admin/forms/abc-123/edit')).toBe(false)
     expect(isChromeFreePath('/')).toBe(false)
+  })
+})
+
+describe('isAuthPath', () => {
+  it('is true for the four auth screens, with or without a trailing slash', () => {
+    for (const path of ['/login', '/signup', '/forgot-password', '/reset-password']) {
+      expect(isAuthPath(path), path).toBe(true)
+      expect(isAuthPath(`${path}/`), `${path}/`).toBe(true)
+    }
+  })
+
+  it('is false for a page that merely starts with one of those names', () => {
+    expect(isAuthPath('/logins')).toBe(false)
+    expect(isAuthPath('/account')).toBe(false)
+    expect(isAuthPath('/')).toBe(false)
+  })
+
+  it('keeps the chrome off every auth screen from first paint', () => {
+    for (const path of ['/login', '/signup', '/forgot-password', '/reset-password']) {
+      expect(isChromeFreePath(path), path).toBe(true)
+    }
+    expect(isChromeFreePath('/account')).toBe(false)
+    expect(isChromeFreePath('/admin')).toBe(false)
   })
 })
 

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import AuthCard from '../components/AuthCard'
-import Button from '../components/ui/Button'
+import AuthShell, { AuthHeading, AuthSecureNote, AuthSubmit } from '../components/AuthShell'
+import AuthNotice from '../components/AuthNotice'
+import FormField from '../components/ui/FormField'
 import MfaChallenge from '../components/MfaChallenge'
 import { supabase } from '../lib/supabaseClient'
 import { getAalStatus } from '../lib/mfa'
@@ -14,7 +15,6 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [needsCode, setNeedsCode] = useState(false)
@@ -55,7 +55,7 @@ export default function Login() {
 
   if (needsCode) {
     return (
-      <AuthCard>
+      <AuthShell>
         <MfaChallenge
           onVerified={() => navigate(location.state?.from?.pathname ?? '/')}
           onCancel={async () => {
@@ -64,125 +64,83 @@ export default function Login() {
             setPassword('')
           }}
         />
-      </AuthCard>
+      </AuthShell>
     )
   }
 
   return (
-    <AuthCard
-      footer={
-        <p className="text-sm text-ink-muted">
-          Don&rsquo;t have an account?{' '}
-          <Link to="/signup" className="font-semibold text-brand no-underline hover:text-orange-500 hover:underline">
-            Create an account
-          </Link>
-        </p>
-      }
-      below={
-        <>
-          <span className="material-symbols-outlined text-base">shield</span>
-          <span>Secure Institution Login</span>
-        </>
-      }
-    >
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-brand">NAMMES Hub</h1>
-        <p className="mt-1 text-sm text-ink-muted">Sign in to your account</p>
-      </div>
+    <AuthShell>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <AuthHeading
+          eyebrow="Member sign in"
+          title="Welcome back"
+          description="Sign in with the email you registered with."
+        />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {justCreated && (
-          <p className="rounded-sm bg-success-bg px-3 py-2 text-sm text-success">
-            Account created. Sign in below.
-          </p>
-        )}
-        {justReset && (
-          <p className="rounded-sm bg-success-bg px-3 py-2 text-sm text-success">
-            Password reset. Sign in with your new password.
-          </p>
-        )}
-        {justDisabled && (
-          <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">
-            This account has been disabled. Contact an admin for help.
-          </p>
-        )}
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-            Email Address
-          </label>
-          <div className="relative">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">
-              mail
-            </span>
-            <input
-              id="email"
-              autoComplete="email"
-              inputMode="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@university.edu"
-              required
-              className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors focus:border-brand"
-            />
+        {(justCreated || justReset || justDisabled) && (
+          <div className="mt-5 flex flex-col gap-3">
+            {justCreated && <AuthNotice tone="success">Account created. Sign in below.</AuthNotice>}
+            {justReset && <AuthNotice tone="success">Password reset. Sign in with your new password.</AuthNotice>}
+            {justDisabled && <AuthNotice tone="danger">This account has been disabled. Contact an admin for help.</AuthNotice>}
           </div>
-        </div>
+        )}
 
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-              Password
-            </label>
-            <Link to="/forgot-password" className="text-xs text-brand no-underline hover:text-orange-500 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-          <div className="relative">
-            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">
-              lock
-            </span>
-            <input
-              id="password"
+        <div className="mt-5 flex flex-col gap-4">
+          <FormField
+            label="Email address"
+            icon="mail"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@university.edu"
+            required
+          />
+
+          <div>
+            <FormField
+              label="Password"
+              icon="lock"
+              type="password"
+              revealable
               autoComplete="current-password"
-              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className={[
-                'w-full rounded-md border bg-surface py-2.5 pl-10 pr-11 text-base text-ink outline-none transition-colors',
-                error ? 'border-danger' : 'border-hairline focus:border-brand',
-              ].join(' ')}
+              error={error}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((shown) => !shown)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              aria-pressed={showPassword}
-              className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-sm text-ink-muted transition-colors duration-150 hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">
-                {showPassword ? 'visibility_off' : 'visibility'}
-              </span>
-            </button>
+            <p className="mt-1.5 text-right">
+              <Link to="/forgot-password" className="text-xs font-semibold text-brand no-underline hover:text-orange-600 hover:underline">
+                Forgot password?
+              </Link>
+            </p>
           </div>
-          {error && <span className="text-xs text-danger">{error}</span>}
+
+          <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+
+          <AuthSubmit
+            type="submit"
+            loading={busy}
+            disabled={!canSubmitWithCaptcha(captcha)}
+          >
+            Sign in
+            <span className="material-symbols-outlined text-base" aria-hidden="true">
+              arrow_forward
+            </span>
+          </AuthSubmit>
         </div>
 
-        <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+        <p className="mt-5 text-center text-sm text-ink-muted">
+          New to NAMMES Hub?{' '}
+          <Link to="/signup" className="font-semibold text-brand no-underline hover:text-orange-600 hover:underline">
+            Create an account
+          </Link>
+        </p>
 
-        <Button
-          variant="primary"
-          type="submit"
-          loading={busy}
-          disabled={!canSubmitWithCaptcha(captcha)}
-          className="justify-center"
-        >
-          Sign In
-          <span className="material-symbols-outlined text-base">arrow_forward</span>
-        </Button>
+        <AuthSecureNote />
       </form>
-    </AuthCard>
+    </AuthShell>
   )
 }

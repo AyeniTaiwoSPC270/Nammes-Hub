@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import AuthCard from '../components/AuthCard'
-import Button from '../components/ui/Button'
+import AuthShell, { AuthHeading, AuthSecureNote, AuthSubmit } from '../components/AuthShell'
+import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
 import TurnstileWidget, { useTurnstile } from '../components/TurnstileWidget'
 import { captchaOptions, canSubmitWithCaptcha } from '../lib/turnstile'
@@ -26,73 +26,68 @@ export default function ForgotPassword() {
   }
 
   return (
-    <AuthCard maxWidth="max-w-[480px]">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-brand">Forgot Password</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Enter your email address and we&rsquo;ll send you instructions to reset your password.
-        </p>
-      </div>
+    <AuthShell>
+      {sent ? (
+        <div className="flex flex-col">
+          <span className="material-symbols-outlined text-4xl text-success" aria-hidden="true">
+            check_circle
+          </span>
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-ink-900">Check your email</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+            If an account exists for <span className="font-medium text-ink">{email}</span>, we&rsquo;ve sent instructions
+            to reset your password.
+          </p>
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center justify-center gap-1.5 self-start text-sm font-semibold text-brand no-underline hover:text-orange-600 hover:underline"
+          >
+            <span className="material-symbols-outlined text-base" aria-hidden="true">
+              arrow_back
+            </span>
+            Return to sign in
+          </Link>
+          <AuthSecureNote />
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <AuthHeading
+            eyebrow="Password help"
+            title="Reset your password"
+            description="Enter your email and we'll send a reset link. It expires in an hour."
+          />
 
-      {!sent && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[.05em] text-orange-600">
-              Email Address
-            </label>
-            <div className="relative">
-              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">
-                mail
+          <div className="mt-5 flex flex-col gap-4">
+            <FormField
+              label="Email address"
+              icon="mail"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+
+            <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+
+            <AuthSubmit type="submit" loading={busy} disabled={!canSubmitWithCaptcha(captcha)}>
+              Send reset link
+              <span className="material-symbols-outlined text-base" aria-hidden="true">
+                arrow_forward
               </span>
-              <input
-                id="email"
-                autoComplete="email"
-                inputMode="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                required
-                className="w-full rounded-md border border-hairline bg-surface py-2.5 pl-10 pr-3 text-base text-ink outline-none transition-colors focus:border-brand"
-              />
-            </div>
+            </AuthSubmit>
           </div>
 
-          <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+          <p className="mt-5 text-center text-sm">
+            <Link to="/login" className="font-semibold text-brand no-underline hover:text-orange-600 hover:underline">
+              Back to sign in
+            </Link>
+          </p>
 
-          <Button
-            variant="primary"
-            type="submit"
-            loading={busy}
-            disabled={!canSubmitWithCaptcha(captcha)}
-            className="justify-center"
-          >
-            Reset Password
-            <span className="material-symbols-outlined text-base">arrow_forward</span>
-          </Button>
+          <AuthSecureNote />
         </form>
       )}
-
-      {sent && (
-        <div className="flex flex-col items-center gap-2 rounded-md border border-hairline bg-surface-low p-6 text-center">
-          <span className="material-symbols-outlined text-4xl text-brand">check_circle</span>
-          <h3 className="text-lg font-bold text-brand">Check your email</h3>
-          <p className="text-sm leading-relaxed text-ink-muted">
-            If an account exists for <span className="font-medium text-ink">{email}</span>, we&rsquo;ve sent
-            instructions to reset your password.
-          </p>
-        </div>
-      )}
-
-      <div className="mt-6 text-center">
-        <Link
-          to="/login"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
-        >
-          <span className="material-symbols-outlined text-base">arrow_back</span>
-          Return to Sign In
-        </Link>
-      </div>
-    </AuthCard>
+    </AuthShell>
   )
 }

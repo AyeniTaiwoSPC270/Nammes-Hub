@@ -42,13 +42,21 @@ export function useSiteChrome({ hidden = false } = {}) {
 }
 
 /**
- * The form page decides for itself whether it is answered bare, so until it has said anything Layout
- * assumes bare on that route. Without this the navbar would flash on the way into a form — including
- * the way most people arrive at one, which is a shared link opened cold, while the page is still
- * being fetched.
+ * A route that is answered bare before its page has said anything. Without this the navbar would
+ * flash on the way in — including the way most people arrive, which is a shared link opened cold
+ * while the page is still being fetched.
+ *
+ * The four auth screens are here for the same reason as a form: the redesigned shell carries the brand
+ * itself, and a navbar above it would be a second header and a second way home.
  */
+const AUTH_PATHS = new Set(['/login', '/signup', '/forgot-password', '/reset-password'])
+
+export function isAuthPath(pathname) {
+  return AUTH_PATHS.has(pathname.replace(/\/$/, ''))
+}
+
 export function isChromeFreePath(pathname) {
-  return /^\/forms\/[^/]+\/?$/.test(pathname)
+  return /^\/forms\/[^/]+\/?$/.test(pathname) || isAuthPath(pathname)
 }
 
 /**

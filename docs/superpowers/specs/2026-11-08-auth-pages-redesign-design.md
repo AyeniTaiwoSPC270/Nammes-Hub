@@ -153,8 +153,8 @@ Two new names go into `icon_names=` in `index.html`, alphabetically: `library_bo
 |---|---|
 | `src/components/AuthShell.jsx` | new — panel, mobile band, form column, theme toggle |
 | `src/components/AuthNotice.jsx` | new — the three alert tones |
-| `src/components/AuthCard.jsx` | deleted |
-| `src/components/ui/FormField.jsx` | gains `icon` (lead symbol inside the field) |
+| `src/components/AuthCard.jsx` | kept — `AdminRoute` still renders the admin two-factor gate in it |
+| `src/components/ui/FormField.jsx` | gains `icon` (lead symbol) and forwards `autoComplete` / `inputMode` |
 | `src/pages/Login.jsx` | shell + `FormField`; MFA challenge renders inside it |
 | `src/pages/Signup.jsx` | shell + copy |
 | `src/pages/ForgotPassword.jsx` | shell + copy |
@@ -174,7 +174,9 @@ Two new names go into `icon_names=` in `index.html`, alphabetically: `library_bo
   `hostRevealExplanation.test.jsx` already uses for provider-dependent components. The suite has no
   DOM, so this is markup, not behaviour.
 - A source scan asserting the four pages import `AuthShell` and none still import `AuthCard` — the
-  same shape as the `quizTypeRenderers` scan, so a page cannot quietly keep the old shell.
+  same shape as the `quizTypeRenderers` scan, so a page cannot quietly keep the old shell. The scan
+  covers the four auth pages only; `AdminRoute` keeps `AuthCard` for the admin two-factor gate, which
+  is a full-page screen inside the admin chrome rather than one of these four routes.
 
 ## Known gaps
 
