@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import Badge from './ui/Badge'
 
-export default function UserMenu({ email, pendingCount = 0, onSignOut, align = 'right', dataTour }) {
+export default function UserMenu({ email, isAdmin = false, pendingCount = 0, onSignOut, align = 'right', dataTour }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const initial = (email || '?').charAt(0).toUpperCase()
@@ -59,19 +59,22 @@ export default function UserMenu({ email, pendingCount = 0, onSignOut, align = '
           >
             Account
           </NavLink>
-          <NavLink
-            to="/admin"
-            onClick={() => setOpen(false)}
-            className={({ isActive }) =>
-              [
-                'flex items-center gap-1.5 px-4 py-2 text-sm font-semibold no-underline transition-colors',
-                isActive ? 'bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-brand' : 'text-ink-muted hover:bg-surface-low hover:text-ink-900',
-              ].join(' ')
-            }
-          >
-            Admin
-            {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
-          </NavLink>
+          {/* An account with no admins row has nowhere to go behind this link, and the route would bounce it home. */}
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                [
+                  'flex items-center gap-1.5 px-4 py-2 text-sm font-semibold no-underline transition-colors',
+                  isActive ? 'bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-brand' : 'text-ink-muted hover:bg-surface-low hover:text-ink-900',
+                ].join(' ')
+              }
+            >
+              Admin
+              {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
+            </NavLink>
+          )}
           <div className="my-1 border-t border-hairline" />
           <button
             type="button"

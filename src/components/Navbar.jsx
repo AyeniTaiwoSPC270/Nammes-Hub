@@ -5,6 +5,7 @@ import { useTheme } from '../lib/ThemeContext'
 import { useTour } from '../lib/TourContext'
 import { supabase } from '../lib/supabaseClient'
 import { usePendingSubmissionsCountQuery } from '../data/outlineSubmissions'
+import { useOwnAdminRowQuery } from '../data/admins'
 import { useCalendarFlag } from '../data/calendar'
 import { useHolidayTheme } from '../lib/HolidayThemeProvider'
 import { holidayImageUrl } from '../data/holidays'
@@ -191,7 +192,12 @@ export default function Navbar() {
   const { user, loading } = useAuth()
   const { wantsMobileNavOpen } = useTour()
   const navigate = useNavigate()
-  const pendingCountQuery = usePendingSubmissionsCountQuery(Boolean(user))
+  // The same row AdminRoute gates on: no admins row means no Admin link to offer. Both are absent while the
+  // query is in flight, which is the right first paint for an ordinary member and a blink for an admin.
+  const adminRowQuery = useOwnAdminRowQuery(user?.id)
+  const isAdmin = Boolean(adminRowQuery.data)
+  // Pending submissions is an admin-only read, so an ordinary member's request would only ever come back empty.
+  const pendingCountQuery = usePendingSubmissionsCountQuery(isAdmin)
   const pendingCount = pendingCountQuery.data ?? 0
   // The kill switch behind the /calendar nav item. Fails open, so the item is there while the query is in
   // flight and only disappears if the flag row actually says the feature is off.
@@ -252,7 +258,14 @@ export default function Navbar() {
           {!loading && (
             <div className="hidden lg:flex items-center gap-4">
               {user ? (
-                <UserMenu email={user.email} pendingCount={pendingCount} onSignOut={handleSignOut} align="right" dataTour="nav-account" />
+                <UserMenu
+                  email={user.email}
+                  isAdmin={isAdmin}
+                  pendingCount={pendingCount}
+                  onSignOut={handleSignOut}
+                  align="right"
+                  dataTour="nav-account"
+                />
               ) : (
                 <NavLink
                   to="/login"
@@ -305,16 +318,18 @@ export default function Navbar() {
                 >
                   Account
                 </NavLink>
-                <NavLink
-                  to="/admin"
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    [mobileNavLinkClass({ isActive }), 'flex items-center gap-1.5'].join(' ')
-                  }
-                >
-                  Admin
-                  {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
-                </NavLink>
+                {isAdmin && (
+                  <NavLink
+                    to="/admin"
+                    onClick={() => setOpen(false)}
+                    className={({ isActive }) =>
+                      [mobileNavLinkClass({ isActive }), 'flex items-center gap-1.5'].join(' ')
+                    }
+                  >
+                    Admin
+                    {pendingCount > 0 && <Badge tone="restricted">{pendingCount}</Badge>}
+                  </NavLink>
+                )}
                 <button
                   type="button"
                   onClick={handleSignOut}
