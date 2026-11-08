@@ -8,7 +8,7 @@ import { useHolidayPageBackground } from '../lib/useHolidayPageBackground'
 import Footer from './Footer'
 import WelcomeCarousel from './tour/WelcomeCarousel'
 import SpotlightOverlay from './tour/SpotlightOverlay'
-import { useChrome, isChromeFreePath, resolveChrome } from '../lib/ChromeContext'
+import { useChrome, isAuthPath, isChromeFreePath, resolveChrome } from '../lib/ChromeContext'
 
 function RouteSkeleton() {
   return (
@@ -49,6 +49,25 @@ function FormRouteSkeleton() {
   )
 }
 
+// The auth shell is its own shape: a forest panel beside a narrow form column. Neither of the two
+// skeletons above has that silhouette, so the route would land as a visible jump between shapes.
+function AuthRouteSkeleton() {
+  return (
+    <div className="grid min-h-svh bg-paper lg:grid-cols-[44%_1fr]">
+      <div className="hidden bg-green-900 lg:block" />
+      <div className="flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-[380px]">
+          <div className="h-3 w-24 animate-pulse rounded-sm bg-hairline" />
+          <div className="mt-3 h-8 w-2/3 animate-pulse rounded-sm bg-hairline" />
+          <div className="mt-6 h-11 w-full animate-pulse rounded-md bg-hairline" />
+          <div className="mt-3 h-11 w-full animate-pulse rounded-md bg-hairline" />
+          <div className="mt-4 h-11 w-full animate-pulse rounded-md bg-hairline" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Layout() {
   const location = useLocation()
   const reducedMotion = useReducedMotion()
@@ -82,7 +101,13 @@ export default function Layout() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
           >
-            <Suspense fallback={chromeFree ? <FormRouteSkeleton /> : <RouteSkeleton />}>{outlet}</Suspense>
+            <Suspense
+              fallback={
+                isAuthPath(location.pathname) ? <AuthRouteSkeleton /> : chromeFree ? <FormRouteSkeleton /> : <RouteSkeleton />
+              }
+            >
+              {outlet}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

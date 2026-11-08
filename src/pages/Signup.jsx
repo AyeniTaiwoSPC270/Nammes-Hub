@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import AuthCard from '../components/AuthCard'
+import AuthShell, { AuthHeading, AuthSubmit } from '../components/AuthShell'
+import AuthNotice from '../components/AuthNotice'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
@@ -75,84 +76,103 @@ export default function Signup() {
 
   if (sent) {
     return (
-      <AuthCard maxWidth="max-w-[480px]">
-        <div className="flex w-full flex-col gap-4">
-          <h2 className="text-2xl font-bold text-ink-900">Check your email</h2>
-          <p className="text-sm leading-relaxed text-ink-muted">
-            We&rsquo;ve sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Click it
-            to activate your account, then sign in.
+      <AuthShell>
+        <div className="flex flex-col">
+          <span className="material-symbols-outlined text-4xl text-success" aria-hidden="true">
+            mark_email_read
+          </span>
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-ink-900">Check your email</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+            We&rsquo;ve sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Click it to
+            activate your account, then sign in.
           </p>
-          <Button variant="primary" type="button" onClick={() => navigate('/login')}>
+          <AuthSubmit type="button" className="mt-6" onClick={() => navigate('/login')}>
             Back to sign in
-          </Button>
+          </AuthSubmit>
         </div>
-      </AuthCard>
+      </AuthShell>
     )
   }
 
   return (
-    <AuthCard maxWidth="max-w-[480px]">
-      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-        <h2 className="text-2xl font-bold text-ink-900">Create account</h2>
+    <AuthShell>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <AuthHeading
+          eyebrow="New member"
+          title="Create your account"
+          description="Use your matric number and the email you check."
+        />
 
         {formError && (
-          <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
+          <AuthNotice tone="danger" className="mt-5">
+            {formError}
+          </AuthNotice>
         )}
 
-        <FormField label="Full name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ada Okafor" autoComplete="name" />
-        <FormField
-          label="Matric number"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          placeholder="e.g. 240406012 or 260406009"
-          autoComplete="off"
-          error={errors.studentId}
-        />
-        <FormField
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
-          autoComplete="email"
-          inputMode="email"
-          error={errors.email}
-        />
-        <FormField
-          label="Password"
-          type="password"
-          revealable
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          helper={!errors.password ? PASSWORD_RULE : undefined}
-          error={errors.password}
-        />
-        <FormField
-          label="Confirm password"
-          type="password"
-          revealable
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          error={errors.confirmPassword}
-          success={confirmPassword.length > 0 && confirmPassword === password && !errors.confirmPassword}
-        />
+        <div className="mt-5 flex flex-col gap-4">
+          <FormField
+            label="Full name"
+            autoComplete="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ada Okafor"
+          />
+          <FormField
+            label="Matric number"
+            autoComplete="off"
+            value={studentId}
+            onChange={(e) => setStudentId(e.target.value)}
+            placeholder="e.g. 240406012 or 260406009"
+            error={errors.studentId}
+          />
+          <FormField
+            label="Email"
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            error={errors.email}
+          />
+          <FormField
+            label="Password"
+            type="password"
+            revealable
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            helper={!errors.password ? PASSWORD_RULE : undefined}
+            error={errors.password}
+          />
+          <FormField
+            label="Confirm password"
+            type="password"
+            revealable
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={errors.confirmPassword}
+            success={confirmPassword.length > 0 && confirmPassword === password && !errors.confirmPassword}
+          />
 
-        <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
+          <TurnstileWidget onToken={captcha.setToken} resetKey={captcha.resetKey} />
 
-        <Button variant="primary" type="submit" loading={busy} disabled={!canSubmitWithCaptcha(captcha)}>
-          Create account
-        </Button>
-        <Button variant="ghost" type="button" onClick={() => navigate('/')}>
-          Cancel
-        </Button>
+          <AuthSubmit type="submit" loading={busy} disabled={!canSubmitWithCaptcha(captcha)}>
+            Create account
+          </AuthSubmit>
+          <Button variant="ghost" type="button" className="w-full justify-center" onClick={() => navigate('/')}>
+            Cancel
+          </Button>
+        </div>
 
-        <p className="text-center text-sm text-ink-muted">
+        <p className="mt-5 text-center text-sm text-ink-muted">
           Already have an account?{' '}
-          <Link to="/login" className="text-brand no-underline hover:text-orange-500 hover:underline">
+          <Link to="/login" className="font-semibold text-brand no-underline hover:text-orange-600 hover:underline">
             Sign in
           </Link>
         </p>
       </form>
-    </AuthCard>
+    </AuthShell>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AuthCard from '../components/AuthCard'
-import Button from '../components/ui/Button'
+import AuthShell, { AuthHeading, AuthSecureNote, AuthSubmit } from '../components/AuthShell'
+import AuthNotice from '../components/AuthNotice'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
 import { PASSWORD_RULE, validatePassword } from '../lib/passwordRules'
@@ -24,23 +24,25 @@ export default function ResetPassword() {
   }, [])
 
   if (checking) {
-    return <AuthCard>{null}</AuthCard>
+    return <AuthShell>{null}</AuthShell>
   }
 
   if (!hasSession) {
     return (
-      <AuthCard maxWidth="max-w-[480px]">
-        <div className="flex w-full flex-col gap-4">
-          <span className="material-symbols-outlined text-danger text-4xl">error_outline</span>
-          <h2 className="text-2xl font-bold text-ink-900">Link expired</h2>
-          <p className="text-sm leading-relaxed text-ink-muted">
+      <AuthShell>
+        <div className="flex flex-col">
+          <span className="material-symbols-outlined text-4xl text-danger" aria-hidden="true">
+            error_outline
+          </span>
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-ink-900">Link expired</h1>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
             This password reset link is invalid or has expired. Request a new one to continue.
           </p>
-          <Button variant="primary" type="button" onClick={() => navigate('/forgot-password')}>
+          <AuthSubmit type="button" className="mt-6" onClick={() => navigate('/forgot-password')}>
             Request a new link
-          </Button>
+          </AuthSubmit>
         </div>
-      </AuthCard>
+      </AuthShell>
     )
   }
 
@@ -81,38 +83,48 @@ export default function ResetPassword() {
   }
 
   return (
-    <AuthCard maxWidth="max-w-[480px]">
-      <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-        <h2 className="text-2xl font-bold text-ink-900">Reset password</h2>
+    <AuthShell>
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <AuthHeading
+          eyebrow="Final step"
+          title="Choose a new password"
+          description="You'll sign in with it from now on."
+        />
 
         {formError && (
-          <p className="rounded-sm bg-danger-bg px-3 py-2 text-sm text-danger">{formError}</p>
+          <AuthNotice tone="danger" className="mt-5">
+            {formError}
+          </AuthNotice>
         )}
 
-        <p className="text-sm leading-relaxed text-ink-muted">Choose a new password for your account.</p>
+        <div className="mt-5 flex flex-col gap-4">
+          <FormField
+            label="New password"
+            type="password"
+            revealable
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            helper={!errors.password ? PASSWORD_RULE : undefined}
+            error={errors.password}
+          />
+          <FormField
+            label="Confirm new password"
+            type="password"
+            revealable
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            error={errors.confirmPassword}
+          />
 
-        <FormField
-          label="New password"
-          autoComplete="new-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          helper={!errors.password ? PASSWORD_RULE : undefined}
-          error={errors.password}
-        />
-        <FormField
-          label="Confirm new password"
-          autoComplete="new-password"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          error={errors.confirmPassword}
-        />
+          <AuthSubmit type="submit" loading={busy}>
+            Reset password
+          </AuthSubmit>
+        </div>
 
-        <Button variant="primary" type="submit" loading={busy}>
-          Reset password
-        </Button>
+        <AuthSecureNote />
       </form>
-    </AuthCard>
+    </AuthShell>
   )
 }
