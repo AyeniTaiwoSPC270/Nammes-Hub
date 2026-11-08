@@ -198,6 +198,9 @@ function JoinForm({ onJoined, notice }) {
         <h1 className="text-4xl font-bold">Join a game</h1>
         <p className="text-ink-muted">Enter the code on the big screen to get in.</p>
         <Link to="/battle" className="text-sm font-semibold text-orange-500">Want to challenge a friend instead? Battle mode</Link>
+        {/* Not inside the seat block below. Results are kept for a month, so the phone that wants them may be a new one
+            or one that has just been cleared -- and those are exactly the phones holding no seat to reveal the block. */}
+        <Link to="/play/history" className="text-sm font-semibold text-orange-500">See your past results</Link>
       </div>
 
       {/* Offered only when the device already holds a seat, and only as a shortcut: the token is still what resumes,
@@ -221,11 +224,6 @@ function JoinForm({ onJoined, notice }) {
             </button>
           ))}
           <p className="text-center text-xs text-ink-muted">Already in a game? Tap to fill its code.</p>
-          {/* History is the one thing a finished seat is good for, and it is not offered above. It sits inside the
-              seat block, so it never pushes the code box further down than the chips already did. */}
-          <Link to="/play/history" className="text-center text-xs font-semibold text-orange-500">
-            See your past results
-          </Link>
         </div>
       )}
 
