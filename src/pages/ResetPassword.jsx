@@ -4,6 +4,7 @@ import AuthCard from '../components/AuthCard'
 import Button from '../components/ui/Button'
 import FormField from '../components/ui/FormField'
 import { supabase } from '../lib/supabaseClient'
+import { PASSWORD_RULE, validatePassword } from '../lib/passwordRules'
 
 export default function ResetPassword() {
   const navigate = useNavigate()
@@ -48,8 +49,9 @@ export default function ResetPassword() {
     setFormError('')
 
     const nextErrors = {}
-    if (password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters'
+    const passwordError = validatePassword(password)
+    if (passwordError) {
+      nextErrors.password = passwordError
     }
     if (password !== confirmPassword) {
       nextErrors.confirmPassword = 'Passwords don’t match'
@@ -72,6 +74,9 @@ export default function ResetPassword() {
       return
     }
 
+    // The recovery link signs the visitor in, so /login would send them home before the confirmation
+    // showed. Ending the session first is also what the screen promises: sign in with the new password.
+    await supabase.auth.signOut()
     navigate('/login?reset=1')
   }
 
@@ -92,7 +97,7 @@ export default function ResetPassword() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          helper={!errors.password ? 'At least 8 characters' : undefined}
+          helper={!errors.password ? PASSWORD_RULE : undefined}
           error={errors.password}
         />
         <FormField

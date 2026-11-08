@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import ErrorBoundary from './components/ErrorBoundary'
 import AdminRoute from './components/AdminRoute'
+import GuestRoute from './components/GuestRoute'
 import AdminLayout from './components/admin/AdminLayout'
 import AppUpdateNotifier from './components/AppUpdateNotifier'
 import PageViewTracker from './components/PageViewTracker'
@@ -282,9 +283,13 @@ export default function App() {
             <Route path="quiz" element={<Quizzes />} />
             <Route path="forms" element={<Forms />} />
             <Route path="forms/:id" element={<FormDetail />} />
-            <Route path="login" element={<Login />} />
-            <Route path="signup" element={<Signup />} />
-            <Route path="forgot-password" element={<ForgotPassword />} />
+            {/* Signing in is pointless once you are signed in, so these three bounce a session that is
+                already there. /reset-password is outside the guard on purpose — see GuestRoute. */}
+            <Route element={<GuestRoute />}>
+              <Route path="login" element={<Login />} />
+              <Route path="signup" element={<Signup />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+            </Route>
             <Route path="reset-password" element={<ResetPassword />} />
             <Route path="account" element={<Account />} />
             <Route element={<AdminRoute />}>
