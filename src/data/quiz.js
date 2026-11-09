@@ -154,6 +154,21 @@ export async function callQuiz(action, body, accessToken) {
   return data
 }
 
+// The quizzes anyone can walk into, for /play. Public, and deliberately not cached by react-query: a card that is a
+// minute stale is a game somebody missed. `startsInMs` is measured from the server's clock in the response, so a
+// phone with the wrong time still counts down correctly by subtracting what has passed since it fetched.
+export async function fetchOpenQuizzes() {
+  const response = await fetch('/api/quiz?action=open')
+  let data = null
+  try {
+    data = await response.json()
+  } catch {
+    // a gateway page is not JSON
+  }
+  if (!response.ok) throw new Error(data?.error || 'Could not load the open quizzes.')
+  return data
+}
+
 export async function hostAction(action, body) {
   const { data } = await supabase.auth.getSession()
   return callQuiz(action, body, data.session?.access_token)

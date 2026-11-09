@@ -48,8 +48,8 @@ clean a value the same way. Anything that needs I/O goes in `api/_lib/handlers/`
 
 Several files under `api/_lib/` are **server-only** and break that rule on purpose, because a canvas draws no
 picture in a browser bundle: `quizCardRender.js`, `awardCardRender.js` and `fonts.js`. Others break it for other
-reasons — `quiz.js`, `handbookBuild.js`, `supabaseAdmin.js`, `resend.js` and `authz.js` reach for `node:` built-ins,
-a service key or `puppeteer`. Nothing in `src/` may import any of them, and the list has to be checked rather than
+reasons — `quiz.js`, `quizSchedule.js`, `handbookBuild.js`, `supabaseAdmin.js`, `resend.js` and `authz.js` reach for
+`node:` built-ins, a service key or `puppeteer`. Nothing in `src/` may import any of them, and the list has to be checked rather than
 assumed when adding to `api/_lib/`. `fonts.js` is the one place the five font files are registered, shared by both
 renderers and by `patternFonts.test.js`, which checks the backdrop glyph table against them — a second copy would
 let a font be deleted while the test kept checking a set no card used. The pure ones that a browser page imports
@@ -238,6 +238,30 @@ data module, and that is deliberate — do not merge them into one shared "prese
   `state`-on-expiry and `next` branches) also called `quiz_practice_record` with six arguments, so a question that ran
   out of time was never recorded and `next` answered 409 "Answer this question first" for the rest of the run. When a
   migration touches an RPC, grep every `rpc(` call site, not the handlers the migration names.
+
+## Open quizzes
+
+- **The clock lives on the session, not in the host tab.** `quiz_sessions.autopilot` lets `api/_lib/quizSchedule.js`
+  decide what is due; `api/quiz?action=tick` (signed like the calendar reminders, `pg_cron` every minute) and every
+  `quiz-state` poll both apply the same decision through the `quiz-advance` compare-and-swap, so a double fire is a
+  0-row update and never a skipped question. Do not add a third engine, and do not let the host screen's timers run
+  under autopilot — they stand down for exactly this reason.
+- **`state_changed_at` must be written by every step.** `stepUpdate` does it. A writer of `quiz_sessions.state` that
+  bypasses `stepUpdate` makes the tick read a stale clock and step early, so grep the update sites, not just the
+  handlers that mention autopilot.
+- **`quizSchedule.js` is server-only** (it imports `nextState`/`effectiveElapsedMs` from `quiz.js`, which reaches for
+  `node:crypto`). Sharing the one definition of "how long has this question run" is worth more than importing it
+  from `src/`; the browser gets `startsInMs` off the API instead.
+- **4:00 opens the room; the game starts 60 seconds after the first arrival**, never before the scheduled time and
+  never with an empty lobby. `LOBBY_WAIT_MS` is the only knob between that and a literal 4:00 start. An open lobby
+  nobody joined expires after 15 minutes, or `/play` fills with dead rooms.
+- **Brackets keep their host.** `dueStep` returns null for `bracket_mode`: settling a round is a side effect, not a
+  pure decision, and a bracket is a room format.
+- **The list is public on purpose.** `/api/quiz?action=open` is a handler rather than a table read because the title
+  lives in `quizzes` (admin-only) and the session row does not; it returns titles and a player count, never a name.
+  The join code is in the payload deliberately — an open quiz is a room anyone may walk into.
+- **Late join is `game_options.late_join`, default on.** It gates new seats only: a resume still returns the seat its
+  token owns, because that player was already in the room.
 
 ## Rejoin and low data
 

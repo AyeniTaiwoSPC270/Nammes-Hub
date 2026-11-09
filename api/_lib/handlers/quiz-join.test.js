@@ -134,3 +134,41 @@ describe('rejoin', () => {
     expect(res.statusCode).toBe(400)
   })
 })
+
+describe('open quizzes', () => {
+  const NOW = new Date('2026-11-09T15:00:00.000Z')
+
+  it('starts the lobby clock at the scheduled time when the room fills early', async () => {
+    const scheduled = new Date(NOW.getTime() + 24 * 3_600_000).toISOString()
+    const db = lobby({ autopilot: true, scheduled_at: scheduled })
+    const res = await createQuizJoinHandler(() => db, { allow, now: () => NOW })(
+      { method: 'POST', headers: {}, body: { code: CODE, nickname: 'Ada', avatarId: 0 }, query: {} },
+      fakeRes(),
+    )
+    void res
+    expect(db.tables.quiz_sessions[0].lobby_start_at).toBe(scheduled)
+  })
+
+  it('refuses a new seat after the start only when the quiz opted out of late join', async () => {
+    const db = lobby({ state: 'question', current_question_index: 0, game_options: { late_join: false } })
+    const res = await join(db, { code: CODE, nickname: 'Grace', avatarId: 0 })
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('This quiz has already started.')
+  })
+
+  it('still takes the late arrival by default', async () => {
+    const db = lobby({ state: 'question', current_question_index: 0, game_options: {} })
+    const res = await join(db, { code: CODE, nickname: 'Grace', avatarId: 0 })
+    expect(res.statusCode).toBe(200)
+  })
+
+  it('always lets a player back into the seat they already hold', async () => {
+    const db = lobby({ state: 'question', current_question_index: 0, game_options: { late_join: false } }, {
+      quiz_players: [{ id: PLAYER, session_id: SESSION, nickname: 'Ada', total_score: 100, streak: 0, avatar_id: 4 }],
+      quiz_player_tokens: [{ player_id: PLAYER, token_hash: hashToken(TOKEN) }],
+    })
+    const res = await join(db, { code: CODE, nickname: 'Ada', avatarId: 4, token: TOKEN })
+    expect(res.statusCode).toBe(200)
+    expect(res.body.playerId).toBe(PLAYER)
+  })
+})
