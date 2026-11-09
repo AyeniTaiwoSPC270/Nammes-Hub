@@ -14,7 +14,7 @@ rediscover the same PDFs instead of finding them.
 | Piece | What it is |
 |---|---|
 | UI | `⌘K` / `Ctrl-K` palette + search icon in navbar; grouped results (Outlines / News / Events / Resources / CGPA) |
-| API | `GET /api/search?q=` — server-side `ilike` over 5 tables, top 5 each, ≤ 25 ms budget note |
+| API | `GET /api/system?action=search&q=` — server-side `ilike` over 5 tables, top 5 each, ≤ 25 ms budget note. **A new top-level function is not an option: all 12 Hobby-plan slots are taken (see the comment in `api/system.js` — the OG previews already ride along there for exactly this reason). Search joins the `ACTIONS` map in `api/system.js` |
 | Indexing | Trigram indexes (`pg_trgm`) on `outlines.course_title`, `news.title`, `opportunities.title`, `resources.title`, `events.title` |
 | Commands | Palette also runs actions: "Go to timetable", "Open CGPA", "Report a problem" |
 | Telemetry | Log zero-result queries to `hub_feedback`-adjacent table (or page_views prop) — shows what students want and can't find |
@@ -42,7 +42,7 @@ The hub's value is "answers in one place" — yet the place has no front door. S
 
 ## 4. The change
 
-Migration: `create extension if not exists pg_trgm;` + 5 GIN indexes. `api/search.js` (auth-optional, rate-limited via the rate-limit spec). `src/components/ui/CommandPalette.jsx` mounted in `Navbar.jsx`; keyboard shortcut hook; `/api/search` added to SW network-only (with the PWA spec).
+Migration: `create extension if not exists pg_trgm;` + 5 GIN indexes. A new `api/_lib/handlers/search.js` module (not a function slot — `_lib` is not routed) registered in `api/system.js`'s `ACTIONS` map as `search`; auth-optional, rate-limited via the rate-limit spec. `src/components/ui/CommandPalette.jsx` mounted in `Navbar.jsx`; keyboard shortcut hook; `/api/system?action=search` added to SW network-only (with the PWA spec). No serverless function is created, moved, or displaced.
 
 ## 5. Verification
 

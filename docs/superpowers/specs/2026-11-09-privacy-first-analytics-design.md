@@ -14,7 +14,7 @@ layout help?" — product decisions run on vibes; and raw page_views grows unbou
 | Piece | What it is |
 |---|---|
 | Events | Named funnel events: `hub_view`, `outlines_open`, `cgpa_calculate`, `quiz_join`, `quiz_complete`, `cbt_submit`, `award_vote` |
-| Storage | Reuse `page_views` (add `event` + `props jsonb`) — one pipeline, one retention policy |
+| Storage | New `funnel_events(at, event, props jsonb)` table written ONLY via a security-definer RPC `record_funnel_event()` — the exact same one-writer pattern as `record_page_view()` (revoke from anon/authenticated, RPC validated server-side). No client inserts into analytics tables, ever |
 | North Star | "Weekly engaged students" = distinct users with ≥3 meaningful events / WAU |
 | Experimentation | A/B via `feature_flags.variant`; deterministic assignment hash(user_id) |
 | Dashboard | Admin analytics gains the funnel + North Star cards (pairs with rollup spec) |
@@ -43,7 +43,7 @@ The hub is funded effort, not money — its survival metric is *demonstrated val
 
 ## 4. The change
 
-Migration: `page_views` += `event text`, `props jsonb`. `src/lib/track.js` (`track(event, props)`) fires best-effort inserts. Funnel cards in `pages/admin/AdminAnalytics.jsx`. Variant assignment in `flags.js`. Weekly digest appended by the analytics-rollup worker.
+Migration: Migration: create `funnel_events` + `record_funnel_event(p_event, p_props)` (validates event name against an allowlist, strips any email-like strings from props, no IP/user — viewer uuid semantics copied from `page_views`). `src/lib/track.js` calls `supabase.rpc('record_funnel_event', …)` — **a DB RPC, not a serverless function, so it consumes none of the 12 Hobby-plan slots**. Funnel cards in `pages/admin/AdminAnalytics.jsx` read via the existing `admin_analytics()` RPC pattern (re-declared with the new aggregates, per the house convention of wholesale re-declaration). Variant assignment in `flags.js`. Weekly digest appended by the analytics-rollup worker.
 
 ## 5. Verification
 

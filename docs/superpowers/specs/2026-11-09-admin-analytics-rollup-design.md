@@ -13,11 +13,12 @@ this gets slower quadratically as data accumulates and will be the first admin p
 
 | Piece | What it is |
 |---|---|
-| Rollup table | `analytics_daily(day, metric, key, value)` filled by a nightly worker |
-| Worker | Reuses the email-worker pattern (`/api/system?action=…` + **Supabase `pg_cron`**, which is free — it is already what the calendar reminders use per `2026-10-17-calendar-ics-feed-design.md`; Vercel Hobby cron only allows ~2 daily jobs, so keep it on pg_cron) |
-| Handlers | Admin analytics + `analyticsPdf` read rollups with raw-SQL fallback for "today" |
-| N+1 audit | Grep per-row `supabase` calls inside loops in `api/` and `src/lib/`; convert to `in()` batches |
-| Index | Cover rollup key: `analytics_daily(day, metric)` unique |
+| Reality check | The dashboard already computes everything server-side via **one** security-definer RPC, `admin_analytics(p_from, p_to)` (re-declared 3× in history, currently `20261107090000`). **There is no rollup table today** — `grep -rn 'analytics_daily' supabase/` → nothing |
+| N+1 audit (primary) | Grep per-row `supabase` calls inside loops in `api/` and `src/lib/` (esp. `analyticsPdf.js`); convert to `in()` batches. Evidence: wherever a loop awaits PostgREST per row |
+| Rollup table (secondary, only if the audit shows the RPC is the bottleneck) | `analytics_daily(day, metric, key, value)` filled by a nightly worker — an optimization, not a prerequisite |
+| Worker | Reuses the email-worker pattern (`/api/system?action=…` + **Supabase `pg_cron`**, which is free — it is already what the calendar reminders use per `2026-10-17-calendar-ics-feed-design.md`; Vercel Hobby cron only allows ~2 daily jobs, so keep it on pg_cron). No new function slot is consumed either way |
+| Handlers | `AdminAnalytics.jsx` and `analyticsPdf.js` read from `admin_analytics()` extended with rollup-aware branches — or extend the RPC itself per the house "wholesale re-declare" convention |
+| Index | If the rollup is built: `analytics_daily(day, metric)` unique index |
 
 ### Out
 
