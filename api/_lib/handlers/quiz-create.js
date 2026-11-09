@@ -8,6 +8,7 @@ import { sanitizeCard } from '../quizCard.js'
 import { cleanTeams, TEAM_SCORING } from '../quizTeams.js'
 import { cleanDrawSettings, buildQuestionSet } from '../quizDraw.js'
 import { sanitizeCast } from '../quizCharacterArt.js'
+import { isScheduledAt } from '../quizSchedule.js'
 
 const CODE_ATTEMPTS = 8
 
@@ -19,10 +20,22 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
       res.status(405).json({ error: 'Method not allowed' })
       return
     }
-    const { quizId, maxPlayers, teamMode, teams: teamsInput, teamScoring } = req.body ?? {}
+    const { quizId, maxPlayers, teamMode, teams: teamsInput, teamScoring, scheduledAt, openJoin, autopilot, lateJoin } = req.body ?? {}
     if (!isUuid(quizId)) {
       res.status(400).json({ error: 'quizId (uuid) is required' })
       return
+    }
+    // A schedule is an instant, not a day: the room opens at that moment and the 60-second wait begins at the first
+    // arrival (quizSchedule.js). Absent means "start now", which is what every game before this one did.
+    if (!isScheduledAt(scheduledAt)) {
+      res.status(400).json({ error: 'The start time must be in the future' })
+      return
+    }
+    for (const [name, value] of [['openJoin', openJoin], ['autopilot', autopilot], ['lateJoin', lateJoin]]) {
+      if (value !== undefined && typeof value !== 'boolean') {
+        res.status(400).json({ error: `${name} must be true or false` })
+        return
+      }
     }
     if (maxPlayers !== undefined && !isMaxPlayers(maxPlayers)) {
       res.status(400).json({ error: 'Max players must be a whole number from 2 to 150' })
@@ -123,6 +136,9 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
       teams = checked.teams
     }
     const gameOptions = sanitizeGameOptions(quiz?.game_options)
+    // The per-quiz default lives in the quiz's own options; hosting may override it for one game without saving it
+    // back to the quiz.
+    if (lateJoin !== undefined) gameOptions.late_join = lateJoin
 
     // The code only has to be unique among running games, so a clash is rare; retry a few times if it happens.
     for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt++) {
@@ -141,6 +157,9 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
             team_scoring: scoring,
             question_ids: questionIds,
             option_orders: optionOrders,
+            scheduled_at: scheduledAt || null,
+            open_join: openJoin === true,
+            autopilot: autopilot === true,
           })
         .select('id, join_code')
         .single()
@@ -157,7 +176,7 @@ export function createQuizCreateHandler(getClient, { makeCode = generateJoinCode
             return
           }
         }
-        res.status(200).json({ sessionId: data.id, joinCode: data.join_code, maxPlayers: limit, teamMode: useTeams })
+        res.status(200).json({ sessionId: data.id, joinCode: data.join_code, maxPlayers: limit, teamMode: useTeams, scheduledAt: scheduledAt || null, openJoin: openJoin === true, autopilot: autopilot === true })
         return
       }
       if (error.code !== '23505') {

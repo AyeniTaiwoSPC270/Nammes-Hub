@@ -29,12 +29,15 @@ import QuizImportModal from '../../components/admin/quizLibrary/QuizImportModal'
 import QuestionBankModal from '../../components/admin/quizLibrary/QuestionBankModal'
 
 // New quizzes start with the fun extras on; an existing quiz keeps whatever it had (older quizzes have them off).
-const NEW_QUIZ_OPTIONS = { streaks: true, powerups: true, comeback: true }
+// `late_join` is the exception: it defaults on everywhere, because closing the doors at the first question is the
+// choice (a competition), and taking the person who is two minutes late is the ordinary case.
+const NEW_QUIZ_OPTIONS = { streaks: true, powerups: true, comeback: true, late_join: true }
 
 const OPTION_ROWS = [
   { key: 'streaks', label: 'Streak bonus', hint: 'Answer right several times in a row for up to +200 extra points each time.' },
   { key: 'powerups', label: 'Power-ups', hint: 'Each player gets one "Double down" and one "50/50" to use during the game.' },
   { key: 'comeback', label: 'Comeback boost', hint: 'Players in the bottom quarter earn 15% extra on right answers, so nobody gives up.' },
+  { key: 'late_join', label: 'Late joiners', hint: 'Players can still join after the game has started. Turn it off to close the doors at the first question.' },
 ]
 
 export default function AdminQuizEditor() {
@@ -149,7 +152,7 @@ const [dialog, setDialog] = useState(null) // 'import' or 'bank'
           />
 
           <fieldset className="rounded-lg border border-hairline bg-surface p-4">
-            <legend className="px-1 text-sm font-bold text-ink-900">Game extras</legend>
+            <legend className="px-1 text-sm font-bold text-ink-900">Game rules</legend>
             <div className="flex flex-col gap-3">
               {OPTION_ROWS.map((row) => (
                 <label key={row.key} className="flex cursor-pointer items-start gap-3">

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
-import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeback, isChoiceType, correctText, cleanDiagramTargets, fiftyFiftyHidden, POWERUPS } from '../quiz.js'
+import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeback, isChoiceType, correctText, cleanDiagramTargets, fiftyFiftyHidden, POWERUPS, stepUpdate } from '../quiz.js'
+import { dueStep, startsInMs } from '../quizSchedule.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
 import { rankTeams } from '../quizTeams.js'
@@ -60,6 +61,26 @@ const saveData = low === 1 || low === true || low === '1'
       sessionQuestionIds(supabaseAdmin, session),
     ])
     const questionCount = questionIds.length
+    const nowMs = now()
+    // An open quiz moves itself. This poll is a second engine beside the pg_cron tick, and it is the one that makes
+    // the clock usable: a phone asks every few seconds, so a five-second leaderboard becomes the next question within
+    // a poll of its deadline instead of up to a minute late. The update is the same compare-and-swap as quiz-advance,
+    // so a host who is also watching cannot be stepped over.
+    if (session.autopilot) {
+      const currentForClock = session.state === 'question' ? await currentQuestion(supabaseAdmin, session) : null
+      const due = dueStep(session, { nowMs, questionCount, question: currentForClock, playerCount: (players ?? []).length })
+      if (due) {
+        const { data: updated } = await supabaseAdmin
+          .from('quiz_sessions')
+          .update(stepUpdate(due.next, new Date(nowMs).toISOString()))
+          .eq('id', session.id)
+          .eq('state', session.state)
+          .eq('current_question_index', session.current_question_index)
+          .select('*')
+          .maybeSingle()
+        if (updated) Object.assign(session, updated)
+      }
+    }
     const gameOptions = sanitizeGameOptions(session.game_options)
     const ranked = rankPlayers(players ?? [])
     const teamRows = session.team_mode
@@ -86,6 +107,11 @@ const saveData = low === 1 || low === true || low === '1'
         pausedAt: session.paused_at ?? null,
         pausedTotalMs: session.paused_total_ms ?? 0,
         timeBonusMs: session.time_bonus_ms ?? 0,
+        autopilot: session.autopilot === true,
+        scheduledAt: session.scheduled_at ?? null,
+        // Negative once the room has started; the phone only shows a countdown in the lobby, where it is positive or
+        // null (nobody has joined yet, so there is no clock).
+        startsInMs: startsInMs(session, nowMs),
         bracket,
       },
       theme: sanitizeTheme(session.theme, { quizId: session.quiz_id }),

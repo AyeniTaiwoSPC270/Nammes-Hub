@@ -251,7 +251,7 @@ const MENU_WIDTH_PX = 256
 // Only a fallback for the first measurement; the panel reports its own height as soon as it has rendered.
 const MENU_HEIGHT_PX = 168
 
-function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots, onSetBracket }) {
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots, onSetBracket, autopilot }) {
   const [menuFor, setMenuFor] = useState(null)
   // One map of pencil buttons rather than a `useRef` per row: a hook cannot be called from inside the player list,
   // because the list grows and shrinks as people join and React requires the hook order to be identical every render.
@@ -293,7 +293,9 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             <ControlButton icon={locked ? 'lock' : 'lock_open'} label={locked ? 'Unlock lobby' : 'Lock lobby'} onClick={onToggleLock} active={locked} />
             {!teams.length && <ControlButton icon="account_tree" label={session.bracket_mode ? 'Bracket on' : 'Bracket'} onClick={() => setBracketOpen((v) => !v)} active={bracketOpen || session.bracket_mode} />}
             <ControlButton icon="smart_toy" label={botCount > 0 ? `Test bots (${botCount})` : 'Test bots'} onClick={() => setBotsOpen((v) => !v)} active={botsOpen} />
-            {isFull ? (
+            {autopilot ? (
+              <span className="text-ink-muted">Runs automatically. You can close this screen; the game carries on.</span>
+            ) : isFull ? (
               <AutoAdvance auto={auto} noun="auto-start" />
             ) : (
               <span className="text-ink-muted">
@@ -1227,6 +1229,9 @@ export default function HostQuiz() {
 
   const question = session && session.current_question_index >= 0 ? questions[session.current_question_index] : null
   const state = session?.state
+  // The server owns every transition for an open quiz. This screen becomes a reader: its timers stand down so the
+  // two engines cannot race, and the manual buttons stay for an admin who is actually here.
+  const autopilot = session?.autopilot === true
   const questionId = question?.id
 
   // Answers to the current question: counted while it is open, and used for the bars and round points after it closes.
@@ -1285,7 +1290,7 @@ export default function HostQuiz() {
   // After the reveal and after the leaderboard the game moves on by itself, so the host does not have to keep
   // clicking. The last leaderboard finishes the game. The server ignores a repeat, so a click at the same moment is harmless.
   useEffect(() => {
-    if (!autoOn || (state !== 'reveal' && state !== 'leaderboard')) return undefined
+    if (autopilot || !autoOn || (state !== 'reveal' && state !== 'leaderboard')) return undefined
     // The answer is held back while the roll plays, so the time to read it only starts once it is up.
     const wait = AUTO_ADVANCE_MS + (state === 'reveal' ? holdMsRef.current : 0)
     const timer = setTimeout(() => advance(), wait)
@@ -1295,7 +1300,7 @@ export default function HostQuiz() {
 
   // A full lobby starts by itself after 10 seconds (the host can press Start sooner, or pause this).
   useEffect(() => {
-    if (!autoOn || state !== 'lobby' || !session?.full_at) return undefined
+    if (autopilot || !autoOn || state !== 'lobby' || !session?.full_at) return undefined
     const wait = Math.max(0, FULL_LOBBY_COUNTDOWN_MS - (Date.now() - fullRef.current.ms))
     const timer = setTimeout(() => advance(), wait)
     return () => clearTimeout(timer)
@@ -1424,7 +1429,7 @@ export default function HostQuiz() {
 
   // Close the question by itself when time runs out or everyone has answered. The server ignores a repeat.
   useEffect(() => {
-    if (state !== 'question' || !question) return
+    if (autopilot || state !== 'question' || !question) return
     if (remaining > 0 && !everyoneAnswered) return
     const key = `${sessionId}:${session.current_question_index}`
     if (autoKeyRef.current === key) return
@@ -1548,7 +1553,8 @@ rightShareRef.current = rightShare
 
   const isLast = session.current_question_index >= questions.length - 1
   const auto = {
-    on: autoOn,
+    // Never advertise a countdown this screen is not going to act on.
+    on: autoOn && !autopilot,
     toggle: () => setAutoOn((on) => !on),
     secondsLeft: autoSecondsLeft({
       enteredMs: enteredRef.current.ms,
@@ -1574,6 +1580,7 @@ rightShareRef.current = rightShare
         maxPlayers={session.max_players}
         fullLeft={fullLeft}
         auto={auto}
+        autopilot={autopilot}
         teams={teams}
         locked={Boolean(session.locked)}
         onToggleLock={() => runOp(session.locked ? 'unlock' : 'lock')}

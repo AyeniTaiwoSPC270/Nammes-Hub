@@ -136,8 +136,10 @@ export function nextState(session, questionCount) {
 }
 
 // The columns to write when a game moves to `next` (see nextState). Every step starts with a clean clock.
+// `state_changed_at` is what the autopilot tick reads to know how long a reveal has been up: without it a reveal
+// that started two seconds ago and one that started twenty minutes ago are the same row.
 export function stepUpdate(next, nowIso) {
-  const update = { state: next.state, current_question_index: next.current_question_index, paused_at: null }
+  const update = { state: next.state, current_question_index: next.current_question_index, paused_at: null, state_changed_at: nowIso }
   if (next.startsQuestion) Object.assign(update, { question_started_at: nowIso, time_bonus_ms: 0, paused_total_ms: 0 })
   if (next.state === 'finished') update.finished_at = nowIso
   return update

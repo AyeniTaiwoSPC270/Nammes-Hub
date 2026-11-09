@@ -264,7 +264,9 @@ export const POWERUPS = ['double', 'fifty']
 
 export function sanitizeGameOptions(input) {
   const o = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
-  return { streaks: o.streaks === true, powerups: o.powerups === true, comeback: o.comeback === true }
+  // `late_join` defaults on: a quiz that has not opted out still takes the person who is two minutes late. The other
+  // three default off because they change the scoring; this one only changes who may sit down.
+  return { streaks: o.streaks === true, powerups: o.powerups === true, comeback: o.comeback === true, late_join: o.late_join !== false }
 }
 
 // 2nd correct answer in a row earns +50, 3rd +100, 4th +150, 5th and beyond +200.

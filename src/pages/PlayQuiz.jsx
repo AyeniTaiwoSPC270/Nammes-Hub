@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS, useCastQuery } from '../data/quiz'
+import { callQuiz, fetchOpenQuizzes, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS, useCastQuery } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { BracketCard } from '../components/quiz/BracketParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
@@ -107,6 +107,100 @@ function CodeInput({ value, onChange, autoFocus }) {
   )
 }
 
+// The quizzes anyone can walk into. Above the keypad whenever there are any, because someone opening /play for a
+// four o'clock quiz should not have to scroll past a code box to find it; with nothing open the page is exactly what
+// it was. Polled rather than live: it is a list of rooms, and fifteen seconds is faster than anyone walks to one.
+const OPEN_POLL_MS = 15000
+
+function openCountdown(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+}
+
+function OpenQuizzes({ onPick }) {
+  const [sessions, setSessions] = useState([])
+  const [fetchedAt, setFetchedAt] = useState(0)
+  const [nowMs, setNowMs] = useState(() => Date.now())
+
+  useEffect(() => {
+    let cancelled = false
+    const load = () => {
+      const askedAt = Date.now()
+      fetchOpenQuizzes()
+        .then((data) => {
+          if (cancelled) return
+          setSessions(data.sessions ?? [])
+          // The countdown is measured from when the phone asked, not from when the answer landed, so a slow network
+          // does not make the start time look later than it is.
+          setFetchedAt(askedAt)
+        })
+        .catch(() => {
+          // A failed poll is not evidence that the list is empty, so the last one stands.
+        })
+    }
+    load()
+    const poll = setInterval(load, OPEN_POLL_MS)
+    const clock = setInterval(() => setNowMs(Date.now()), 1000)
+    return () => {
+      cancelled = true
+      clearInterval(poll)
+      clearInterval(clock)
+    }
+  }, [])
+
+  if (sessions.length === 0) return null
+
+  return (
+    <div className="qz-rise flex flex-col gap-2" style={{ animationDelay: '25ms' }}>
+      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">
+        <span className="material-symbols-outlined text-base text-orange-500" aria-hidden="true">groups</span>
+        Open quizzes
+      </p>
+      {sessions.map((session) => {
+        const live = session.state !== 'lobby'
+        const startsIn = session.startsInMs == null ? null : session.startsInMs - (nowMs - fetchedAt)
+        const full = session.players >= session.maxPlayers
+        // A quiz that closed its doors at the first question says so rather than offering a button that 403s.
+        const closed = live && !session.lateJoin
+        const canJoin = !full && !closed
+        return (
+          <button
+            key={session.id}
+            type="button"
+            disabled={!canJoin}
+            onClick={() => onPick(session.joinCode)}
+            className={[
+              'flex min-h-16 items-center justify-between gap-3 rounded-2xl border px-4 text-left',
+              canJoin ? 'border-orange-500 bg-orange-500/10' : 'border-hairline bg-surface opacity-70',
+            ].join(' ')}
+          >
+            <span className="min-w-0">
+              <span className="block truncate font-semibold text-ink-900">{session.title}</span>
+              <span className="mt-0.5 flex items-center gap-2 text-xs text-ink-muted">
+                <span className="material-symbols-outlined text-sm" aria-hidden="true">{live ? 'bolt' : 'hourglass_top'}</span>
+                {closed
+                  ? 'Already started'
+                  : live
+                    ? 'Live now'
+                    : startsIn == null
+                      ? 'Waiting for players'
+                      : startsIn > 0
+                        ? `Starts in ${openCountdown(startsIn)}`
+                        : 'Starting…'}
+                <span className="inline-flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-sm" aria-hidden="true">group</span>
+                  {session.players}/{session.maxPlayers}
+                </span>
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-bold text-orange-500">{full ? 'Full' : closed ? 'Started' : 'Join'}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function JoinForm({ onJoined, notice }) {
   const [params] = useSearchParams()
   const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
@@ -202,6 +296,8 @@ function JoinForm({ onJoined, notice }) {
             or one that has just been cleared -- and those are exactly the phones holding no seat to reveal the block. */}
         <Link to="/play/history" className="text-sm font-semibold text-orange-500">See your past results</Link>
       </div>
+
+      {code.length !== 6 && <OpenQuizzes onPick={setCode} />}
 
       {/* Offered only when the device already holds a seat, and only as a shortcut: the token is still what resumes,
           and the server verifies it. Without this a phone that refreshed on a bare /play was left holding a seat it had
@@ -683,6 +779,11 @@ function PlayQuizGame({ onTheme }) {
                 <span className="block text-sm text-ink-muted">The game is about to start</span>
               </span>
             </div>
+          ) : session.autopilot ? (
+            // An open quiz has no host to wait for; it starts a minute after the first arrival.
+            <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
+              The game starts by itself in a moment <WaitingDots />
+            </p>
           ) : (
             <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
               Waiting for the host to start <WaitingDots />

@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
-import { isJoinCode, isAvatarId, validateNickname, newPlayerToken, hashToken, safeEqual, createRateLimiter, clientIp, MAX_PLAYERS } from '../quiz.js'
+import { isJoinCode, isAvatarId, validateNickname, newPlayerToken, hashToken, safeEqual, createRateLimiter, clientIp, MAX_PLAYERS, sanitizeGameOptions } from '../quiz.js'
 import { pickAutoTeam } from '../quizTeams.js'
+import { lobbyStartAtMs, lateJoinAllowed } from '../quizSchedule.js'
 
 // A player who reloads sends the same nickname again, and `quiz_players_nickname` refuses it -- "That nickname is
 // taken. Pick another." is a true statement and a useless one, because the person asking is the person who took it.
@@ -77,7 +78,7 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
     const supabaseAdmin = getClient()
     const { data: session } = await supabaseAdmin
       .from('quiz_sessions')
-      .select('id, state, max_players, locked, blocked_nicknames, team_mode, characters')
+      .select('id, state, max_players, locked, blocked_nicknames, team_mode, characters, scheduled_at, lobby_start_at, autopilot, game_options')
       .eq('join_code', code)
       .neq('state', 'finished')
       .maybeSingle()
@@ -102,6 +103,13 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
     const resumed = await tryResume(supabaseAdmin, session, checked.value, playerToken)
     if (resumed) {
       res.status(200).json(resumed)
+      return
+    }
+
+    // Only new seats are refused once the quiz has started; a resume above still gets its own seat back. The default
+    // is open, because the person who is two minutes late is still in the class.
+    if (!lateJoinAllowed(session, sanitizeGameOptions(session.game_options))) {
+      res.status(403).json({ error: 'This quiz has already started.' })
       return
     }
 
@@ -206,6 +214,18 @@ export function createQuizJoinHandler(getClient, { allow = createRateLimiter({ m
         return
       }
       team = (await supabaseAdmin.from('quiz_teams').select('id, name, color').eq('id', assigned).maybeSingle()).data ?? team
+    }
+
+    // An open quiz starts itself sixty seconds after the first arrival, and a scheduled one cannot start before its
+    // scheduled time (lobbyStartAtMs takes the later of the two). Only the first join writes this, so fifty phones
+    // arriving together cannot move the start.
+    if (session.autopilot && !session.lobby_start_at) {
+      const { error: startError } = await supabaseAdmin
+        .from('quiz_sessions')
+        .update({ lobby_start_at: new Date(lobbyStartAtMs({ scheduledAt: session.scheduled_at, firstJoinAt: now() })).toISOString() })
+        .eq('id', session.id)
+        .is('lobby_start_at', null)
+      if (startError) console.error('quiz-join: could not start the lobby clock', startError)
     }
 
     // The join that fills the lobby starts the 10-second countdown (only the first to get here sets it).
