@@ -435,6 +435,8 @@ function PlayQuizGame({ onTheme }) {
   const rankStart = useRef({ key: '', rank: null }) // rank when the current question began, to show up/down moves
   const finishedSeat = useRef('') // the code already flagged as over, so a poll on the final screen writes storage once
   const failures = useRef(0) // consecutive failed polls, for the backoff
+  // How long the server says it is until this game moves on by itself, so the next poll can be timed to it.
+  const nextStepMs = useRef(null)
 
   const token = saved?.token
   const sessionId = saved?.sessionId
@@ -449,6 +451,7 @@ function PlayQuizGame({ onTheme }) {
       // `low` is the one thing the server can act on: it drops the explanation and an unused picture from the payload
       // rather than leaving the client to discard bytes it has already paid for.
       const data = await callQuiz('state', { token, ...(low ? { low: 1 } : {}) })
+      nextStepMs.current = typeof data.session.nextStepInMs === 'number' ? data.session.nextStepInMs : null
       setOffset(data.serverNow - Date.now())
       setStartAtMs(data.session.state === 'lobby' && data.session.startsInMs != null ? Date.now() + data.session.startsInMs : 0)
       setNowMs(Date.now())
@@ -478,6 +481,7 @@ function PlayQuizGame({ onTheme }) {
         return false
       }
       failures.current += 1
+      nextStepMs.current = null
       setMessage('Connection problem. Trying again…')
       return false
     }
@@ -492,7 +496,16 @@ function PlayQuizGame({ onTheme }) {
       if (stopped) return
       const alive = await refresh()
       if (stopped) return
-      const delay = alive ? pollMs : Math.min(pollMs * 2 ** Math.max(0, failures.current - 1), BACKOFF_MAX_MS)
+      // An open game moves itself, and it can only move on a poll: a flat interval means every step is up to four
+      // seconds late and a bot that has finished thinking waits for the next poll. So when the server says a step is
+      // due in 900ms, ask again then (plus a small margin for the round trip), and never faster than half a second.
+      // In a steady state there is no deadline and the normal interval still applies, so this costs no extra requests.
+      const due = nextStepMs.current
+      const delay = alive
+        ? due == null
+          ? pollMs
+          : Math.min(pollMs, Math.max(500, due + 150))
+        : Math.min(pollMs * 2 ** Math.max(0, failures.current - 1), BACKOFF_MAX_MS)
       timer = setTimeout(tick, delay)
     }
 

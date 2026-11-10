@@ -12,7 +12,11 @@ const ACCURACY = {
   expert: { easy: 0.97, medium: 0.9, hard: 0.75 },
 }
 // Fraction of the time limit a bot usually takes: experts are quick, beginners slow.
-const PACE = { beginner: [0.35, 0.8], average: [0.25, 0.7], expert: [0.12, 0.45] }
+//
+// The slow end used to be 0.8, which on a twenty-second question is sixteen seconds — long enough that the room has
+// already decided the bots are not playing. A bot now answers inside the first half of the timer, and a poll timed to
+// the question's deadline is the only thing left between its decision and its answer.
+const PACE = { beginner: [0.3, 0.55], average: [0.2, 0.5], expert: [0.1, 0.35] }
 
 // Questions without a difficulty are judged by their points (1000 is standard).
 export function questionDifficulty(question) {

@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { hashToken, rankPlayers, createRateLimiter, sanitizeGameOptions, isComeback, isChoiceType, correctText, cleanDiagramTargets, fiftyFiftyHidden, POWERUPS, stepUpdate } from '../quiz.js'
-import { dueStep, startsInMs } from '../quizSchedule.js'
+import { dueStep, nextStepInMs, startsInMs } from '../quizSchedule.js'
 import { sanitizeTheme } from '../quizTheme.js'
 import { publicImageUrl } from '../quizImage.js'
 import { rankTeams } from '../quizTeams.js'
@@ -60,7 +60,7 @@ const saveData = low === 1 || low === true || low === '1'
     const [{ data: players }, questionIds] = await Promise.all([
       // `bot_skill` is read only to answer "does this game have test bots?", which decides whether a poll also plays
       // their turns. It never leaves the server.
-      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id, bot_skill').eq('session_id', session.id),
+      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id, streak, bot_skill').eq('session_id', session.id),
       sessionQuestionIds(supabaseAdmin, session),
     ])
     const questionCount = questionIds.length
@@ -69,9 +69,13 @@ const saveData = low === 1 || low === true || low === '1'
     // the clock usable: a phone asks every few seconds, so a five-second leaderboard becomes the next question within
     // a poll of its deadline instead of up to a minute late. The update is the same compare-and-swap as quiz-advance,
     // so a host who is also watching cannot be stepped over.
+    // The autopilot clock needs the open question to know when it ends, and the payload below needs the same row. It
+    // used to be fetched twice in one poll, which is a whole extra round trip on every phone every few seconds.
+    let clockQuestion = null
+    let botWakeInMs = null
     if (session.autopilot) {
-      const currentForClock = session.state === 'question' ? await currentQuestion(supabaseAdmin, session) : null
-      const due = dueStep(session, { nowMs, questionCount, question: currentForClock, playerCount: (players ?? []).length })
+      if (session.state === 'question') clockQuestion = await currentQuestion(supabaseAdmin, session)
+      const due = dueStep(session, { nowMs, questionCount, question: clockQuestion, playerCount: (players ?? []).length })
       if (due) {
         const { data: updated } = await supabaseAdmin
           .from('quiz_sessions')
@@ -86,9 +90,12 @@ const saveData = low === 1 || low === true || low === '1'
       // An open quiz has no host page, so this poll is the only thing a bot's turn can be played from: the host screen's
       // `botsPlay` op needs a screen nobody is guaranteed to have open. The question is already in hand from the clock
       // branch above, and playBots is idempotent, so every phone asking costs one filtered read, not a second answer.
-      if (session.state === 'question' && (players ?? []).some((p) => p.bot_skill)) {
+      const bots = (players ?? []).filter((p) => p.bot_skill)
+      if (session.state === 'question' && bots.length > 0) {
         try {
-          await playBots(supabaseAdmin, session, { nowMs, question: currentForClock })
+          // The roster is already in hand, so this asks for no extra read of the bots it is about to play.
+          const played = await playBots(supabaseAdmin, session, { nowMs, question: clockQuestion, bots })
+          botWakeInMs = played.nextInMs ?? null
         } catch (botError) {
           // A failed bot turn must never fail the phone's poll: the player's own screen is more important than a bot's.
           console.error('quiz-state: bot play failed', botError)
@@ -105,6 +112,11 @@ const saveData = low === 1 || low === true || low === '1'
     const bracket = session.bracket_mode
       ? bracketViewFor(((await supabaseAdmin.from('quiz_bracket_matches').select('*').eq('session_id', session.id)).data ?? []), player.id, session)
       : null
+
+    // Whichever comes first: the session's own next step, or the next bot's turn. Either one changes what this phone
+    // should be showing, so the poll is timed to it rather than to a fixed interval.
+    const stepInMs = nextStepInMs(session, { nowMs, question: clockQuestion, playerCount: (players ?? []).length })
+    const wakeInMs = stepInMs == null ? botWakeInMs : botWakeInMs == null ? stepInMs : Math.min(stepInMs, botWakeInMs)
 
     const out = {
       serverNow: now(),
@@ -126,6 +138,9 @@ const saveData = low === 1 || low === true || low === '1'
         // Negative once the room has started; the phone only shows a countdown in the lobby, where it is positive or
         // null (nobody has joined yet, so there is no clock).
         startsInMs: startsInMs(session, nowMs),
+        // Milliseconds until this session moves on by itself, so the phone can time its next poll to that instant
+        // instead of guessing with a fixed interval. Null when nothing is pending: hosted, paused, or no room yet.
+        nextStepInMs: wakeInMs,
         bracket,
       },
       theme: sanitizeTheme(session.theme, { quizId: session.quiz_id }),
@@ -142,7 +157,7 @@ const saveData = low === 1 || low === true || low === '1'
     }
 
     if (['question', 'reveal', 'leaderboard'].includes(session.state)) {
-      const question = await currentQuestion(supabaseAdmin, session)
+      const question = clockQuestion ?? (await currentQuestion(supabaseAdmin, session))
       if (question) {
         // Answers go out in the order this game drew, and everything reported back is mapped back to it, so what a
         // phone (and the projector) sees is the same everywhere. Stored answers keep their original positions.

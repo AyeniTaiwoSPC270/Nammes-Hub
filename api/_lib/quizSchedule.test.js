@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ANSWER_GRACE_MS } from './quiz.js'
 import {
   LOBBY_WAIT_MS,
   REVEAL_HOLD_MS,
@@ -9,6 +10,7 @@ import {
   lobbyStartAtMs,
   startsInMs,
   dueStep,
+  nextStepInMs,
   isListed,
   compareListed,
   lateJoinAllowed,
@@ -148,6 +150,40 @@ describe('dueStep', () => {
   it('leaves a bracket game to the host screen', () => {
     const bracket = session({ bracket_mode: true, lobby_start_at: new Date(NOW - 60_000).toISOString() })
     expect(dueStep(bracket, { nowMs: NOW, playerCount: 4, questionCount: 3 })).toBe(null)
+  })
+})
+
+// The phone's poll is timed to this number, so a wrong one shows up as a step that lands early, late or never.
+describe('nextStepInMs', () => {
+  it('is the time left on an open question', () => {
+    const row = session({ state: 'question', question_started_at: new Date(NOW - 5_000).toISOString() })
+    // Twenty-second limit, five seconds gone, plus the same grace quiz-answer gives a slow phone.
+    expect(nextStepInMs(row, { nowMs: NOW, question: QUESTION })).toBe(15_000 + ANSWER_GRACE_MS)
+  })
+
+  it('is zero once the question is past its grace, so the phone asks again at once', () => {
+    const row = session({ state: 'question', question_started_at: new Date(NOW - 60_000).toISOString() })
+    expect(nextStepInMs(row, { nowMs: NOW, question: QUESTION })).toBe(0)
+  })
+
+  it('counts down the reveal and leaderboard holds', () => {
+    const reveal = session({ state: 'reveal', state_changed_at: new Date(NOW - 3_000).toISOString() })
+    expect(nextStepInMs(reveal, { nowMs: NOW })).toBe(REVEAL_HOLD_MS - 3_000)
+    const board = session({ state: 'leaderboard', state_changed_at: new Date(NOW - 2_000).toISOString() })
+    expect(nextStepInMs(board, { nowMs: NOW })).toBe(LEADERBOARD_HOLD_MS - 2_000)
+  })
+
+  it('is the lobby countdown once somebody is in the room', () => {
+    const row = session({ lobby_start_at: new Date(NOW - 15_000).toISOString() })
+    expect(nextStepInMs(row, { nowMs: NOW, playerCount: 1 })).toBe(LOBBY_WAIT_MS - 15_000)
+    // An empty room has no clock to wake for; the tick expires it on its own schedule.
+    expect(nextStepInMs(row, { nowMs: NOW, playerCount: 0 })).toBe(null)
+  })
+
+  it('is null for a hosted game, a paused question and a finished one', () => {
+    expect(nextStepInMs(session({ autopilot: false }), { nowMs: NOW, playerCount: 1 })).toBe(null)
+    expect(nextStepInMs(session({ state: 'question', paused_at: new Date(NOW).toISOString() }), { nowMs: NOW, question: QUESTION })).toBe(null)
+    expect(nextStepInMs(session({ state: 'finished' }), { nowMs: NOW })).toBe(null)
   })
 })
 
