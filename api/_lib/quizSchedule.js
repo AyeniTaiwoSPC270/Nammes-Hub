@@ -127,6 +127,38 @@ export function dueStep(session, { nowMs = Date.now(), questionCount = 0, questi
   return null
 }
 
+// How long until this session moves on by itself, or null when nothing is pending (hosted game, paused question, no
+// room yet). The phone uses it to time its next poll to the moment a transition actually happens: the clock can only
+// tick on a poll, so a flat four-second interval makes every step up to four seconds late, and makes a bot that has
+// finished thinking wait for the next poll before it answers. Same decisions as dueStep, read as a deadline rather than
+// a yes/no, so the two cannot disagree about when a step is due.
+export function nextStepInMs(session, { nowMs = Date.now(), question = null, playerCount = 0 } = {}) {
+  if (!session || session.autopilot !== true) return null
+  if (session.state === 'finished') return null
+  // Brackets are settled by a person, so nothing here is predictable enough to wake a phone for.
+  if (session.bracket_mode) return null
+
+  if (session.state === 'lobby') {
+    if (playerCount < 1) return null
+    const waits = []
+    const fullAt = instant(session.full_at)
+    if (fullAt != null) waits.push(fullAt + FULL_LOBBY_COUNTDOWN_MS - nowMs)
+    const left = startsInMs(session, nowMs)
+    if (left != null) waits.push(left)
+    if (waits.length === 0) return null
+    return Math.max(0, Math.min(...waits))
+  }
+
+  if (session.state === 'question') {
+    if (session.paused_at || !question || !session.question_started_at) return null
+    return Math.max(0, questionLimitMs(session, question) + ANSWER_GRACE_MS - effectiveElapsedMs(session, nowMs))
+  }
+
+  if (session.state === 'reveal') return Math.max(0, REVEAL_HOLD_MS - (nowMs - stateChangedMs(session)))
+  if (session.state === 'leaderboard') return Math.max(0, LEADERBOARD_HOLD_MS - (nowMs - stateChangedMs(session)))
+  return null
+}
+
 // Listed on /play: open, unfinished, and either already live or close enough to its start to be worth showing.
 export function isListed(session, nowMs = Date.now()) {
   if (!session?.open_join) return false

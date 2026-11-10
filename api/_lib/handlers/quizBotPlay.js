@@ -11,35 +11,44 @@ import { currentQuestion } from '../quizSessionQuestions.js'
 // Every question's answers are fixed by the bot's id (see quizBots.js), so calling this twice, or once per phone in
 // the room, changes nothing: a bot that has already answered is filtered out below, and the record RPC refuses a
 // second answer to the same question.
-export async function playBots(supabaseAdmin, session, { nowMs = Date.now(), question: known = null } = {}) {
-  if (!session || session.state !== 'question' || session.paused_at) return { answered: 0 }
+export async function playBots(supabaseAdmin, session, { nowMs = Date.now(), question: known = null, bots: knownBots = null } = {}) {
+  if (!session || session.state !== 'question' || session.paused_at) return { answered: 0, nextInMs: null }
 
-  const { data: bots } = await supabaseAdmin
-    .from('quiz_players')
-    .select('id, streak, bot_skill')
-    .eq('session_id', session.id)
-    .not('bot_skill', 'is', null)
-  if ((bots ?? []).length === 0) return { answered: 0 }
+  // A caller that already has the roster passes the bot rows in, which is one read less on the per-phone poll path.
+  let bots = knownBots
+  if (bots == null) {
+    const { data } = await supabaseAdmin
+      .from('quiz_players')
+      .select('id, streak, bot_skill')
+      .eq('session_id', session.id)
+      .not('bot_skill', 'is', null)
+    bots = data ?? []
+  }
+  if (bots.length === 0) return { answered: 0, nextInMs: null }
 
   // The caller usually has the question already (the clock branch of quiz-state fetches it), so it is passed in.
   const question = known ?? (await currentQuestion(supabaseAdmin, session))
-  if (!question) return { answered: 0 }
+  if (!question) return { answered: 0, nextInMs: null }
 
   const elapsedMs = effectiveElapsedMs(session, nowMs)
   const limitMs = questionLimitMs(session, question)
   // A late call is a no-op rather than a burst of answers after the reveal: the question is already marked up.
-  if (elapsedMs > limitMs + ANSWER_GRACE_MS) return { answered: 0 }
+  if (elapsedMs > limitMs + ANSWER_GRACE_MS) return { answered: 0, nextInMs: null }
 
   const { data: answeredRows } = await supabaseAdmin
     .from('quiz_answers')
     .select('player_id, points_awarded')
     .eq('question_id', question.id)
   const answeredIds = new Set((answeredRows ?? []).map((a) => a.player_id))
-  const due = bots
+  const pending = bots
     .filter((b) => !answeredIds.has(b.id))
     .map((bot) => ({ bot, decision: botDecision({ botId: bot.id, skill: bot.bot_skill, question, limitMs }) }))
-    .filter(({ decision }) => decision.thinkMs <= elapsedMs)
-  if (due.length === 0) return { answered: 0 }
+  const due = pending.filter(({ decision }) => decision.thinkMs <= elapsedMs)
+  // When the next bot is due, so the caller can time a poll to it. Without this a bot that has finished thinking still
+  // waits up to a full poll interval to answer, which is most of why the bots looked slow in a hostless game.
+  const waiting = pending.filter(({ decision }) => decision.thinkMs > elapsedMs)
+  const nextInMs = waiting.length === 0 ? null : Math.min(...waiting.map(({ decision }) => decision.thinkMs)) - elapsedMs
+  if (due.length === 0) return { answered: 0, nextInMs }
 
   const options = sanitizeGameOptions(session.game_options)
   let before = null
@@ -85,5 +94,5 @@ export async function playBots(supabaseAdmin, session, { nowMs = Date.now(), que
     return !error && recorded === true
   }))
 
-  return { answered: results.filter(Boolean).length }
+  return { answered: results.filter(Boolean).length, nextInMs }
 }
