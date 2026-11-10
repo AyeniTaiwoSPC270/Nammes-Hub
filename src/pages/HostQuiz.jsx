@@ -251,7 +251,7 @@ const MENU_WIDTH_PX = 256
 // Only a fallback for the first measurement; the panel reports its own height as soon as it has rendered.
 const MENU_HEIGHT_PX = 168
 
-function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots, onSetBracket, autopilot }) {
+function Lobby({ session, title, players, questionCount, onStart, busy, maxPlayers, fullLeft, auto, locked, onToggleLock, onKick, onRename, teams, onAddBots, onRemoveBots, onSetBracket, autopilot, startsIn }) {
   const [menuFor, setMenuFor] = useState(null)
   // One map of pencil buttons rather than a `useRef` per row: a hook cannot be called from inside the player list,
   // because the list grows and shrinks as people join and React requires the hook order to be identical every render.
@@ -294,7 +294,22 @@ function Lobby({ session, title, players, questionCount, onStart, busy, maxPlaye
             {!teams.length && <ControlButton icon="account_tree" label={session.bracket_mode ? 'Bracket on' : 'Bracket'} onClick={() => setBracketOpen((v) => !v)} active={bracketOpen || session.bracket_mode} />}
             <ControlButton icon="smart_toy" label={botCount > 0 ? `Test bots (${botCount})` : 'Test bots'} onClick={() => setBotsOpen((v) => !v)} active={botsOpen} />
             {autopilot ? (
-              <span className="text-ink-muted">Runs automatically. You can close this screen; the game carries on.</span>
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                {/* The clock an open quiz runs on, shown here because this is the screen the admin is looking at when
+                    they wonder whether it is about to start. Before anyone joins there is no clock yet, so it says
+                    when the room was set for rather than inventing a countdown. */}
+                <span className="inline-flex items-center gap-1 font-semibold text-ink-900">
+                  <span className="material-symbols-outlined text-base" aria-hidden="true">hourglass_top</span>
+                  {startsIn == null
+                    ? session.scheduled_at
+                      ? `Set for ${new Date(session.scheduled_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+                      : 'Waiting for the first player'
+                    : startsIn > 0
+                      ? `Starts in ${Math.ceil(startsIn / 1000)}s`
+                      : 'Starting…'}
+                </span>
+                <span className="text-ink-muted">Runs automatically. You can close this screen; the game carries on.</span>
+              </span>
             ) : isFull ? (
               <AutoAdvance auto={auto} noun="auto-start" />
             ) : (
@@ -1152,6 +1167,24 @@ export default function HostQuiz() {
     if (data) setPlayers(data)
   }, [sessionId])
 
+  // The countdown an open lobby is showing, plus when this screen heard it. Kept as "ms from receipt" rather than as a
+  // start instant so a laptop whose clock is a minute out still counts down correctly.
+  const [hostStart, setHostStart] = useState({ inMs: null, at: 0 })
+
+  // An open quiz has no person to move it on, so this screen asks the server to apply whatever is due -- the same
+  // decision, and the same compare-and-swap, as a player's poll and the pg_cron tick. Nothing is decided here: the
+  // host screen is simply the watcher that is still there when every phone's tab has been closed.
+  const keepClock = useCallback(async () => {
+    if (!sessionRef.current?.autopilot) return
+    try {
+      const result = await hostOp('clock', sessionId)
+      if (result.session) applySession(result.session, true)
+      setHostStart({ inMs: result.startsInMs ?? null, at: Date.now() })
+    } catch {
+      // One missed step, not a page error: the next poll asks again.
+    }
+  }, [sessionId, applySession])
+
   // First load, then a slow poll as a safety net in case live updates drop.
   useEffect(() => {
     let cancelled = false
@@ -1198,12 +1231,17 @@ export default function HostQuiz() {
       }
     }
     loadAll(true)
-    const timer = setInterval(() => loadAll(false), POLL_MS)
+    // The clock goes first, so the read that follows sees the step it may have just applied instead of the row from
+    // before it. Sequential on purpose: two requests in flight at once would race each other onto the screen.
+    const timer = setInterval(async () => {
+      await keepClock()
+      loadAll(false)
+    }, POLL_MS)
     return () => {
       cancelled = true
       clearInterval(timer)
     }
-  }, [sessionId, applySession, loadPlayers])
+  }, [sessionId, applySession, loadPlayers, keepClock])
 
   useEffect(() => {
     const channel = supabase
@@ -1280,12 +1318,14 @@ export default function HostQuiz() {
     if (state === 'reveal') loadPlayers()
   }, [state, loadPlayers])
 
+  // The 250ms tick that drains the countdown rings. An open lobby needs it too, for its start clock.
+  const openLobby = state === 'lobby' && autopilot
   useEffect(() => {
     const lobbyFull = state === 'lobby' && Boolean(session?.full_at)
-    if (state !== 'question' && state !== 'reveal' && state !== 'leaderboard' && !lobbyFull) return undefined
+    if (state !== 'question' && state !== 'reveal' && state !== 'leaderboard' && !lobbyFull && !openLobby) return undefined
     const timer = setInterval(() => setNowMs(Date.now()), 250)
     return () => clearInterval(timer)
-  }, [state, session?.full_at])
+  }, [state, session?.full_at, openLobby])
 
   // After the reveal and after the leaderboard the game moves on by itself, so the host does not have to keep
   // clicking. The last leaderboard finishes the game. The server ignores a repeat, so a click at the same moment is harmless.
@@ -1581,6 +1621,7 @@ rightShareRef.current = rightShare
         fullLeft={fullLeft}
         auto={auto}
         autopilot={autopilot}
+        startsIn={autopilot && hostStart.inMs != null ? hostStart.inMs - (nowMs - hostStart.at) : null}
         teams={teams}
         locked={Boolean(session.locked)}
         onToggleLock={() => runOp(session.locked ? 'unlock' : 'lock')}

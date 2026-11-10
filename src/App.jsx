@@ -86,6 +86,7 @@ const HostQuiz = lazyRetry(() => import('./pages/HostQuiz'))
 const PlayQuiz = lazyRetry(() => import('./pages/PlayQuiz'))
 const PlayLow = lazyRetry(() => import('./pages/PlayLow'))
 const PlayHistory = lazyRetry(() => import('./pages/PlayHistory'))
+const PlayOpen = lazyRetry(() => import('./pages/PlayOpen'))
 const PlayPractice = lazyRetry(() => import('./pages/PlayPractice'))
 const PlayBattle = lazyRetry(() => import('./pages/PlayBattle'))
 const PracticeList = lazyRetry(() => import('./pages/PracticeList'))
@@ -169,6 +170,15 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <PlayHistory />
+              </Suspense>
+            }
+          />
+          {/* The rooms nobody needs a code for. Beside /play rather than on it: /play answers "what is the code". */}
+          <Route
+            path="play/open"
+            element={
+              <Suspense fallback={null}>
+                <PlayOpen />
               </Suspense>
             }
           />

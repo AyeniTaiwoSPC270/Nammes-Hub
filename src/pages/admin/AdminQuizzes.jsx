@@ -32,6 +32,10 @@ const STATE_LABELS = { lobby: 'Lobby', question: 'In progress', reveal: 'In prog
 function useRecentSessionsQuery() {
   return useQuery({
     queryKey: ['quiz_sessions', 'recent'],
+    // Polled, because a game's state changes while this page is open: without it the list kept the word it read when
+    // the page loaded, so a quiz that started a minute ago still said "Lobby" and looked like it had never run.
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('quiz_sessions')

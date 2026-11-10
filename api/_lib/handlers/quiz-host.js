@@ -11,8 +11,9 @@ import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_
 import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion, fitsBracketLength, bracketLengthsThatFit } from '../quizBracket.js'
 import { settleRound } from '../quizBracketEngine.js'
 import { sessionQuestionIds, currentQuestion } from '../quizSessionQuestions.js'
+import { dueStep, startsInMs } from '../quizSchedule.js'
 
-const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay', 'setBracket', 'end']
+const OPS = ['kick', 'lock', 'unlock', 'pause', 'resume', 'extend', 'skip', 'rename', 'addBots', 'removeBots', 'botsPlay', 'setBracket', 'end', 'clock']
 const STEP_OPS = ['pause', 'resume', 'extend', 'skip', 'botsPlay']
 const GUARDED_OPS = [...STEP_OPS, 'end'] // ops that say which step they mean
 
@@ -94,6 +95,44 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
     }
 
     if (op === 'lock' || op === 'unlock') return done({ locked: op === 'lock' })
+
+    // The clock, for a game that runs itself. This op decides nothing: it asks `dueStep` what is due, exactly as a
+    // player's poll and the pg_cron tick do, and applies it with the same compare-and-swap. It exists because the host
+    // screen is the most reliable watcher a quiz has -- a projector is left on, a phone is put in a pocket -- and
+    // without it the clock stopped dead at the moment the last player's tab closed, leaving a finished question on
+    // the screen until somebody happened to come back. That is the bug this op fixes, not a new authority.
+    if (op === 'clock') {
+      const nowMs = now().getTime()
+      const questionIds = await sessionQuestionIds(supabaseAdmin, session)
+      const question = session.state === 'question' ? await currentQuestion(supabaseAdmin, session) : null
+      let playerCount = 0
+      if (session.state === 'lobby') {
+        const { count } = await supabaseAdmin
+          .from('quiz_players')
+          .select('id', { count: 'exact', head: true })
+          .eq('session_id', sessionId)
+        playerCount = count ?? 0
+      }
+      const due = dueStep(session, { nowMs, questionCount: questionIds.length, question, playerCount })
+      if (!due) {
+        res.status(200).json({ session, advanced: false, startsInMs: startsInMs(session, nowMs) })
+        return
+      }
+      const { data: updated, error: updateError } = await supabaseAdmin
+        .from('quiz_sessions')
+        .update(stepUpdate(due.next, new Date(nowMs).toISOString()))
+        .eq('id', sessionId)
+        .eq('state', session.state)
+        .eq('current_question_index', session.current_question_index)
+        .select('*')
+        .maybeSingle()
+      if (updateError) return fail(updateError, 'Could not step the game')
+      // 0 rows is another engine getting there first. Answer with the row as it stands rather than an error: the
+      // caller only wanted to know what to show.
+      const next = updated ?? (await supabaseAdmin.from('quiz_sessions').select('*').eq('id', sessionId).maybeSingle()).data ?? session
+      res.status(200).json({ session: next, advanced: Boolean(updated), startsInMs: startsInMs(next, nowMs) })
+      return
+    }
 
     // End the game now, from any step after the lobby: everyone sees the final results, and the report keeps what was played.
     if (op === 'end') {
