@@ -6,6 +6,8 @@ import { summariseSeat } from '../lib/quizHistory'
 import { cardFilename, fetchCardBlob, personalCardUrl } from '../lib/quizCard'
 import { saveCardBlob } from '../lib/shareCard'
 import { SkeletonText } from '../components/ui/Skeleton'
+import { BrandMark, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { QuizThemeScope } from '../components/quiz/QuizTheme'
 
 // The join screen offers a seat for a day, because that is how long a game is worth re-entering. History is a
 // different question -- "how did I do?" -- and a game from last week is exactly what a student opened this page for.
@@ -38,7 +40,7 @@ function CardButton({ seat, nickname }) {
         type="button"
         disabled={busy}
         onClick={download}
-        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-green-900 px-4 text-sm font-bold text-white disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl bg-orange-500 px-5 text-sm font-bold text-white disabled:opacity-50"
       >
         <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
         {busy ? 'Making your card…' : 'Download my card'}
@@ -53,12 +55,12 @@ function HistoryRow({ entry, onRetry }) {
 
   if (error) {
     return (
-      <article className="rounded-2xl border border-hairline bg-surface p-4 shadow-sm">
+      <article className="rounded-3xl border border-hairline bg-surface p-5 shadow-md">
         <p className="text-sm text-ink-muted">Couldn&rsquo;t load this one. {error}</p>
         <button
           type="button"
           onClick={onRetry}
-          className="mt-2 text-sm font-semibold text-brand-orange"
+          className="mt-2 text-sm font-semibold text-orange-500"
         >
           Retry
         </button>
@@ -68,7 +70,7 @@ function HistoryRow({ entry, onRetry }) {
 
   if (!summary) {
     return (
-      <article className="rounded-2xl border border-hairline bg-surface p-4 shadow-sm">
+      <article className="rounded-3xl border border-hairline bg-surface p-5 shadow-md">
         <SkeletonText lines={2} />
       </article>
     )
@@ -79,7 +81,7 @@ function HistoryRow({ entry, onRetry }) {
   const winner = summary.winner && summary.rank !== 1 ? summary.winner : null
 
   return (
-    <article className="rounded-2xl border border-hairline bg-surface p-4 shadow-sm">
+    <article className="rounded-3xl border border-hairline bg-surface p-5 shadow-md">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-ink-900">
@@ -109,7 +111,7 @@ function HistoryRow({ entry, onRetry }) {
         {summary.status === 'live' && (
           <Link
             to={`/play?code=${encodeURIComponent(summary.code)}`}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-hairline px-4 text-sm font-bold text-ink-900 hover:border-brand"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-2xl border-2 border-orange-500 px-5 text-sm font-bold text-orange-500 no-underline"
           >
             <span className="material-symbols-outlined text-base" aria-hidden="true">login</span>
             Rejoin
@@ -161,41 +163,43 @@ export default function PlayHistory() {
   }
 
   return (
-    <div className="min-h-svh bg-surface-low px-4 py-6">
-      <div className="mx-auto flex w-full max-w-[560px] flex-col gap-4">
-        <header>
-          <Link to="/play" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-orange">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
-            Back to join
-          </Link>
-          <h1 className="mt-3 text-3xl font-bold text-ink-900">Your results</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Results live on this phone. Clearing site data removes them.
-          </p>
-        </header>
-
-        {/* `entries` can empty out after the fetch: a token the server no longer knows is removed rather than shown.
-            Without the second half, that would leave the page with no message at all. */}
-        {seats.length === 0 || entries.length === 0 ? (
-          <div className="rounded-2xl border border-hairline bg-surface p-6 text-center shadow-sm">
-            <span className="material-symbols-outlined text-4xl text-ink-muted" aria-hidden="true">task_alt</span>
-            <p className="mt-2 font-semibold text-ink-900">No games on this phone yet.</p>
-            <p className="mt-1 text-sm text-ink-muted">
-              Join a game and your final position will appear here.
-            </p>
-            <Link to="/play" className="mt-3 inline-block text-sm font-semibold text-brand-orange">
-              Find a game
-            </Link>
+    // Same shell as /play and /practice. This page is reached from the join screen and is one tap from it, so a plain
+    // site layout here read as a different product.
+    <QuizThemeScope theme={null}>
+      <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+        <QuizBackdrop />
+        <QuizTopBar compact />
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">
+          <Link to="/play" className="text-sm font-semibold text-orange-500">← Back to join</Link>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <BrandMark className="h-14 w-14" />
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">On this phone</p>
+            <h1 className="text-3xl font-bold">Your results</h1>
+            <p className="text-ink-muted">Results live on this phone. Clearing site data removes them.</p>
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {entries.map((entry) => (
-              <HistoryRow key={entry.seat.code} entry={entry} onRetry={() => retry(entry.seat)} />
-            ))}
-          </div>
-        )}
 
+          {/* `entries` can empty out after the fetch: a token the server no longer knows is removed rather than shown.
+              Without the second half, that would leave the page with no message at all. */}
+          {seats.length === 0 || entries.length === 0 ? (
+            <div className="rounded-3xl border border-hairline bg-surface p-6 text-center shadow-md">
+              <span className="material-symbols-outlined text-4xl text-ink-muted" aria-hidden="true">task_alt</span>
+              <p className="mt-2 font-semibold text-ink-900">No games on this phone yet.</p>
+              <p className="mt-1 text-sm text-ink-muted">
+                Join a game and your final position will appear here.
+              </p>
+              <Link to="/play" className="mt-3 inline-flex items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-bold text-white no-underline">
+                Find a game
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {entries.map((entry) => (
+                <HistoryRow key={entry.seat.code} entry={entry} onRetry={() => retry(entry.seat)} />
+              ))}
+            </div>
+          )}
+        </main>
       </div>
-    </div>
+    </QuizThemeScope>
   )
 }

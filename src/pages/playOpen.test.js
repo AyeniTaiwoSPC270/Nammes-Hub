@@ -28,6 +28,13 @@ describe('/play/open is its own route', () => {
 
   it('keeps the light client out, as every other play page does', () => {
     expect(page).not.toContain('PlayLow')
-    expect(page).not.toContain('QuizBackdrop')
+  })
+
+  // The backdrop and the top bar are the quiz shell, not the light client: /play, /practice and /quiz all wear them, and
+  // this page is one tap from the join screen. Rendering as a plain site page made it look like a different product.
+  it('wears the same shell as the pages either side of it', () => {
+    expect(page).toContain('QuizThemeScope')
+    expect(page).toContain('QuizBackdrop')
+    expect(page).toContain('QuizTopBar')
   })
 })

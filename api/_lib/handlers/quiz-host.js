@@ -2,12 +2,10 @@ import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { logError } from '../logError.js'
 import { getCaller, bearerToken } from '../authz.js'
 import { isUuid } from '../validate.js'
-import {
-  stepUpdate, EXTEND_STEP_MS, MAX_EXTEND_MS, effectiveElapsedMs, questionLimitMs, scoreAnswer, gradeAnswer, computeAward,
-  isComeback, sanitizeGameOptions, ANSWER_GRACE_MS, DEFAULT_MAX_PLAYERS,
-} from '../quiz.js'
+import { stepUpdate, EXTEND_STEP_MS, MAX_EXTEND_MS, DEFAULT_MAX_PLAYERS } from '../quiz.js'
 import { castIds } from '../quizCharacterArt.js'
-import { botDecision, botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_ONCE } from '../quizBots.js'
+import { botNicknames, skillForBot, BOT_SKILL_CHOICES, MAX_BOTS_AT_ONCE } from '../quizBots.js'
+import { playBots } from './quizBotPlay.js'
 import { BRACKET_LENGTHS, isRoundEnd, roundOfQuestion, fitsBracketLength, bracketLengthsThatFit } from '../quizBracket.js'
 import { settleRound } from '../quizBracketEngine.js'
 import { sessionQuestionIds, currentQuestion } from '../quizSessionQuestions.js'
@@ -326,80 +324,8 @@ export function createQuizHostHandler(getClient, { now = () => new Date(), pickN
     // The host page asks about once a second; every bot whose thinking time has passed answers the open question.
     // What a bot answers and when is fixed by its id (see quizBots.js), so asking again never changes anything.
     if (op === 'botsPlay') {
-      if (session.paused_at) {
-        res.status(200).json({ answered: 0 })
-        return
-      }
-      const { data: bots } = await supabaseAdmin.from('quiz_players').select('id, streak, bot_skill').eq('session_id', sessionId).not('bot_skill', 'is', null)
-      if ((bots ?? []).length === 0) {
-        res.status(200).json({ answered: 0 })
-        return
-      }
-      const question = await currentQuestion(supabaseAdmin, session)
-      if (!question) {
-        res.status(200).json({ answered: 0 })
-        return
-      }
-      const elapsedMs = effectiveElapsedMs(session, now().getTime())
-      const limitMs = questionLimitMs(session, question)
-      if (elapsedMs > limitMs + ANSWER_GRACE_MS) {
-        res.status(200).json({ answered: 0 })
-        return
-      }
-      const { data: answeredRows } = await supabaseAdmin.from('quiz_answers').select('player_id, points_awarded').eq('question_id', question.id)
-      const answeredIds = new Set((answeredRows ?? []).map((a) => a.player_id))
-      const due = bots
-        .filter((b) => !answeredIds.has(b.id))
-        .map((bot) => ({ bot, decision: botDecision({ botId: bot.id, skill: bot.bot_skill, question, limitMs }) }))
-        .filter(({ decision }) => decision.thinkMs <= elapsedMs)
-      if (due.length === 0) {
-        res.status(200).json({ answered: 0 })
-        return
-      }
-
-      const options = sanitizeGameOptions(session.game_options)
-      let before = null
-      if (options.comeback) {
-        const { data: players } = await supabaseAdmin.from('quiz_players').select('id, total_score').eq('session_id', sessionId)
-        const gained = new Map((answeredRows ?? []).map((a) => [a.player_id, a.points_awarded]))
-        before = new Map((players ?? []).map((p) => [p.id, p.total_score - (gained.get(p.id) ?? 0)]))
-      }
-      const results = await Promise.all(due.map(async ({ bot, decision }) => {
-        const graded = gradeAnswer(question, decision.submission)
-        if (!graded.ok) return false
-        const base = scoreAnswer({ correct: graded.correct === true, points: question.points, timeLimitSeconds: limitMs / 1000, elapsedMs: decision.thinkMs })
-        const award = computeAward({
-          correct: graded.correct,
-          base,
-          credit: graded.credit ?? 1,
-          streakBefore: bot.streak ?? 0,
-          multiplier: question.points_multiplier ?? 1,
-          comeback: Boolean(before && graded.correct && isComeback(before, bot.id)),
-          options,
-        })
-        const { data: recorded, error } = await supabaseAdmin.rpc('quiz_record_answer', {
-          p_session: sessionId,
-          p_player: bot.id,
-          p_question: question.id,
-          p_index: session.current_question_index,
-          p_chosen: graded.chosenIndex,
-          p_points: award.points,
-          p_bonus: award.bonus,
-          p_correct: graded.correct,
-          p_text: graded.answerText,
-          p_powerup: null,
-          p_streak: award.streakAfter,
-          p_elapsed: decision.thinkMs,
-          // The same two arguments the three human-facing call sites send. quiz_record_answer has one signature, and a
-          // payload that omits either of these is not one it can resolve at all, so a bot left out here does not score
-          // badly, it does not score at all.
-          p_order: graded.order ?? null,
-          p_credit: graded.credit ?? null,
-        })
-        if (error) console.error('quiz-host: bot answer failed', error)
-        return !error && recorded === true
-      }))
-      res.status(200).json({ answered: results.filter(Boolean).length })
+      const { answered } = await playBots(supabaseAdmin, session, { nowMs: now().getTime() })
+      res.status(200).json({ answered })
       return
     }
 

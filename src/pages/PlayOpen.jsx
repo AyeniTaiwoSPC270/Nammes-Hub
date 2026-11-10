@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchOpenQuizzes } from '../data/quiz'
+import { BrandMark, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
+import { QuizThemeScope } from '../components/quiz/QuizTheme'
 
 // The quizzes anyone can walk into, which is the one thing /play cannot answer: that screen is for a code somebody
 // is reading off a projector, and a list of rooms above the keypad is a second, unrelated question on it. So this is
@@ -34,7 +36,7 @@ function SessionCard({ session, nowMs, fetchedAt }) {
           : 'Starting…'
 
   return (
-    <article className="rounded-2xl border border-hairline bg-surface p-4 shadow-sm">
+    <article className="flex flex-col gap-3 rounded-3xl border border-hairline bg-surface p-5 shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate font-bold text-ink-900">{session.title}</h2>
@@ -56,7 +58,7 @@ function SessionCard({ session, nowMs, fetchedAt }) {
         ) : (
           <Link
             to={`/play?code=${session.joinCode}`}
-            className="inline-flex min-h-10 shrink-0 items-center rounded-lg bg-green-900 px-4 text-sm font-bold text-white"
+            className="inline-flex min-h-11 shrink-0 items-center rounded-2xl bg-orange-500 px-5 text-sm font-bold text-white no-underline"
           >
             Join
           </Link>
@@ -100,60 +102,63 @@ export default function PlayOpen() {
   }, [reloadKey])
 
   return (
-    <div className="min-h-svh bg-surface-low px-4 py-6">
-      <div className="mx-auto flex w-full max-w-[560px] flex-col gap-4">
-        <header>
-          <Link to="/play" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-orange">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
-            Back to join
-          </Link>
-          <h1 className="mt-3 text-3xl font-bold text-ink-900">Open quizzes</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Games anyone can join right now, or that start by themselves later. This list refreshes on its own.
-          </p>
-        </header>
-
-        {sessions === null && !failed && (
-          <div className="flex flex-col gap-2" aria-hidden="true">
-            <div className="h-24 rounded-2xl border border-hairline bg-surface" />
+    // The same shell as /play, /practice and /quiz: these are phone screens beside the keypad, not site pages, so the
+    // backdrop, top bar and orange accent have to match the page one tap away.
+    <QuizThemeScope theme={null}>
+      <div className="relative isolate flex min-h-[100dvh] flex-col bg-paper text-ink-900">
+        <QuizBackdrop />
+        <QuizTopBar compact />
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 py-5">
+          <Link to="/play" className="text-sm font-semibold text-orange-500">← Back to join</Link>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <BrandMark className="h-14 w-14" />
+            <p className="text-sm font-bold uppercase tracking-[0.14em] text-orange-500">Live now</p>
+            <h1 className="text-3xl font-bold">Open quizzes</h1>
+            <p className="text-ink-muted">Games anyone can walk into, or that start by themselves later.</p>
           </div>
-        )}
 
-        {sessions === null && failed && (
-          <div className="rounded-2xl border border-hairline bg-surface p-6 text-center shadow-sm">
-            <span className="material-symbols-outlined text-4xl text-ink-muted" aria-hidden="true">event_busy</span>
-            <p className="mt-2 font-semibold text-ink-900">Couldn&rsquo;t load the list.</p>
-            <p className="mt-1 text-sm text-ink-muted">Check your connection, or enter the code from the projector.</p>
-            <button
-              type="button"
-              onClick={() => setReloadKey((key) => key + 1)}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-orange"
-            >
-              <span className="material-symbols-outlined text-base" aria-hidden="true">refresh</span>
-              Try again
-            </button>
-          </div>
-        )}
+          {sessions === null && !failed && (
+            <div className="flex flex-col gap-2" aria-hidden="true">
+              <div className="h-24 rounded-3xl border border-hairline bg-surface" />
+            </div>
+          )}
 
-        {sessions !== null && sessions.length === 0 && (
-          <div className="rounded-2xl border border-hairline bg-surface p-6 text-center shadow-sm">
-            <span className="material-symbols-outlined text-4xl text-ink-muted" aria-hidden="true">groups</span>
-            <p className="mt-2 font-semibold text-ink-900">Nothing open right now.</p>
-            <p className="mt-1 text-sm text-ink-muted">When a quiz opens it will appear here. You can also enter its code.</p>
-            <Link to="/play" className="mt-3 inline-block text-sm font-semibold text-brand-orange">
-              Enter a code
-            </Link>
-          </div>
-        )}
+          {sessions === null && failed && (
+            <div className="rounded-3xl border border-hairline bg-surface p-6 text-center shadow-md">
+              <span className="material-symbols-outlined text-4xl text-ink-muted" aria-hidden="true">event_busy</span>
+              <p className="mt-2 font-semibold text-ink-900">Couldn&rsquo;t load the list.</p>
+              <p className="mt-1 text-sm text-ink-muted">Check your connection, or enter the code from the projector.</p>
+              <button
+                type="button"
+                onClick={() => setReloadKey((key) => key + 1)}
+                className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-orange-500"
+              >
+                <span className="material-symbols-outlined text-base" aria-hidden="true">refresh</span>
+                Try again
+              </button>
+            </div>
+          )}
 
-        {sessions !== null && sessions.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {sessions.map((session) => (
-              <SessionCard key={session.id} session={session} nowMs={nowMs} fetchedAt={fetchedAt} />
-            ))}
-          </div>
-        )}
+          {sessions !== null && sessions.length === 0 && (
+            <div className="rounded-3xl border border-hairline bg-surface p-6 text-center shadow-md">
+              <span className="material-symbols-outlined text-4xl text-ink-muted" aria-hidden="true">groups</span>
+              <p className="mt-2 font-semibold text-ink-900">Nothing open right now.</p>
+              <p className="mt-1 text-sm text-ink-muted">When a quiz opens it will appear here. You can also enter its code.</p>
+              <Link to="/play" className="mt-3 inline-flex items-center justify-center rounded-2xl bg-orange-500 px-5 py-3 text-sm font-bold text-white no-underline">
+                Enter a code
+              </Link>
+            </div>
+          )}
+
+          {sessions !== null && sessions.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {sessions.map((session) => (
+                <SessionCard key={session.id} session={session} nowMs={nowMs} fetchedAt={fetchedAt} />
+              ))}
+            </div>
+          )}
+        </main>
       </div>
-    </div>
+    </QuizThemeScope>
   )
 }
