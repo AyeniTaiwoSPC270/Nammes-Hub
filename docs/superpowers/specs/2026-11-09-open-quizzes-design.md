@@ -23,7 +23,7 @@ This spec turns the clock into a row on the session. The host screen survives as
 | # | Feature | Change |
 |---|---|---|
 | 1 | **Scheduling** | `quiz_sessions.scheduled_at`. An admin sets 4pm and can close the laptop. |
-| 2 | **Open listing** | `quiz_sessions.open_join`, a public `GET /api/quiz?action=open`, and the list on `/play` above the code pad. |
+| 2 | **Open listing** | `quiz_sessions.open_join`, a public `GET /api/quiz?action=open`, and the list on `/play/open`. |
 | 3 | **Autopilot** | `quiz_sessions.autopilot`. The server advances lobby → question → reveal → leaderboard → … → finished, with `pg_cron` for quiet rooms and a due-step on every `quiz-state` read for sub-minute precision. |
 | 4 | **Late-join policy** | `game_options.late_join` (default `true`). Off = joinable only while the game is in its lobby. |
 | 5 | **Expiry** | An open lobby with nobody in it for 15 minutes, or a scheduled game two hours past its start with no players, becomes `finished`. |
@@ -70,7 +70,7 @@ One migration, `quiz_sessions` grows five columns:
 | Column | Meaning |
 |---|---|
 | `scheduled_at timestamptz` | null = "start when the admin says", today's behaviour. |
-| `open_join boolean not null default false` | listed on `/play`. |
+| `open_join boolean not null default false` | listed on `/play/open`. |
 | `autopilot boolean not null default false` | the server owns the transitions. |
 | `state_changed_at timestamptz` | when the current state began. Written by every step. |
 | `lobby_start_at timestamptz` | the instant the lobby clock started (see below), so the countdown is a column rather than a `min(joined_at)` aggregate on every phone poll. |
@@ -140,7 +140,7 @@ follows; making scheduling the one exception is not worth a duplicated snapshot.
 | `lobby` | `autopilot` and `now >= lobby_start_at + 60s` and at least one player |
 | `question` | `autopilot` and `effectiveElapsedMs > questionLimitMs + ANSWER_GRACE_MS` |
 | `reveal` | `autopilot` and `now - state_changed_at > REVEAL_HOLD_MS` |
-| `leaderboard` | `autopilot` and `now - state_changed_at > AUTO_ADVANCE_MS` |
+| `leaderboard` | `autopilot` and `now - state_changed_at > LEADERBOARD_HOLD_MS` |
 | `lobby` | no players for 15 minutes, or `scheduled_at` more than 2 hours past with no players → `finished` |
 
 - `effectiveElapsedMs` already subtracts paused time and `questionLimitMs` already adds `time_bonus_ms`, so a host who
@@ -150,13 +150,18 @@ follows; making scheduling the one exception is not worth a duplicated snapshot.
 - `REVEAL_HOLD_MS` is the server's answer to the client's roll animation; the projector may still show its own
   countdown, but it is no longer the authority.
 
-### 4.3 Two callers, one winner
+### 4.3 Three callers, one winner
 
 - **`pg_cron`, every minute**, signed like the calendar reminders, posting to `api/quiz?action=tick`. This is what
   expires empty rooms and finishes a game nobody is watching.
 - **Every `quiz-state` read** attempts one due step when the session is autopilot and due, throttled per instance to
   one attempt per second per session. That is where sub-minute precision comes from: phones poll every 4s, so a 5-second
   leaderboard becomes a question within a poll of its deadline rather than up to a minute late.
+- **The host screen's `clock` op** (`quiz-host`), asked on the same 2.5s poll that refreshes the projector. It was added
+  after a real game stalled: a question ran out, the only player had closed the phone's tab, and nothing advanced until
+  they came back — the host screen's own timers deliberately stand down under autopilot, so the room had no engine at
+  all. This is a caller of `dueStep`, not a second clock, and it is also what returns `startsInMs` for the lobby
+  countdown on the big screen.
 - A room that has fallen far behind catches up one step per read. Ten steps take ten polls; nobody is watching a room
   that has been asleep for an hour, and the cron closes the gap anyway.
 
@@ -195,14 +200,15 @@ migration lands, grep every `quiz_sessions` update that touches `state`, not jus
 - Title joins `quizzes` with the service role. Player names never appear — only a count.
 - The code is included on purpose. It is the join path, and it is already anon-readable from the table.
 
-On `/play`:
+On `/play/open`, a route beside `/play` and `/play/history`:
 
-- **List above the code pad whenever it is non-empty**, because someone opening `/play` for a 4pm quiz should not have
-  to scroll past a keypad to find it. With nothing open, the page is exactly what it is today.
+- **The list is not on `/play`.** That screen answers one question — "what is the code on the projector" — and a room
+  list above the keypad made it answer two. `/play` carries a link to the list instead, and nothing else changes there.
 - A card shows title, start (or "Live now"), `players / max`, a countdown while in the lobby, and "Full" / "Started"
-  states. Tapping joins through the same path as the keypad and stores the same seat token.
-- The list polls every 15s while visible; it is one small request, not a realtime channel.
-- `/play/low` does not import any of it.
+  states. Tapping goes to `/play?code=…`, so the join path and the seat token are the keypad's own.
+- The list polls every 15s while the page is open; it is one small request, not a realtime channel. A failed poll keeps
+  the last list, and a page that has never loaded shows a retry rather than an empty page.
+- `/play/low` does not import any of it, and neither does `/play`.
 
 ---
 
@@ -212,24 +218,27 @@ On `/play`:
 
 A "Start now / Schedule" choice. A schedule takes a local date and time and stores an instant; anything displayed back
 is formatted in `Africa/Lagos`, the same discipline the calendar uses. One "Open quiz" switch sets `open_join` and
-`autopilot` together; the dialog says what that means ("listed on /play and starts by itself").
+`autopilot` together; the dialog says what that means ("listed on /play/open and starts by itself").
 
 ### 6.2 Host screen (`HostQuiz.jsx`)
 
-- The lobby shows "Starts at 4:00pm · 12 players waiting" and a live countdown when an open quiz is waiting on its
-  first arrival.
+- The lobby shows the wait: "Starts in 42s · Runs automatically…", or "Set for 4:00 PM" before anyone has joined and
+  there is no clock yet. The number comes from the `clock` op, never from `lobby_start_at + LOBBY_WAIT_MS` computed in
+  the browser.
+- The player's lobby shows the same number ("Starting in 42s") from `quiz-state`'s `startsInMs`.
 - When `autopilot` is on, the client's auto-advance, full-lobby countdown and question-expiry timers stand down, and
-  the screen becomes a reader. Start now / Pause / Add time stay, because an admin who *is* there should be able to
-  interfere — but nothing breaks when they are not.
+  the screen becomes a reader: it asks the server for the clock and shows what came back. Start now / Pause / Add time
+  stay, because an admin who *is* there should be able to interfere — but nothing breaks when they are not.
 - Opening `/host/:sessionId` after the game has finished shows the final state, not a broken room.
 
 ---
 
 ## 7. Failure cases
 
-- **Cron not enabled.** Autopilot still works wherever players poll; empty lobbies do not expire. The migration leaves
+- **Cron not enabled.** Autopilot still works wherever a screen is open — a phone's poll or the host screen's `clock`
+  op — but a room nobody is looking at stops at its current step and empty lobbies do not expire. The migration leaves
   the `cron.schedule` call commented, as `20261009120000_calendar_reminders.sql` does, because a tick against an
-  undeployed route is a 404 every minute.
+  undeployed route is a 404 every minute. **This is a required setup step, not an optional one.**
 - **Double step.** CAS. No question is skipped by two engines.
 - **A pause nobody lifts.** An autopilot question with `paused_at` set never expires. That is correct — a pause is a
   human decision — but the list should show "Paused" and expiry should not reap a session with players in it.
@@ -251,6 +260,8 @@ is formatted in `Africa/Lagos`, the same discipline the calendar uses. One "Open
   untouched; an empty lobby expires.
 - `api/_lib/handlers/quiz-open.test.js` — public shape, no player names, filters, countdown, late-join flag.
 - `quiz-join` — late join refused only when `late_join` is false and the game has left the lobby.
+- `src/pages/playOpen.test.js` — the route is registered, `/play` links to it and no longer fetches the list, and a
+  pick goes through `/play?code=`.
 - `src/pages/playLow.test.js` — still fails if the list is imported.
 
 ---

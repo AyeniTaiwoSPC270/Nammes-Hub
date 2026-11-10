@@ -107,12 +107,12 @@ export default function HostQuizModal({ quiz, busy, onHost, onClose }) {
             <input type="checkbox" className="mt-1 h-5 w-5" checked={openQuiz} onChange={(e) => setOpenQuiz(e.target.checked)} />
             <span>
               <span className="block font-semibold text-ink-900">Open to everyone</span>
-              <span className="block text-sm text-ink-muted">Listed on /play, and it starts when the room is ready without anyone at the host screen.</span>
+              <span className="block text-sm text-ink-muted">Listed on /play/open, and it starts when the room is ready without anyone at the host screen.</span>
             </span>
           </label>
         ) : (
           <p className="rounded-lg bg-orange-500/10 px-3 py-2 text-sm text-ink-900">
-            This quiz will be listed on /play. Nobody has to be at the host screen for it to run.
+            This quiz will be listed on /play/open. Nobody has to be at the host screen for it to run.
           </p>
         )}
 

@@ -242,10 +242,19 @@ data module, and that is deliberate — do not merge them into one shared "prese
 ## Open quizzes
 
 - **The clock lives on the session, not in the host tab.** `quiz_sessions.autopilot` lets `api/_lib/quizSchedule.js`
-  decide what is due; `api/quiz?action=tick` (signed like the calendar reminders, `pg_cron` every minute) and every
-  `quiz-state` poll both apply the same decision through the `quiz-advance` compare-and-swap, so a double fire is a
-  0-row update and never a skipped question. Do not add a third engine, and do not let the host screen's timers run
-  under autopilot — they stand down for exactly this reason.
+  decide what is due, and `dueStep` is the only decision anywhere. Three callers apply it, always through the
+  `quiz-advance` compare-and-swap so a double fire is a 0-row update and never a skipped question: `api/quiz?action=tick`
+  (signed like the calendar reminders, `pg_cron` every minute), every `quiz-state` poll, and the host screen's `clock`
+  op on `quiz-host`.
+- **The `clock` op is a caller, not a second clock.** It exists because the host screen is the watcher that is still
+  there when every phone's tab has been closed: a question whose time ran out sat on the projector until somebody
+  reopened `/play`. It must keep calling `dueStep` and the same CAS — a browser deciding its own transitions is the
+  thing that is forbidden. The host screen's own timers (`AUTO_ADVANCE_MS`, the 10-second full-lobby start, question
+  expiry) still stand down under autopilot.
+- **Both countdowns are computed on the server.** `quiz-state` returns `session.startsInMs` and the `clock` op returns
+  it for the host screen; the client turns the number into a deadline at receipt (`Date.now() + startsInMs`) instead of
+  working out `lobby_start_at + LOBBY_WAIT_MS` itself, because `LOBBY_WAIT_MS` lives in a server-only module and a
+  second copy in the browser is how the two screens drift apart.
 - **`state_changed_at` must be written by every step.** `stepUpdate` does it. A writer of `quiz_sessions.state` that
   bypasses `stepUpdate` makes the tick read a stale clock and step early, so grep the update sites, not just the
   handlers that mention autopilot.

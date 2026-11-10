@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
-import { callQuiz, fetchOpenQuizzes, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS, useCastQuery } from '../data/quiz'
+import { callQuiz, OPTION_STYLES, secondsRemaining, elapsedAtPauseMs, formatScore, autoSecondsLeft, FULL_LOBBY_COUNTDOWN_MS, useCastQuery } from '../data/quiz'
 import { AnswerShape, Avatar, BrandMark, CountdownRing, Confetti, QuizBackdrop, QuizTopBar } from '../components/quiz/QuizParts'
 import { BracketCard } from '../components/quiz/BracketParts'
 import QuizThemeToggle from '../components/quiz/QuizThemeToggle'
@@ -107,100 +107,6 @@ function CodeInput({ value, onChange, autoFocus }) {
   )
 }
 
-// The quizzes anyone can walk into. Above the keypad whenever there are any, because someone opening /play for a
-// four o'clock quiz should not have to scroll past a code box to find it; with nothing open the page is exactly what
-// it was. Polled rather than live: it is a list of rooms, and fifteen seconds is faster than anyone walks to one.
-const OPEN_POLL_MS = 15000
-
-function openCountdown(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000))
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
-}
-
-function OpenQuizzes({ onPick }) {
-  const [sessions, setSessions] = useState([])
-  const [fetchedAt, setFetchedAt] = useState(0)
-  const [nowMs, setNowMs] = useState(() => Date.now())
-
-  useEffect(() => {
-    let cancelled = false
-    const load = () => {
-      const askedAt = Date.now()
-      fetchOpenQuizzes()
-        .then((data) => {
-          if (cancelled) return
-          setSessions(data.sessions ?? [])
-          // The countdown is measured from when the phone asked, not from when the answer landed, so a slow network
-          // does not make the start time look later than it is.
-          setFetchedAt(askedAt)
-        })
-        .catch(() => {
-          // A failed poll is not evidence that the list is empty, so the last one stands.
-        })
-    }
-    load()
-    const poll = setInterval(load, OPEN_POLL_MS)
-    const clock = setInterval(() => setNowMs(Date.now()), 1000)
-    return () => {
-      cancelled = true
-      clearInterval(poll)
-      clearInterval(clock)
-    }
-  }, [])
-
-  if (sessions.length === 0) return null
-
-  return (
-    <div className="qz-rise flex flex-col gap-2" style={{ animationDelay: '25ms' }}>
-      <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-ink-muted">
-        <span className="material-symbols-outlined text-base text-orange-500" aria-hidden="true">groups</span>
-        Open quizzes
-      </p>
-      {sessions.map((session) => {
-        const live = session.state !== 'lobby'
-        const startsIn = session.startsInMs == null ? null : session.startsInMs - (nowMs - fetchedAt)
-        const full = session.players >= session.maxPlayers
-        // A quiz that closed its doors at the first question says so rather than offering a button that 403s.
-        const closed = live && !session.lateJoin
-        const canJoin = !full && !closed
-        return (
-          <button
-            key={session.id}
-            type="button"
-            disabled={!canJoin}
-            onClick={() => onPick(session.joinCode)}
-            className={[
-              'flex min-h-16 items-center justify-between gap-3 rounded-2xl border px-4 text-left',
-              canJoin ? 'border-orange-500 bg-orange-500/10' : 'border-hairline bg-surface opacity-70',
-            ].join(' ')}
-          >
-            <span className="min-w-0">
-              <span className="block truncate font-semibold text-ink-900">{session.title}</span>
-              <span className="mt-0.5 flex items-center gap-2 text-xs text-ink-muted">
-                <span className="material-symbols-outlined text-sm" aria-hidden="true">{live ? 'bolt' : 'hourglass_top'}</span>
-                {closed
-                  ? 'Already started'
-                  : live
-                    ? 'Live now'
-                    : startsIn == null
-                      ? 'Waiting for players'
-                      : startsIn > 0
-                        ? `Starts in ${openCountdown(startsIn)}`
-                        : 'Starting…'}
-                <span className="inline-flex items-center gap-0.5">
-                  <span className="material-symbols-outlined text-sm" aria-hidden="true">group</span>
-                  {session.players}/{session.maxPlayers}
-                </span>
-              </span>
-            </span>
-            <span className="shrink-0 text-sm font-bold text-orange-500">{full ? 'Full' : closed ? 'Started' : 'Join'}</span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 function JoinForm({ onJoined, notice }) {
   const [params] = useSearchParams()
   const initialCode = (params.get('code') ?? '').replace(/\D/g, '').slice(0, 6)
@@ -292,12 +198,13 @@ function JoinForm({ onJoined, notice }) {
         <h1 className="text-4xl font-bold">Join a game</h1>
         <p className="text-ink-muted">Enter the code on the big screen to get in.</p>
         <Link to="/battle" className="text-sm font-semibold text-orange-500">Want to challenge a friend instead? Battle mode</Link>
+        {/* The list of rooms nobody needs a code for. Its own route rather than a block above this keypad: the code
+            box is the answer to one question, and a room list is a different one. */}
+        <Link to="/play/open" className="text-sm font-semibold text-orange-500">See the open quizzes</Link>
         {/* Not inside the seat block below. Results are kept for a month, so the phone that wants them may be a new one
             or one that has just been cleared -- and those are exactly the phones holding no seat to reveal the block. */}
         <Link to="/play/history" className="text-sm font-semibold text-orange-500">See your past results</Link>
       </div>
-
-      {code.length !== 6 && <OpenQuizzes onPick={setCode} />}
 
       {/* Offered only when the device already holds a seat, and only as a shortcut: the token is still what resumes,
           and the server verifies it. Without this a phone that refreshed on a bare /play was left holding a seat it had
@@ -502,6 +409,9 @@ function PlayQuizGame({ onTheme }) {
   const [game, setGame] = useState(null)
   const [offset, setOffset] = useState(0) // server clock minus this phone's clock
   const [nowMs, setNowMs] = useState(() => Date.now())
+  // When an open lobby starts, in this phone's own clock. The payload says how long is left relative to the server's
+  // now, so adding it to the moment the answer arrived keeps the countdown right on a phone whose clock is wrong.
+  const [startAtMs, setStartAtMs] = useState(0)
   const [picked, setPicked] = useState(null) // what this phone just sent for this question ({ index } or { text }), so the screen reacts at once
   const [typed, setTyped] = useState('')
   // Drafts rather than answers: an ordering question and a diagram tap are both "pick" interactions, and `answer` only
@@ -540,6 +450,8 @@ function PlayQuizGame({ onTheme }) {
       // rather than leaving the client to discard bytes it has already paid for.
       const data = await callQuiz('state', { token, ...(low ? { low: 1 } : {}) })
       setOffset(data.serverNow - Date.now())
+      setStartAtMs(data.session.state === 'lobby' && data.session.startsInMs != null ? Date.now() + data.session.startsInMs : 0)
+      setNowMs(Date.now())
       setGame(data)
       // The game is over as far as other people are concerned: its seat can never be joined again, so the join form must
       // stop advertising it. Flagging rather than forgetting keeps the token, which is what repaints this final screen
@@ -629,11 +541,12 @@ function PlayQuizGame({ onTheme }) {
 
   const state = game?.session.state
   const lobbyFull = state === 'lobby' && Boolean(game?.session.fullAt)
+  const lobbyStarting = state === 'lobby' && startAtMs > 0
   useEffect(() => {
-    if (state !== 'question' && !lobbyFull) return undefined
+    if (state !== 'question' && !lobbyFull && !lobbyStarting) return undefined
     const timer = setInterval(() => setNowMs(Date.now()), 250)
     return () => clearInterval(timer)
-  }, [state, lobbyFull])
+  }, [state, lobbyFull, lobbyStarting])
 
   // A new question clears the local tap and remembers the rank we started it with.
   const questionKey = game ? `${game.session.state}:${game.session.index}` : ''
@@ -740,6 +653,8 @@ function PlayQuizGame({ onTheme }) {
 
   const { session, me, question, reveal, top } = game
   const rankDelta = rankStart.current.rank && me.rank ? rankStart.current.rank - me.rank : 0
+  // Negative once it is due; the server starts the game, this only counts down to it.
+  const startsIn = startAtMs ? startAtMs - nowMs : null
 
   if (session.state === 'lobby') {
     return (
@@ -779,10 +694,22 @@ function PlayQuizGame({ onTheme }) {
                 <span className="block text-sm text-ink-muted">The game is about to start</span>
               </span>
             </div>
+          ) : session.autopilot && startsIn != null && startsIn > 0 ? (
+            // An open quiz has no host to wait for: it starts a minute after the first arrival, so the phone says how
+            // long that is rather than leaving the player to wonder whether anything is happening.
+            <div role="status" className="qz-pop mt-4 flex items-center justify-center gap-3 rounded-2xl border-2 border-orange-500 bg-orange-500/12 p-3 text-ink-900">
+              <span className="material-symbols-outlined text-orange-500" aria-hidden="true">hourglass_top</span>
+              <span className="text-left">
+                <span className="block text-lg font-bold">Starting in {Math.ceil(startsIn / 1000)}s</span>
+                <span className="block text-sm text-ink-muted">Nobody has to press anything.</span>
+              </span>
+            </div>
           ) : session.autopilot ? (
-            // An open quiz has no host to wait for; it starts a minute after the first arrival.
             <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
-              The game starts by itself in a moment <WaitingDots />
+              {session.scheduledAt && new Date(session.scheduledAt).getTime() > Date.now()
+                ? `Set for ${new Date(session.scheduledAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}. It starts by itself.`
+                : 'The game starts by itself in a moment'}{' '}
+              <WaitingDots />
             </p>
           ) : (
             <p className="mt-4 flex items-center justify-center gap-3 text-sm text-ink-muted">
