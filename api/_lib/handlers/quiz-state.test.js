@@ -201,3 +201,31 @@ describe('diagram regions never leave before the reveal', () => {
     expect(res.body.reveal.diagramTargets).toBeUndefined()
   })
 })
+// An open quiz has no host screen, and the host screen is what used to ask the server to play the bots' turns. This
+// poll is the engine that runs instead, so it has to be able to answer for them -- otherwise ten bots sit at zero while
+// their question closes, which is exactly what an open game with test bots looked like.
+describe('test bots in an open game', () => {
+  function withBots(session = {}) {
+    const db = game({ state: 'question' })
+    Object.assign(db.tables.quiz_sessions[0], {
+      autopilot: true,
+      question_started_at: new Date(Date.now() - 19_000).toISOString(),
+      ...session,
+    })
+    db.tables.quiz_players.push({ id: 'bot1', session_id: SESSION, nickname: 'Bot one', total_score: 0, streak: 0, bot_skill: 'expert' })
+    return db
+  }
+
+  it('plays a bot turn when a phone polls', async () => {
+    const db = withBots()
+    const res = await state(db)
+    expect(res.statusCode).toBe(200)
+    expect(db.tables.quiz_answers.map((a) => a.player_id)).toEqual(['bot1'])
+  })
+
+  it('leaves a hosted game alone, where the host screen plays them', async () => {
+    const db = withBots({ autopilot: false })
+    await state(db)
+    expect(db.tables.quiz_answers).toHaveLength(0)
+  })
+})

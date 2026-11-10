@@ -7,6 +7,7 @@ import { rankTeams } from '../quizTeams.js'
 import { bracketViewFor } from '../quizBracket.js'
 import { sessionQuestionIds, currentQuestion, optionOrderFor } from '../quizSessionQuestions.js'
 import { shownOptions, shownIndex } from '../quizDraw.js'
+import { playBots } from './quizBotPlay.js'
 
 const TOP_N = 10
 
@@ -57,7 +58,9 @@ const saveData = low === 1 || low === true || low === '1'
     }
 
     const [{ data: players }, questionIds] = await Promise.all([
-      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id').eq('session_id', session.id),
+      // `bot_skill` is read only to answer "does this game have test bots?", which decides whether a poll also plays
+      // their turns. It never leaves the server.
+      supabaseAdmin.from('quiz_players').select('id, nickname, total_score, avatar_id, team_id, bot_skill').eq('session_id', session.id),
       sessionQuestionIds(supabaseAdmin, session),
     ])
     const questionCount = questionIds.length
@@ -79,6 +82,17 @@ const saveData = low === 1 || low === true || low === '1'
           .select('*')
           .maybeSingle()
         if (updated) Object.assign(session, updated)
+      }
+      // An open quiz has no host page, so this poll is the only thing a bot's turn can be played from: the host screen's
+      // `botsPlay` op needs a screen nobody is guaranteed to have open. The question is already in hand from the clock
+      // branch above, and playBots is idempotent, so every phone asking costs one filtered read, not a second answer.
+      if (session.state === 'question' && (players ?? []).some((p) => p.bot_skill)) {
+        try {
+          await playBots(supabaseAdmin, session, { nowMs, question: currentForClock })
+        } catch (botError) {
+          // A failed bot turn must never fail the phone's poll: the player's own screen is more important than a bot's.
+          console.error('quiz-state: bot play failed', botError)
+        }
       }
     }
     const gameOptions = sanitizeGameOptions(session.game_options)
