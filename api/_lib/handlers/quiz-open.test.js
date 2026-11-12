@@ -51,7 +51,8 @@ describe('the open list', () => {
       quiz_sessions: [
         session({ id: 'finished', state: 'finished' }),
         session({ id: 'private', open_join: false }),
-        session({ id: 'far', scheduled_at: new Date(NOW + 48 * 3_600_000).toISOString() }),
+        // Beyond the listing horizon: scheduled, but not for a week yet.
+        session({ id: 'far', scheduled_at: new Date(NOW + 8 * 24 * 3_600_000).toISOString() }),
       ],
     })
     const res = await list(db)

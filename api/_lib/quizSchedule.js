@@ -16,10 +16,15 @@ export const LOBBY_WAIT_MS = 60_000
 // the host screen's own 5-second timer is not the authority once the server owns the clock.
 export const REVEAL_HOLD_MS = 8_000
 export const LEADERBOARD_HOLD_MS = 5_000
-// An open lobby nobody joined is not a game, it is a row that would sit on /play for ever.
+// An open lobby nobody joined is not a game, it is a row that would sit on /play for ever. Two clocks, because the
+// two kinds of lobby fail differently: a scheduled one is late once its start has passed and should go quickly, but
+// an unscheduled one has no start to be late for, and fifteen minutes meant an admin who opened a lobby before a
+// class found a finished game by the time the class arrived.
 export const EMPTY_LOBBY_EXPIRY_MS = 15 * 60_000
-// A scheduled lobby is not listed until it is close enough to be useful.
-export const LIST_HORIZON_MS = 24 * 60 * 60_000
+export const OPEN_LOBBY_IDLE_MS = 3 * 60 * 60_000
+// A scheduled lobby is not listed until it is close enough to be useful. A week rather than a day, because that is
+// how far ahead someone schedules a class, and a game that exists but cannot be seen is the report we just had.
+export const LIST_HORIZON_MS = 7 * 24 * 60 * 60_000
 export const LIST_LIMIT = 12
 export const MAX_SCHEDULE_AHEAD_MS = 90 * 24 * 60 * 60_000
 
@@ -70,6 +75,12 @@ function emptyAnchorMs(session) {
   return instant(session?.lobby_start_at) ?? instant(session?.scheduled_at) ?? instant(session?.created_at) ?? 0
 }
 
+// Which of the two clocks an empty room is on. A schedule is the only thing that can make a lobby late, so a room
+// without one waits out the idle window instead.
+function emptyExpiryMs(session) {
+  return instant(session?.scheduled_at) == null ? OPEN_LOBBY_IDLE_MS : EMPTY_LOBBY_EXPIRY_MS
+}
+
 function finished(session) {
   return { state: 'finished', current_question_index: session.current_question_index ?? -1 }
 }
@@ -89,7 +100,7 @@ export function dueStep(session, { nowMs = Date.now(), questionCount = 0, questi
 
   if (session.state === 'lobby') {
     if (playerCount < 1) {
-      return nowMs - emptyAnchorMs(session) >= EMPTY_LOBBY_EXPIRY_MS ? { next: finished(session), reason: 'expired' } : null
+      return nowMs - emptyAnchorMs(session) >= emptyExpiryMs(session) ? { next: finished(session), reason: 'expired' } : null
     }
     // A full room keeps the 10-second count that a hosted game has always had; the 60-second wait is for a room that
     // is still filling. Whichever comes first.

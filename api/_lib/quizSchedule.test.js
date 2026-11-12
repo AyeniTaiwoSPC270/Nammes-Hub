@@ -5,6 +5,8 @@ import {
   REVEAL_HOLD_MS,
   LEADERBOARD_HOLD_MS,
   EMPTY_LOBBY_EXPIRY_MS,
+  OPEN_LOBBY_IDLE_MS,
+  LIST_HORIZON_MS,
   MAX_SCHEDULE_AHEAD_MS,
   isScheduledAt,
   lobbyStartAtMs,
@@ -147,6 +149,14 @@ describe('dueStep', () => {
     expect(dueStep(fresh, { nowMs: NOW, playerCount: 0 })).toBe(null)
   })
 
+  it('gives an unscheduled lobby hours, not minutes, to be joined', () => {
+    // Opened before a class: fifteen minutes would have made a finished game out of one nobody had reached yet.
+    const opened = session({ created_at: new Date(NOW - 60 * 60_000).toISOString() })
+    expect(dueStep(opened, { nowMs: NOW, playerCount: 0 })).toBe(null)
+    const abandoned = session({ created_at: new Date(NOW - OPEN_LOBBY_IDLE_MS).toISOString() })
+    expect(dueStep(abandoned, { nowMs: NOW, playerCount: 0 })?.reason).toBe('expired')
+  })
+
   it('leaves a bracket game to the host screen', () => {
     const bracket = session({ bracket_mode: true, lobby_start_at: new Date(NOW - 60_000).toISOString() })
     expect(dueStep(bracket, { nowMs: NOW, playerCount: 4, questionCount: 3 })).toBe(null)
@@ -194,12 +204,15 @@ describe('the /play list', () => {
     expect(isListed(session({ open_join: false }), NOW)).toBe(false)
   })
 
-  it('hides a lobby scheduled for another day until it is close or already waiting', () => {
-    const far = session({ scheduled_at: new Date(NOW + 48 * 3_600_000).toISOString() })
-    expect(isListed(far, NOW)).toBe(false)
+  it('shows a lobby scheduled later in the week, and hides one past the horizon', () => {
     const soon = session({ scheduled_at: new Date(NOW + 3_600_000).toISOString() })
     expect(isListed(soon, NOW)).toBe(true)
-    const waiting = session({ scheduled_at: new Date(NOW + 48 * 3_600_000).toISOString(), lobby_start_at: new Date(NOW).toISOString() })
+    // A quiz scheduled on Monday for Friday is a real room: it has to be findable before the day it runs.
+    const laterInWeek = session({ scheduled_at: new Date(NOW + 3 * 24 * 3_600_000).toISOString() })
+    expect(isListed(laterInWeek, NOW)).toBe(true)
+    const beyond = session({ scheduled_at: new Date(NOW + LIST_HORIZON_MS + 3_600_000).toISOString() })
+    expect(isListed(beyond, NOW)).toBe(false)
+    const waiting = session({ scheduled_at: new Date(NOW + 8 * 24 * 3_600_000).toISOString(), lobby_start_at: new Date(NOW).toISOString() })
     expect(isListed(waiting, NOW)).toBe(true)
   })
 

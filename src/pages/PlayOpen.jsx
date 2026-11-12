@@ -17,6 +17,15 @@ function countdown(ms) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
 
+// A game days away counts down as "2880:00", which is not a time anyone reads. Past a few hours the card prints the
+// day and time it starts instead; closer than that the minutes are the useful part.
+const FAR_START_MS = 6 * 60 * 60_000
+function startLabel(ms) {
+  if (ms <= FAR_START_MS) return `Starts in ${countdown(ms)}`
+  const at = new Date(Date.now() + ms)
+  return `Starts ${at.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}`
+}
+
 function SessionCard({ session, nowMs, fetchedAt }) {
   const live = session.state !== 'lobby'
   // Measured from when this phone asked, not from when the answer landed, so a slow network does not delay the start.
@@ -32,7 +41,7 @@ function SessionCard({ session, nowMs, fetchedAt }) {
       : startsIn == null
         ? 'Waiting for players'
         : startsIn > 0
-          ? `Starts in ${countdown(startsIn)}`
+          ? startLabel(startsIn)
           : 'Starting…'
 
   return (
