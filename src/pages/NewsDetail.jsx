@@ -265,7 +265,7 @@ export default function NewsDetail() {
 
           <Reveal>
             {/* The cover is drawn by the body, either at its `[image]` line or above the first
-                paragraph, and it is capped at 16:9 rather than growing with the photo's own size. */}
+                paragraph, at the column's width and its own proportions -- no crop. */}
             <RichBody
               text={post.body}
               cover={showCover ? post.image_url : null}
