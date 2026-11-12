@@ -9,9 +9,14 @@ import { Fragment } from 'react'
 import { parseRichText } from '../../lib/richText'
 import { linkifyText } from '../../lib/linkify'
 
+// Sizes are relative, so the same `[size=lg]` step reads right in a paragraph and in a heading.
+const SIZE_CLASS = { sm: 'text-[0.85em]', base: '', lg: 'text-[1.2em]', xl: 'text-[1.45em]' }
+const COLOR_CLASS = { muted: 'text-ink-muted', brand: 'text-brand', orange: 'text-brand-orange', red: 'text-danger' }
+const FONT_CLASS = { serif: 'font-article-serif', mono: 'font-article-mono' }
+
 function Inline({ segments }) {
   return segments.map((segment, index) => {
-    const content = segment.href ? (
+    let content = segment.href ? (
       <a
         href={segment.href}
         target="_blank"
@@ -24,16 +29,16 @@ function Inline({ segments }) {
       linkifyText(segment.text)
     )
 
-    if (segment.bold) {
-      return (
-        <strong key={index} className="font-bold text-ink-900">
-          {content}
-        </strong>
-      )
-    }
-    if (segment.italic) {
-      return <em key={index}>{content}</em>
-    }
+    // Every marker is a separate wrapper, so they compose rather than replace one another. Bold is
+    // applied last (outermost) because its colour rule must not swallow a segment's own colour.
+    const look = [SIZE_CLASS[segment.size], COLOR_CLASS[segment.color], FONT_CLASS[segment.font]]
+      .filter(Boolean)
+      .join(' ')
+    if (look) content = <span className={look}>{content}</span>
+    if (segment.underline) content = <u>{content}</u>
+    if (segment.italic) content = <em>{content}</em>
+    if (segment.bold) content = <strong className="font-bold text-ink-900">{content}</strong>
+
     return <Fragment key={index}>{content}</Fragment>
   })
 }

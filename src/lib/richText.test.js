@@ -58,6 +58,26 @@ describe('parseRichText', () => {
     expect(block.segments).toEqual([{ text: '2 * 3 * 4' }])
   })
 
+  it('combines a heading with bold and a colour inside it', () => {
+    const [block] = parseRichText('## A [color=orange]**bold** word[/color]')
+    expect(block.type).toBe('heading')
+    expect(block.segments).toEqual([
+      { text: 'A ' },
+      { text: 'bold', bold: true, color: 'orange' },
+      { text: ' word', color: 'orange' },
+    ])
+  })
+
+  it('stacks a size, a font and underline on one run', () => {
+    const [block] = parseRichText('## [size=lg][font=serif]**[u]Big[/u]**[/font][/size]')
+    expect(block.segments).toEqual([{ text: 'Big', bold: true, underline: true, size: 'lg', font: 'serif' }])
+  })
+
+  it('only accepts the allow-listed values, and an unclosed wrapper stays literal', () => {
+    expect(parseRichText('[color=purple]x[/color]')[0].segments).toEqual([{ text: '[color=purple]x[/color]' }])
+    expect(parseRichText('[color=red]oops')[0].segments).toEqual([{ text: '[color=red]oops' }])
+  })
+
   it('turns [image] on its own line into an image block', () => {
     expect(types('Intro\n\n[image]\n\nRest')).toEqual(['paragraph', 'image', 'paragraph'])
     expect(types('  [IMAGE]  ')).toEqual(['image'])
@@ -73,6 +93,10 @@ describe('richTextPlain', () => {
     expect(richTextPlain('## Heading\n\nA **bold** and *soft* [link](https://x.test)\n\n- one\n- two')).toBe(
       'Heading A bold and soft link one two'
     )
+  })
+
+  it('strips the size, colour, font and underline wrappers', () => {
+    expect(richTextPlain('A [color=orange][size=lg]big[/size][/color] [u]word[/u]')).toBe('A big word')
   })
 
   it('drops the image placeholder', () => {
