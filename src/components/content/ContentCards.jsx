@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom'
 import Badge from '../ui/Badge'
 import BlurredBackdropImage from '../ui/BlurredBackdropImage'
 import { themeVars } from '../../../api/_lib/contentTheme.js'
+import { richTextPlain } from '../../lib/richText'
 import { resolveNewsVideo, useNewsVideoFlag } from '../../data/news'
 import { useContentSettingsQuery } from '../../data/contentLooks'
 
@@ -138,7 +139,7 @@ export function EventCard({ event, theme }) {
           </div>
         </div>
         <h3 className={['content-card-title content-clamp m-0 font-bold', text.title].join(' ')}>{event.title}</h3>
-        {event.description && <p className={['content-clamp flex-grow text-base leading-relaxed', text.body].join(' ')}>{event.description}</p>}
+        {event.description && <p className={['content-clamp flex-grow text-base leading-relaxed', text.body].join(' ')}>{richTextPlain(event.description)}</p>}
       </div>
     </Link>
   )
@@ -169,7 +170,7 @@ export function NewsCard({ item, theme, excerpt = '' }) {
         </div>
         <h3 className={['content-card-title content-clamp m-0 font-bold', text.title].join(' ')}>{item.title}</h3>
         {excerpt ? (
-          <p className={['content-clamp text-base leading-relaxed', text.body].join(' ')}>{excerpt}</p>
+          <p className={['content-clamp text-base leading-relaxed', text.body].join(' ')}>{richTextPlain(excerpt)}</p>
         ) : (
           <p className={['mt-auto text-sm', text.meta].join(' ')}>{item.date}</p>
         )}

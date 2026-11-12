@@ -9,11 +9,11 @@ import { SkeletonText } from '../components/ui/Skeleton'
 import GalleryLightbox from '../components/GalleryLightbox'
 import ReportProblem from '../components/ReportProblem'
 import { ContentLook } from '../components/content/ContentCards'
+import RichBody from '../components/content/RichBody'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
 import { saveBlob } from '../lib/downloadImage'
-import { linkifyText } from '../lib/linkify'
 import { useEventsQuery, getEventById } from '../data/events'
 import { useEventPhotosQuery } from '../data/eventPhotos'
 import { usePageLook } from '../data/contentLooks'
@@ -76,48 +76,53 @@ export default function EventDetail() {
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs items={[{ label: 'Events', to: '/events' }, { label: event.title }]} />
 
-      <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{event.title}</h1>
+      {/* The header and the prose share the article's measure; the gallery below keeps the full page
+          width because a photo grid is the one thing on this screen that benefits from it. */}
+      <div className="mx-auto max-w-[720px]">
+        <h1 className="mt-1.5 text-3xl font-bold text-ink-900 sm:text-4xl">{event.title}</h1>
 
-      <div className="mt-6 flex gap-2 border-b border-hairline">
-        <button
-          type="button"
-          onClick={() => setTab('details')}
-          className={[
-            'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-            tab === 'details' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
-          ].join(' ')}
-        >
-          Details
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('gallery')}
-          className={[
-            'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-            tab === 'gallery' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
-          ].join(' ')}
-        >
-          Gallery{photos.length > 0 ? ` (${photos.length})` : ''}
-        </button>
+        <div className="mt-6 flex gap-2 border-b border-hairline">
+          <button
+            type="button"
+            onClick={() => setTab('details')}
+            className={[
+              'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
+              tab === 'details' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
+            ].join(' ')}
+          >
+            Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('gallery')}
+            className={[
+              'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
+              tab === 'gallery' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
+            ].join(' ')}
+          >
+            Gallery{photos.length > 0 ? ` (${photos.length})` : ''}
+          </button>
+        </div>
+
+        {tab === 'details' && (
+          <ContentLook theme={theme}>
+            <Reveal className="mt-6">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+                <span>{event.date}</span>
+                {event.meta && (
+                  <>
+                    <span aria-hidden="true">&middot;</span>
+                    <span>{event.meta}</span>
+                  </>
+                )}
+              </div>
+              <RichBody text={event.description} cover={event.image_url} className="mt-4" />
+            </Reveal>
+          </ContentLook>
+        )}
       </div>
 
-      {tab === 'details' ? (
-        <ContentLook theme={theme}>
-          <Reveal className="mt-6">
-            {event.image_url && <img src={event.image_url} decoding="async" alt="" className="content-radius w-full" />}
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-              <span>{event.date}</span>
-              {event.meta && (
-                <>
-                  <span aria-hidden="true">&middot;</span>
-                  <span>{event.meta}</span>
-                </>
-              )}
-            </div>
-            <p className="mt-4 max-w-2xl leading-relaxed text-ink whitespace-pre-line">{linkifyText(event.description)}</p>
-          </Reveal>
-        </ContentLook>
-      ) : (
+      {tab === 'gallery' && (
         <div className="mt-6">
           {photosQuery.isError && !photosQuery.data ? (
             <ErrorState message="Couldn't load this gallery right now." onRetry={photosQuery.refetch} />
@@ -162,7 +167,7 @@ export default function EventDetail() {
         />
       )}
 
-      <div className="mt-6">
+      <div className="mx-auto mt-6 max-w-[720px]">
         <ReportProblem title={event.title} />
       </div>
     </div>
