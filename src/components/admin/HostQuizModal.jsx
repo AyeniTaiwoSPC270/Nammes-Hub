@@ -126,7 +126,9 @@ export default function HostQuizModal({ quiz, busy, onHost, onClose }) {
           </label>
         )}
         <Button type="submit" variant="accent" className="w-full justify-center" loading={busy} disabled={Boolean(problem || scheduleProblem)}>
-          {when === 'schedule' ? 'Schedule quiz' : 'Open lobby'}
+          {/* Named for what it will actually do: without "Open to everyone" the button used to promise an open lobby
+              that was in fact a normal hosted game, which is a quiz that exists and is not on /play/open. */}
+          {when === 'schedule' ? 'Schedule quiz' : open ? 'Open lobby' : 'Start game'}
         </Button>
         <button
           type="button"
