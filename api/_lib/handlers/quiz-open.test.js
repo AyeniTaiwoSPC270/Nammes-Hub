@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { createQuizOpenHandler } from './quiz-open.js'
 import { QUIZ, fakeDb, fakeRes } from '../quizTestKit.js'
@@ -67,6 +68,17 @@ describe('the open list', () => {
     const res = await list(db)
     expect(res.body.serverNow).toBe(NOW)
     expect(res.body.sessions[0].startsInMs).toBe(60_000)
+  })
+
+  // `fakeDb` answers with whole rows whatever the projection says, so the suite cannot notice a column the handler
+  // reads but never asks for. This did happen: `isListed` returns false on a missing `open_join`, so the list came back
+  // empty for every game ever made while every test above passed.
+  it('selects the flag it then filters rows on', () => {
+    const source = readFileSync(new URL('./quiz-open.js', import.meta.url), 'utf8')
+    const select = source.match(/from\('quiz_sessions'\)[\s\S]*?\.select\('([^']+)'\)/)
+    expect(select).not.toBeNull()
+    const columns = select[1].split(',').map((name) => name.trim())
+    for (const column of ['open_join', 'scheduled_at', 'lobby_start_at', 'game_options', 'autopilot']) expect(columns).toContain(column)
   })
 
   it('reports a quiz that closed its doors at the first question', async () => {

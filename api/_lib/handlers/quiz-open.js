@@ -22,7 +22,9 @@ export function createQuizOpenHandler(getClient, { now = () => Date.now() } = {}
     const supabaseAdmin = getClient()
     const { data: rows, error } = await supabaseAdmin
       .from('quiz_sessions')
-      .select('id, quiz_id, join_code, state, scheduled_at, lobby_start_at, max_players, game_options, autopilot')
+      // `open_join` is selected even though the query already filters on it: `isListed` reads the flag off the row, and
+      // a projection that leaves it out makes that guard drop every row the filter just found.
+      .select('id, quiz_id, open_join, join_code, state, scheduled_at, lobby_start_at, max_players, game_options, autopilot')
       .eq('open_join', true)
       .neq('state', 'finished')
       .limit(MAX_ROWS)
