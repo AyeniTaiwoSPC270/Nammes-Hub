@@ -34,6 +34,10 @@
   --font-display: "Public Sans", -apple-system, sans-serif;
   --font-body: "Public Sans", -apple-system, sans-serif;
   --font-mono: "Public Sans", -apple-system, sans-serif;
+  /* Article formatting only. System faces on purpose: an admin's serif word must not make a news
+     page wait on a Google Fonts request, and these are the two families a body actually needs. */
+  --font-article-serif: Georgia, "Times New Roman", serif;
+  --font-article-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-sm: 4px;
   --radius-md: 8px;

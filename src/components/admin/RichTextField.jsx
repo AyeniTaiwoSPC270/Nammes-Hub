@@ -3,26 +3,18 @@
 // A plain textarea plus a formatting bar rather than a WYSIWYG engine: the stored column stays plain
 // text, so the review queue, the Open Graph description and every archived post keep working, and no
 // HTML sanitiser has to be trusted for content an admin can paste into. What the toolbar writes is the
-// markdown subset src/lib/richText.js understands, and Preview shows the exact component the public
+// markup subset src/lib/richText.js understands, and Preview shows the exact component the public
 // page renders.
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { TEXT_COLORS, TEXT_FONTS, TEXT_SIZES } from '../../lib/richText'
 import RichBody from '../content/RichBody'
 
 const MARKERS = /^\s*(?:#{1,3}|>|[-*+]|\d+[.)])\s+/
+const CLOSERS = { size: '[/size]', color: '[/color]', font: '[/font]' }
 
 export default function RichTextField({ label, value, onChange, coverUrl = '', required = false }) {
   const ref = useRef(null)
   const [preview, setPreview] = useState(false)
-  // A tool clicked while Preview is showing has no textarea to act on, so it waits for the edit view
-  // to mount instead of silently doing nothing.
-  const pendingTool = useRef(null)
-
-  useEffect(() => {
-    if (preview || !pendingTool.current) return
-    const run = pendingTool.current
-    pendingTool.current = null
-    run()
-  }, [preview])
 
   // React re-renders the textarea from `value`, so the caret has to be restored after that paint.
   function commit(nextValue, selectionStart, selectionEnd) {
@@ -35,14 +27,15 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
     })
   }
 
-  function wrap(marker, placeholder) {
+  function wrapPair(open, close, placeholder) {
     const el = ref.current
     if (!el) return
     const start = el.selectionStart
     const end = el.selectionEnd
     const selected = value.slice(start, end) || placeholder
-    const next = value.slice(0, start) + marker + selected + marker + value.slice(end)
-    commit(next, start + marker.length, start + marker.length + selected.length)
+    const next = value.slice(0, start) + open + selected + close + value.slice(end)
+    // An inserted placeholder stays selected, so the admin's next keystroke replaces it.
+    commit(next, start + open.length, start + open.length + selected.length)
   }
 
   function prefixLines(prefix) {
@@ -88,15 +81,33 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
     commit(before + token + after, start + token.length, start + token.length)
   }
 
+  // A control clicked while Preview is showing has no textarea to act on. Switching back to the edit
+  // view is the only honest outcome; the admin picks the control again. Acting anyway would wrap the
+  // start of the document, because a remounted textarea has no remembered selection.
+  function runTool(run) {
+    if (preview) {
+      setPreview(false)
+      return
+    }
+    run()
+  }
+
   const tools = [
-    { label: 'Bold', icon: 'format_bold', run: () => wrap('**', 'bold text') },
-    { label: 'Italic', icon: 'format_italic', run: () => wrap('*', 'italic text') },
+    { label: 'Bold', icon: 'format_bold', run: () => wrapPair('**', '**', 'bold text') },
+    { label: 'Italic', icon: 'format_italic', run: () => wrapPair('*', '*', 'italic text') },
+    { label: 'Underline', icon: 'format_underlined', run: () => wrapPair('[u]', '[/u]', 'underlined text') },
     { label: 'Heading', icon: 'title', run: () => prefixLines('## ') },
     { label: 'Quote', icon: 'format_quote', run: () => prefixLines('> ') },
     { label: 'Bulleted list', icon: 'format_list_bulleted', run: () => prefixLines('- ') },
     { label: 'Numbered list', icon: 'format_list_numbered', run: () => prefixLines('1. ') },
     { label: 'Link', icon: 'link', run: insertLink },
     { label: 'Photo here', icon: 'image', run: insertImage },
+  ]
+
+  const looks = [
+    { kind: 'size', label: 'Text size', options: TEXT_SIZES, placeholder: 'Size' },
+    { kind: 'color', label: 'Text colour', options: TEXT_COLORS, placeholder: 'Colour' },
+    { kind: 'font', label: 'Font style', options: TEXT_FONTS, placeholder: 'Font' },
   ]
 
   return (
@@ -117,31 +128,49 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
       </div>
 
       <div className="overflow-hidden rounded-md border border-hairline bg-surface">
-        <div role="toolbar" aria-label={`${label} formatting`} className="flex flex-wrap gap-0.5 border-b border-hairline bg-surface-low p-1">
-          {tools.map((tool) => (
-            <button
-              key={tool.label}
-              type="button"
-              title={tool.label}
-              aria-label={tool.label}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                // Formatting acts on the textarea, so a preview that is showing has to step aside first
-                // and the tool runs once the edit view is back.
-                if (preview) {
-                  pendingTool.current = tool.run
-                  setPreview(false)
-                } else {
-                  tool.run()
-                }
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-surface hover:text-brand"
-            >
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">
-                {tool.icon}
-              </span>
-            </button>
-          ))}
+        <div role="toolbar" aria-label={`${label} formatting`} className="border-b border-hairline bg-surface-low">
+          <div className="flex flex-wrap gap-0.5 p-1">
+            {tools.map((tool) => (
+              <button
+                key={tool.label}
+                type="button"
+                title={tool.label}
+                aria-label={tool.label}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => runTool(tool.run)}
+                className="flex h-8 w-8 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-surface hover:text-brand"
+              >
+                <span className="material-symbols-outlined text-lg" aria-hidden="true">
+                  {tool.icon}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* A dropdown applies its wrapper to the selected text, so size, colour and font stack with
+              bold, italics and a heading instead of replacing them. */}
+          <div className="flex flex-wrap items-center gap-1 px-2 pb-2">
+            {looks.map((look) => (
+              <select
+                key={look.kind}
+                aria-label={look.label}
+                value=""
+                onChange={(event) => {
+                  const chosen = event.target.value
+                  if (!chosen) return
+                  runTool(() => wrapPair(`[${look.kind}=${chosen}]`, CLOSERS[look.kind], 'text'))
+                }}
+                className="h-7 rounded-sm border border-hairline bg-surface px-1 text-xs font-semibold text-ink-muted"
+              >
+                <option value="">{look.placeholder}</option>
+                {look.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            ))}
+          </div>
         </div>
 
         {preview ? (
@@ -165,8 +194,9 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
       </div>
 
       <span className="text-xs text-ink-muted">
-        Leave a blank line between paragraphs. Single line breaks are kept. Put <code>[image]</code> on its own line
-        to place the photo there; without it the photo sits above the text.
+        Select text before choosing a size, colour or font so the style wraps just that text. Leave a blank line between
+        paragraphs. Put <code>[image]</code> on its own line to place the photo there; without it the photo sits above
+        the text.
       </span>
     </div>
   )
