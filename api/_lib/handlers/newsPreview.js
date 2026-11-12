@@ -3,6 +3,7 @@ import path from 'node:path'
 import { getSupabaseAdmin } from '../supabaseAdmin.js'
 import { renderPage, looksLikeBrowser, siteOrigin } from './og.js'
 import { renderNewsCard, OG_WIDTH, OG_HEIGHT } from '../newsCardRender.js'
+import { richTextPlain } from '../../../src/lib/richText.js'
 
 // Link previews for a news article. WhatsApp, Telegram and X fetch the article's own URL and read
 // whatever HTML comes back, so one URL has to serve two audiences: meta tags for a crawler, the
@@ -23,7 +24,9 @@ import { renderNewsCard, OG_WIDTH, OG_HEIGHT } from '../newsCardRender.js'
 
 /** First ~160 characters of the body as plain text: the whole article is not a description. */
 export function newsExcerpt(body, max = 160) {
-  const text = String(body ?? '').replace(/\s+/g, ' ').trim()
+  // The body is authored with the News editor's markdown subset, so the card's description must be
+  // the words only -- `**bold**` in a link preview is a bug a visitor sees before the article.
+  const text = richTextPlain(body)
   if (text.length <= max) return text
   return `${text.slice(0, max - 1).trimEnd()}…`
 }

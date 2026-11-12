@@ -5,6 +5,7 @@ import ImageUploadField from './ImageUploadField'
 import VideoUploadField from './VideoUploadField'
 import AvatarUploadField from './AvatarUploadField'
 import EventImageUploadField from './EventImageUploadField'
+import RichTextField from './RichTextField'
 import { buildFormState, buildPayload } from '../../lib/adminFields'
 import { useContentSettingsQuery } from '../../data/contentLooks'
 
@@ -98,6 +99,18 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
           label={f.label}
           url={values[f.field]}
           onChange={(url) => setField(f.field, url)}
+        />
+      )
+    }
+    if (f.type === 'richtext') {
+      return (
+        <RichTextField
+          key={f.field}
+          label={f.label}
+          value={values[f.field]}
+          coverUrl={f.coverField ? values[f.coverField] : ''}
+          onChange={(next) => setField(f.field, next)}
+          required={!f.optional}
         />
       )
     }

@@ -11,7 +11,7 @@ export const eventsAdminConfig = {
     { field: 'date', label: 'Date label', type: 'text' },
     { field: 'tone', label: 'Card color', type: 'select', options: ['green', 'orange'] },
     { field: 'meta', label: 'Location / time', type: 'text', optional: true },
-    { field: 'description', label: 'Description', type: 'textarea' },
+    { field: 'description', label: 'Description', type: 'richtext', coverField: 'image_url' },
     { field: 'image_url', label: 'Photo', type: 'event-image' },
   ],
 }

@@ -15,7 +15,9 @@ export const newsAdminConfig = {
     { field: 'tone', label: 'Card color', type: 'select', options: ['green', 'orange', 'neutral'] },
     { field: 'date', label: 'Date', type: 'date' },
     { field: 'author', label: 'Author', type: 'text' },
-    { field: 'body', label: 'Body', type: 'textarea' },
+    // `coverField` lets the editor's Preview draw the real cover at the `[image]` placeholder, so an
+    // admin sees where the photo lands before saving.
+    { field: 'body', label: 'Body', type: 'richtext', coverField: 'image_url' },
     { field: 'badge_tone', label: 'Badge (optional)', type: 'select', options: ['', 'new', 'updated'], optional: true },
     { field: 'badge_label', label: 'Badge label', type: 'text', optional: true },
     { field: 'image_url', widthField: 'image_width_pct', label: 'Image', type: 'image' },

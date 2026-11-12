@@ -8,11 +8,11 @@ import Reveal from '../components/ui/Reveal'
 import ReportProblem from '../components/ReportProblem'
 import { SkeletonText } from '../components/ui/Skeleton'
 import { ContentLook } from '../components/content/ContentCards'
+import RichBody from '../components/content/RichBody'
 import { useNewsQuery, getNewsByKey, resolveNewsVideo, useNewsVideoFlag, useNewsShareFlag } from '../data/news'
 import { shareArticle, copyLink, whatsappUrl } from '../lib/share'
 import { youtubeEmbedUrl, youtubeThumbUrl } from '../lib/newsVideo'
 import { usePageLook } from '../data/contentLooks'
-import { linkifyText } from '../lib/linkify'
 import { useToast } from '../lib/ToastContext'
 
 /**
@@ -245,45 +245,47 @@ export default function NewsDetail() {
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
       <Breadcrumbs items={[{ label: 'News', to: '/news' }, { label: post.title }]} />
 
+      {/* One readable column for the article, inside the page's 1200px shell. At full width the body
+          ran to 1200px and the cover to match, which is what made a phone photo fill the screen. The
+          actions below share the measure so they line up with the text. */}
       <ContentLook theme={theme}>
-        <div className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
-          {post.category}
-        </div>
-        <h1 className="mt-1.5 text-3xl font-bold text-ink-900">{post.title}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-          <span>Posted by {post.author}</span>
-          <span aria-hidden="true">&middot;</span>
-          <span>{post.date}</span>
-          {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
-        </div>
+        <article className="mx-auto max-w-[720px]">
+          <div className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
+            {post.category}
+          </div>
+          <h1 className="mt-1.5 text-3xl font-bold text-ink-900 sm:text-4xl">{post.title}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+            <span>Posted by {post.author}</span>
+            <span aria-hidden="true">&middot;</span>
+            <span>{post.date}</span>
+            {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
+          </div>
 
-        {video && video.position === 'top' && <NewsVideo video={video} cover={post.image_url} />}
+          {video && video.position === 'top' && <NewsVideo video={video} cover={post.image_url} />}
 
-        <Reveal>
-          {showCover && (
-            <img
-              src={post.image_url}
-              decoding="async"
-              alt=""
-              style={{ width: `${post.image_width_pct || 100}%` }}
-              className="content-radius mt-6"
+          <Reveal>
+            {/* The cover is drawn by the body, either at its `[image]` line or above the first
+                paragraph, and it is capped at 16:9 rather than growing with the photo's own size. */}
+            <RichBody
+              text={post.body}
+              cover={showCover ? post.image_url : null}
+              imageWidthPct={post.image_width_pct}
+              className="mt-6"
             />
-          )}
 
-          <p className="mt-6 max-w-2xl leading-relaxed text-ink">{linkifyText(post.body)}</p>
-
-          {video && video.position === 'bottom' && <NewsVideo video={video} cover={post.image_url} />}
-        </Reveal>
+            {video && video.position === 'bottom' && <NewsVideo video={video} cover={post.image_url} />}
+          </Reveal>
+        </article>
       </ContentLook>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto mt-10 flex max-w-[720px] flex-wrap items-center justify-between gap-4">
         <Button variant="ghost" onClick={() => navigate('/news')}>
           Back to news
         </Button>
         {shareEnabled && <ArticleShare title={post.title} path={`/news/${canonical}`} />}
       </div>
 
-      <div className="mt-4">
+      <div className="mx-auto mt-4 max-w-[720px]">
         <ReportProblem title={post.title} />
       </div>
     </div>
