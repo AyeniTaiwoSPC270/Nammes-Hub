@@ -210,20 +210,20 @@ export default function CbtHome() {
 
       <Link
         to="/cbt/make"
-        className="flex items-center gap-4 rounded-xl border border-orange-100 bg-orange-100 p-5 no-underline transition-colors hover:border-orange-500"
+        className="flex items-center gap-4 rounded-xl border border-orange-100 bg-orange-100 p-5 no-underline transition-colors hover:border-orange-500 dark:border-orange-600/40 dark:bg-orange-600/15"
       >
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-orange-600">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface text-brand-orange">
           <span className="material-symbols-outlined" aria-hidden="true">
             add
           </span>
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-bold text-ink-900">Make your own practice exam</span>
-          <span className="block text-sm text-ink-900/75">
+          <span className="block text-sm text-ink-muted">
             Paste past questions from a spreadsheet and take them as a timed CBT, up to 100 questions. Private to you and anyone you share the code with.
           </span>
         </span>
-        <span className="material-symbols-outlined text-orange-600" aria-hidden="true">
+        <span className="material-symbols-outlined text-brand-orange" aria-hidden="true">
           arrow_forward
         </span>
       </Link>
