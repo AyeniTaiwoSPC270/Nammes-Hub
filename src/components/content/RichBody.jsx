@@ -41,9 +41,9 @@ function Inline({ segments }) {
 /**
  * The cover photo.
  *
- * `image_width_pct` still narrows it (the News editor's drag handle writes it), but inside a 720px
- * column the height is capped by a 16:9 crop. That is the whole fix for a portrait phone photo that
- * used to run to 1200px wide and taller than the screen.
+ * It keeps its own proportions: the 720px column is what stops a wide desktop photo from filling the
+ * screen now, so cropping to a fixed ratio would only cut the top and bottom off a poster an admin
+ * uploaded whole. `image_width_pct` still narrows it (the News editor's drag handle writes it).
  */
 function CoverImage({ src, widthPct }) {
   if (!src) return null
@@ -53,7 +53,7 @@ function CoverImage({ src, widthPct }) {
       className="content-radius overflow-hidden bg-surface-low"
       style={width >= 30 && width <= 100 ? { width: `${width}%` } : undefined}
     >
-      <img src={src} decoding="async" alt="" className="aspect-[16/9] w-full object-cover" />
+      <img src={src} decoding="async" alt="" className="block h-auto w-full" />
     </figure>
   )
 }
