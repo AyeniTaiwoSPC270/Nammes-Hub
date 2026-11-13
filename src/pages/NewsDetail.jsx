@@ -254,10 +254,11 @@ export default function NewsDetail() {
           badge={post.badge_tone ? <Badge tone={post.badge_tone}>{post.badge_label}</Badge> : null}
         />
 
-        {/* One readable column, and the article's own actions share its measure. The cover is drawn by
-            the body, either at its `[image]` line or above the first paragraph, at the column's width,
-            in its own proportions unless an admin chose a shape. */}
-        <article className="mx-auto mt-8 max-w-[1000px]">
+        {/* One measure for the whole article: the headline, the cover, the prose and the credits all share
+            the same column, so the photo never runs wider than the text beside it. The cover is drawn by
+            the body, either at its `[image]` line or above the first paragraph, in its own proportions
+            unless an admin chose a shape. */}
+        <article className="mx-auto mt-8 max-w-[720px]">
           {video && video.position === 'top' && <NewsVideo video={video} cover={post.image_url} />}
 
           <Reveal>
@@ -272,7 +273,7 @@ export default function NewsDetail() {
 
           {/* The credits, then the share row: the reader has finished the piece by the time they reach
               these, so they sit after the prose rather than at the top of the page. */}
-          <div className="mx-auto mt-10 max-w-[720px]">
+          <div className="mt-10">
             <div className="content-radius flex flex-wrap items-center gap-x-10 gap-y-3 bg-surface-low px-5 py-4">
               <span
                 aria-hidden="true"
@@ -303,7 +304,7 @@ export default function NewsDetail() {
             )}
           </div>
 
-          <div className="mx-auto mt-6 max-w-[720px]">
+          <div className="mt-6">
             <ReportProblem title={post.title} />
           </div>
         </article>

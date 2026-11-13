@@ -25,7 +25,7 @@ export default function ArticleHero({
   ].filter(Boolean)
 
   return (
-    <header className="mx-auto max-w-[860px]">
+    <header className="mx-auto max-w-[720px]">
       {(back || eyebrow) && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           {back ? (
@@ -76,7 +76,7 @@ export default function ArticleHero({
       </h1>
 
       {summary && (
-        <p className="mt-5 max-w-[760px] text-lg leading-relaxed text-ink-muted sm:text-xl">{summary}</p>
+        <p className="mt-5 text-lg leading-relaxed text-ink-muted sm:text-xl">{summary}</p>
       )}
     </header>
   )
