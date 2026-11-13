@@ -13,6 +13,13 @@ import { linkifyText } from '../../lib/linkify'
 const SIZE_CLASS = { sm: 'text-[0.85em]', base: '', lg: 'text-[1.2em]', xl: 'text-[1.45em]' }
 const COLOR_CLASS = { muted: 'text-ink-muted', brand: 'text-brand', orange: 'text-brand-orange', red: 'text-danger' }
 const FONT_CLASS = { serif: 'font-article-serif', mono: 'font-article-mono' }
+// A chosen shape crops; the default leaves the picture in its own proportions.
+const SHAPE_CLASS = {
+  '16:9': 'aspect-[16/9]',
+  '4:3': 'aspect-[4/3]',
+  '1:1': 'aspect-square',
+  '3:4': 'aspect-[3/4]',
+}
 
 function Inline({ segments }) {
   return segments.map((segment, index) => {
@@ -50,15 +57,21 @@ function Inline({ segments }) {
  * screen now, so cropping to a fixed ratio would only cut the top and bottom off a poster an admin
  * uploaded whole. `image_width_pct` still narrows it (the News editor's drag handle writes it).
  */
-function CoverImage({ src, widthPct }) {
+function CoverImage({ src, widthPct, ratio = 'natural' }) {
   if (!src) return null
   const width = Number(widthPct)
+  const shape = SHAPE_CLASS[ratio]
   return (
     <figure
-      className="content-radius overflow-hidden bg-surface-low"
+      className={['content-radius overflow-hidden bg-surface-low', shape].filter(Boolean).join(' ')}
       style={width >= 30 && width <= 100 ? { width: `${width}%` } : undefined}
     >
-      <img src={src} decoding="async" alt="" className="block h-auto w-full" />
+      <img
+        src={src}
+        decoding="async"
+        alt=""
+        className={shape ? 'h-full w-full object-cover' : 'block h-auto w-full'}
+      />
     </figure>
   )
 }
@@ -69,6 +82,8 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
   // A serif body is the per-post choice; headings stay Public Sans so the two faces contrast the way
   // an editorial page expects instead of turning the whole article into a book page.
   const serif = bodyFontOf(text) === 'serif'
+  const marker = blocks.find((block) => block.type === 'image')
+  const coverRatio = marker?.ratio ?? 'natural'
   let imageDrawn = false
   let ledeDrawn = false
 
@@ -82,7 +97,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
         .filter(Boolean)
         .join(' ')}
     >
-      {cover && !hasMarker && <CoverImage src={cover} widthPct={imageWidthPct} />}
+      {cover && !hasMarker && <CoverImage src={cover} widthPct={imageWidthPct} ratio={coverRatio} />}
 
       {blocks.map((block, index) => {
         if (block.type === 'image') {
@@ -90,7 +105,9 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
           // the page would be a mistake the admin can see straight away rather than a second image.
           if (!cover || imageDrawn) return null
           imageDrawn = true
-          return <CoverImage key={index} src={cover} widthPct={imageWidthPct} />
+          return (
+            <CoverImage key={index} src={cover} widthPct={imageWidthPct} ratio={block.ratio} />
+          )
         }
 
         if (block.type === 'heading') {
@@ -111,9 +128,11 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
 
         if (block.type === 'quote') {
           return (
+            // A pull quote is set as a statement, not as an aside: large, upright and dark, with the
+            // accent rule doing the attribution work.
             <blockquote
               key={index}
-              className="border-l-4 border-brand-orange pl-4 font-display text-lg italic leading-relaxed text-ink-900"
+              className="my-2 border-l-4 border-brand-orange pl-5 font-display text-[1.45em] font-bold leading-snug text-ink-900"
             >
               <Inline segments={block.segments} />
             </blockquote>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { bodyFontOf, parseRichText, readingMinutes, richTextPlain } from './richText'
+import { bodyFontOf, imageRatioOf, parseRichText, readingMinutes, richTextPlain } from './richText'
 
 const types = (text) => parseRichText(text).map((b) => b.type)
 
@@ -89,6 +89,15 @@ describe('parseRichText', () => {
     expect(types('  [IMAGE]  ')).toEqual(['image'])
   })
 
+  it('reads a cover shape off the marker and ignores a shape it does not know', () => {
+    const [block] = parseRichText('[image=16:9]')
+    expect(block).toEqual({ type: 'image', ratio: '16:9' })
+    expect(imageRatioOf('[image=3:4]\n\ntext')).toBe('3:4')
+    expect(imageRatioOf('plain text')).toBe('natural')
+    // A typo stays visible as text rather than quietly cropping the photo to something else.
+    expect(types('[image=7:5]')).toEqual(['paragraph'])
+  })
+
   it('renders a legacy plain-text body that has no markup at all', () => {
     expect(types('Welcome to November.\n\nLet us begin.')).toEqual(['paragraph', 'paragraph'])
   })
@@ -111,6 +120,7 @@ describe('richTextPlain', () => {
 
   it('drops the image placeholder', () => {
     expect(richTextPlain('Before\n\n[image]\n\nAfter')).toBe('Before After')
+    expect(richTextPlain('Before\n\n[image=16:9]\n\nAfter')).toBe('Before After')
   })
 
   it('collapses whitespace and handles null', () => {
