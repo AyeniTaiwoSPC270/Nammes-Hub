@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Navigate, useNavigate } from 'react-router-dom'
+import { Link, useParams, Navigate, useNavigate } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
@@ -7,13 +7,29 @@ import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
 import ReportProblem from '../components/ReportProblem'
 import { SkeletonText } from '../components/ui/Skeleton'
-import { ContentLook } from '../components/content/ContentCards'
+import { ContentGrid, ContentLook, NewsCard } from '../components/content/ContentCards'
+import ArticleHero from '../components/content/ArticleHero'
 import RichBody from '../components/content/RichBody'
+import { readingMinutes } from '../lib/richText'
 import { useNewsQuery, getNewsByKey, resolveNewsVideo, useNewsVideoFlag, useNewsShareFlag } from '../data/news'
 import { shareArticle, copyLink, whatsappUrl } from '../lib/share'
 import { youtubeEmbedUrl, youtubeThumbUrl } from '../lib/newsVideo'
 import { usePageLook } from '../data/contentLooks'
 import { useToast } from '../lib/ToastContext'
+
+// "Dr. A. Bello" reads as "AB", not "DA": the last two words, so an honorific never becomes the avatar.
+function initials(name) {
+  const words = String(name ?? '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (words.length === 0) return 'NH'
+  return words
+    .slice(-2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase()
+}
 
 /**
  * A post's player: a native `<video>` for an upload, a click-to-load facade for a YouTube link.
@@ -240,54 +256,86 @@ export default function NewsDetail() {
   // A video at the top IS the article's media, so the cover is not repeated above it -- it has already
   // done its job on the card that got the reader here. At the bottom, the cover keeps its usual slot.
   const showCover = Boolean(post.image_url) && !(video && video.position === 'top')
+  const minutes = readingMinutes(post.body)
+
+  // Same section first, then whatever is newest: a category with two posts should still fill the row.
+  const others = (data ?? []).filter((item) => item.id !== post.id)
+  const related = others.filter((item) => item.category === post.category).slice(0, 3)
+  const more = related.length > 0 ? related : others.slice(0, 3)
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-5 pb-16 pt-6 sm:px-6">
       <Breadcrumbs items={[{ label: 'News', to: '/news' }, { label: post.title }]} />
 
-      {/* One readable column for the article, inside the page's 1200px shell. At full width the body
-          ran to 1200px and the cover to match, which is what made a phone photo fill the screen. The
-          actions below share the measure so they line up with the text. */}
       <ContentLook theme={theme}>
-        <article className="mx-auto max-w-[720px]">
-          <div className="text-xs font-semibold uppercase tracking-[.05em] text-brand-orange">
-            {post.category}
-          </div>
-          <h1 className="mt-1.5 text-3xl font-bold text-ink-900 sm:text-4xl">{post.title}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-            <span>Posted by {post.author}</span>
-            <span aria-hidden="true">&middot;</span>
-            <span>{post.date}</span>
-            {post.badge_tone && <Badge tone={post.badge_tone}>{post.badge_label}</Badge>}
-          </div>
+        <ArticleHero
+          eyebrow={post.category}
+          title={post.title}
+          meta={[`By ${post.author || 'Nammes Hub'}`, post.date, `${minutes} min read`]}
+          badge={post.badge_tone ? <Badge tone={post.badge_tone}>{post.badge_label}</Badge> : null}
+        />
 
+        {/* One readable column, and the article's own actions share its measure. The cover is drawn by
+            the body, either at its `[image]` line or above the first paragraph, at the column's width
+            and in its own proportions -- no crop. */}
+        <article className="mx-auto max-w-[720px]">
           {video && video.position === 'top' && <NewsVideo video={video} cover={post.image_url} />}
 
-          <Reveal>
-            {/* The cover is drawn by the body, either at its `[image]` line or above the first
-                paragraph, at the column's width and its own proportions -- no crop. */}
+          <Reveal className="mt-8">
             <RichBody
               text={post.body}
               cover={showCover ? post.image_url : null}
               imageWidthPct={post.image_width_pct}
-              className="mt-6"
             />
 
             {video && video.position === 'bottom' && <NewsVideo video={video} cover={post.image_url} />}
           </Reveal>
+
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-5">
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-bold text-white"
+              >
+                {initials(post.author)}
+              </span>
+              <div>
+                <div className="text-sm font-semibold text-ink-900">{post.author || 'Nammes Hub'}</div>
+                <div className="text-xs text-ink-muted">
+                  {post.date} &middot; {minutes} min read
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="ghost" onClick={() => navigate('/news')}>
+                Back to news
+              </Button>
+              {shareEnabled && <ArticleShare title={post.title} path={`/news/${canonical}`} />}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <ReportProblem title={post.title} />
+          </div>
         </article>
+
+        {more.length > 0 && (
+          <section className="mx-auto mt-16 max-w-[1100px]">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="font-display text-2xl font-bold text-ink-900">More from News</h2>
+              <Link to="/news" className="text-sm font-bold text-brand-orange hover:underline">
+                All news
+              </Link>
+            </div>
+            <ContentGrid theme={theme} className="mt-5">
+              {more.map((item) => (
+                <NewsCard key={item.id} item={item} theme={theme} />
+              ))}
+            </ContentGrid>
+          </section>
+        )}
       </ContentLook>
-
-      <div className="mx-auto mt-10 flex max-w-[720px] flex-wrap items-center justify-between gap-4">
-        <Button variant="ghost" onClick={() => navigate('/news')}>
-          Back to news
-        </Button>
-        {shareEnabled && <ArticleShare title={post.title} path={`/news/${canonical}`} />}
-      </div>
-
-      <div className="mx-auto mt-4 max-w-[720px]">
-        <ReportProblem title={post.title} />
-      </div>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
+import { Link, useParams, Navigate } from 'react-router-dom'
 import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
@@ -8,13 +8,14 @@ import Reveal from '../components/ui/Reveal'
 import { SkeletonText } from '../components/ui/Skeleton'
 import GalleryLightbox from '../components/GalleryLightbox'
 import ReportProblem from '../components/ReportProblem'
-import { ContentLook } from '../components/content/ContentCards'
+import { ContentGrid, ContentLook, EventCard } from '../components/content/ContentCards'
+import ArticleHero from '../components/content/ArticleHero'
 import RichBody from '../components/content/RichBody'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
 import { saveBlob } from '../lib/downloadImage'
-import { useEventsQuery, getEventById } from '../data/events'
+import { useEventsQuery, getEventById, groupEventsByTime } from '../data/events'
 import { useEventPhotosQuery } from '../data/eventPhotos'
 import { usePageLook } from '../data/contentLooks'
 
@@ -55,6 +56,11 @@ export default function EventDetail() {
   const event = getEventById(eventsQuery.data ?? [], id)
   if (!event) return <Navigate to="/events" replace />
 
+  // Upcoming first: a reader who just finished an event is the likeliest person to go to the next one.
+  const others = (eventsQuery.data ?? []).filter((item) => String(item.id) !== String(event.id))
+  const { upcoming, past } = groupEventsByTime(others)
+  const more = [...upcoming, ...past].slice(0, 3)
+
   async function handleDownloadAll() {
     setZipping(true)
     try {
@@ -73,54 +79,44 @@ export default function EventDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:px-6">
+    <div className="mx-auto max-w-[1200px] px-5 pb-16 pt-6 sm:px-6">
       <Breadcrumbs items={[{ label: 'Events', to: '/events' }, { label: event.title }]} />
 
-      {/* The header and the prose share the article's measure; the gallery below keeps the full page
-          width because a photo grid is the one thing on this screen that benefits from it. */}
-      <div className="mx-auto max-w-[720px]">
-        <h1 className="mt-1.5 text-3xl font-bold text-ink-900 sm:text-4xl">{event.title}</h1>
+      <ContentLook theme={theme}>
+        <ArticleHero eyebrow="Event" title={event.title} meta={[event.date, event.meta].filter(Boolean)} />
 
-        <div className="mt-6 flex gap-2 border-b border-hairline">
-          <button
-            type="button"
-            onClick={() => setTab('details')}
-            className={[
-              'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-              tab === 'details' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
-            ].join(' ')}
-          >
-            Details
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('gallery')}
-            className={[
-              'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
-              tab === 'gallery' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
-            ].join(' ')}
-          >
-            Gallery{photos.length > 0 ? ` (${photos.length})` : ''}
-          </button>
-        </div>
+        {/* The details share the article's measure; the gallery below keeps the full page width
+            because a photo grid is the one thing on this screen that benefits from it. */}
+        <div className="mx-auto max-w-[720px]">
+          <div className="mt-6 flex gap-2 border-b border-hairline">
+            <button
+              type="button"
+              onClick={() => setTab('details')}
+              className={[
+                'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
+                tab === 'details' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
+              ].join(' ')}
+            >
+              Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('gallery')}
+              className={[
+                'px-4 py-2 text-sm font-semibold border-b-2 -mb-px',
+                tab === 'gallery' ? 'border-brand text-brand' : 'border-transparent text-ink-muted',
+              ].join(' ')}
+            >
+              Gallery{photos.length > 0 ? ` (${photos.length})` : ''}
+            </button>
+          </div>
 
-        {tab === 'details' && (
-          <ContentLook theme={theme}>
-            <Reveal className="mt-6">
-              <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-                <span>{event.date}</span>
-                {event.meta && (
-                  <>
-                    <span aria-hidden="true">&middot;</span>
-                    <span>{event.meta}</span>
-                  </>
-                )}
-              </div>
-              <RichBody text={event.description} cover={event.image_url} className="mt-4" />
+          {tab === 'details' && (
+            <Reveal className="mt-8">
+              <RichBody text={event.description} cover={event.image_url} />
             </Reveal>
-          </ContentLook>
-        )}
-      </div>
+          )}
+        </div>
 
       {tab === 'gallery' && (
         <div className="mt-6">
@@ -167,9 +163,40 @@ export default function EventDetail() {
         />
       )}
 
-      <div className="mx-auto mt-6 max-w-[720px]">
-        <ReportProblem title={event.title} />
-      </div>
+        <div className="mx-auto mt-10 max-w-[720px]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
+            <Link
+              to="/events"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-ink-muted transition-colors hover:text-brand"
+            >
+              <span className="material-symbols-outlined text-base" aria-hidden="true">
+                arrow_back
+              </span>
+              Back to events
+            </Link>
+            <span className="text-xs text-ink-muted">{event.date}</span>
+          </div>
+          <div className="mt-4">
+            <ReportProblem title={event.title} />
+          </div>
+        </div>
+
+        {more.length > 0 && (
+          <section className="mx-auto mt-16 max-w-[1100px]">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="font-display text-2xl font-bold text-ink-900">More events</h2>
+              <Link to="/events" className="text-sm font-bold text-brand-orange hover:underline">
+                All events
+              </Link>
+            </div>
+            <ContentGrid theme={theme} className="mt-5">
+              {more.map((item) => (
+                <EventCard key={item.id} event={item} theme={theme} />
+              ))}
+            </ContentGrid>
+          </section>
+        )}
+      </ContentLook>
     </div>
   )
 }

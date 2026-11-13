@@ -6,11 +6,13 @@
 // markup subset src/lib/richText.js understands, and Preview shows the exact component the public
 // page renders.
 import { useRef, useState } from 'react'
-import { TEXT_COLORS, TEXT_FONTS, TEXT_SIZES } from '../../lib/richText'
+import { BODY_FONTS, TEXT_COLORS, TEXT_FONTS, TEXT_SIZES, bodyFontOf } from '../../lib/richText'
 import RichBody from '../content/RichBody'
 
 const MARKERS = /^\s*(?:#{1,3}|>|[-*+]|\d+[.)])\s+/
 const CLOSERS = { size: '[/size]', color: '[/color]', font: '[/font]' }
+const SELECT_CLASS = 'h-7 rounded-sm border border-hairline bg-surface px-1 text-xs font-semibold text-ink-muted'
+const BODY_DIRECTIVE_RE = /^\s*\[body=(?:serif|sans)\]\s*\n*/i
 
 export default function RichTextField({ label, value, onChange, coverUrl = '', required = false }) {
   const ref = useRef(null)
@@ -79,6 +81,13 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
     const trail = !after ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n'
     const token = `${lead}[image]${trail}`
     commit(before + token + after, start + token.length, start + token.length)
+  }
+
+  // The whole-article face is a directive line rather than a wrapper, because a wrapper cannot span
+  // paragraphs. It is rewritten in place, so flipping it twice does not stack blank lines.
+  function setBodyFont(font) {
+    const plain = String(value).replace(BODY_DIRECTIVE_RE, '').replace(/^\n+/, '')
+    onChange(font === 'serif' ? `[body=serif]\n\n${plain}` : plain)
   }
 
   // A control clicked while Preview is showing has no textarea to act on. Switching back to the edit
@@ -160,7 +169,7 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
                   if (!chosen) return
                   runTool(() => wrapPair(`[${look.kind}=${chosen}]`, CLOSERS[look.kind], 'text'))
                 }}
-                className="h-7 rounded-sm border border-hairline bg-surface px-1 text-xs font-semibold text-ink-muted"
+                className={SELECT_CLASS}
               >
                 <option value="">{look.placeholder}</option>
                 {look.options.map((option) => (
@@ -170,6 +179,23 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
                 ))}
               </select>
             ))}
+
+            {/* Sets the whole article, not the selection: a body face is a document decision. */}
+            <select
+              aria-label="Article body font"
+              value={bodyFontOf(value)}
+              onChange={(event) => {
+                if (preview) setPreview(false)
+                setBodyFont(event.target.value)
+              }}
+              className={SELECT_CLASS}
+            >
+              {BODY_FONTS.map((font) => (
+                <option key={font.value} value={font.value}>
+                  Body: {font.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -194,9 +220,9 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
       </div>
 
       <span className="text-xs text-ink-muted">
-        Select text before choosing a size, colour or font so the style wraps just that text. Leave a blank line between
-        paragraphs. Put <code>[image]</code> on its own line to place the photo there; without it the photo sits above
-        the text.
+        Select text before choosing a size, colour or font so the style wraps just that text; Body sets the whole
+        article. Leave a blank line between paragraphs. Put <code>[image]</code> on its own line to place the photo
+        there; without it the photo sits above the text.
       </span>
     </div>
   )
