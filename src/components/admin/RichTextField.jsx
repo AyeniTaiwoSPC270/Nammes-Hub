@@ -6,13 +6,22 @@
 // markup subset src/lib/richText.js understands, and Preview shows the exact component the public
 // page renders.
 import { useRef, useState } from 'react'
-import { BODY_FONTS, TEXT_COLORS, TEXT_FONTS, TEXT_SIZES, bodyFontOf } from '../../lib/richText'
+import {
+  BODY_FONTS,
+  IMAGE_SHAPES,
+  TEXT_COLORS,
+  TEXT_FONTS,
+  TEXT_SIZES,
+  bodyFontOf,
+  imageRatioOf,
+} from '../../lib/richText'
 import RichBody from '../content/RichBody'
 
 const MARKERS = /^\s*(?:#{1,3}|>|[-*+]|\d+[.)])\s+/
 const CLOSERS = { size: '[/size]', color: '[/color]', font: '[/font]' }
 const SELECT_CLASS = 'h-7 rounded-sm border border-hairline bg-surface px-1 text-xs font-semibold text-ink-muted'
 const BODY_DIRECTIVE_RE = /^\s*\[body=(?:serif|sans)\]\s*\n*/i
+const IMAGE_MARKER_RE = /^[ \t]*\[image(?:=[^\]\n]+)?\][ \t]*$/im
 
 export default function RichTextField({ label, value, onChange, coverUrl = '', required = false }) {
   const ref = useRef(null)
@@ -79,8 +88,26 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
     const after = value.slice(end)
     const lead = !before ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
     const trail = !after ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n'
-    const token = `${lead}[image]${trail}`
+    const shape = imageRatioOf(value)
+    const marker = shape === 'natural' ? '[image]' : `[image=${shape}]`
+    const token = `${lead}${marker}${trail}`
     commit(before + token + after, start + token.length, start + token.length)
+  }
+
+  // The cover's shape is a property of the marker line, so this rewrites that line rather than adding a
+  // second setting. A body with no marker is placed at the top, which is where the cover already sat.
+  function setPhotoShape(shape) {
+    const marker = shape === 'natural' ? '[image]' : `[image=${shape}]`
+    if (IMAGE_MARKER_RE.test(value)) {
+      onChange(String(value).replace(IMAGE_MARKER_RE, marker))
+      return
+    }
+    // "Own shape" is the default, so there is nothing to write when no marker exists.
+    if (shape === 'natural') return
+    const lines = String(value).split('\n')
+    const bodyAt = lines.findIndex((line) => BODY_DIRECTIVE_RE.test(line))
+    lines.splice(bodyAt + 1, 0, marker, '')
+    onChange(lines.join('\n'))
   }
 
   // The whole-article face is a directive line rather than a wrapper, because a wrapper cannot span
@@ -196,6 +223,24 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
                 </option>
               ))}
             </select>
+
+            {/* Applies to the cover whether or not it is already in the text: choosing a shape inserts
+                the marker, so "Square" cannot mean nothing on a post that has never placed its photo. */}
+            <select
+              aria-label="Cover photo shape"
+              value={imageRatioOf(value)}
+              onChange={(event) => {
+                if (preview) setPreview(false)
+                setPhotoShape(event.target.value)
+              }}
+              className={SELECT_CLASS}
+            >
+              {IMAGE_SHAPES.map((shape) => (
+                <option key={shape.value} value={shape.value}>
+                  Photo: {shape.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -221,8 +266,8 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
 
       <span className="text-xs text-ink-muted">
         Select text before choosing a size, colour or font so the style wraps just that text; Body sets the whole
-        article. Leave a blank line between paragraphs. Put <code>[image]</code> on its own line to place the photo
-        there; without it the photo sits above the text.
+        article and Photo its cover shape. Leave a blank line between paragraphs. Put <code>[image]</code> on its
+        own line to place the photo there; without it the photo sits above the text.
       </span>
     </div>
   )

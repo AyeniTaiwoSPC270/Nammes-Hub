@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useParams, Navigate, useNavigate } from 'react-router-dom'
-import Breadcrumbs from '../components/Breadcrumbs'
-import Button from '../components/ui/Button'
+import { Link, useParams, Navigate } from 'react-router-dom'
 import Badge from '../components/ui/Badge'
 import ErrorState from '../components/ui/ErrorState'
 import Reveal from '../components/ui/Reveal'
@@ -210,7 +208,6 @@ function ArticleShare({ title, path }) {
 
 export default function NewsDetail() {
   const { key } = useParams()
-  const navigate = useNavigate()
   const { data, isLoading, isError, refetch } = useNewsQuery()
   // Hook first, before any early return below: it has to run on every render or the loading and error
   // branches would render a different number of hooks than the loaded one.
@@ -258,30 +255,31 @@ export default function NewsDetail() {
   const showCover = Boolean(post.image_url) && !(video && video.position === 'top')
   const minutes = readingMinutes(post.body)
 
-  // Same section first, then whatever is newest: a category with two posts should still fill the row.
+  // Same section first, then whatever is newest, always three: one related story in a three-column
+  // grid leaves two empty columns and reads as a mistake.
   const others = (data ?? []).filter((item) => item.id !== post.id)
-  const related = others.filter((item) => item.category === post.category).slice(0, 3)
-  const more = related.length > 0 ? related : others.slice(0, 3)
+  const sameCategory = others.filter((item) => item.category === post.category)
+  const more = [...sameCategory, ...others.filter((item) => item.category !== post.category)].slice(0, 3)
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 pb-16 pt-6 sm:px-6">
-      <Breadcrumbs items={[{ label: 'News', to: '/news' }, { label: post.title }]} />
-
+    <div className="mx-auto max-w-[1200px] px-5 pb-16 pt-8 sm:px-6">
       <ContentLook theme={theme}>
         <ArticleHero
+          back={{ to: '/news', label: 'Back to News' }}
           eyebrow={post.category}
           title={post.title}
-          meta={[`By ${post.author || 'Nammes Hub'}`, post.date, `${minutes} min read`]}
+          date={post.date}
+          minutes={minutes}
           badge={post.badge_tone ? <Badge tone={post.badge_tone}>{post.badge_label}</Badge> : null}
         />
 
         {/* One readable column, and the article's own actions share its measure. The cover is drawn by
-            the body, either at its `[image]` line or above the first paragraph, at the column's width
-            and in its own proportions -- no crop. */}
-        <article className="mx-auto max-w-[720px]">
+            the body, either at its `[image]` line or above the first paragraph, at the column's width,
+            in its own proportions unless an admin chose a shape. */}
+        <article className="mx-auto mt-8 max-w-[840px]">
           {video && video.position === 'top' && <NewsVideo video={video} cover={post.image_url} />}
 
-          <Reveal className="mt-8">
+          <Reveal>
             <RichBody
               text={post.body}
               cover={showCover ? post.image_url : null}
@@ -291,8 +289,10 @@ export default function NewsDetail() {
             {video && video.position === 'bottom' && <NewsVideo video={video} cover={post.image_url} />}
           </Reveal>
 
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-5">
-            <div className="flex items-center gap-3">
+          {/* The credits, then the share row: the reader has finished the piece by the time they reach
+              these, so they sit after the prose rather than at the top of the page. */}
+          <div className="mt-10">
+            <div className="content-radius flex items-center gap-3 bg-surface-low px-5 py-4">
               <span
                 aria-hidden="true"
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-bold text-white"
@@ -300,22 +300,21 @@ export default function NewsDetail() {
                 {initials(post.author)}
               </span>
               <div>
-                <div className="text-sm font-semibold text-ink-900">{post.author || 'Nammes Hub'}</div>
-                <div className="text-xs text-ink-muted">
-                  {post.date} &middot; {minutes} min read
+                <div className="text-xs font-semibold uppercase tracking-[.08em] text-ink-muted">
+                  Writer
                 </div>
+                <div className="text-sm font-semibold text-ink-900">{post.author || 'Nammes Hub'}</div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" onClick={() => navigate('/news')}>
-                Back to news
-              </Button>
-              {shareEnabled && <ArticleShare title={post.title} path={`/news/${canonical}`} />}
-            </div>
+            {shareEnabled && (
+              <div className="mt-5">
+                <ArticleShare title={post.title} path={`/news/${canonical}`} />
+              </div>
+            )}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-6">
             <ReportProblem title={post.title} />
           </div>
         </article>

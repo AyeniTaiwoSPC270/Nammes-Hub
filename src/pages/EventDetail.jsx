@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
-import Breadcrumbs from '../components/Breadcrumbs'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import ErrorState from '../components/ui/ErrorState'
@@ -79,15 +78,19 @@ export default function EventDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 pb-16 pt-6 sm:px-6">
-      <Breadcrumbs items={[{ label: 'Events', to: '/events' }, { label: event.title }]} />
-
+    <div className="mx-auto max-w-[1200px] px-5 pb-16 pt-8 sm:px-6">
       <ContentLook theme={theme}>
-        <ArticleHero eyebrow="Event" title={event.title} meta={[event.date, event.meta].filter(Boolean)} />
+        <ArticleHero
+          back={{ to: '/events', label: 'Back to events' }}
+          eyebrow="Event"
+          title={event.title}
+          date={event.date}
+          meta={event.meta ? [event.meta] : []}
+        />
 
         {/* The details share the article's measure; the gallery below keeps the full page width
             because a photo grid is the one thing on this screen that benefits from it. */}
-        <div className="mx-auto max-w-[720px]">
+        <div className="mx-auto max-w-[840px]">
           <div className="mt-6 flex gap-2 border-b border-hairline">
             <button
               type="button"
@@ -163,20 +166,8 @@ export default function EventDetail() {
         />
       )}
 
-        <div className="mx-auto mt-10 max-w-[720px]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-5">
-            <Link
-              to="/events"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-ink-muted transition-colors hover:text-brand"
-            >
-              <span className="material-symbols-outlined text-base" aria-hidden="true">
-                arrow_back
-              </span>
-              Back to events
-            </Link>
-            <span className="text-xs text-ink-muted">{event.date}</span>
-          </div>
-          <div className="mt-4">
+        <div className="mx-auto mt-10 max-w-[840px]">
+          <div className="border-t border-hairline pt-5">
             <ReportProblem title={event.title} />
           </div>
         </div>

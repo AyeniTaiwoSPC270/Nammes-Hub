@@ -31,7 +31,18 @@ const HEADING_RE = /^(#{1,3})\s+(.*)$/
 const QUOTE_RE = /^>\s?(.*)$/
 const BULLET_RE = /^\s*[-*+]\s+(.*)$/
 const NUMBERED_RE = /^\s*\d+[.)]\s+(.*)$/
-const IMAGE_RE = /^\s*\[image\]\s*$/i
+// `[image]` keeps the photo's own proportions; `[image=16:9]` crops it to that shape. The allowed
+// shapes are listed here so the editor's select cannot write a ratio the parser would ignore.
+export const IMAGE_SHAPES = [
+  { value: 'natural', label: 'Own shape' },
+  { value: '16:9', label: 'Landscape 16:9' },
+  { value: '4:3', label: 'Landscape 4:3' },
+  { value: '1:1', label: 'Square' },
+  { value: '3:4', label: 'Portrait 3:4' },
+]
+
+const IMAGE_SHAPE_VALUES = IMAGE_SHAPES.map((shape) => shape.value).join('|')
+const IMAGE_RE = new RegExp(`^\\s*\\[image(?:=(${IMAGE_SHAPE_VALUES}))?\\]\\s*$`, 'im')
 const BODY_FONT_RE = /^\s*\[body=(serif|sans)\]\s*$/im
 
 // The article's body face, chosen per post. It is a directive line rather than a wrapper because a
@@ -44,6 +55,13 @@ export const BODY_FONTS = [
 export function bodyFontOf(input) {
   const match = BODY_FONT_RE.exec(String(input ?? ''))
   return match ? match[1].toLowerCase() : 'sans'
+}
+
+// The shape chosen for the cover, read off the `[image=…]` marker. "natural" is the default, so a body
+// with no marker at all (an older post) is not silently cropped the first time it is opened.
+export function imageRatioOf(input) {
+  const match = IMAGE_RE.exec(String(input ?? ''))
+  return match && match[1] ? match[1].toLowerCase() : 'natural'
 }
 
 // The allow-lists behind the editor's three dropdowns. Exported so the toolbar offers exactly the
@@ -171,8 +189,10 @@ export function parseRichText(input) {
       continue
     }
 
-    if (IMAGE_RE.test(line)) {
-      blocks.push({ type: 'image' })
+    const image = IMAGE_RE.exec(line)
+    if (image) {
+      const ratio = (image[1] ?? 'natural').toLowerCase()
+      blocks.push({ type: 'image', ratio })
       i += 1
       continue
     }
@@ -240,7 +260,7 @@ export function parseRichText(input) {
 export function richTextPlain(input) {
   return String(input ?? '')
     .replace(/\r\n?/g, '\n')
-    .replace(/^\s*\[image\]\s*$/gim, ' ')
+    .replace(/^\s*\[image(?:=[a-z0-9:]+)?\]\s*$/gim, ' ')
     .replace(/^\s*\[body=(?:serif|sans)\]\s*$/gim, ' ')
     .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, '$1')
     .replace(/\*\*([^*\n]+)\*\*/g, '$1')
