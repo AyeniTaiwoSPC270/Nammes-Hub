@@ -6,7 +6,7 @@
 // AND below a picture -- the ULES-news layout. With no marker the photo goes at the top, which is what
 // every post did before this existed, so old rows look unchanged.
 import { Fragment } from 'react'
-import { parseRichText } from '../../lib/richText'
+import { bodyFontOf, parseRichText } from '../../lib/richText'
 import { linkifyText } from '../../lib/linkify'
 
 // Sizes are relative, so the same `[size=lg]` step reads right in a paragraph and in a heading.
@@ -66,10 +66,22 @@ function CoverImage({ src, widthPct }) {
 export default function RichBody({ text, cover = null, imageWidthPct = 100, className = '' }) {
   const blocks = parseRichText(text)
   const hasMarker = blocks.some((block) => block.type === 'image')
+  // A serif body is the per-post choice; headings stay Public Sans so the two faces contrast the way
+  // an editorial page expects instead of turning the whole article into a book page.
+  const serif = bodyFontOf(text) === 'serif'
   let imageDrawn = false
+  let ledeDrawn = false
 
   return (
-    <div className={['flex flex-col gap-4 text-[17px] leading-[1.75] text-ink', className].filter(Boolean).join(' ')}>
+    <div
+      className={[
+        'flex flex-col gap-4 leading-[1.75] text-ink',
+        serif ? 'font-article-serif text-[18.5px]' : 'text-[18px]',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {cover && !hasMarker && <CoverImage src={cover} widthPct={imageWidthPct} />}
 
       {blocks.map((block, index) => {
@@ -88,8 +100,8 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
               key={index}
               className={
                 block.level === 1 || block.level === 2
-                  ? 'mt-2 text-2xl font-bold leading-snug text-ink-900'
-                  : 'mt-1 text-xl font-bold leading-snug text-ink-900'
+                  ? 'mt-2 font-display text-2xl font-bold leading-snug text-ink-900'
+                  : 'mt-1 font-display text-xl font-bold leading-snug text-ink-900'
               }
             >
               <Inline segments={block.segments} />
@@ -101,7 +113,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
           return (
             <blockquote
               key={index}
-              className="border-l-4 border-brand-orange pl-4 text-lg italic leading-relaxed text-ink-900"
+              className="border-l-4 border-brand-orange pl-4 font-display text-lg italic leading-relaxed text-ink-900"
             >
               <Inline segments={block.segments} />
             </blockquote>
@@ -127,8 +139,19 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
           )
         }
 
+        // The opening paragraph is set as a lede and carries the drop cap (`.article-lede` in
+        // index.css). Only the first one: a paragraph after an [image] line is still the opening text.
+        const lede = !ledeDrawn
+        ledeDrawn = true
         return (
-          <p key={index} className="whitespace-pre-line">
+          <p
+            key={index}
+            className={
+              lede
+                ? 'article-lede whitespace-pre-line text-[1.06em] font-medium leading-[1.7] text-ink-900'
+                : 'whitespace-pre-line'
+            }
+          >
             <Inline segments={block.segments} />
           </p>
         )

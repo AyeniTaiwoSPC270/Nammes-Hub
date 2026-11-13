@@ -12,7 +12,12 @@ function EventSection({ heading, events, theme }) {
   if (events.length === 0) return null
   return (
     <Reveal as="section">
-      <h2 className="mb-5 text-2xl font-bold text-ink-900">{heading}</h2>
+      {/* The same orange rule as the article masthead's eyebrow, so the listing and the event page read as
+          one publication rather than a grid that happens to link to articles. */}
+      <h2 className="mb-5 flex items-center gap-3 font-display text-2xl font-bold text-ink-900">
+        <span aria-hidden="true" className="h-5 w-1 rounded-full bg-brand-orange" />
+        {heading}
+      </h2>
       <ContentGrid theme={theme}>
         {events.map((event, i) => (
           <Reveal key={event.id} delay={staggerDelay(theme, i)}>

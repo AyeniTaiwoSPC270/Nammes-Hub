@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseRichText, richTextPlain } from './richText'
+import { bodyFontOf, parseRichText, readingMinutes, richTextPlain } from './richText'
 
 const types = (text) => parseRichText(text).map((b) => b.type)
 
@@ -78,6 +78,12 @@ describe('parseRichText', () => {
     expect(parseRichText('[color=red]oops')[0].segments).toEqual([{ text: '[color=red]oops' }])
   })
 
+  it('drops the body-font directive instead of rendering it as a paragraph', () => {
+    expect(types('[body=serif]\n\nWelcome')).toEqual(['paragraph'])
+    expect(bodyFontOf('[body=serif]\n\nWelcome')).toBe('serif')
+    expect(bodyFontOf('Welcome')).toBe('sans')
+  })
+
   it('turns [image] on its own line into an image block', () => {
     expect(types('Intro\n\n[image]\n\nRest')).toEqual(['paragraph', 'image', 'paragraph'])
     expect(types('  [IMAGE]  ')).toEqual(['image'])
@@ -99,6 +105,10 @@ describe('richTextPlain', () => {
     expect(richTextPlain('A [color=orange][size=lg]big[/size][/color] [u]word[/u]')).toBe('A big word')
   })
 
+  it('does not put the body-font directive in a description', () => {
+    expect(richTextPlain('[body=serif]\n\nHello there')).toBe('Hello there')
+  })
+
   it('drops the image placeholder', () => {
     expect(richTextPlain('Before\n\n[image]\n\nAfter')).toBe('Before After')
   })
@@ -106,5 +116,17 @@ describe('richTextPlain', () => {
   it('collapses whitespace and handles null', () => {
     expect(richTextPlain(' a   b\nc ')).toBe('a b c')
     expect(richTextPlain(null)).toBe('')
+  })
+})
+
+describe('readingMinutes', () => {
+  it('counts the prose, ignoring markup and the photo placeholder', () => {
+    const words = Array.from({ length: 440 }, () => 'word').join(' ')
+    expect(readingMinutes(`[body=serif]\n\n[image]\n\n## Title\n\n${words}`)).toBe(2)
+  })
+
+  it('never reports less than a minute', () => {
+    expect(readingMinutes('')).toBe(1)
+    expect(readingMinutes('Three words only')).toBe(1)
   })
 })

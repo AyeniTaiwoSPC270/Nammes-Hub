@@ -197,6 +197,17 @@
   overflow: hidden;
 }
 
+/* The opening paragraph of an article, and the only drop cap on the site. The cap takes the article's
+   accent rather than a fixed orange so it follows the look an admin chose for the News page. */
+.article-lede::first-letter {
+  float: left;
+  margin: 0.08em 0.14em 0 0;
+  font-size: 3.2em;
+  font-weight: 700;
+  line-height: 0.78;
+  color: var(--color-brand-orange);
+}
+
 /* A fixed desktop column count is the one setting that must not reach a phone: three 370px cards do not fit
    on a 375px screen, and a settings-driven grid that did so would push the whole page sideways. */
 @media (max-width: 639px) {

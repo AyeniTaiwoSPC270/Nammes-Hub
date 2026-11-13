@@ -17,6 +17,7 @@
 //   [color=muted|brand|orange|red]...[/color]
 //   [font=serif|mono]...[/font]
 //   [image]         -> the post's cover photo, so the admin decides where it sits
+//   [body=serif]    -> a directive line: sets the whole article's body face ("sans" is the default)
 //
 // The wrappers nest, and nest with the inline markers, so a heading can hold a bold orange word:
 //   ## A [color=orange]**bold** word[/color]
@@ -31,6 +32,19 @@ const QUOTE_RE = /^>\s?(.*)$/
 const BULLET_RE = /^\s*[-*+]\s+(.*)$/
 const NUMBERED_RE = /^\s*\d+[.)]\s+(.*)$/
 const IMAGE_RE = /^\s*\[image\]\s*$/i
+const BODY_FONT_RE = /^\s*\[body=(serif|sans)\]\s*$/im
+
+// The article's body face, chosen per post. It is a directive line rather than a wrapper because a
+// wrapper could not span paragraphs -- `parseInline` runs one block at a time.
+export const BODY_FONTS = [
+  { value: 'sans', label: 'Sans (default)' },
+  { value: 'serif', label: 'Serif' },
+]
+
+export function bodyFontOf(input) {
+  const match = BODY_FONT_RE.exec(String(input ?? ''))
+  return match ? match[1].toLowerCase() : 'sans'
+}
 
 // The allow-lists behind the editor's three dropdowns. Exported so the toolbar offers exactly the
 // values the parser accepts, rather than a second copy that can drift out of agreement.
@@ -152,6 +166,11 @@ export function parseRichText(input) {
       continue
     }
 
+    if (BODY_FONT_RE.test(line)) {
+      i += 1
+      continue
+    }
+
     if (IMAGE_RE.test(line)) {
       blocks.push({ type: 'image' })
       i += 1
@@ -195,6 +214,7 @@ export function parseRichText(input) {
     while (
       i < lines.length &&
       lines[i].trim() &&
+      !BODY_FONT_RE.test(lines[i]) &&
       !IMAGE_RE.test(lines[i]) &&
       !HEADING_RE.test(lines[i]) &&
       !QUOTE_RE.test(lines[i]) &&
@@ -221,6 +241,7 @@ export function richTextPlain(input) {
   return String(input ?? '')
     .replace(/\r\n?/g, '\n')
     .replace(/^\s*\[image\]\s*$/gim, ' ')
+    .replace(/^\s*\[body=(?:serif|sans)\]\s*$/gim, ' ')
     .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, '$1')
     .replace(/\*\*([^*\n]+)\*\*/g, '$1')
     .replace(/\*([^*\n]+)\*/g, '$1')
@@ -231,4 +252,15 @@ export function richTextPlain(input) {
     .replace(/^\s*(?:[-*+]|\d+[.)])\s+/gm, '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+/**
+ * How many minutes the article takes to read, never less than one.
+ *
+ * 220 words a minute is the usual figure for adult prose; the number is decoration on an article page,
+ * so it is rounded rather than shown as a range.
+ */
+export function readingMinutes(input, wordsPerMinute = 220) {
+  const words = richTextPlain(input).split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(words / wordsPerMinute))
 }
