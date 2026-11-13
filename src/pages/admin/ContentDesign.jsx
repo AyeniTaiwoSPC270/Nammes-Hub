@@ -524,7 +524,7 @@ function ContentPreview({ page, theme, news, events, newsState, eventsState }) {
     <ContentFeed theme={theme} featured={lead}>
       {items.map((item) => (
         <PreviewCard key={item.id}>
-          <NewsCard item={item} theme={theme} />
+          <NewsCard item={item} theme={theme} excerpt={item.body} showDate />
         </PreviewCard>
       ))}
     </ContentFeed>

@@ -146,10 +146,11 @@ export function EventCard({ event, theme }) {
 }
 
 /**
- * One news item. `excerpt` is passed only by Home, which shows a body preview and a "Read more" link;
- * /news shows the date instead, so an excerpt prop rather than a guess at which page this is.
+ * One news item. `excerpt` is the body preview Home and /news both show; `showDate` is what /news keeps
+ * underneath it. It defaults to the date-only card (a related-news card on an article page, for instance)
+ * so a caller that passes no excerpt looks exactly as it always has.
  */
-export function NewsCard({ item, theme, excerpt = '' }) {
+export function NewsCard({ item, theme, excerpt = '', showDate = !excerpt }) {
   const videoEnabled = useNewsVideoFlag()
   const settings = useContentSettingsQuery().data
   const video = resolveNewsVideo(item, videoEnabled, settings)
@@ -169,11 +170,10 @@ export function NewsCard({ item, theme, excerpt = '' }) {
           {item.badge_tone && <Badge tone={item.badge_tone}>{item.badge_label}</Badge>}
         </div>
         <h3 className={['content-card-title content-clamp m-0 font-bold', text.title].join(' ')}>{item.title}</h3>
-        {excerpt ? (
+        {excerpt && (
           <p className={['content-clamp text-base leading-relaxed', text.body].join(' ')}>{richTextPlain(excerpt)}</p>
-        ) : (
-          <p className={['mt-auto text-sm', text.meta].join(' ')}>{item.date}</p>
         )}
+        {showDate && <p className={['mt-auto text-sm', text.meta].join(' ')}>{item.date}</p>}
         <span className={['inline-flex items-center gap-1 text-sm font-bold', text.action].join(' ')}>
           Read more
           <span className="material-symbols-outlined text-[16px]">arrow_forward</span>

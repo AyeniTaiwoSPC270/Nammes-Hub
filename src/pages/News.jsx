@@ -81,7 +81,7 @@ export default function News() {
           <ContentFeed theme={theme} featured={first ? <Reveal><NewsFeatureCard item={first} theme={theme} /></Reveal> : null}>
             {rest.map((item, i) => (
               <Reveal key={item.id} delay={staggerDelay(theme, i)}>
-                <NewsCard item={item} theme={theme} />
+                <NewsCard item={item} theme={theme} excerpt={item.body} showDate />
               </Reveal>
             ))}
           </ContentFeed>
