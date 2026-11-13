@@ -14,6 +14,11 @@ export function whatsappUrl(text, path) {
   return `https://wa.me/?text=${encodeURIComponent(`${text} ${absoluteUrl(path)}`.trim())}`
 }
 
+/** X (Twitter) composes the text and the URL as two fields, so each is escaped on its own. */
+export function xUrl(text, path) {
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(absoluteUrl(path))}`
+}
+
 /**
  * Hand the link to the phone's share sheet.
  *

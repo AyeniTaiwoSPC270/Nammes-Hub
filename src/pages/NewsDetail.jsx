@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
 import Badge from '../components/ui/Badge'
 import ErrorState from '../components/ui/ErrorState'
@@ -8,12 +8,16 @@ import { SkeletonText } from '../components/ui/Skeleton'
 import { ContentGrid, ContentLook, NewsCard } from '../components/content/ContentCards'
 import ArticleHero from '../components/content/ArticleHero'
 import RichBody from '../components/content/RichBody'
-import { readingMinutes } from '../lib/richText'
+import { editorOf, readingMinutes, summaryOf } from '../lib/richText'
 import { useNewsQuery, getNewsByKey, resolveNewsVideo, useNewsVideoFlag, useNewsShareFlag } from '../data/news'
-import { shareArticle, copyLink, whatsappUrl } from '../lib/share'
+import { shareArticle, copyLink, whatsappUrl, xUrl } from '../lib/share'
+import { WhatsAppIcon, XIcon } from '../components/SocialIcons'
 import { youtubeEmbedUrl, youtubeThumbUrl } from '../lib/newsVideo'
 import { usePageLook } from '../data/contentLooks'
 import { useToast } from '../lib/ToastContext'
+
+const SHARE_ICON_CLASS =
+  'flex h-9 w-9 items-center justify-center rounded-full border border-hairline text-ink-muted transition-colors hover:border-brand hover:text-brand'
 
 // "Dr. A. Bello" reads as "AB", not "DA": the last two words, so an honorific never becomes the avatar.
 function initials(name) {
@@ -110,97 +114,71 @@ function NewsVideo({ video, cover }) {
 }
 
 /**
- * The share control: the phone's own sheet where one exists, with Copy link and WhatsApp beside it.
- * Rendered as a menu rather than three buttons because on a phone the sheet is the whole point and
- * two more buttons would crowd the footer of every article.
+ * The share row: label plus round targets, on the article's own footer line. The phone's own sheet is
+ * offered alongside the named networks rather than hidden behind a menu -- at the end of an article a
+ * reader is deciding where to send it, so the destinations should be visible.
  */
 function ArticleShare({ title, path }) {
   const toast = useToast()
-  const [open, setOpen] = useState(false)
-  const wrapRef = useRef(null)
   const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
-  useEffect(() => {
-    if (!open) return undefined
-    function onKeyDown(e) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    function onPointerDown(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('pointerdown', onPointerDown)
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('pointerdown', onPointerDown)
-    }
-  }, [open])
+  function handleX() {
+    window.open(xUrl(title, path), '_blank', 'noopener,noreferrer')
+  }
 
-  async function handleNative() {
-    setOpen(false)
-    const result = await shareArticle({ title, path })
-    if (result.reason === 'error') toast.error('Could not open the share sheet.')
+  function handleWhatsApp() {
+    window.open(whatsappUrl(title, path), '_blank', 'noopener,noreferrer')
   }
 
   async function handleCopy() {
-    setOpen(false)
     const copied = await copyLink(path)
     if (copied) toast.success('Link copied to clipboard.')
     else toast.error('Could not copy the link — copy it from the address bar.')
   }
 
-  function handleWhatsApp() {
-    setOpen(false)
-    window.open(whatsappUrl(title, path), '_blank', 'noopener,noreferrer')
+  async function handleNative() {
+    const result = await shareArticle({ title, path })
+    if (result.reason === 'error') toast.error('Could not open the share sheet.')
   }
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div className="flex flex-wrap items-center gap-2.5">
+      <span className="mr-1 text-[11px] font-bold uppercase tracking-[.12em] text-ink-muted">Share to</span>
+      <button type="button" onClick={handleX} aria-label="Share on X" title="Share on X" className={SHARE_ICON_CLASS}>
+        <XIcon className="h-4 w-4" />
+      </button>
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-muted transition-colors hover:text-brand-orange"
+        onClick={handleWhatsApp}
+        aria-label="Share on WhatsApp"
+        title="Share on WhatsApp"
+        className={SHARE_ICON_CLASS}
       >
-        <span className="material-symbols-outlined text-base" aria-hidden="true">
-          share
-        </span>
-        Share
+        <WhatsAppIcon className="h-4 w-4" />
       </button>
-
-      {open && (
-        <div role="menu" className="absolute bottom-full left-0 z-20 mb-2 w-48 rounded-lg border border-hairline bg-surface p-1 shadow-md">
-          {canNativeShare && (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={handleNative}
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-ink-900 hover:bg-surface-low"
-            >
-              <span className="material-symbols-outlined text-base" aria-hidden="true">share</span>
-              Share…
-            </button>
-          )}
-          <button
-            type="button"
-            role="menuitem"
-            onClick={handleCopy}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-ink-900 hover:bg-surface-low"
-          >
-            <span className="material-symbols-outlined text-base" aria-hidden="true">content_copy</span>
-            Copy link
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={handleWhatsApp}
-            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-semibold text-ink-900 hover:bg-surface-low"
-          >
-            <span className="material-symbols-outlined text-base" aria-hidden="true">campaign</span>
-            WhatsApp
-          </button>
-        </div>
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label="Copy link"
+        title="Copy link"
+        className={SHARE_ICON_CLASS}
+      >
+        <span className="material-symbols-outlined text-lg" aria-hidden="true">
+          link
+        </span>
+      </button>
+      {canNativeShare && (
+        <button
+          type="button"
+          onClick={handleNative}
+          aria-label="More share options"
+          title="More share options"
+          className={SHARE_ICON_CLASS}
+        >
+          <span className="material-symbols-outlined text-lg" aria-hidden="true">
+            share
+          </span>
+        </button>
       )}
     </div>
   )
@@ -254,6 +232,8 @@ export default function NewsDetail() {
   // done its job on the card that got the reader here. At the bottom, the cover keeps its usual slot.
   const showCover = Boolean(post.image_url) && !(video && video.position === 'top')
   const minutes = readingMinutes(post.body)
+  const summary = summaryOf(post.body)
+  const editor = editorOf(post.body)
 
   // Same section first, then whatever is newest, always three: one related story in a three-column
   // grid leaves two empty columns and reads as a mistake.
@@ -270,13 +250,14 @@ export default function NewsDetail() {
           title={post.title}
           date={post.date}
           minutes={minutes}
+          summary={summary}
           badge={post.badge_tone ? <Badge tone={post.badge_tone}>{post.badge_label}</Badge> : null}
         />
 
         {/* One readable column, and the article's own actions share its measure. The cover is drawn by
             the body, either at its `[image]` line or above the first paragraph, at the column's width,
             in its own proportions unless an admin chose a shape. */}
-        <article className="mx-auto mt-8 max-w-[840px]">
+        <article className="mx-auto mt-8 max-w-[1000px]">
           {video && video.position === 'top' && <NewsVideo video={video} cover={post.image_url} />}
 
           <Reveal>
@@ -291,8 +272,8 @@ export default function NewsDetail() {
 
           {/* The credits, then the share row: the reader has finished the piece by the time they reach
               these, so they sit after the prose rather than at the top of the page. */}
-          <div className="mt-10">
-            <div className="content-radius flex items-center gap-3 bg-surface-low px-5 py-4">
+          <div className="mx-auto mt-10 max-w-[720px]">
+            <div className="content-radius flex flex-wrap items-center gap-x-10 gap-y-3 bg-surface-low px-5 py-4">
               <span
                 aria-hidden="true"
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-900 text-sm font-bold text-white"
@@ -305,6 +286,14 @@ export default function NewsDetail() {
                 </div>
                 <div className="text-sm font-semibold text-ink-900">{post.author || 'Nammes Hub'}</div>
               </div>
+              {editor && (
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[.08em] text-ink-muted">
+                    Editor
+                  </div>
+                  <div className="text-sm font-semibold text-ink-900">{editor}</div>
+                </div>
+              )}
             </div>
 
             {shareEnabled && (
@@ -314,7 +303,7 @@ export default function NewsDetail() {
             )}
           </div>
 
-          <div className="mt-6">
+          <div className="mx-auto mt-6 max-w-[720px]">
             <ReportProblem title={post.title} />
           </div>
         </article>
