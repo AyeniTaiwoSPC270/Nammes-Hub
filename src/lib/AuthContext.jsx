@@ -15,8 +15,15 @@ async function signOutIfDisabled(userId, navigate) {
 
 function touchLastSeenOnce() {
   if (sessionStorage.getItem('nammes_last_seen_touched')) return
-  sessionStorage.setItem('nammes_last_seen_touched', '1')
-  supabase.rpc('touch_last_seen')
+  // A Postgrest builder is lazy: the request is only dispatched from `.then()`, so a bare
+  // `supabase.rpc(...)` never reaches the server. Mark the session only once it succeeded, so a
+  // failed call is retried on the next auth event instead of suppressing it for the whole tab.
+  supabase
+    .rpc('touch_last_seen')
+    .then(({ error }) => {
+      if (!error) sessionStorage.setItem('nammes_last_seen_touched', '1')
+    })
+    .catch(() => {})
 }
 
 export function AuthProvider({ children }) {
