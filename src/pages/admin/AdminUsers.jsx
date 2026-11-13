@@ -13,6 +13,11 @@ function formatDate(value) {
   return value ? new Date(value).toLocaleDateString() : '—'
 }
 
+// Activity is judged in days but an admin asking "when was this account last on?" needs the hour too.
+function formatDateTime(value) {
+  return value ? new Date(value).toLocaleString() : '—'
+}
+
 export default function AdminUsers() {
   const { user } = useAuth()
   const usersQuery = useAllUsersQuery()
@@ -102,7 +107,7 @@ export default function AdminUsers() {
               u.full_name || '—',
               u.student_id,
               formatDate(u.created_at),
-              formatDate(u.last_seen_at),
+              formatDateTime(u.last_seen_at),
               <Badge key="status" tone={u.active ? 'updated' : 'neutral'}>
                 {u.active ? 'Active' : 'Inactive'}
               </Badge>,
