@@ -15,6 +15,7 @@ import {
   bodyFontOf,
   editorOf,
   imageRatioOf,
+  readMinutesOf,
   summaryOf,
 } from '../../lib/richText'
 import RichBody from '../content/RichBody'
@@ -24,6 +25,7 @@ const CLOSERS = { size: '[/size]', color: '[/color]', font: '[/font]' }
 const SELECT_CLASS = 'h-7 rounded-sm border border-hairline bg-surface px-1 text-xs font-semibold text-ink-muted'
 const BODY_DIRECTIVE_RE = /^\s*\[body=(?:serif|sans)\]\s*\n*/i
 const IMAGE_MARKER_RE = /^[ \t]*\[image(?:=[^\]\n]+)?\][ \t]*$/im
+const READ_TIME_RE = /^\s*\[read=\d{1,3}\]\s*\n*/im
 
 export default function RichTextField({ label, value, onChange, coverUrl = '', required = false }) {
   const ref = useRef(null)
@@ -119,6 +121,15 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
     const bodyAt = lines.findIndex((line) => BODY_DIRECTIVE_RE.test(line))
     lines.splice(bodyAt + 1, 0, marker, '')
     onChange(lines.join('\n'))
+  }
+
+  // Optional by design: an empty box removes the directive and the article falls back to the word-count
+  // estimate, so no post is ever obliged to state a time. Rewritten rather than appended, so typing 4
+  // over 3 does not leave both.
+  function setReadMinutes(raw) {
+    const minutes = Math.round(Number(raw))
+    const plain = String(value).replace(READ_TIME_RE, '').replace(/^\n+/, '')
+    onChange(minutes >= 1 && minutes <= 999 ? `[read=${minutes}]\n${plain}` : plain)
   }
 
   // The whole-article face is a directive line rather than a wrapper, because a wrapper cannot span
@@ -252,6 +263,27 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
                 </option>
               ))}
             </select>
+
+            {/* The reading time is decoration on the article page, so it is a hint the admin can correct
+                or ignore rather than a field they must fill. Blank means "work it out from the words". */}
+            <label className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[.1em] text-ink-muted">
+              Read
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max="999"
+                aria-label="Reading time in minutes"
+                value={readMinutesOf(value) ?? ''}
+                onChange={(event) => {
+                  if (preview) setPreview(false)
+                  setReadMinutes(event.target.value)
+                }}
+                placeholder="auto"
+                className="h-7 w-16 rounded-sm border border-hairline bg-surface px-1 text-xs font-semibold text-ink focus:outline-none"
+              />
+              min
+            </label>
           </div>
         </div>
 
@@ -301,7 +333,8 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
       <span className="text-xs text-ink-muted">
         Select text before choosing a size, colour or font so the style wraps just that text; Body sets the whole
         article and Photo its cover shape. The standfirst sits under the headline and the editor joins the writer
-        in the credit box. Leave a blank line between paragraphs. Put <code>[image]</code> on its own line to
+        in the credit box. Read is the minutes shown beside the date — leave it blank to work the time out from
+        the word count. Leave a blank line between paragraphs. Put <code>[image]</code> on its own line to
         place the photo there; without it the photo sits above the text.
       </span>
     </div>

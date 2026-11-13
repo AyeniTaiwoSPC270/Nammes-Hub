@@ -18,6 +18,7 @@
 //   [font=serif|mono]...[/font]
 //   [image]         -> the post's cover photo, so the admin decides where it sits
 //   [body=serif]    -> a directive line: sets the whole article's body face ("sans" is the default)
+//   [read=4]        -> a directive line: the reading time the admin set, instead of the estimate
 //
 // The wrappers nest, and nest with the inline markers, so a heading can hold a bold orange word:
 //   ## A [color=orange]**bold** word[/color]
@@ -44,6 +45,11 @@ export const IMAGE_SHAPES = [
 const IMAGE_SHAPE_VALUES = IMAGE_SHAPES.map((shape) => shape.value).join('|')
 const IMAGE_RE = new RegExp(`^\\s*\\[image(?:=(${IMAGE_SHAPE_VALUES}))?\\]\\s*$`, 'im')
 const BODY_FONT_RE = /^\s*\[body=(serif|sans)\]\s*$/im
+// Reading time is optional: an admin who knows the piece is a two-minute note can say so, and one who
+// leaves it alone gets the word-count estimate. Kept as a directive for the same reason as the
+// standfirst -- `news`/`events` have no column for it and a new one would be dropped from the review
+// queue's column list.
+const READ_TIME_RE = /^\s*\[read=(\d{1,3})\]\s*$/im
 // The standfirst and the editor's name are one-line directives rather than columns: `news` has no
 // summary or editor field, and a column added for them would be dropped from every queued non-owner
 // edit (apply_change_request enumerates the table's columns).
@@ -67,6 +73,14 @@ export function bodyFontOf(input) {
 export function imageRatioOf(input) {
   const match = IMAGE_RE.exec(String(input ?? ''))
   return match && match[1] ? match[1].toLowerCase() : 'natural'
+}
+
+/** The reading time an admin set, or null when the post uses the estimate. */
+export function readMinutesOf(input) {
+  const match = READ_TIME_RE.exec(String(input ?? ''))
+  if (!match) return null
+  const minutes = Number(match[1])
+  return minutes > 0 ? minutes : null
 }
 
 function directiveText(input, tag) {
@@ -218,7 +232,7 @@ export function parseRichText(input) {
     }
 
     // These directives are read by the page, never drawn as prose.
-    if (SUMMARY_RE.test(line) || EDITOR_RE.test(line)) {
+    if (SUMMARY_RE.test(line) || EDITOR_RE.test(line) || READ_TIME_RE.test(line)) {
       i += 1
       continue
     }
@@ -263,6 +277,7 @@ export function parseRichText(input) {
       !BODY_FONT_RE.test(lines[i]) &&
       !SUMMARY_RE.test(lines[i]) &&
       !EDITOR_RE.test(lines[i]) &&
+      !READ_TIME_RE.test(lines[i]) &&
       !IMAGE_RE.test(lines[i]) &&
       !HEADING_RE.test(lines[i]) &&
       !QUOTE_RE.test(lines[i]) &&
@@ -290,6 +305,7 @@ export function richTextPlain(input) {
     .replace(/\r\n?/g, '\n')
     .replace(/^\s*\[image(?:=[a-z0-9:]+)?\]\s*$/gim, ' ')
     .replace(/^\s*\[body=(?:serif|sans)\]\s*$/gim, ' ')
+    .replace(/^\s*\[read=\d{1,3}\]\s*$/gim, ' ')
     .replace(/\[(?:summary|editor)\][\s\S]*?\[\/(?:summary|editor)\]/gi, ' ')
     .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, '$1')
     .replace(/\*\*([^*\n]+)\*\*/g, '$1')
@@ -307,9 +323,12 @@ export function richTextPlain(input) {
  * How many minutes the article takes to read, never less than one.
  *
  * 220 words a minute is the usual figure for adult prose; the number is decoration on an article page,
- * so it is rounded rather than shown as a range.
+ * so it is rounded rather than shown as a range. An admin's `[read=N]` wins over the estimate, because a
+ * short announcement padded with a poster and a quote reads faster than its word count admits.
  */
 export function readingMinutes(input, wordsPerMinute = 220) {
+  const set = readMinutesOf(input)
+  if (set) return set
   const words = richTextPlain(input).split(/\s+/).filter(Boolean).length
   return Math.max(1, Math.round(words / wordsPerMinute))
 }

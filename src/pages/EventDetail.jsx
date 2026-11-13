@@ -10,6 +10,7 @@ import ReportProblem from '../components/ReportProblem'
 import { ContentGrid, ContentLook, EventCard } from '../components/content/ContentCards'
 import ArticleHero from '../components/content/ArticleHero'
 import RichBody from '../components/content/RichBody'
+import { readingMinutes } from '../lib/richText'
 
 const CARD_STAGGER = 0.06
 const MAX_STAGGER_DELAY = 0.3
@@ -85,6 +86,7 @@ export default function EventDetail() {
           eyebrow="Event"
           title={event.title}
           date={event.date}
+          minutes={readingMinutes(event.description)}
           meta={event.meta ? [event.meta] : []}
         />
 

@@ -4,6 +4,7 @@ import {
   editorOf,
   imageRatioOf,
   parseRichText,
+  readMinutesOf,
   readingMinutes,
   richTextPlain,
   summaryOf,
@@ -157,5 +158,24 @@ describe('readingMinutes', () => {
   it('never reports less than a minute', () => {
     expect(readingMinutes('')).toBe(1)
     expect(readingMinutes('Three words only')).toBe(1)
+  })
+
+  it("uses the admin's own minutes when they set one", () => {
+    const words = Array.from({ length: 440 }, () => 'word').join(' ')
+    expect(readingMinutes(`[read=7]\n\n${words}`)).toBe(7)
+    expect(readMinutesOf(`[read=7]\n\n${words}`)).toBe(7)
+  })
+
+  it('is optional: no directive means the estimate, not zero', () => {
+    expect(readMinutesOf('A plain body')).toBeNull()
+    expect(readingMinutes('A plain body')).toBe(1)
+    expect(readMinutesOf('[read=0]')).toBeNull()
+  })
+
+  it('never draws the read-time line as prose', () => {
+    expect(parseRichText('[read=3]\n\nHello')).toEqual([
+      { type: 'paragraph', segments: [{ text: 'Hello' }] },
+    ])
+    expect(richTextPlain('[read=3]\n\nHello')).toBe('Hello')
   })
 })
