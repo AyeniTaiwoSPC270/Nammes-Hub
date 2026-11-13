@@ -59,7 +59,8 @@ function Inline({ segments }) {
  *
  * A natural-shape picture is also capped by height and centred, not cropped: a portrait poster at the
  * column's full width would be taller than the screen on desktop, so the cap shrinks it and leaves the
- * whole picture showing. `w-fit` keeps the frame wrapped round the photo, so no empty bars appear.
+ * whole picture showing. The frame keeps the column's width and paints no background in that case, as a
+ * `w-fit` frame measured the photo's untrimmed width and left a grey slab beside the capped picture.
  */
 function CoverImage({ src, widthPct, ratio = 'natural' }) {
   if (!src) return null
@@ -67,10 +68,7 @@ function CoverImage({ src, widthPct, ratio = 'natural' }) {
   const shape = SHAPE_CLASS[ratio]
   return (
     <figure
-      className={[
-        'content-radius overflow-hidden bg-surface-low',
-        shape ? shape : 'mx-auto w-fit max-w-full',
-      ]
+      className={['content-radius overflow-hidden', shape ? `bg-surface-low ${shape}` : 'mx-auto max-w-full']
         .filter(Boolean)
         .join(' ')}
       style={width >= 30 && width <= 100 ? { width: `${width}%` } : undefined}
@@ -79,7 +77,11 @@ function CoverImage({ src, widthPct, ratio = 'natural' }) {
         src={src}
         decoding="async"
         alt=""
-        className={shape ? 'h-full w-full object-cover' : 'block h-auto max-h-[68vh] w-auto max-w-full'}
+        className={
+          shape
+            ? 'h-full w-full object-cover'
+            : 'mx-auto block h-auto max-h-[68vh] w-auto max-w-full'
+        }
       />
     </figure>
   )
