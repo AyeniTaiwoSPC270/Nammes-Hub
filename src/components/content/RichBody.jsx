@@ -53,9 +53,13 @@ function Inline({ segments }) {
 /**
  * The cover photo.
  *
- * It keeps its own proportions: the 720px column is what stops a wide desktop photo from filling the
- * screen now, so cropping to a fixed ratio would only cut the top and bottom off a poster an admin
- * uploaded whole. `image_width_pct` still narrows it (the News editor's drag handle writes it).
+ * It keeps its own proportions: the article's own measure is what stops a wide desktop photo from
+ * filling the screen, so cropping to a fixed ratio would only cut the top and bottom off a poster an
+ * admin uploaded whole. `image_width_pct` still narrows it (the News editor's drag handle writes it).
+ *
+ * A natural-shape picture is also capped by height and centred, not cropped: a portrait poster at the
+ * column's full width would be taller than the screen on desktop, so the cap shrinks it and leaves the
+ * whole picture showing. `w-fit` keeps the frame wrapped round the photo, so no empty bars appear.
  */
 function CoverImage({ src, widthPct, ratio = 'natural' }) {
   if (!src) return null
@@ -63,14 +67,19 @@ function CoverImage({ src, widthPct, ratio = 'natural' }) {
   const shape = SHAPE_CLASS[ratio]
   return (
     <figure
-      className={['content-radius overflow-hidden bg-surface-low', shape].filter(Boolean).join(' ')}
+      className={[
+        'content-radius overflow-hidden bg-surface-low',
+        shape ? shape : 'mx-auto w-fit max-w-full',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={width >= 30 && width <= 100 ? { width: `${width}%` } : undefined}
     >
       <img
         src={src}
         decoding="async"
         alt=""
-        className={shape ? 'h-full w-full object-cover' : 'block h-auto w-full'}
+        className={shape ? 'h-full w-full object-cover' : 'block h-auto max-h-[68vh] w-auto max-w-full'}
       />
     </figure>
   )
@@ -116,8 +125,8 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
               key={index}
               className={
                 block.level === 1 || block.level === 2
-                  ? 'mx-auto mt-2 w-full max-w-[720px] font-display text-2xl font-bold leading-snug text-ink-900'
-                  : 'mx-auto mt-1 w-full max-w-[720px] font-display text-xl font-bold leading-snug text-ink-900'
+                  ? 'mt-2 w-full font-display text-2xl font-bold leading-snug text-ink-900'
+                  : 'mt-1 w-full font-display text-xl font-bold leading-snug text-ink-900'
               }
             >
               <Inline segments={block.segments} />
@@ -131,7 +140,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
             // accent rule doing the attribution work.
             <blockquote
               key={index}
-              className="mx-auto my-2 w-full max-w-[720px] border-l-4 border-brand-orange pl-5 font-display text-[1.45em] font-bold leading-snug text-ink-900"
+              className="my-2 w-full border-l-4 border-brand-orange pl-5 font-display text-[1.45em] font-bold leading-snug text-ink-900"
             >
               <Inline segments={block.segments} />
             </blockquote>
@@ -144,7 +153,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
             <Tag
               key={index}
               className={[
-                'mx-auto w-full max-w-[720px] space-y-2 pl-5',
+                'w-full space-y-2 pl-5',
                 block.ordered ? 'list-decimal' : 'list-disc',
               ].join(' ')}
             >
@@ -158,7 +167,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
         }
 
         return (
-          <p key={index} className="mx-auto w-full max-w-[720px] whitespace-pre-line">
+          <p key={index} className="w-full whitespace-pre-line">
             <Inline segments={block.segments} />
           </p>
         )

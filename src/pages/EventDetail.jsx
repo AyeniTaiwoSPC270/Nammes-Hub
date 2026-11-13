@@ -88,10 +88,11 @@ export default function EventDetail() {
           meta={event.meta ? [event.meta] : []}
         />
 
-        {/* The details share the article's measure; the gallery below keeps the full page width
-            because a photo grid is the one thing on this screen that benefits from it. */}
-        <div className="mx-auto max-w-[1000px]">
-          <div className="mx-auto mt-6 flex max-w-[720px] gap-2 border-b border-hairline">
+        {/* The details share the article's measure -- one column for the headline, the cover and the text --
+            and the gallery below keeps the full page width because a photo grid is the one thing on this
+            screen that benefits from it. */}
+        <div className="mx-auto max-w-[720px]">
+          <div className="mt-6 flex gap-2 border-b border-hairline">
             <button
               type="button"
               onClick={() => setTab('details')}
