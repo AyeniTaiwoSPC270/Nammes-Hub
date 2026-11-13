@@ -6,7 +6,16 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 
-export default function ArticleHero({ back = null, eyebrow, title, date, minutes = null, meta = [], badge = null }) {
+export default function ArticleHero({
+  back = null,
+  eyebrow,
+  title,
+  summary = '',
+  date,
+  minutes = null,
+  meta = [],
+  badge = null,
+}) {
   // Only the date and the reading time get an icon; anything else (an event's venue) is prose and
   // wearing a clock would be a lie about what it is.
   const details = [
@@ -65,6 +74,10 @@ export default function ArticleHero({ back = null, eyebrow, title, date, minutes
       <h1 className="mt-3 font-display text-[2.2rem] font-extrabold leading-[1.05] tracking-[-0.02em] text-ink-900 sm:text-[3.25rem]">
         {title}
       </h1>
+
+      {summary && (
+        <p className="mt-5 max-w-[760px] text-lg leading-relaxed text-ink-muted sm:text-xl">{summary}</p>
+      )}
     </header>
   )
 }

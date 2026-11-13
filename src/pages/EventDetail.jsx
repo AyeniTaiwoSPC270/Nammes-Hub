@@ -90,8 +90,8 @@ export default function EventDetail() {
 
         {/* The details share the article's measure; the gallery below keeps the full page width
             because a photo grid is the one thing on this screen that benefits from it. */}
-        <div className="mx-auto max-w-[840px]">
-          <div className="mt-6 flex gap-2 border-b border-hairline">
+        <div className="mx-auto max-w-[1000px]">
+          <div className="mx-auto mt-6 flex max-w-[720px] gap-2 border-b border-hairline">
             <button
               type="button"
               onClick={() => setTab('details')}
@@ -166,7 +166,7 @@ export default function EventDetail() {
         />
       )}
 
-        <div className="mx-auto mt-10 max-w-[840px]">
+        <div className="mx-auto mt-10 max-w-[720px]">
           <div className="border-t border-hairline pt-5">
             <ReportProblem title={event.title} />
           </div>

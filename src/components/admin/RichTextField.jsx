@@ -13,7 +13,9 @@ import {
   TEXT_FONTS,
   TEXT_SIZES,
   bodyFontOf,
+  editorOf,
   imageRatioOf,
+  summaryOf,
 } from '../../lib/richText'
 import RichBody from '../content/RichBody'
 
@@ -92,6 +94,15 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
     const marker = shape === 'natural' ? '[image]' : `[image=${shape}]`
     const token = `${lead}${marker}${trail}`
     commit(before + token + after, start + token.length, start + token.length)
+  }
+
+  // The standfirst and the editor's name are kept as directives in the same column, so they travel with
+  // the post through the review queue and need no migration. Typing only rewrites the one line.
+  function setDirective(tag, text) {
+    const re = new RegExp(`^\\s*\\[${tag}\\][\\s\\S]*?\\[\\/${tag}\\]\\s*\\n*`, 'im')
+    const rest = String(value).replace(re, '')
+    const clean = String(text).replace(/\s+/g, ' ').trim()
+    onChange((clean ? `[${tag}]${clean}[/${tag}]\n` : '') + rest)
   }
 
   // The cover's shape is a property of the marker line, so this rewrites that line rather than adding a
@@ -244,6 +255,29 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
           </div>
         </div>
 
+        <div className="grid gap-2 border-b border-hairline px-2 py-2 sm:grid-cols-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-[.1em] text-ink-muted">Standfirst</span>
+            <input
+              type="text"
+              defaultValue={summaryOf(value)}
+              onChange={(event) => setDirective('summary', event.target.value)}
+              placeholder="One line under the headline"
+              className="h-8 rounded-sm border border-hairline bg-surface px-2 text-sm text-ink focus:outline-none"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-[.1em] text-ink-muted">Editor</span>
+            <input
+              type="text"
+              defaultValue={editorOf(value)}
+              onChange={(event) => setDirective('editor', event.target.value)}
+              placeholder="Who edited it (optional)"
+              className="h-8 rounded-sm border border-hairline bg-surface px-2 text-sm text-ink focus:outline-none"
+            />
+          </label>
+        </div>
+
         {preview ? (
           <div className="min-h-[160px] px-3 py-2.5">
             {String(value).trim() ? (
@@ -266,8 +300,9 @@ export default function RichTextField({ label, value, onChange, coverUrl = '', r
 
       <span className="text-xs text-ink-muted">
         Select text before choosing a size, colour or font so the style wraps just that text; Body sets the whole
-        article and Photo its cover shape. Leave a blank line between paragraphs. Put <code>[image]</code> on its
-        own line to place the photo there; without it the photo sits above the text.
+        article and Photo its cover shape. The standfirst sits under the headline and the editor joins the writer
+        in the credit box. Leave a blank line between paragraphs. Put <code>[image]</code> on its own line to
+        place the photo there; without it the photo sits above the text.
       </span>
     </div>
   )

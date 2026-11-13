@@ -85,7 +85,6 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
   const marker = blocks.find((block) => block.type === 'image')
   const coverRatio = marker?.ratio ?? 'natural'
   let imageDrawn = false
-  let ledeDrawn = false
 
   return (
     <div
@@ -117,8 +116,8 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
               key={index}
               className={
                 block.level === 1 || block.level === 2
-                  ? 'mt-2 font-display text-2xl font-bold leading-snug text-ink-900'
-                  : 'mt-1 font-display text-xl font-bold leading-snug text-ink-900'
+                  ? 'mx-auto mt-2 w-full max-w-[720px] font-display text-2xl font-bold leading-snug text-ink-900'
+                  : 'mx-auto mt-1 w-full max-w-[720px] font-display text-xl font-bold leading-snug text-ink-900'
               }
             >
               <Inline segments={block.segments} />
@@ -132,7 +131,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
             // accent rule doing the attribution work.
             <blockquote
               key={index}
-              className="my-2 border-l-4 border-brand-orange pl-5 font-display text-[1.45em] font-bold leading-snug text-ink-900"
+              className="mx-auto my-2 w-full max-w-[720px] border-l-4 border-brand-orange pl-5 font-display text-[1.45em] font-bold leading-snug text-ink-900"
             >
               <Inline segments={block.segments} />
             </blockquote>
@@ -145,7 +144,7 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
             <Tag
               key={index}
               className={[
-                'ml-1 space-y-2 pl-5',
+                'mx-auto w-full max-w-[720px] space-y-2 pl-5',
                 block.ordered ? 'list-decimal' : 'list-disc',
               ].join(' ')}
             >
@@ -158,19 +157,8 @@ export default function RichBody({ text, cover = null, imageWidthPct = 100, clas
           )
         }
 
-        // The opening paragraph is set as a lede and carries the drop cap (`.article-lede` in
-        // index.css). Only the first one: a paragraph after an [image] line is still the opening text.
-        const lede = !ledeDrawn
-        ledeDrawn = true
         return (
-          <p
-            key={index}
-            className={
-              lede
-                ? 'article-lede whitespace-pre-line text-[1.06em] font-medium leading-[1.7] text-ink-900'
-                : 'whitespace-pre-line'
-            }
-          >
+          <p key={index} className="mx-auto w-full max-w-[720px] whitespace-pre-line">
             <Inline segments={block.segments} />
           </p>
         )

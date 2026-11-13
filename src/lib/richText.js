@@ -44,6 +44,11 @@ export const IMAGE_SHAPES = [
 const IMAGE_SHAPE_VALUES = IMAGE_SHAPES.map((shape) => shape.value).join('|')
 const IMAGE_RE = new RegExp(`^\\s*\\[image(?:=(${IMAGE_SHAPE_VALUES}))?\\]\\s*$`, 'im')
 const BODY_FONT_RE = /^\s*\[body=(serif|sans)\]\s*$/im
+// The standfirst and the editor's name are one-line directives rather than columns: `news` has no
+// summary or editor field, and a column added for them would be dropped from every queued non-owner
+// edit (apply_change_request enumerates the table's columns).
+const SUMMARY_RE = /^\s*\[summary\]([\s\S]*?)\[\/summary\]\s*$/i
+const EDITOR_RE = /^\s*\[editor\]([\s\S]*?)\[\/editor\]\s*$/i
 
 // The article's body face, chosen per post. It is a directive line rather than a wrapper because a
 // wrapper could not span paragraphs -- `parseInline` runs one block at a time.
@@ -62,6 +67,21 @@ export function bodyFontOf(input) {
 export function imageRatioOf(input) {
   const match = IMAGE_RE.exec(String(input ?? ''))
   return match && match[1] ? match[1].toLowerCase() : 'natural'
+}
+
+function directiveText(input, tag) {
+  const match = new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, 'i').exec(String(input ?? ''))
+  return match ? richTextPlain(match[1]) : ''
+}
+
+/** The sentence under the headline, or '' when the post has none. */
+export function summaryOf(input) {
+  return directiveText(input, 'summary')
+}
+
+/** Who edited the piece, or '' -- the credit block only shows a second line when it exists. */
+export function editorOf(input) {
+  return directiveText(input, 'editor')
 }
 
 // The allow-lists behind the editor's three dropdowns. Exported so the toolbar offers exactly the
@@ -197,6 +217,12 @@ export function parseRichText(input) {
       continue
     }
 
+    // These directives are read by the page, never drawn as prose.
+    if (SUMMARY_RE.test(line) || EDITOR_RE.test(line)) {
+      i += 1
+      continue
+    }
+
     const heading = HEADING_RE.exec(line)
     if (heading) {
       blocks.push({ type: 'heading', level: heading[1].length, segments: parseInline(heading[2].trim()) })
@@ -235,6 +261,8 @@ export function parseRichText(input) {
       i < lines.length &&
       lines[i].trim() &&
       !BODY_FONT_RE.test(lines[i]) &&
+      !SUMMARY_RE.test(lines[i]) &&
+      !EDITOR_RE.test(lines[i]) &&
       !IMAGE_RE.test(lines[i]) &&
       !HEADING_RE.test(lines[i]) &&
       !QUOTE_RE.test(lines[i]) &&
@@ -262,6 +290,7 @@ export function richTextPlain(input) {
     .replace(/\r\n?/g, '\n')
     .replace(/^\s*\[image(?:=[a-z0-9:]+)?\]\s*$/gim, ' ')
     .replace(/^\s*\[body=(?:serif|sans)\]\s*$/gim, ' ')
+    .replace(/\[(?:summary|editor)\][\s\S]*?\[\/(?:summary|editor)\]/gi, ' ')
     .replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, '$1')
     .replace(/\*\*([^*\n]+)\*\*/g, '$1')
     .replace(/\*([^*\n]+)\*/g, '$1')

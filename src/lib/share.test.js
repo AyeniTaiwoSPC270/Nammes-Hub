@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { absoluteUrl, whatsappUrl, shareArticle, copyLink } from './share.js'
+import { absoluteUrl, whatsappUrl, xUrl, shareArticle, copyLink } from './share.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -28,6 +28,16 @@ describe('whatsappUrl', () => {
     expect(decodeURIComponent(url.split('?text=')[1])).toBe(
       'Exam timetable moved https://nammeshub.com.ng/news/timetable-moved',
     )
+  })
+})
+
+describe('xUrl', () => {
+  it('keeps the title and the link in separate, escaped fields', () => {
+    stubWindow()
+    const url = xUrl('Exam & timetable', '/news/timetable-moved')
+    const params = new URL(url).searchParams
+    expect(params.get('text')).toBe('Exam & timetable')
+    expect(params.get('url')).toBe('https://nammeshub.com.ng/news/timetable-moved')
   })
 })
 

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { bodyFontOf, imageRatioOf, parseRichText, readingMinutes, richTextPlain } from './richText'
+import {
+  bodyFontOf,
+  editorOf,
+  imageRatioOf,
+  parseRichText,
+  readingMinutes,
+  richTextPlain,
+  summaryOf,
+} from './richText'
 
 const types = (text) => parseRichText(text).map((b) => b.type)
 
@@ -89,6 +97,15 @@ describe('parseRichText', () => {
     expect(types('  [IMAGE]  ')).toEqual(['image'])
   })
 
+  it('hides the standfirst and editor directives from the prose', () => {
+    const body = '[summary]A short line **with style**[/summary]\n\n[editor]Olamide Lawal[/editor]\n\nBody'
+    expect(types(body)).toEqual(['paragraph'])
+    expect(summaryOf(body)).toBe('A short line with style')
+    expect(editorOf(body)).toBe('Olamide Lawal')
+    expect(summaryOf('Body only')).toBe('')
+    expect(editorOf('Body only')).toBe('')
+  })
+
   it('reads a cover shape off the marker and ignores a shape it does not know', () => {
     const [block] = parseRichText('[image=16:9]')
     expect(block).toEqual({ type: 'image', ratio: '16:9' })
@@ -121,6 +138,8 @@ describe('richTextPlain', () => {
   it('drops the image placeholder', () => {
     expect(richTextPlain('Before\n\n[image]\n\nAfter')).toBe('Before After')
     expect(richTextPlain('Before\n\n[image=16:9]\n\nAfter')).toBe('Before After')
+    // The standfirst is a headline element, not prose: a card excerpt starts at the body.
+    expect(richTextPlain('[summary]Lead line[/summary]\n\nBody')).toBe('Body')
   })
 
   it('collapses whitespace and handles null', () => {
