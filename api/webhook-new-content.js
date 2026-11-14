@@ -2,12 +2,40 @@ import { getSupabaseAdmin } from './_lib/supabaseAdmin.js'
 import { logError } from './_lib/logError.js'
 import { enqueueEmails } from './_lib/emailQueue.js'
 import { renderNewContentEmail, loadEmailDesign, SITE_URL } from './_lib/emailTemplates.js'
+import { safeLink } from './_lib/emailDesign.js'
 import { isSafeRecordKey, isWebhookAuthentic } from './_lib/webhookAuth.js'
 import { boundedString } from './_lib/validate.js'
 
 const CONTENT_META = {
   news: { eyebrow: 'News Update', subjectPrefix: 'News update' },
   events: { eyebrow: 'New Event', subjectPrefix: 'New event' },
+  opportunities: { eyebrow: 'New Opportunity', subjectPrefix: 'New opportunity' },
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+// `deadline` is a `date` column, so it is read as three numbers rather than through `new Date(string)`, which
+// would treat the value as UTC midnight and print the day before for any host west of Greenwich.
+function formatDay(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value ?? ''))
+  if (!match) return ''
+  const month = MONTHS[Number(match[2]) - 1]
+  return month ? `${Number(match[3])} ${month} ${match[1]}` : ''
+}
+
+// The apply link is the one thing a member actually needs from an opportunity email, but it is
+// admin-authored, so it goes through the same allow-list every other email link does.
+function applyUrl(link) {
+  const safe = safeLink(link)
+  return safe.startsWith('https://') || safe.startsWith('mailto:') ? safe : ''
+}
+
+function opportunityDetails(record) {
+  return [
+    { label: 'Organization', value: record.org },
+    { label: 'Type', value: record.type },
+    { label: 'Deadline', value: formatDay(record.deadline) },
+  ].filter((detail) => detail.value)
 }
 
 export function createWebhookNewContentHandler({ getClient = getSupabaseAdmin, enqueue = enqueueEmails } = {}) {
@@ -43,9 +71,18 @@ export function createWebhookNewContentHandler({ getClient = getSupabaseAdmin, e
       return
     }
 
-    const url = `${SITE_URL}/${table}/${record.id}`
+    // Opportunities have no detail route, so the button lands on the list; a known apply link takes it
+    // instead, because one click to the application beats two clicks through the hub.
+    const pageUrl = table === 'opportunities' ? `${SITE_URL}/opportunities` : `${SITE_URL}/${table}/${record.id}`
+    const apply = table === 'opportunities' ? applyUrl(record.link) : ''
+    const url = apply || pageUrl
+    const details = table === 'opportunities' ? opportunityDetails(record) : []
+    const buttonText = apply ? 'Apply now →' : 'Read more →'
     const design = await loadEmailDesign(supabaseAdmin, 'new_content')
-    const html = renderNewContentEmail({ eyebrow: meta.eyebrow, title: record.title, url, imageUrl: record.image_url }, design)
+    const html = renderNewContentEmail(
+      { eyebrow: meta.eyebrow, title: record.title, url, imageUrl: record.image_url, details, buttonText },
+      design,
+    )
     const subject = `${meta.subjectPrefix}: ${record.title}`
     // Queued, not sent here: the worker delivers them and retries failures. The key stops a repeated webhook
     // from queueing the same email twice.

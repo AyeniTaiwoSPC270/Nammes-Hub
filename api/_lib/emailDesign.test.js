@@ -170,4 +170,19 @@ describe('helpers', () => {
     expect(nc).toContain('href="https://a.com/x"')
     expect(nc).toContain('News')
   })
+  it('an opportunity email carries its details and its own button label', () => {
+    const html = render(
+      systemDesign('new_content'),
+      newContentEmailContent({
+        eyebrow: 'New Opportunity',
+        title: 'Chevron Internship',
+        url: 'https://apply.example/chevron',
+        details: [{ label: 'Deadline', value: '20 January 2027' }],
+        buttonText: 'Apply now →',
+      }),
+    )
+    expect(html).toContain('<strong>Deadline:</strong> 20 January 2027')
+    expect(html).toContain('Apply now')
+    expect(html).toContain('href="https://apply.example/chevron"')
+  })
 })

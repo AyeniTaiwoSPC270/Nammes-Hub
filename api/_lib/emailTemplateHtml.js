@@ -89,12 +89,20 @@ ${SHARED_STYLE}
 </html>`
 }
 
-export function buildNewContentEmailHtml({ eyebrow, title, url, imageUrl }) {
+export function buildNewContentEmailHtml({ eyebrow, title, url, imageUrl, details, buttonText }) {
   const safeEyebrow = escapeHtml(eyebrow)
   const safeTitle = escapeHtml(title)
   const imageHtml = imageUrl
     ? `<img src="${imageUrl}" alt="" width="520" class="content-image" />`
     : ''
+  const detailHtml = (details ?? [])
+    .filter((detail) => detail?.label && detail?.value)
+    .map(
+      (detail) =>
+        `<p class="supporting-copy"><strong>${escapeHtml(detail.label)}:</strong> ${escapeHtml(detail.value)}</p>`,
+    )
+    .join('')
+  const buttonLabel = escapeHtml(buttonText || 'Read more →')
   const postedAt = new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -130,8 +138,9 @@ ${SHARED_STYLE}
       ${imageHtml}
       <h1 class="headline-title">${safeTitle}</h1>
       <p class="supporting-copy">A new update was just posted on NAMMES Hub.</p>
+      ${detailHtml}
       <div class="cta-container">
-        <a href="${url}" class="cta-button">Read more &rarr;</a>
+        <a href="${url}" class="cta-button">${buttonLabel}</a>
       </div>
     </div>
     <div class="email-footer">

@@ -38,5 +38,12 @@ export const newsAdminConfig = {
       coverField: 'image_url',
       optional: true,
     },
+    {
+      field: 'email_members',
+      label: 'Email members about this',
+      type: 'boolean',
+      default: true,
+      helper: 'Untick to publish the post without sending an alert email.',
+    },
   ],
 }

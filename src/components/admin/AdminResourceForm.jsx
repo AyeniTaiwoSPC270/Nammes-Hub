@@ -6,6 +6,7 @@ import VideoUploadField from './VideoUploadField'
 import AvatarUploadField from './AvatarUploadField'
 import EventImageUploadField from './EventImageUploadField'
 import RichTextField from './RichTextField'
+import Toggle from '../ui/Toggle'
 import { buildFormState, buildPayload } from '../../lib/adminFields'
 import { useContentSettingsQuery } from '../../data/contentLooks'
 
@@ -111,6 +112,17 @@ export default function AdminResourceForm({ config, record, onSubmit, onCancel, 
           coverUrl={f.coverField ? values[f.coverField] : ''}
           onChange={(next) => setField(f.field, next)}
           required={!f.optional}
+        />
+      )
+    }
+    if (f.type === 'boolean') {
+      return (
+        <Toggle
+          key={f.field}
+          checked={values[f.field] === true}
+          onChange={(checked) => setField(f.field, checked)}
+          label={f.label}
+          description={f.helper}
         />
       )
     }

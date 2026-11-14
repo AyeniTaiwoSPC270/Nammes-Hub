@@ -167,6 +167,54 @@ describe('webhook-new-content and webhook-welcome queue their emails', () => {
     expect(queued[0].subject).toBe('News update: Big news')
   })
 
+  it('opportunities: links the apply button and states the deadline', async () => {
+    const queued = []
+    const enqueue = async (_c, rows) => { queued.push(...rows); return { queued: rows.length, error: null } }
+    const handler = createWebhookNewContentHandler({ getClient: () => okClient(), enqueue })
+    const res = fakeRes()
+    await handler(
+      {
+        method: 'POST',
+        headers: signed,
+        body: {
+          table: 'opportunities',
+          record: {
+            id: 'chevron-internship',
+            title: 'Chevron Internship',
+            org: 'Chevron Nigeria',
+            type: 'Internship',
+            deadline: '2027-01-20',
+            link: 'https://apply.example/chevron',
+          },
+        },
+      },
+      res,
+    )
+    expect(res.statusCode).toBe(200)
+    expect(queued[0].subject).toBe('New opportunity: Chevron Internship')
+    expect(queued[0].html).toContain('href="https://apply.example/chevron"')
+    expect(queued[0].html).toContain('Deadline')
+    expect(queued[0].html).toContain('20 January 2027')
+  })
+
+  it('opportunities: an unusable apply link falls back to the opportunities page', async () => {
+    const queued = []
+    const enqueue = async (_c, rows) => { queued.push(...rows); return { queued: rows.length, error: null } }
+    const handler = createWebhookNewContentHandler({ getClient: () => okClient(), enqueue })
+    const res = fakeRes()
+    await handler(
+      {
+        method: 'POST',
+        headers: signed,
+        body: { table: 'opportunities', record: { id: 'o1', title: 'Role', link: 'javascript:alert(1)' } },
+      },
+      res,
+    )
+    expect(res.statusCode).toBe(200)
+    expect(queued[0].html).toContain('https://www.nammeshub.com.ng/opportunities')
+    expect(queued[0].html).not.toContain('javascript:')
+  })
+
   it('welcome: queues one email keyed by the user', async () => {
     const queued = []
     const enqueue = async (_c, rows) => { queued.push(...rows); return { queued: rows.length, error: null } }
