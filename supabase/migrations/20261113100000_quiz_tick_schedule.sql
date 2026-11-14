@@ -1,0 +1,13 @@
+-- The quiz autopilot's own clock, switched on.
+--
+-- 20261109120000_quiz_open_sessions.sql:30 created run_quiz_tick() and left the `cron.schedule` call commented
+-- (:57) to be run by hand once the route was deployed. It never was, so the only engine left running an open or
+-- scheduled quiz was a phone's `quiz-state` poll: a game whose last tab was closed sat on whatever step it was on
+-- until that phone came back, and an empty lobby never expired off /play/open. That is the reported "the game only
+-- continues when I come back".
+--
+-- Every minute, as the calendar reminders are. Sub-minute precision still comes from the phones and the host
+-- screen, which call the same `dueStep` and the same compare-and-swap; this is what steps a room nobody is
+-- watching, one step per tick. `cron.schedule` updates a job of the same name, so a project where it was already
+-- scheduled by hand ends up with this definition rather than a duplicate.
+select cron.schedule('quiz-tick', '* * * * *', 'select public.run_quiz_tick()');

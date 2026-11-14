@@ -246,6 +246,10 @@ data module, and that is deliberate — do not merge them into one shared "prese
   `quiz-advance` compare-and-swap so a double fire is a 0-row update and never a skipped question: `api/quiz?action=tick`
   (signed like the calendar reminders, `pg_cron` every minute), every `quiz-state` poll, and the host screen's `clock`
   op on `quiz-host`.
+- **The tick's schedule lives in a migration, not in a comment.** `20261113100000_quiz_tick_schedule.sql` runs
+  `cron.schedule('quiz-tick', …)` every minute. The schedule was left as a manual `select cron.schedule(...)` to be
+  run after deploy and never was, so with no phone polling a game froze on its current step until one came back —
+  exactly the failure the tick exists to prevent. Do not move it back out of the migrations.
 - **The `clock` op is a caller, not a second clock.** It exists because the host screen is the watcher that is still
   there when every phone's tab has been closed: a question whose time ran out sat on the projector until somebody
   reopened `/play`. It must keep calling `dueStep` and the same CAS — a browser deciding its own transitions is the
@@ -258,6 +262,12 @@ data module, and that is deliberate — do not merge them into one shared "prese
 - **`state_changed_at` must be written by every step.** `stepUpdate` does it. A writer of `quiz_sessions.state` that
   bypasses `stepUpdate` makes the tick read a stale clock and step early, so grep the update sites, not just the
   handlers that mention autopilot.
+- **The server plays the bots' turns, before it closes the question.** `quiz-tick` and `quiz-state` both call
+  `playBots`, and both ask at `botTurnAt(session, question, nowMs)` — the question's deadline, not "now". A tick is a
+  minute late and a returning phone can be hours late, so the real instant is always past `ANSWER_GRACE_MS` and every
+  bot turn would be refused. The score is taken from the bot's own think time, so playing at the deadline records the
+  turn it would have taken while the question was open. Order is load-bearing too: the poll used to step first, so a
+  player coming back to an expired question moved the room to the reveal and the bots never answered it at all.
 - **`quizSchedule.js` is server-only** (it imports `nextState`/`effectiveElapsedMs` from `quiz.js`, which reaches for
   `node:crypto`). Sharing the one definition of "how long has this question run" is worth more than importing it
   from `src/`; the browser gets `startsInMs` off the API instead.

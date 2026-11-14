@@ -4,6 +4,7 @@ import { isWebhookAuthentic } from '../webhookAuth.js'
 import { stepUpdate } from '../quiz.js'
 import { dueStep } from '../quizSchedule.js'
 import { sessionQuestionIds, currentQuestion } from '../quizSessionQuestions.js'
+import { playBots, botTurnAt } from './quizBotPlay.js'
 
 // One tick for every open quiz. Called by pg_cron (run_quiz_tick) and never by a browser: the signature is the
 // same one the calendar reminders use, over a table/key pair no other caller signs.
@@ -55,6 +56,13 @@ export function createQuizTickHandler(getClient, { now = () => Date.now(), authe
             .select('id', { count: 'exact', head: true })
             .eq('session_id', session.id)
           playerCount = count ?? 0
+        }
+
+        if (question) {
+          // Nobody is polling, so this is the only place a test bot's turn gets taken: a hosted game has the host
+          // screen and every phone to call `playBots`, an unwatched one has only this tick. It has to be done before
+          // `dueStep` below, which is what closes the question, or the bots' answers are refused as late.
+          await playBots(supabaseAdmin, session, { nowMs: botTurnAt(session, question, nowMs), question })
         }
 
         const due = dueStep(session, { nowMs, questionCount: questionIds.length, question, playerCount })

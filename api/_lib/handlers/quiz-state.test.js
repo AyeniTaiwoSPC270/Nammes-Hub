@@ -223,6 +223,16 @@ describe('test bots in an open game', () => {
     expect(db.tables.quiz_answers.map((a) => a.player_id)).toEqual(['bot1'])
   })
 
+  // The poll that matters most in a game nobody is watching: the player comes back to a question that has already
+  // run out. The clock closes it on that same request, and if the step ran first the bots never answered it at all.
+  it('answers for the bots before closing a question the poll arrived late for', async () => {
+    const db = withBots({ question_started_at: new Date(Date.now() - 25_000).toISOString() })
+    const res = await state(db)
+    expect(res.statusCode).toBe(200)
+    expect(db.tables.quiz_answers.map((a) => a.player_id)).toEqual(['bot1'])
+    expect(db.tables.quiz_sessions[0].state).toBe('reveal')
+  })
+
   it('leaves a hosted game alone, where the host screen plays them', async () => {
     const db = withBots({ autopilot: false })
     await state(db)
