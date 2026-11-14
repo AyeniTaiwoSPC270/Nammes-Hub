@@ -246,6 +246,10 @@ data module, and that is deliberate — do not merge them into one shared "prese
   `quiz-advance` compare-and-swap so a double fire is a 0-row update and never a skipped question: `api/quiz?action=tick`
   (signed like the calendar reminders, `pg_cron` every minute), every `quiz-state` poll, and the host screen's `clock`
   op on `quiz-host`.
+- **The tick's schedule lives in a migration, not in a comment.** `20261113100000_quiz_tick_schedule.sql` runs
+  `cron.schedule('quiz-tick', …)` every minute. The schedule was left as a manual `select cron.schedule(...)` to be
+  run after deploy and never was, so with no phone polling a game froze on its current step until one came back —
+  exactly the failure the tick exists to prevent. Do not move it back out of the migrations.
 - **The `clock` op is a caller, not a second clock.** It exists because the host screen is the watcher that is still
   there when every phone's tab has been closed: a question whose time ran out sat on the projector until somebody
   reopened `/play`. It must keep calling `dueStep` and the same CAS — a browser deciding its own transitions is the
