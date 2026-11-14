@@ -262,6 +262,12 @@ data module, and that is deliberate — do not merge them into one shared "prese
 - **`state_changed_at` must be written by every step.** `stepUpdate` does it. A writer of `quiz_sessions.state` that
   bypasses `stepUpdate` makes the tick read a stale clock and step early, so grep the update sites, not just the
   handlers that mention autopilot.
+- **The server plays the bots' turns, before it closes the question.** `quiz-tick` and `quiz-state` both call
+  `playBots`, and both ask at `botTurnAt(session, question, nowMs)` — the question's deadline, not "now". A tick is a
+  minute late and a returning phone can be hours late, so the real instant is always past `ANSWER_GRACE_MS` and every
+  bot turn would be refused. The score is taken from the bot's own think time, so playing at the deadline records the
+  turn it would have taken while the question was open. Order is load-bearing too: the poll used to step first, so a
+  player coming back to an expired question moved the room to the reveal and the bots never answered it at all.
 - **`quizSchedule.js` is server-only** (it imports `nextState`/`effectiveElapsedMs` from `quiz.js`, which reaches for
   `node:crypto`). Sharing the one definition of "how long has this question run" is worth more than importing it
   from `src/`; the browser gets `startsInMs` off the API instead.

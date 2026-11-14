@@ -71,6 +71,24 @@ describe('quiz-tick', () => {
     expect(db.tables.quiz_sessions[0].state).toBe('question')
   })
 
+  it('takes the bots’ turns on a question nobody is watching before closing it', async () => {
+    const { db } = setup({
+      state: 'question',
+      current_question_index: 0,
+      question_started_at: new Date(NOW - 5 * 60_000).toISOString(),
+      state_changed_at: new Date(NOW - 5 * 60_000).toISOString(),
+    })
+    db.tables.quiz_players.push({ id: 'b1', session_id: SESSION, nickname: 'Bot_Prime', bot_skill: 'expert', streak: 0 })
+    const res = await tick(db)
+    expect(res.body.advanced).toBe(1)
+    // The tick runs a minute late, so the answer is recorded against the question's deadline: an expert thinks inside
+    // the first 35% of the limit, and the score is taken from that think time either way.
+    const answers = db.tables.quiz_answers.filter((a) => a.question_id === Q1)
+    expect(answers).toHaveLength(1)
+    expect(answers[0].elapsed_ms).toBeLessThanOrEqual(20_000)
+    expect(db.tables.quiz_sessions[0].state).toBe('reveal')
+  })
+
   it('leaves a game the admin is driving alone', async () => {
     const { db } = setup({ autopilot: false, lobby_start_at: new Date(NOW - LOBBY_WAIT_MS).toISOString() })
     db.tables.quiz_players.push({ id: 'p1', session_id: SESSION, nickname: 'Ada' })

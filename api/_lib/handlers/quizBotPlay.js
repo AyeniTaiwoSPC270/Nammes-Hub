@@ -11,6 +11,18 @@ import { currentQuestion } from '../quizSessionQuestions.js'
 // Every question's answers are fixed by the bot's id (see quizBots.js), so calling this twice, or once per phone in
 // the room, changes nothing: a bot that has already answered is filtered out below, and the record RPC refuses a
 // second answer to the same question.
+// The instant a server-side caller should ask at. Both autopilot engines can arrive after the question has already
+// closed -- the tick is up to a minute late, and a phone coming back to the tab can be hours late -- and `playBots`
+// rightly refuses an answer after the grace window. Bots are timed from `question_started_at` and their score comes
+// from their think time, so the question's deadline is the honest instant to play them at: their turns are the ones
+// they would have taken while it was open, not answers invented now.
+//
+export function botTurnAt(session, question, nowMs) {
+  const startMs = Date.parse(session?.question_started_at ?? '')
+  if (!question || !Number.isFinite(startMs)) return nowMs
+  return Math.min(nowMs, startMs + questionLimitMs(session, question) + ANSWER_GRACE_MS)
+}
+
 export async function playBots(supabaseAdmin, session, { nowMs = Date.now(), question: known = null, bots: knownBots = null } = {}) {
   if (!session || session.state !== 'question' || session.paused_at) return { answered: 0, nextInMs: null }
 

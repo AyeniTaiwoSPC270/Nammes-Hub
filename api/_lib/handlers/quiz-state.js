@@ -7,7 +7,7 @@ import { rankTeams } from '../quizTeams.js'
 import { bracketViewFor } from '../quizBracket.js'
 import { sessionQuestionIds, currentQuestion, optionOrderFor } from '../quizSessionQuestions.js'
 import { shownOptions, shownIndex } from '../quizDraw.js'
-import { playBots } from './quizBotPlay.js'
+import { playBots, botTurnAt } from './quizBotPlay.js'
 
 const TOP_N = 10
 
@@ -75,6 +75,29 @@ const saveData = low === 1 || low === true || low === '1'
     let botWakeInMs = null
     if (session.autopilot) {
       if (session.state === 'question') clockQuestion = await currentQuestion(supabaseAdmin, session)
+      // An open quiz has no host page, so this poll is the only thing a bot's turn can be played from: the host screen's
+      // `botsPlay` op needs a screen nobody is guaranteed to have open. The question is already in hand from the clock
+      // branch above, and playBots is idempotent, so every phone asking costs one filtered read, not a second answer.
+      //
+      // This runs before the step below, not after. A phone that comes back to a question whose time has run out is
+      // the common case in an autopilot game, and the step used to happen first: the room moved to the reveal, the
+      // question stopped being current, and the bots never answered it -- the room showed bots on zero for a question
+      // they were perfectly able to sit. `botTurnAt` asks at the deadline for the same reason the tick does.
+      const bots = (players ?? []).filter((p) => p.bot_skill)
+      if (session.state === 'question' && bots.length > 0) {
+        try {
+          // The roster is already in hand, so this asks for no extra read of the bots it is about to play.
+          const played = await playBots(supabaseAdmin, session, {
+            nowMs: botTurnAt(session, clockQuestion, nowMs),
+            question: clockQuestion,
+            bots,
+          })
+          botWakeInMs = played.nextInMs ?? null
+        } catch (botError) {
+          // A failed bot turn must never fail the phone's poll: the player's own screen is more important than a bot's.
+          console.error('quiz-state: bot play failed', botError)
+        }
+      }
       const due = dueStep(session, { nowMs, questionCount, question: clockQuestion, playerCount: (players ?? []).length })
       if (due) {
         const { data: updated } = await supabaseAdmin
@@ -85,20 +108,10 @@ const saveData = low === 1 || low === true || low === '1'
           .eq('current_question_index', session.current_question_index)
           .select('*')
           .maybeSingle()
-        if (updated) Object.assign(session, updated)
-      }
-      // An open quiz has no host page, so this poll is the only thing a bot's turn can be played from: the host screen's
-      // `botsPlay` op needs a screen nobody is guaranteed to have open. The question is already in hand from the clock
-      // branch above, and playBots is idempotent, so every phone asking costs one filtered read, not a second answer.
-      const bots = (players ?? []).filter((p) => p.bot_skill)
-      if (session.state === 'question' && bots.length > 0) {
-        try {
-          // The roster is already in hand, so this asks for no extra read of the bots it is about to play.
-          const played = await playBots(supabaseAdmin, session, { nowMs, question: clockQuestion, bots })
-          botWakeInMs = played.nextInMs ?? null
-        } catch (botError) {
-          // A failed bot turn must never fail the phone's poll: the player's own screen is more important than a bot's.
-          console.error('quiz-state: bot play failed', botError)
+        if (updated) {
+          Object.assign(session, updated)
+          // The bots this poll was waiting on belong to the question it just closed, so nothing is due any more.
+          botWakeInMs = null
         }
       }
     }
