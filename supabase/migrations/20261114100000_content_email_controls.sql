@@ -10,14 +10,15 @@
 --   2. `feature_flags.email_<table>` -- an owner-wide pause that needs no deploy, like every other switch.
 -- A missing flag row is read as on, so a rebuild that loses the seed does not silently stop the alerts.
 
+-- `if not exists` so a file that failed halfway through can simply be run again.
 alter table public.news
-  add column email_members boolean not null default true;
+  add column if not exists email_members boolean not null default true;
 
 alter table public.events
-  add column email_members boolean not null default true;
+  add column if not exists email_members boolean not null default true;
 
 alter table public.opportunities
-  add column email_members boolean not null default true;
+  add column if not exists email_members boolean not null default true;
 
 insert into public.feature_flags (key, enabled) values
   ('email_news', true),
@@ -123,12 +124,12 @@ begin
     raise exception 'Two-factor verification required';
   end if;
   if not public.is_owner() then
-    raise exception 'Only the owner can review changes.'
+    raise exception 'Only the owner can review changes.';
   end if;
 
   select * into req from public.change_requests where id = p_id and status = 'pending';
   if not found then
-    raise exception 'No pending request with that id.'
+    raise exception 'No pending request with that id.';
   end if;
 
   if req.entity_type = 'news' then
