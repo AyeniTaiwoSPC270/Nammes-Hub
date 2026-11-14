@@ -13,5 +13,12 @@ export const eventsAdminConfig = {
     { field: 'meta', label: 'Location / time', type: 'text', optional: true },
     { field: 'description', label: 'Description', type: 'richtext', coverField: 'image_url' },
     { field: 'image_url', label: 'Photo', type: 'event-image' },
+    {
+      field: 'email_members',
+      label: 'Email members about this',
+      type: 'boolean',
+      default: true,
+      helper: 'Untick to publish the event without sending an alert email.',
+    },
   ],
 }

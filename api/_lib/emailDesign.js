@@ -801,11 +801,17 @@ export function welcomeContent({ fullName }) {
   }
 }
 
-export function newContentEmailContent({ eyebrow, title, url, imageUrl }) {
+// `details` is for content that has facts worth stating in the email itself (an opportunity's organization,
+// type and deadline); it is skipped entirely for news and events, which have nothing beyond the title.
+export function newContentEmailContent({ eyebrow, title, url, imageUrl, details, buttonText }) {
   const blocks = []
   if (imageUrl) blocks.push({ ...newBlock('image'), url: imageUrl, src: imageUrl })
   blocks.push({ ...newBlock('text'), text: 'A new update was just posted on NAMMES Hub.' })
-  if (url) blocks.push({ ...newBlock('button'), text: 'Read more →', url })
+  const lines = (details ?? [])
+    .filter((detail) => detail?.label && detail?.value)
+    .map((detail) => `**${detail.label}:** ${detail.value}`)
+  if (lines.length) blocks.push({ ...newBlock('text'), text: lines.join('\n') })
+  if (url) blocks.push({ ...newBlock('button'), text: buttonText || 'Read more →', url })
   return { subject: title, preheader: eyebrow, blocks, eyebrow }
 }
 

@@ -12,5 +12,12 @@ export const opportunitiesAdminConfig = {
     { field: 'type', label: 'Type', type: 'select', options: ['Scholarship', 'Internship'] },
     { field: 'deadline', label: 'Deadline', type: 'date' },
     { field: 'link', label: 'Apply link', type: 'url' },
+    {
+      field: 'email_members',
+      label: 'Email members about this',
+      type: 'boolean',
+      default: true,
+      helper: 'Untick to post the opportunity without sending an alert email.',
+    },
   ],
 }

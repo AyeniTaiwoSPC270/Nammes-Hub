@@ -47,6 +47,8 @@ export function buildFormState(fields, record) {
       state[f.secondsField] = record?.[f.secondsField] ?? ''
       // Selects are strings in form state, so the tri-state is '' / '1' / '0' -- inherit, loop, once.
       state[f.loopField] = record?.[f.loopField] === true ? '1' : record?.[f.loopField] === false ? '0' : ''
+    } else if (f.type === 'boolean') {
+      state[f.field] = record?.[f.field] ?? f.default ?? false
     } else if (f.type === 'select') {
       // A native <select> visually shows its first <option> even when the
       // controlled value doesn't match any option (e.g. an empty default).
@@ -96,7 +98,8 @@ export function buildPayload(fields, values) {
             : seconds
         payload[f.loopField] = values[f.loopField] === '1' ? true : values[f.loopField] === '0' ? false : null
       }
-    } else if (f.type === 'number') payload[f.field] = values[f.field] === '' ? null : Number(values[f.field])
+    } else if (f.type === 'boolean') payload[f.field] = Boolean(values[f.field])
+    else if (f.type === 'number') payload[f.field] = values[f.field] === '' ? null : Number(values[f.field])
     else payload[f.field] = values[f.field] === '' ? null : values[f.field]
   })
   return payload

@@ -36,6 +36,9 @@ const SWITCH_INFO = {
   broadcasts: 'Email broadcasts',
   public_forms: 'Contact form and public form responses',
   require_admin_mfa: 'Require two-factor login for admin powers',
+  email_news: 'Email members when news is posted',
+  email_events: 'Email members when an event is posted',
+  email_opportunities: 'Email members when an opportunity is posted',
 }
 
 function SwitchesPanel({ query }) {
