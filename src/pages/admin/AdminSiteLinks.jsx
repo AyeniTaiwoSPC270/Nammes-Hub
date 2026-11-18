@@ -8,6 +8,7 @@ import Toggle from '../../components/ui/Toggle'
 import ErrorState from '../../components/ui/ErrorState'
 import { SkeletonText } from '../../components/ui/Skeleton'
 import { useToast } from '../../lib/ToastContext'
+import FollowHubPanel from '../../components/admin/FollowHubPanel'
 
 const EMPTY_FORM = {
   substack_url: '',
@@ -142,6 +143,8 @@ export default function AdminSiteLinks() {
               <FormField key={key} label={label} type="url" placeholder="https://…" {...field(key)} />
             ))}
           </fieldset>
+
+          <FollowHubPanel />
 
           <Button type="submit" variant="primary" loading={saveMutation.isPending}>
             Save changes

@@ -19,6 +19,7 @@ const Home = lazyRetry(() => import('./pages/Home'))
 const About = lazyRetry(() => import('./pages/About'))
 const Excos = lazyRetry(() => import('./pages/Excos'))
 const Contact = lazyRetry(() => import('./pages/Contact'))
+const Follow = lazyRetry(() => import('./pages/Follow'))
 const NotFound = lazyRetry(() => import('./pages/NotFound'))
 const Outlines = lazyRetry(() => import('./pages/Outlines'))
 const Curriculum = lazyRetry(() => import('./pages/Curriculum'))
@@ -272,6 +273,9 @@ export default function App() {
             <Route path="about" element={<About />} />
             <Route path="excos" element={<Excos />} />
             <Route path="contact" element={<Contact />} />
+            {/* Where the printed QR code lands. Its own page rather than the footer, because a poster has one
+                job: show the socials and get out of the way. */}
+            <Route path="follow" element={<Follow />} />
             <Route path="outlines" element={<Outlines />} />
             <Route path="curriculum" element={<Curriculum />} />
             <Route path="outlines/:level" element={<OutlineLevel />} />
