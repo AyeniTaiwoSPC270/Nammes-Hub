@@ -73,6 +73,16 @@ function readCachedLinks() {
 // absolute https link is dropped rather than rendered as a clickable target.
 const isHttps = (url) => typeof url === 'string' && /^https:\/\//i.test(url)
 
+// The icon row and the /follow page must agree about which platforms exist and which links are safe, so
+// both read the filtered list from here rather than each re-deciding.
+export function socialLinks(content) {
+  if (!content) return []
+  return SOCIAL_PLATFORMS.filter(({ key }) => isHttps(content[key])).map((platform) => ({
+    ...platform,
+    url: content[platform.key],
+  }))
+}
+
 export default function SocialIcons({ className = '', variant = 'dark' }) {
   const contentQuery = useSiteContentQuery()
   const content = contentQuery.data
@@ -93,17 +103,16 @@ export default function SocialIcons({ className = '', variant = 'dark' }) {
   }, [content])
 
   const linkClass = variant === 'light' ? lightLinkClass : darkLinkClass
-  const urls = content ?? cached
-  const links = SOCIAL_PLATFORMS.filter(({ key }) => isHttps(urls[key]))
+  const links = socialLinks(content ?? cached)
 
   if (links.length === 0) return null
 
   return (
     <div className={['flex items-center gap-3', className].join(' ')}>
-      {links.map(({ key, label, Icon }) => (
+      {links.map(({ key, label, url, Icon }) => (
         <a
           key={key}
-          href={urls[key]}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}

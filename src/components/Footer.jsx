@@ -34,6 +34,8 @@ const linkGroups = [
     heading: 'Department',
     items: [
       { label: 'CGPA calculator', to: '/cgpa' },
+      // The page the printed follow QR opens, so the same destination is reachable without a poster.
+      { label: 'Follow us', to: '/follow' },
       { label: 'Contact Us', to: '/contact' },
       { label: 'Sign in', to: '/login' },
       // Not a route: it opens the rating modal in place, and disappears with the rest of the
