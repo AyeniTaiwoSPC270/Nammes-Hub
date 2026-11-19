@@ -87,15 +87,3 @@ export function campaignFromSearch(search) {
   }
   return normaliseCampaign(campaign) || null
 }
-
-// The /follow page pins a channel that is a community rather than a feed: a student who joins a WhatsApp
-// group gets everything the department posts, while an Instagram follow is one of several feeds they may
-// never open again. The other links stay one tap away underneath; they just do not compete for the first
-// look. Adding a second pinned platform is editing this list, not the page.
-export const PRIMARY_SOCIAL_KEYS = ['whatsapp_url']
-
-export function splitSocialLinks(links) {
-  const list = Array.isArray(links) ? links : []
-  const isPrimary = (link) => PRIMARY_SOCIAL_KEYS.includes(link.key)
-  return { primary: list.filter(isPrimary), secondary: list.filter((link) => !isPrimary(link)) }
-}
