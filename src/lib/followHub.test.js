@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CAMPAIGN_MAX_LENGTH,
   FOLLOW_SCAN_SOURCES,
+  PRIMARY_SOCIAL_KEYS,
+  campaignFromSearch,
+  followLinkKey,
   followPageUrl,
   followQrTarget,
+  followSharedTarget,
+  normaliseCampaign,
   scanSourceFromSearch,
+  splitSocialLinks,
 } from './followHub'
 
 describe('followQrTarget', () => {
@@ -17,6 +24,25 @@ describe('followQrTarget', () => {
 
   it('leaves the copied link unmarked', () => {
     expect(followPageUrl('https://nammes.example')).toBe('https://nammes.example/follow')
+  })
+
+  it('marks a shared link as a link, with the poster when one is named', () => {
+    expect(followSharedTarget('https://nammes.example')).toBe('https://nammes.example/follow?src=link')
+    expect(followSharedTarget('https://nammes.example/', 'october-flyer')).toBe(
+      'https://nammes.example/follow?src=link&c=october-flyer',
+    )
+  })
+
+  it('tags a poster when one is named', () => {
+    expect(followQrTarget('https://nammes.example', 'october-flyer')).toBe(
+      'https://nammes.example/follow?src=qr&c=october-flyer',
+    )
+  })
+
+  it('folds a human poster name into the same slug the database checks', () => {
+    expect(followQrTarget('https://nammes.example', 'Main Gate Poster!')).toBe(
+      'https://nammes.example/follow?src=qr&c=main-gate-poster',
+    )
   })
 })
 
@@ -35,5 +61,71 @@ describe('scanSourceFromSearch', () => {
 
   it('keeps the whitelist and the database in agreement', () => {
     expect(FOLLOW_SCAN_SOURCES).toEqual(['qr', 'link'])
+  })
+})
+
+describe('campaignFromSearch', () => {
+  it('reads a campaign alongside the scan marker', () => {
+    expect(campaignFromSearch('?src=qr&c=october-flyer')).toBe('october-flyer')
+  })
+
+  it('accepts a campaign that needs folding, so a hand-typed URL still counts', () => {
+    expect(campaignFromSearch('?c=Main%20Gate')).toBe('main-gate')
+  })
+
+  it('is null when there is no campaign or it cannot form a slug', () => {
+    expect(campaignFromSearch('?src=qr')).toBeNull()
+    expect(campaignFromSearch('?c=!!!')).toBeNull()
+    expect(campaignFromSearch('')).toBeNull()
+  })
+})
+
+describe('normaliseCampaign', () => {
+  it('lower-cases, folds punctuation and strips the edges', () => {
+    expect(normaliseCampaign('  October / Flyer  ')).toBe('october-flyer')
+    expect(normaliseCampaign('---')).toBe('')
+  })
+
+  it('caps the length without leaving a trailing dash', () => {
+    const campaign = normaliseCampaign('a'.repeat(CAMPAIGN_MAX_LENGTH) + ' extra words')
+    expect(campaign).toHaveLength(CAMPAIGN_MAX_LENGTH)
+    expect(campaign.endsWith('-')).toBe(false)
+  })
+
+  it('refuses a value that is not a string', () => {
+    expect(normaliseCampaign(null)).toBe('')
+    expect(normaliseCampaign(42)).toBe('')
+  })
+})
+
+describe('followLinkKey', () => {
+  it('normalises a platform name or a hub path into the stored key', () => {
+    expect(followLinkKey('whatsapp')).toBe('whatsapp')
+    expect(followLinkKey('/calendar')).toBe('calendar')
+    expect(followLinkKey('Instagram!')).toBe('instagram')
+  })
+
+  it('is null when nothing usable is left', () => {
+    expect(followLinkKey('')).toBeNull()
+    expect(followLinkKey('???')).toBeNull()
+    expect(followLinkKey(undefined)).toBeNull()
+  })
+})
+
+describe('splitSocialLinks', () => {
+  const links = [{ key: 'whatsapp_url' }, { key: 'x_url' }, { key: 'instagram_url' }]
+
+  it('pins the community channel and demotes the feeds', () => {
+    const { primary, secondary } = splitSocialLinks(links)
+    expect(primary.map((link) => link.key)).toEqual(['whatsapp_url'])
+    expect(secondary.map((link) => link.key)).toEqual(['x_url', 'instagram_url'])
+  })
+
+  it('survives a missing list', () => {
+    expect(splitSocialLinks(undefined)).toEqual({ primary: [], secondary: [] })
+  })
+
+  it('keeps the pinned list meaningful', () => {
+    expect(PRIMARY_SOCIAL_KEYS.length).toBeGreaterThan(0)
   })
 })
