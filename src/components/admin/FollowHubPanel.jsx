@@ -1,18 +1,41 @@
 import { useEffect, useState } from 'react'
 import Button from '../ui/Button'
+import FormField from '../ui/FormField'
 import { useToast } from '../../lib/ToastContext'
 import { saveBlob } from '../../lib/downloadImage'
 import { saveCardBlob } from '../../lib/shareCard'
-import { followPageUrl, followQrTarget } from '../../lib/followHub'
+import { followQrTarget, followSharedTarget, normaliseCampaign } from '../../lib/followHub'
 import { qrPngDataUrl, qrSvgText, renderFollowCard } from '../../lib/followQr'
 import { useFollowScanSummaryQuery } from '../../data/follow'
 
 const SOURCE_LABELS = { qr: 'QR scans', link: 'Shared links' }
 
+// Display names only; an unknown key still renders, so adding a pinned platform or a hub tile never needs
+// this map edited for the number to appear at all.
+const LINK_LABELS = {
+  whatsapp: 'WhatsApp',
+  x: 'X',
+  instagram: 'Instagram',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
+  newsletter: 'Newsletter',
+  news: 'News',
+  events: 'Events',
+  calendar: 'Calendar',
+  quiz: 'Quizzes',
+  cbt: 'CBT practice',
+  outlines: 'Outlines',
+  resources: 'Resources',
+  cgpa: 'CGPA calculator',
+}
+
 export default function FollowHubPanel() {
   const toast = useToast()
-  const pageUrl = followPageUrl(window.location.origin)
-  const target = followQrTarget(window.location.origin)
+  const [campaign, setCampaign] = useState('')
+  const campaignSlug = normaliseCampaign(campaign)
+  const target = followQrTarget(window.location.origin, campaignSlug)
+  const sharedUrl = followSharedTarget(window.location.origin, campaignSlug)
+  const fileSuffix = campaignSlug ? `-${campaignSlug}` : ''
   const [qrDataUrl, setQrDataUrl] = useState(null)
   const [busy, setBusy] = useState('')
   const summaryQuery = useFollowScanSummaryQuery()
@@ -41,7 +64,7 @@ export default function FollowHubPanel() {
 
   function handleCopy() {
     navigator.clipboard
-      .writeText(pageUrl)
+      .writeText(sharedUrl)
       .then(() => toast.success('Link copied to clipboard.'))
       .catch(() => toast.error('Could not copy the link — copy it manually.'))
   }
@@ -54,6 +77,19 @@ export default function FollowHubPanel() {
         at your own domain, so changing a handle here changes where a scan lands — posters already in the
         department never need reprinting.
       </p>
+
+      <FormField
+        label="Poster name (optional)"
+        value={campaign}
+        onChange={(event) => setCampaign(event.target.value)}
+        placeholder="october-flyer"
+        maxLength={32}
+        helper={
+          campaignSlug && campaignSlug !== campaign
+            ? `Each poster gets its own code, so scans can be traced back to it. Saved as “${campaignSlug}”.`
+            : 'Each poster gets its own code, so scans can be traced back to it. Leave blank for the general code.'
+        }
+      />
 
       <div className="flex flex-col gap-5 sm:flex-row">
         {qrDataUrl ? (
@@ -70,9 +106,9 @@ export default function FollowHubPanel() {
           <div className="flex items-center gap-2">
             <input
               readOnly
-              value={pageUrl}
+              value={sharedUrl}
               onFocus={(e) => e.target.select()}
-              aria-label="Follow page URL"
+              aria-label="Follow link to share"
               className="min-w-0 flex-1 rounded-md border border-hairline bg-surface-low px-3 py-2 text-sm text-ink-muted"
             />
             <Button variant="secondary" size="sm" onClick={handleCopy}>
@@ -88,7 +124,7 @@ export default function FollowHubPanel() {
               onClick={() =>
                 run('svg', async () => {
                   const svg = await qrSvgText(target)
-                  saveBlob(new Blob([svg], { type: 'image/svg+xml' }), 'nammes-follow-qr.svg')
+                  saveBlob(new Blob([svg], { type: 'image/svg+xml' }), `nammes-follow${fileSuffix}-qr.svg`)
                 })
               }
             >
@@ -103,7 +139,7 @@ export default function FollowHubPanel() {
                 run('png', async () => {
                   const dataUrl = await qrPngDataUrl(target, 2048)
                   const blob = await (await fetch(dataUrl)).blob()
-                  saveBlob(blob, 'nammes-follow-qr.png')
+                  saveBlob(blob, `nammes-follow${fileSuffix}-qr.png`)
                 })
               }
             >
@@ -116,7 +152,7 @@ export default function FollowHubPanel() {
               loading={busy === 'card'}
               onClick={() =>
                 run('card', async () => {
-                  saveCardBlob(await renderFollowCard(target), 'nammes-follow-card.png')
+                  saveCardBlob(await renderFollowCard(target), `nammes-follow${fileSuffix}-card.png`)
                 })
               }
             >
@@ -162,9 +198,30 @@ export default function FollowHubPanel() {
               .join(' · ')}
           </p>
         )}
+        {summary?.byCampaign?.length > 0 && (
+          <p className="mt-1 text-xs text-ink-muted">
+            By poster:{' '}
+            {summary.byCampaign
+              .slice(0, 8)
+              .map((row) => `${row.campaign}: ${row.scans}`)
+              .join(' · ')}
+          </p>
+        )}
+        {summary && (
+          <p className="mt-1 text-xs text-ink-muted">
+            Chosen after arriving:{' '}
+            <strong className="text-ink-900">{summary.linkClicks ?? 0}</strong> link clicks
+            {summary.byLink?.length > 0 &&
+              ` — ${summary.byLink
+                .slice(0, 8)
+                .map((row) => `${LINK_LABELS[row.link] ?? row.link}: ${row.clicks}`)
+                .join(' · ')}`}
+          </p>
+        )}
         <p className="mt-2 text-xs text-ink-muted">
           Only arrivals through the code are counted — someone opening /follow from a link on the site is
-          ordinary traffic and is not a scan.
+          ordinary traffic and is not a scan. Link clicks show which channel people chose once they were
+          there.
         </p>
       </div>
     </fieldset>
