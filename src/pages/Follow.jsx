@@ -7,12 +7,7 @@ import { useSiteContentQuery } from '../data/siteContent'
 import { useCalendarFlag } from '../data/calendar'
 import { socialLinks } from '../components/SocialIcons'
 import { recordFollowLinkClick, recordFollowScan } from '../data/follow'
-import {
-  campaignFromSearch,
-  followLinkKey,
-  scanSourceFromSearch,
-  splitSocialLinks,
-} from '../lib/followHub'
+import { campaignFromSearch, followLinkKey, scanSourceFromSearch } from '../lib/followHub'
 
 // Everything the QR code can usefully offer, in one list so a feature the site switches off does not leave
 // a dead tile on the page a poster sends people to.
@@ -41,11 +36,8 @@ export default function Follow() {
   const content = contentQuery.data
   const calendarEnabled = useCalendarFlag()
   const links = socialLinks(content)
-  const { primary, secondary } = splitSocialLinks(links)
-  const pinned = primary[0]
   const substackUrl = content?.substack_url
   const hubLinks = HUB_LINKS.filter((item) => item.requires !== 'calendar' || calendarEnabled)
-  const primaryCount = (pinned ? 1 : 0) + (substackUrl ? 1 : 0)
 
   // Fire and forget: a tap that opens WhatsApp must not wait on a counter, and a failed beacon is never a
   // reason to block the link. `_url` is stripped so the stored key is `whatsapp`, not the site-content name.
@@ -87,111 +79,70 @@ export default function Follow() {
         </div>
 
         {contentQuery.isLoading ? (
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="h-44 animate-pulse rounded-lg bg-surface-low" />
-            <div className="h-44 animate-pulse rounded-lg bg-surface-low" />
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-20 animate-pulse rounded-lg bg-surface-low" />
+            ))}
+          </div>
+        ) : links.length > 0 ? (
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {links.map(({ key, label, url, Icon }) => (
+              <a
+                key={key}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackLink(key)}
+                className="group flex items-center gap-4 rounded-lg border border-hairline bg-surface p-5 no-underline shadow-sm transition-shadow hover:shadow-md"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-low text-brand transition-colors group-hover:bg-brand group-hover:text-white">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="text-sm font-bold text-ink-900">{label}</span>
+                  <span className="truncate text-xs text-ink-muted">{hostOf(url)}</span>
+                </span>
+                <span className="material-symbols-outlined ml-auto shrink-0 text-hairline transition-colors group-hover:text-brand">
+                  arrow_forward
+                </span>
+              </a>
+            ))}
           </div>
         ) : (
-          <>
-            {/* The two things worth doing before anything else: join the room the department actually talks
-                in, and subscribe once. Both are pinned above the feeds so a first-time visitor is not asked
-                to choose between five accounts. */}
-            {primaryCount > 0 && (
-              <div className={['mt-6 grid grid-cols-1 gap-4', primaryCount > 1 ? 'sm:grid-cols-2' : ''].join(' ')}>
-                {pinned && (
-                  <a
-                    href={pinned.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => trackLink(pinned.key)}
-                    className="group flex flex-col gap-4 rounded-lg bg-green-900 p-6 text-white no-underline shadow-sm transition-shadow hover:shadow-md sm:p-8"
-                  >
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
-                      <pinned.Icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <h3 className="text-xl font-bold text-white">Join the {pinned.label}</h3>
-                      <p className="mt-1 max-w-lg text-sm text-white/75">
-                        Announcements, results and day-to-day updates land here first.
-                      </p>
-                    </div>
-                    <span className="mt-auto inline-flex items-center gap-1.5 self-start rounded-md bg-orange-500 px-5 py-3 text-sm font-bold text-white no-underline transition-colors group-hover:bg-orange-600">
-                      Join now
-                      <span className="material-symbols-outlined text-base">arrow_forward</span>
-                    </span>
-                  </a>
-                )}
+          <div className="mt-6 rounded-lg border border-hairline bg-surface-low p-6">
+            <p className="text-sm text-ink-muted">
+              No social links have been added yet. In the meantime you can reach an Exco directly.
+            </p>
+            <Link
+              to="/excos"
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
+            >
+              Meet the Excos
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </Link>
+          </div>
+        )}
 
-                {substackUrl && (
-                  <div className="flex flex-col gap-4 rounded-lg bg-green-900 p-6 text-white sm:p-8">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
-                      <span className="material-symbols-outlined text-xl">mail</span>
-                    </span>
-                    <div>
-                      <h3 className="text-xl font-bold text-white">The NAMMES Communique</h3>
-                      <p className="mt-1 max-w-lg text-sm text-white/75">
-                        The department&rsquo;s newsletter — write-ups, interviews and the stories behind the
-                        results. Subscribe once and it comes to your inbox.
-                      </p>
-                    </div>
-                    <a
-                      href={substackUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackLink('newsletter')}
-                      className="mt-auto inline-flex items-center gap-1.5 self-start rounded-md bg-orange-500 px-5 py-3 text-sm font-bold text-white no-underline transition-colors hover:bg-orange-600"
-                    >
-                      Read &amp; subscribe
-                      <span className="material-symbols-outlined text-base">arrow_forward</span>
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Everything else stays one tap away, but as a compact row: five equal cards made a visitor
-                pick one at random, which is the opposite of "join the ones you use". */}
-            {secondary.length > 0 && (
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {secondary.map(({ key, label, url, Icon }) => (
-                  <a
-                    key={key}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => trackLink(key)}
-                    className="group flex items-center gap-4 rounded-lg border border-hairline bg-surface p-5 no-underline shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-low text-brand transition-colors group-hover:bg-brand group-hover:text-white">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="flex min-w-0 flex-col">
-                      <span className="text-sm font-bold text-ink-900">{label}</span>
-                      <span className="truncate text-xs text-ink-muted">{hostOf(url)}</span>
-                    </span>
-                    <span className="material-symbols-outlined ml-auto shrink-0 text-hairline transition-colors group-hover:text-brand">
-                      arrow_forward
-                    </span>
-                  </a>
-                ))}
-              </div>
-            )}
-
-            {primaryCount === 0 && secondary.length === 0 && (
-              <div className="mt-6 rounded-lg border border-hairline bg-surface-low p-6">
-                <p className="text-sm text-ink-muted">
-                  No social links have been added yet. In the meantime you can reach an Exco directly.
-                </p>
-                <Link
-                  to="/excos"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand no-underline hover:text-orange-500 hover:underline"
-                >
-                  Meet the Excos
-                  <span className="material-symbols-outlined text-base">arrow_forward</span>
-                </Link>
-              </div>
-            )}
-          </>
+        {substackUrl && (
+          <div className="mt-10 flex flex-col gap-4 rounded-lg bg-green-900 p-6 text-white sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div>
+              <h3 className="text-xl font-bold text-white">The NAMMES Communique</h3>
+              <p className="mt-1 max-w-lg text-sm text-white/75">
+                The department&rsquo;s newsletter — write-ups, interviews and the stories behind the results.
+                Subscribe once and it comes to your inbox.
+              </p>
+            </div>
+            <a
+              href={substackUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackLink('newsletter')}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-orange-500 px-5 py-3 text-sm font-bold text-white no-underline transition-colors hover:bg-orange-600"
+            >
+              Read &amp; subscribe
+              <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </a>
+          </div>
         )}
 
         <div className="mt-14 flex flex-col gap-1">

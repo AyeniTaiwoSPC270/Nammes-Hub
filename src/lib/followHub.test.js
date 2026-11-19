@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   CAMPAIGN_MAX_LENGTH,
   FOLLOW_SCAN_SOURCES,
-  PRIMARY_SOCIAL_KEYS,
   campaignFromSearch,
   followLinkKey,
   followPageUrl,
@@ -10,7 +9,6 @@ import {
   followSharedTarget,
   normaliseCampaign,
   scanSourceFromSearch,
-  splitSocialLinks,
 } from './followHub'
 
 describe('followQrTarget', () => {
@@ -109,23 +107,5 @@ describe('followLinkKey', () => {
     expect(followLinkKey('')).toBeNull()
     expect(followLinkKey('???')).toBeNull()
     expect(followLinkKey(undefined)).toBeNull()
-  })
-})
-
-describe('splitSocialLinks', () => {
-  const links = [{ key: 'whatsapp_url' }, { key: 'x_url' }, { key: 'instagram_url' }]
-
-  it('pins the community channel and demotes the feeds', () => {
-    const { primary, secondary } = splitSocialLinks(links)
-    expect(primary.map((link) => link.key)).toEqual(['whatsapp_url'])
-    expect(secondary.map((link) => link.key)).toEqual(['x_url', 'instagram_url'])
-  })
-
-  it('survives a missing list', () => {
-    expect(splitSocialLinks(undefined)).toEqual({ primary: [], secondary: [] })
-  })
-
-  it('keeps the pinned list meaningful', () => {
-    expect(PRIMARY_SOCIAL_KEYS.length).toBeGreaterThan(0)
   })
 })
